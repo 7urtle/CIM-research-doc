@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">宏整体架构：上下两块 + 转置读口 + AMBA 总线</text>
+
+  <!-- 上层块 -->
+  <rect x="300" y="90" width="620" height="150" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="320" y="116" fill="#0e5a8a" font-size="13" font-weight="700">上层块（Upper Block）</text>
+  <g font-size="11">
+    <rect x="320" y="128" width="140" height="50" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="390" y="148" text-anchor="middle" fill="#1d8a5f" font-weight="600">CWM-SRAM</text>
+    <text x="390" y="166" text-anchor="middle" fill="#45536b">1 端口 4b/单元</text>
+    <text x="390" y="180" text-anchor="middle" fill="#45536b">64×64 6T-SRAM</text>
+    <rect x="480" y="128" width="180" height="50" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="570" y="148" text-anchor="middle" fill="#6b3fa0" font-weight="600">DMBP-MAC</text>
+    <text x="570" y="166" text-anchor="middle" fill="#45536b">64 DM-MUL + 6 级 DM-ADD</text>
+    <text x="570" y="180" text-anchor="middle" fill="#45536b">→ 14b 点积</text>
+    <text x="680" y="150" fill="#45536b">256b 转置读口</text>
+    <text x="680" y="172" fill="#45536b">（FF 行 / BP 对角）</text>
+  </g>
+
+  <!-- 下层块 -->
+  <rect x="300" y="260" width="620" height="150" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="320" y="286" fill="#6b3fa0" font-size="13" font-weight="700">下层块（Lower Block）＝ 同构</text>
+  <text x="320" y="316" fill="#45536b">INT4 模式：上下块各自独立做 4b MAC；</text>
+  <text x="320" y="340" fill="#45536b">INT8 / FP8 / BF16 模式：一块处理高 4 位、一块处理低 4 位</text>
+  <text x="320" y="376" fill="#6b3fa0" font-weight="600">→ 4b/8b 位宽按需拼接，一套硬件多种精度</text>
+
+  <!-- 控制与总线 -->
+  <rect x="60" y="90" width="200" height="320" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="160" y="118" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">读写控制 +</text>
+  <text x="160" y="140" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">激活旋转对齐</text>
+  <g font-size="10.5">
+    <text x="80" y="170" fill="#45536b">· 地址译码、读写信号</text>
+    <text x="80" y="192" fill="#45536b">· 激活向量旋转（配合循环映射）</text>
+    <text x="80" y="214" fill="#45536b">· SFME 编码 + VWPA 预对齐</text>
+    <text x="80" y="248" fill="#1d8a5f" font-weight="600">AMBA 总线接口：</text>
+    <text x="80" y="272" fill="#45536b">AHB：内存访问</text>
+    <text x="80" y="294" fill="#45536b">APB：计算控制与结果</text>
+    <text x="80" y="330" fill="#45536b">→ 可直接集成进 SoC</text>
+  </g>
+  <path d="M260,250 H300" stroke="#1d8a5f" stroke-width="2.4" marker-end="url(#ar)"/>
+
+  <!-- 底部 -->
+  <rect x="60" y="430" width="860" height="0" rx="0"/>
+  <rect x="60" y="440" width="860" height="30" rx="8" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="490" y="460" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">28nm · 2.5ns 访问（0.9V）· 峰值 192.3 TFLOPS/W（FP8，近似模式）· 首个四格式统一 FP 训练/推理 CIM</text>
+</svg>

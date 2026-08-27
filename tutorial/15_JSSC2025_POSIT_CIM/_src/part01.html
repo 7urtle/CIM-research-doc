@@ -1,0 +1,80 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：FP-CIM 的瓶颈与 POSIT 数据格式</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 为什么 FP-CIM 需要高位宽？② FP8 为什么覆盖不了梯度？③ POSIT 的四个部分（S/R/E/M）与 regime 温度计码怎么工作？④ POSIT8 ≈ FP16 的底气从哪来？</p>
+</div>
+
+<h3>1.1 AI 模型的两大趋势：规模暴涨 + 精度要求高</h3>
+<p>现代 AI 应用（自动驾驶、3D 重建、视频生成）有两个共同趋势：</p>
+<ul>
+<li><strong>模型规模暴涨</strong>：ResNet152（2015）600 万参数 → Llama2（2023）700 亿参数，数据搬移能耗相差 <strong>11667×</strong>；</li>
+<li><strong>需要高精度浮点</strong>：图像生成（扩散模型）用 INT8 比 FP16 掉精度 &gt;10%；片上训练也需要 FP 保证精度。FP16 比 INT8 多耗 6.25× 能耗、临界路径长 1.5×。</li>
+</ul>
+<p>所以需要“精度高 + 能耗低”的推理/训练硬件——FP-CIM 是候选之一（省搬移 + 高精度），但传统 FP 格式（FP32/FP16/BF16）位宽大，存储和 MAC 功耗成了瓶颈。</p>
+
+<h3>1.2 问题的具体形态：数据分布不匹配</h3>
+<p>论文 Fig.1 展示 ViT-B 一次训练迭代中梯度/激活/权重的指数范围：</p>
+<ul>
+<li>梯度指数范围 [−66, −10]（动态范围极大）；</li>
+<li>激活 [−16, 4]、权重 [−16, 2]（相对集中）；</li>
+<li>FP8 (1,5,2) 的指数表示范围只有 [−14, 15] → <strong>覆盖不了梯度</strong> → 69.3% 的梯度（指数 &lt;−14）被迫表示成 0 → 训练掉精度。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 固定格式的死穴：要么范围够（高位宽贵），要么省（覆盖不了）</div>
+<p>FP16/BF16 能同时覆盖三者但要付出 2×（存储）和 3.06×（MAC）的能耗。固定位宽的格式无法同时满足“范围”和“成本”——这就是 POSIT 登场的原因：<strong>位宽动态分配，哪里需要就给哪里</strong>。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_1_相对误差对比.png" alt="相对误差对比">
+<figcaption>图 1 · 论文 Fig.1：不同数据格式的相对误差对比——POSIT8 用 8 位达到接近 FP16 的精度。</figcaption>
+</figure>
+
+<h3>1.3 POSIT 数据格式：S / R / E / M</h3>
+<p>POSIT(n, es) 由四部分组成：<strong>S（1 位符号）+ R（regime，动态位宽）+ E（指数，es 位）+ M（尾数，动态位宽）</strong>：</p>
+<p class="formula">值 = (−1)ˢ × (2^es)ᴿ × 2ᴱ × 1.M</p>
+<ul>
+<li>R 与 M 的位宽<strong>动态变化</strong>（m = n − r − es − 1）：R 长 → 指数范围大、尾数精度低；R 短 → 尾数精度高；</li>
+<li><strong>R 是一元温度计码</strong>：正数“1…10”，十进制 = 连续 1 的个数 − 1（11110 → +3）；负数“0…01”，十进制 = 连续 0 的个数（00001 → −4）；</li>
+<li>温度计码的连续 0/1 用<strong>前导 1/0 检测器</strong>自动分段 → 动态区分 regime 和尾数。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_2_POSIT原理与性能.png" alt="POSIT原理与性能">
+<figcaption>图 2 · 论文 Fig.2：POSIT 数据格式原理与性能——动态位分配实现范围-精度权衡，POSIT8 精度 ≈ FP16。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d01_posit_format.svg" alt="POSIT格式教学图">
+<figcaption>教学图 1 · POSIT 的四部分结构、regime 温度计码，以及 POSIT8 ≈ FP16 的动机。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig15_2_POSIT原理与性能.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · POSIT 数据格式：S/R/E/M 位结构动画演示（R 与 M 位宽动态变化）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · POSIT(8,1) 位结构（动态位分配）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">R=2b(11,+1) · E=0 · M=101(3b) → 大尾数</span>
+</div>
+<div class="hint">每个示例的 8 个比特被动态分成 S / R（橙色，温度计码）/ E（绿色）/ M（紫色）。注意 R 变长时 M 变短（范围优先），R 变短时 M 变长（精度优先）。对比 FP8 固定 (1,5,2) 覆盖不了梯度。</div>
+</div>
+
+<h3>1.4 POSIT 的“账面”优势</h3>
+<ul>
+<li>POSIT8 的精度损失 &lt;0.4%（vs FP16/BF16，ResNet18 分类）；</li>
+<li>能耗省 <strong>6.25×</strong>（8 位 vs 16 位存储/MAC）；</li>
+<li>动态范围覆盖梯度（R 位自动变长）→ 训练不掉精度。</li>
+</ul>
+<div class="box warn">
+<div class="bt">⚠️ 但“账面优势”不等于“硬件优势”</div>
+<p>动态位宽在软件（算法）上很美好，落到硬件就有三个麻烦：regime 要动态解析（能耗↑）、尾数位宽不固定（单元浪费）、对齐后无重叠（加法浪费）。下一节详述这三大挑战——它们正是本论文创新的靶子。</p>
+</div>
+</section>

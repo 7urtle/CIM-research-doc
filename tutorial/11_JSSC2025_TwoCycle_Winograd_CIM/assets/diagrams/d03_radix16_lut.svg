@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">创新①：Radix16 + LUT 数字 CIM 宏 —— 两周期完成 INT8 MAC</text>
+
+  <!-- 宏结构 -->
+  <rect x="40" y="80" width="440" height="300" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">4×32 CiM 宏（每周期处理 4 行）</text>
+  <g font-size="11">
+    <rect x="60" y="122" width="120" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="120" y="140" text-anchor="middle" fill="#c25e2e" font-weight="600">Radix16 编码器 ×4</text>
+    <text x="120" y="158" text-anchor="middle" fill="#45536b">5b 激活 → 控制信号</text>
+    <rect x="200" y="122" width="120" height="44" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="260" y="140" text-anchor="middle" fill="#1d8a5f" font-weight="600">4×32 SRAM 阵列</text>
+    <text x="260" y="158" text-anchor="middle" fill="#45536b">（存权重）</text>
+    <rect x="340" y="122" width="120" height="44" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="400" y="140" text-anchor="middle" fill="#6b3fa0" font-weight="600">权重编码器</text>
+    <text x="400" y="158" text-anchor="middle" fill="#45536b">NEG/EIGHT/ZERO</text>
+    <rect x="60" y="186" width="280" height="44" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="200" y="204" text-anchor="middle" fill="#0e5a8a" font-weight="600">移位器 + LUT（集成在 SRAM 内）</text>
+    <text x="200" y="222" text-anchor="middle" fill="#45536b">→ P[10:0] 部分积</text>
+    <rect x="360" y="186" width="100" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="410" y="204" text-anchor="middle" fill="#c25e2e" font-weight="600">PPRS</text>
+    <text x="410" y="222" text-anchor="middle" fill="#45536b">（稀疏移位）</text>
+    <rect x="60" y="250" width="280" height="44" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="200" y="268" text-anchor="middle" fill="#1d8a5f" font-weight="600">4 输入加法树 + 累加器</text>
+    <text x="200" y="286" text-anchor="middle" fill="#45536b">补码加法器 → 18b 部分积</text>
+    <text x="60" y="340" fill="#45536b">INT8 拆成两个 5b Radix16 码（t0/t1 两周期）</text>
+    <text x="60" y="362" fill="#45536b">→ 每 2 周期输出完整 4 行 18b MAC 结果</text>
+  </g>
+
+  <!-- LUT 原理 -->
+  <rect x="500" y="80" width="420" height="300" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">LUT 优化：把“移位+加法”变成查表</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">Radix16 的部分积分两类：</text>
+    <rect x="520" y="150" width="180" height="40" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="610" y="170" text-anchor="middle" fill="#1d8a5f">只移位：{±W,±2W,±4W,±8W}</text>
+    <rect x="720" y="150" width="180" height="40" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="810" y="170" text-anchor="middle" fill="#c25e2e">移位+加法：{±3W,±5W,±6W,±7W}</text>
+    <text x="520" y="220" fill="#45536b">• “移位+加法”类占全部编码的 <strong>53.3%</strong>（不含 0）；</text>
+    <text x="520" y="242" fill="#45536b">• ±7W 甚至要<strong>两次</strong>额外加法（最贵）；</text>
+    <text x="520" y="264" fill="#45536b">• 用 <strong>LUT</strong>（定制数字电路，类似加法器）</text>
+    <text x="520" y="286" fill="#45536b">　直接查表生成这些部分积 → 省掉加法链</text>
+    <text x="520" y="318" fill="#6b3fa0" font-weight="600">→ 宏的动态功耗 −21.7%</text>
+    <text x="520" y="340" fill="#45536b">→ 每次完整 MAC 的功耗比现有方案低 2.44×</text>
+    <text x="520" y="362" fill="#45536b">（即使每周期功耗更高，但周期数少）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="404" width="880" height="72" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="432" fill="#0e5a8a" font-size="13" font-weight="700">验证</text>
+  <text x="60" y="458" fill="#45536b" font-size="12.5">Virtuoso 评估（0.9V/100MHz/TT）：Radix16 本身省电很少（对比 Radix4），<strong>LUT 才是功耗大降的关键</strong>；</text>
+  <text x="60" y="476" fill="#45536b" font-size="12.5">单宏面积 8400 μm²；编码器与权重编码器分别占 MAC 功耗 7.58% / 16.66%。</text>
+</svg>

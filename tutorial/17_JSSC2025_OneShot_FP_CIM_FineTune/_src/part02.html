@@ -1,0 +1,54 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>三大挑战与 One-Shot CIM 引擎总体架构</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 三大挑战的量化（吞吐、转换开销、环境变化）；② 引擎的四大模块（ManAU/CIM core/ITFU/ODFC）与职责。</p>
+</div>
+
+<h3>2.1 三大挑战（论文 Fig.2）</h3>
+<table>
+<tr><th>挑战</th><th>量化</th><th>对策</th></tr>
+<tr><td><strong>① INT 尾数 MAC 拖慢吞吐</strong></td><td>位串行 8 周期；位并行 96% 面积/能耗</td><td>One-Shot 计算（multiply-less → 最小选择，1 周期）</td></tr>
+<tr><td><strong>② FP/INT 转换开销大</strong></td><td>步骤①需 127 个 8 位比较器；步骤④搜 16 位整数</td><td>输入-权重协同对齐 + UBF16</td></tr>
+<tr><td><strong>③ 环境变化掉精度</strong></td><td>MNIST 99.1% → MNIST-M 13.8%</td><td>ODFC 片上微调</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig17_2_三大挑战.png" alt="三大挑战">
+<figcaption>图 2 · 论文 Fig.2：先前预对齐 FP-CIM 的三大挑战。</figcaption>
+</figure>
+
+<h3>2.2 引擎架构（论文 Fig.3）</h3>
+<p>引擎由四大模块组成：</p>
+<table>
+<tr><th style="width:18%">模块</th><th>职责</th></tr>
+<tr><td><strong>ManAU</strong>（尾数对齐单元，0.018 mm²）</td><td>核心级输入-权重协同对齐：直接用权重最大指数对齐输入尾数（免 XE_max 选择）</td></tr>
+<tr><td><strong>CIM Core</strong>（0.084 mm²）</td><td>INT 尾数计算：输入驱动 + InADD（128 输入加法树，Σxi 共享）+ 16 列子阵列（16-kb 权重）+ ParMS + ACC-ASU</td></tr>
+<tr><td><strong>ITFU</strong>（INT→FP 单元，0.003 mm²）</td><td>16 位整数结果 → UBF16 格式</td></tr>
+<tr><td><strong>ODFC</strong>（片上微调核心，0.037 mm²）</td><td>在线权重更新（训练）</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig17_3_CIM引擎架构.png" alt="CIM引擎架构">
+<figcaption>图 3 · 论文 Fig.3：One-Shot CIM 引擎总体架构（ManAU + CIM core + ITFU + ODFC）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d02_arch.svg" alt="架构教学图">
+<figcaption>教学图 2 · 引擎架构与计算流程。</figcaption>
+</figure>
+
+<h3>2.3 multiply-less 的计算分解</h3>
+<p>引擎支持 FP 与 INT 两种模式（都只需 1 周期）。FP 模式下：ManAU 对齐 → CIM core 尾数计算 → ITFU 转回 FP。核心运算沿袭第 13 篇的 multiply-less 分解（L1 距离）：</p>
+<p class="formula">Σ|xi−wi| = Σxi + Σwi − 2·Σmin(xi,wi)</p>
+<ul>
+<li><strong>Σxi</strong>：InADD（128 输入 8 位加法树），结果在整个 CIM core 共享（摊薄成本）；</li>
+<li><strong>Σwi</strong>：部署前预计算存 WSUM；</li>
+<li><strong>2Σmin</strong>：ParMS + ACC-ASU 实时完成（最轻的运算）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 设计与第 13 篇的关系</div>
+<p>第 13 篇（multiply-less INT CIM）用位串行动态比较器；本篇把它推到 <strong>BF16 浮点</strong>：尾数变成 8 位 → 用<strong>位并行</strong>的定制 ParMS（静态、进位前瞻）→ 1 周期完成。同时新增协同对齐（指数部分）和 ODFC（训练部分）——是前作的完整升级。</p>
+</div>
+</section>

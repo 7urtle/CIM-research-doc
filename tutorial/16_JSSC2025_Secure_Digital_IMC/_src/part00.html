@@ -1,0 +1,60 @@
+<section class="chapter" id="sec0">
+<h1 class="title">安全数字存内计算宏零基础精讲：让 CIM 也学会“保守秘密”
+<span class="en">Digital In-Memory Compute for Machine Learning Applications With Input and Model Security（IEEE JSSC, vol.60, no.9, 2025）</span></h1>
+<div class="meta">论文作者：Maitreyi Ashok, Saurav Maji, Xin Zhang, John Cohn, Anantha P. Chandrakasan（MIT + Intel Labs + IBM T.J. Watson Research Center）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 9, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前十几篇论文都在卷“能效”。这篇 MIT + IBM 的工作把视角转向另一个常被忽视的维度：<strong>安全</strong>。ML 加速器处理人脸/语音等隐私输入，模型权重是私有 IP——但传统数字 IMC 的功耗会泄露数据（侧信道），片外权重总线可以被窃听（总线探测）。本论文提出一个<strong>安全数字 IMC 宏</strong>，用三招同时防住两类攻击：</p>
+<ol>
+<li><strong>SCA 安全计算</strong>：用 <strong>Boolean 共享</strong>（每个比特拆成 3 份看似随机的共享）让电路功耗与真实数据无关；关键是乘法用<strong>原生安全的 XNOR 门</strong>（线性逻辑）替代 AND——每份可独立计算、天然均匀、抗毛刺 → <strong>运行期零随机比特</strong>（IMC 百万并行 MAC 下这是唯一可行的路线）；</li>
+<li><strong>BPA 安全</strong>：片外权重以<strong>密文</strong>存储，用 NIST 轻量密码竞赛冠军 <strong>ASCON</strong> 在片上解密——轻量、AND 门占比最低（共享开销最小）、SCA 弹性好；</li>
+<li><strong>片上密钥</strong>：用 <strong>PUF（物理不可克隆函数）</strong>复用 IMC 的 SRAM 单元（反馈切断）生成密钥——制造随机性即芯片指纹，密钥永不离开芯片。</li>
+</ol>
+<p>14nm 实测：<strong>8.1 TOPS/W</strong>、NN 精度零影响、SCA/BPA 安全超过 <strong>100 万采样</strong>（高 SNR 理想攻击条件下）。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“功耗是数据的影子”：</strong>CMOS 电路处理 0 和 1 消耗的电流不同，测量功耗就能反推数据。侧信道攻击（SCA）就是利用这个物理事实。防御思路：<strong>让电路的功耗与真实数据统计无关</strong>。</li>
+<li><strong>“IMC 安全的最大敌人是随机比特”：</strong>传统掩码方案每周期要注入新随机比特。IMC 每周期并行百万个 MAC，若每个都要随机比特，随机数生成的开销反超计算。所以<strong>任何 IMC 安全方案必须“运行期零随机比特”</strong>——这是本论文所有设计的硬约束。</li>
+<li><strong>“密钥必须长在芯片里”：</strong>密码解密需要密钥，但密钥若从片外传入就会被探测。PUF 利用制造工艺的随机失配（每颗芯片都不同、且无法复制）在芯片内部“长”出密钥——像指纹一样独一无二。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“one often overlooked parameter is security, which is necessary to maintain the privacy and integrity of the accelerator”</td>
+<td>安全常被忽视，但它是维持加速器隐私与完整性的必要条件。</td></tr>
+<tr><td class="num">“we propose an IMC macro design that is protected against two types of eavesdropping attacks, passive physical side-channels and memory bus-probing”</td>
+<td>本论文的 IMC 宏同时防两类窃听攻击：物理侧信道（SCA）与总线探测（BPA）。</td></tr>
+<tr><td class="num">“secure compute that eliminates the need for random bits”</td>
+<td>对策①：安全计算消除了对（运行期）随机比特的需求。</td></tr>
+<tr><td class="num">“local model decryption with a lightweight cipher”</td>
+<td>对策②：用轻量密码在本地（片上）解密模型。</td></tr>
+<tr><td class="num">“secret key generation reusing existing IMC circuitry”</td>
+<td>对策③：复用现有 IMC 电路生成秘密密钥（PUF）。</td></tr>
+<tr><td class="num">“provide side-channel security against all practical attackers beyond 1 million samples”</td>
+<td>对超过 100 万采样的所有实际攻击者都提供侧信道安全。</td></tr>
+<tr><td class="num">“still operating without any effect on neural network accuracy at 8.1 TOPS/W energy efficiency”</td>
+<td>NN 精度零影响，能效 8.1 TOPS/W。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>SCA 安全计算（Boolean 共享 + XNOR 乘法）</strong>：3 份共享一阶安全；XNOR 线性乘法每份独立、免随机比特（AND 需 48 门+2 随机比特/周期，XNOR 只需 6 门+0）；SV/BV 换算 + 校正因子保持多位 MAC 精度（表 I：奇数量化 vs 标准量化精度一致）；</li>
+<li><strong>安全加法树/累加器</strong>：进位保存加法（免半加器→免随机刷新）、近似均匀性（CV 0.44→0.01）、MSB 首拍用“复用式随机 0 共享”（仅启动一次性随机比特）；</li>
+<li><strong>BPA 安全（ASCON）</strong>：NIST 轻量密码冠军、TI-ASCON 用 "Changing of the Guards"（仅 4 个一次性随机比特）、SCA 弹性好；</li>
+<li><strong>片上密钥（SRAM PUF）</strong>：反馈切断复用 IMC 位单元、TMV 抗噪 + 差分 FSM 抗简单功耗分析、NIST 随机性全过、0% 误码（TMV+BCH）；</li>
+<li><strong>完整实测</strong>：CPA/DPA 超 100 万采样安全、8.1 TOPS/W、开销量化（位单元 ×5.3、加法树 ×15.5）与可扩展性讨论。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“安全与电路设计结合”的入门佳作：先建立威胁模型（§1），再理解 Boolean 共享的数学（§2），然后看三招怎么落地（§3–6），最后看怎么用 CPA/DPA 证明安全（§7）。读时注意：<strong>每个设计决策都在回答“怎么省掉随机比特”</strong>。</p>
+</div>
+</section>

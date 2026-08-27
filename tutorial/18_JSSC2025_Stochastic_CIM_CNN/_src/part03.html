@@ -1,0 +1,40 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：位并行 SC 数据流</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 传统位串 SC 为什么慢；② 位并行怎么把 N 位流映射到 N 个宏、1 周期算完；③ 位并行如何与 CIM 结构契合。</p>
+</div>
+
+<h3>3.1 传统 SC 的问题：位串行</h3>
+<p>SC 天然是位串行：随机比特流逐位生成 → 计算逐位进行。把位串 SC 直接嵌入内存需要每宏一个 SNG → 面积巨大。本论文的解法：<strong>把整个比特流存进内存，计算并行展开</strong>。</p>
+
+<h3>3.2 位并行映射（论文 Fig.4 下半部）</h3>
+<p>假设流长 N，激活向量 a（K 个元素）：</p>
+<ul>
+<li><strong>宏 1</strong> 存激活向量第 1 位（a1_t1 … ak_t1）；</li>
+<li><strong>宏 2</strong> 存第 2 位（a1_t2 … ak_t2）；… <strong>宏 N</strong> 存第 N 位；</li>
+<li>权重的第 i 位（wp1_ti … wpk_ti、wn1_ti … wnk_ti）施加到宏 i 的 CPWL；</li>
+<li>所有宏<strong>并行</strong>做点积 → 所有输出位 1 周期可得。</li>
+</ul>
+<p>这等于把位串 SC 的“时间展开”变成“空间展开”：<strong>把 N 个周期的逐位运算换成 N 个宏并行的一次运算</strong>。由于 SC 的 MAC 是 1-bit AND/OR，宏的硬件非常小，空间展开可行。</p>
+
+<figure>
+<img src="assets/figs/fig18_4_split-unipolar表示与位并行映射.png" alt="位并行映射">
+<figcaption>图 5 · 论文 Fig.4（下半部）：位级 SC MAC 到 SCIM 宏的位并行映射。</figcaption>
+</figure>
+
+<h3>3.3 激活存内存：为什么要存激活而不是权重？</h3>
+<div class="box key">
+<div class="bt">💡 因为激活更短</div>
+<p>激活是正数（ReLU）→ 只需 unipolar 正流（N 位）；权重是有符号数 → 需要 split-unipolar 正负两流（2N 位）。所以<strong>把较短的激活随机流存进内存</strong>，权重在计算周期由 SNG 实时转换施加。这也是“输入-行驻留（IRS）数据流”（§7）的基础。</p>
+</div>
+
+<h3>3.4 MAC 的交叉积</h3>
+<p>split-unipolar 乘法要考虑交叉项。但本设计只支持正激活（视觉应用）：每个元素 a_k 与 wp_k、wn_k 分别 AND → 两个 OR 累加 → outp/outn → 相减得点积。无需处理激活负流项。</p>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 位串 SC 逐位算 → 慢；② 位并行：宏 i 存激活流第 i 位、权重第 i 位施加 → N 宏并行 1 周期算完（空间换时间）；③ 激活正流短 → 存内存，权重实时转换。</p>
+</div>
+</section>

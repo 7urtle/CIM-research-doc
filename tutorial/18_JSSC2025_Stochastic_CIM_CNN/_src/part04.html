@@ -1,0 +1,50 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>SCIM 位单元与阵列：+4 晶体管做乘法、wired-OR 做累加</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 10T 单元的结构（6T SRAM + 两套 AND）；② wired-OR 累加怎么用伪 nMOS 预充实现、为什么免 ADC；③ 宏规格与时序。</p>
+</div>
+
+<h3>4.1 10T SCIM 位单元（论文 Fig.7）</h3>
+<p>单元用<strong>标准 6T SRAM</strong>设计（存激活随机位 a），加上每对<strong>级联 nMOS</strong>实现一个 AND（乘法）：</p>
+<ul>
+<li>两套乘法电路：a × wp（CPWLP）与 a × wn（CPWLN）——对应权重参数的正位与负位；</li>
+<li>数字 CIM 每存储位需 ~20 个额外晶体管（乘法器+数字加法树），SCIM 单元<strong>仅 +4 个晶体管</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_7_SCIM位单元阵列.png" alt="SCIM位单元阵列">
+<figcaption>图 6 · 论文 Fig.7：SCIM 位单元阵列——10T 单元电路（6T SRAM + AND 乘法）、感放与计算时序。</figcaption>
+</figure>
+
+<h3>4.2 wired-OR 累加：伪 nMOS 预充（论文 Fig.7 时序）</h3>
+<p>一行共享计算端口（CPP/CPN）实现 <strong>wired-OR</strong>（256 单元 OR）：</p>
+<ol>
+<li><strong>预充</strong>：计算端口预充到 VDD、所有 CPWL 接地；</li>
+<li><strong>求值</strong>：关预充 pMOS、使能 CPWL 驱动；</li>
+<li>任一单元导通 → 计算端口被主动电流放电到地（结果=1）；全不导通 → 仅漏电（最差 PVT 下 256 单元漏电仅 12 mV 跌落）；</li>
+<li>反相器作感放 + 缓冲 → 容忍噪声耦合；求值完成 → 1-bit 结果入触发器。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么免 ADC？</div>
+<p>SC 的累加输出本身就是 1-bit 随机位（outp/outn）——它是<strong>逻辑电平</strong>信号，感放即可直接读取，根本不需要把模拟量转成多位二进制。这是 SC 与模拟 CIM 的本质区别：<strong>模拟 CIM 的位线电压携带多位信息（要 ADC），SCIM 的每条计算线只携带 1-bit（不要 ADC）</strong>。</p>
+</div>
+
+<h3>4.3 宏规格</h3>
+<ul>
+<li>宏 = 32 行 × 256 列；每行做<strong>两个 256 长点积</strong>（正/负流）；</li>
+<li>每宏 <strong>16.4k MAC 单元</strong>；</li>
+<li>时序约束：预充到感放锁存的延迟 = 计算线到感放输出的传播延迟（最坏：仅 1 单元导通、255 个不导通，且存储位影响计算线电容）；FSM 计数可编程系统时钟数控制。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d03_cell.svg" alt="单元教学图">
+<figcaption>教学图 3 · 10T 单元结构、wired-OR 累加与宏规格。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 6T SRAM + 4T AND → 每存储位 +4 晶体管（vs 数字 CIM ~20）；② 伪 nMOS 预充 wired-OR 做 OR 累加 → 1-bit 逻辑电平输出 → 免 ADC；③ 宏 32×256、每宏 16.4k MAC。</p>
+</div>
+</section>

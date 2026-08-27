@@ -1,0 +1,77 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要 CIM，为什么数字 CIM 有“乘法成本”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 神经网络推理的瓶颈为什么是“数据搬移”？② CIM 怎么解决搬移问题、有几大类？③ 数字 CIM 的乘法器/加法树为什么贵、贵在哪？</p>
+</div>
+
+<h3>1.1 神经网络的本质：大规模矩阵-向量乘（MVM）</h3>
+<p>从图像分类到语音识别，现代 AI 应用有一个共同点：计算极度依赖<strong>高维矩阵与张量</strong>的运算，其中最核心的原语是<strong>矩阵-向量乘（Matrix-Vector Multiply, MVM）</strong>。以一层卷积为例：</p>
+<p class="formula">Y = W·X</p>
+<p>其中 W 是权重矩阵（例如 128×128），X 是输入激活向量（128×1）。一次推理要在<strong>每一层</strong>都做这样的乘法，而一个网络有几十上百层——权重被<strong>反复</strong>读取使用。问题的关键就在这里：</p>
+<div class="box warn">
+<div class="bt">⚠️ 冯·诺依曼瓶颈</div>
+<p>传统架构里，计算单元（ALU）和存储器是分开的。做一次 MVM，要把权重从存储器搬到计算单元，算完再把结果搬回去。Horowitz 在 ISSCC 2014 的著名报告指出：<strong>数据搬移的能耗远大于计算本身的能耗</strong>（一次 32-bit DRAM 访问约几百 pJ，而一次 8-bit 乘加只有约 1 pJ 量级）。MVM 的计算强度低、权重复用度高，所以性能被<strong>访存带宽</strong>卡死——这就是“冯·诺依曼瓶颈”。</p>
+</div>
+<p>图 1（论文 Fig.1）直观画出了这个区别：左边冯·诺依曼架构里数据和权重在“存储 ↔ 计算”之间来回搬；右边 CIM 把计算单元“塞进”存储阵列里，权重就地参与运算。</p>
+<figure>
+<img src="assets/figs/fig13_1_VonNeumann与CIM对比.png" alt="冯诺依曼与CIM对比">
+<figcaption>图 1 · 论文 Fig.1：冯·诺依曼架构（左）与 CIM（右）的差别——CIM 把处理单元放进存储单元，就地完成运算，省掉权重搬移。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 两个直觉</div>
+<ul>
+<li><strong>CIM 的两个好处：</strong>① 权重不出阵列 → 省数据搬移能耗；② 输入向量可以同时激活多行 → 天然获得大带宽（一行一行算 vs 一次算一整列）。</li>
+<li><strong>CIM 的代价：</strong>每个存储单元都要挂计算电路 → 单元变大、密度下降、写入/读取控制变复杂。所以 CIM 设计是“省搬移”与“加硬件”之间的博弈。</li>
+</ul>
+</div>
+
+<h3>1.2 CIM 的两大流派：模拟 vs 数字</h3>
+<p>按“怎么做乘加”分类，CIM 主要分两大流派：</p>
+<table>
+<tr><th style="width:22%">流派</th><th style="width:30%">怎么做乘法</th><th>优点 / 缺点</th></tr>
+<tr><td><strong>模拟 CIM（电流域）</strong></td><td>用位单元晶体管的导通电流调制（权重→电流），多行电流自然求和</td><td>密度高；但受 PVT 工艺偏差影响，精度受限</td></tr>
+<tr><td><strong>模拟 CIM（电荷域）</strong></td><td>电容预充实现乘法、电荷重分布实现累加</td><td>较电流域更稳；仍需 ADC 读出</td></tr>
+<tr><td><strong>数字 CIM</strong></td><td>用数字逻辑（乘法器 + 加法树）完成乘加</td><td>精度高、鲁棒、易集成；但数字逻辑面积/能耗大</td></tr>
+</table>
+<p>模拟 CIM 的一个通病是<strong>读出需要 ADC</strong>（把模拟量转成数字），而 ADC 在位数提高时面积和功耗暴涨。数字 CIM 用纯数字逻辑做乘加，不需要 ADC，但代价是<strong>乘法器和加法树吃掉大量面积和能耗</strong>。数字 CIM 的演进（论文引言回顾）：</p>
+<ul>
+<li>[16] 最早的数字 CIM：混合加法器支持全精度 MAC；</li>
+<li>[17] 12T SRAM，5nm 工艺，支持同时写和 CIM 运算；</li>
+<li>[20] 引入动态逻辑做各种位级运算，减小电路面积；</li>
+<li>但“乘法器和加法树”始终是数字 CIM 的面积/能耗大头。</li>
+</ul>
+
+<h3>1.3 数字 CIM 的“乘法成本”：二次膨胀</h3>
+<p>数字 CIM 有两种实现乘法的典型方式，各有各的二次成本（论文 Fig.2(b)，我们的数据图 c01 画出了趋势）：</p>
+<div class="box warn">
+<div class="bt">⚠️ 为什么是“二次”？</div>
+<ul>
+<li><strong>位并行（bit-parallel）：</strong>乘法器把两个 n 位数的每一位两两相乘再相加 → 部分积个数 ∝ n²，硬件面积 ∝ n²；</li>
+<li><strong>位串行（bit-serial）：</strong>把乘法展开成“按位乘再移位累加” → 需要 n×m 个周期，周期数 ∝ n²。</li>
+</ul>
+<p>所以不管位并行还是位串行，<strong>“面积 × 周期”这个面积效率指标都随位宽二次增长</strong>。位串行 CIM 虽然能把乘法器简化为 NOR 门（乘数与被乘数按位与），但计算周期大增。这是限制数字 CIM 面积效率进一步突破的根本原因。</p>
+</div>
+<p>面对这个“乘法成本”，业界尝试过两条路：</p>
+<ol>
+<li><strong>近似计算</strong>（如 DIMC [15]）：用 OR / OR-AND 简单逻辑门替代加法树的多级加法器。能省 56% 晶体管，但在 CIFAR-10 上损失 3.5% 精度——<strong>电路级近似是以精度换效率</strong>；</li>
+<li><strong>块/数据级稀疏</strong>（[21][22]）：跳过连续零权重/激活。但需要额外的稀疏训练和额外硬件，且粒度粗。</li>
+</ol>
+<p>本论文的立场很鲜明：<strong>电路级近似和粗粒度稀疏都不够好</strong>——前者伤精度，后者要额外训练。作者选择从<strong>算法层面</strong>把乘法彻底消灭（multiply-less），再针对新算法的特性设计电路。这就是下一节的“三大挑战”要讲的内容。</p>
+
+<figure>
+<img src="assets/diagrams/d01_motivation.svg" alt="背景动机">
+<figcaption>教学图 1 · 冯·诺依曼瓶颈与数字 CIM 的乘法二次成本（示意）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c01_面积周期积_位宽缩放.png" alt="面积周期积位宽缩放">
+<figcaption>数据图 1 · 面积-周期积 vs 位宽（示意，依据论文 Fig.2(b)）：位并行/位串行都二次增长，本论文 multiply-less 线性扩展。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① MVM 是神经网络的核心原语，被数据搬移卡脖子 → CIM 把计算搬进存储；② 模拟 CIM 密度高但需 ADC、受偏差影响，数字 CIM 精度高但数字逻辑贵；③ 数字 CIM 的乘法成本随位宽<strong>二次膨胀</strong>，是效率上限的元凶 → 本论文选择“免乘法”算法来根治。</p>
+</div>
+</section>

@@ -1,0 +1,33 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>EVS-sCNN 核：记忆中心的异步近传感器计算</h2>
+<figure>
+  <img src="assets/diagrams/d04_snn_pe.svg" alt="sCNN PE" style="max-width:940px">
+  <figcaption>图 4.1　sCNN PE：全异步（双轨握手、无时钟树）+ 事件驱动卷积（事件到达才激活核、跳过空白）。</figcaption>
+</figure>
+<ul>
+<li><strong>近传感（NMC）</strong>：sCNN PE 紧贴片上 EVS——事件一产生就被消费，不经过“传感器→存储→处理器”的搬运（挑战 1 的物理解法）；</li>
+<li><strong>全异步</strong>：双轨握手（dual-rail handshake）逻辑传递事件，无全局时钟树 → 省时钟树功耗，且事件稀疏时电路几乎静止；</li>
+<li><strong>事件驱动卷积</strong>：只有事件到达的位置才激活卷积核，<strong>跳过空白区域</strong>（稀疏自适应）；padding 保证维度一致，核锚点决定输出位置；</li>
+<li><strong>LIF 神经元</strong>：地址扫描生成神经元地址，非零 8b 权重累加进 <strong>16b Vmem</strong>；超阈值则复位并输出事件；事件经轮询合并、打包、NoC 路由到下一层。</li>
+</ul>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig18_4_2_系统架构与卷积流程.png">
+  <source src="assets/videos/v01_event_flow.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 事件驱动流水动画：EVS 产生稀疏事件 → sCNN 核事件卷积 → sFC-OCL 核推理/学习。全程无帧转换。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig18_4_2_系统架构与卷积流程.png" alt="论文图 18.4.2">
+  <figcaption>图 4.2　论文原图 Fig. 18.4.2：SpikeRAM 系统架构（上）与 sCNN PE 的事件驱动卷积流程（下）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 事件驱动卷积（事件到达才算，空白全跳过）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">事件驱动：只计算事件位置的卷积</span>
+</div>
+<div class="hint">红色亮点=到达的事件；蓝色方格=被激活的卷积核窗口；灰色=跳过（不计算）。稀疏场景下大部分区域不计算 → 省功耗。</div>
+</div>
+</section>

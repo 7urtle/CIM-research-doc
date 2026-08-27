@@ -1,0 +1,73 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>芯片实测与 SOTA 对比</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 芯片规格与关键指标；② 面积/能耗分解证明数字逻辑被压薄；③ 与 SOTA 的量化对比。</p>
+</div>
+
+<h3>8.1 芯片规格（论文 Fig.16）</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 1.7×1.1 mm²</td></tr>
+<tr><td>模块面积</td><td>CIM core 0.084 · ManAU 0.018 · ITFU 0.003 · ODFC 0.037 mm²</td></tr>
+<tr><td>电压 / 频率</td><td>0.55–0.9 V / 20–180 MHz（SRAM 读写只在 0.9V，低电压静态保持）</td></tr>
+<tr><td>峰值性能</td><td>737 GOPS @0.9V/180MHz（UBF16）</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>128 TFLOPS/W</strong> @0.55V/20MHz（10% 输入 + 50% 权重稀疏）</td></tr>
+<tr><td><strong>峰值面积效率</strong></td><td><strong>7.02 TFLOPS/mm²</strong> @0.9V/180MHz</td></tr>
+</table>
+<p>吞吐口径：1 次最小选择+累加计 2 Ops（与点积芯片不同）。</p>
+
+<figure>
+<img src="assets/figs/fig17_16_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 21 · 论文 Fig.16：(a) 芯片显微照片 (b) 测试平台。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_17_电压频率缩放.png" alt="电压频率缩放">
+<figcaption>图 22 · 论文 Fig.17：电压-频率缩放。</figcaption>
+</figure>
+
+<h3>8.2 改进分解（论文 Fig.18）</h3>
+<p>FoM = 数据精度 × 面积效率 × 能效。基线：基于 [14] 的 28nm FP multiply-less CIM（位串行动态逻辑比较器）。<strong>本工作 FoM 提升 5×</strong>（post-synthesis 对比，0.9V/180MHz/10% 稀疏）。</p>
+
+<figure>
+<img src="assets/figs/fig17_18_改进分解.png" alt="改进分解">
+<figcaption>图 23 · 论文 Fig.18：改进分解（基线为 [14] 风格的 FP multiply-less CIM）。</figcaption>
+</figure>
+
+<h3>8.3 面积/能耗分解（论文 Fig.19）</h3>
+<ul>
+<li>ManAU + ITFU（FP/INT 转换）：面积仅 <strong>18.1%</strong>、能耗仅 <strong>11.4%</strong>——协同对齐真的把转换开销压薄了；</li>
+<li>单列布局：SRAM、WSUM、ParMS、ACC-ASU；数字逻辑（ParMS+ACC-ASU）只有 SRAM 的 <strong>5.2×</strong>；</li>
+<li>对比：并行乘法 FP-CIM [22] 中乘法器+加法树是 SRAM 的 <strong>49×</strong> → 本论文压薄了 9.4×。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_19_能量面积分解.png" alt="能量面积分解">
+<figcaption>图 24 · 论文 Fig.19：(a) 测试芯片能量与面积分解 (b) CIM core 单列布局。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_measurements.svg" alt="实测教学图">
+<figcaption>教学图 8 · 芯片规格、分解与对比。</figcaption>
+</figure>
+
+<h3>8.4 与 SOTA 对比（表 V）</h3>
+<ul>
+<li>同工艺（28nm）下面积/能效最高；</li>
+<li>vs 最新 FP-CIM [21]：能效 <strong>+4.1×</strong>、面积效率 <strong>+3.6×</strong>、FoM <strong>+14.7×</strong>（摘要口径面积效率 +3.4×）；</li>
+<li>vs 位并行乘法 FP-CIM [22]：one-shot 大幅降低数字逻辑面积/能耗；</li>
+<li>vs 仅推理 FP-CIM：ODFC 支持在线更新 → 环境变化时保持高精度（差异化优势）。</li>
+</ul>
+
+<figure>
+<img src="assets/charts/c03_SOTA.png" alt="SOTA对比图">
+<figcaption>数据图 3 · 与 SOTA FP-CIM 的能效/面积效率对比（依据论文表 V）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 全文总结、评价与未来方向。</figcaption>
+</figure>
+</section>

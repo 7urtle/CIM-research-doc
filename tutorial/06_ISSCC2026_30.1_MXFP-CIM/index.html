@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：MXFP 自适应位宽 CIM 宏（ISSCC 2026 30.1）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2026 30.1 MXFP6/8 自适应保留位宽浮点 CIM 宏的 MXFP 格式、串行双位滑动、无害数据映射、双级分配与实测分析。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">MXFP 存内计算（MXFP-CIM）零基础精讲</div>
+    <div class="t2">ISSCC 2026 · Session 30 · Paper 30.1</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：为什么需要 MXFP</a>
+  <a class="sec" href="#sec2">02 · MXFP 格式基础</a>
+  <a class="sub" href="#sec2-1">2.1 块共享尺度</a>
+  <a class="sub" href="#sec2-2">2.2 隐藏位与次正规数</a>
+  <a class="sec" href="#sec3">03 · FP-CIM 的三大挑战</a>
+  <a class="sec" href="#sec4">04 · 创新①：SDBS 串行双位滑动</a>
+  <a class="sub" href="#sec4-1">4.1 垂直截断</a>
+  <a class="sub" href="#sec4-2">4.2 DBSU 与滑动流程</a>
+  <a class="sub" href="#sec4-3">4.3 视频与仿真</a>
+  <a class="sec" href="#sec5">05 · 创新②：HDM 无害数据映射</a>
+  <a class="sec" href="#sec6">06 · 创新③：双级分配自适应 PBW</a>
+  <a class="sec" href="#sec7">07 · 系统架构与数据流</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">MXFP 自适应位宽存内计算零基础精讲：一个宏，从简单推理做到训练
+<span class="en">A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes（ISSCC 2026 · Paper 30.1）</span></h1>
+<div class="meta">论文作者：Xing Wang, Yucheng Du 等 · 东南大学 + 国家 EDA 创新中心 + 小米 + 北京大学（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.1
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>模型越来越大（DeepSeek-V3 都用 FP8 训练了），低比特浮点 <strong>MXFP6/MXFP8</strong> 成为新宠。但现有浮点 CIM 的<strong>保留位宽（PBW）是固定的</strong>——简单推理用高精度浪费、训练用低精度不够。这篇来自东南大学司鑫组（联合小米、北大）的论文，做出了<strong>首个宽范围自适应 PBW 的 MXFP-CIM</strong>（3b→27b 可调），靠三招：</p>
+<ol>
+<li><strong>SDBS（串行双位滑动）</strong>：让输入尾数每周期滑 2b、垂直截断地完成浮点乘法 → 无无效位浪费，乘积压缩器只用 6 个全加器（加法树输入位宽 −42.9%、面积 −35.9%、功耗 −40%）；</li>
+<li><strong>HDM（无害数据映射）+ 层次化隐藏位解码器</strong>：MXFP6/8 两种格式都塞满同一块存储（内存容量满用），解码器面积 −63.1%；</li>
+<li><strong>双级分配（CGA + FGA）</strong>：按层粗调（−14.8% 平均位宽）、按组精调（再 −29.3%），精度无损。</li>
+</ol>
+<p>28nm 实测：<strong>MXFP6 127.54 TFLOPS/W</strong>、<strong>MXFP8 117.42 TFLOPS/W</strong>、面积效率 4.44 TFLOPS/mm²。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>MXFP 是什么：</strong>Microscaling 格式——<strong>一组 32 个数共享一个 8b 尺度（E8M0）</strong>，每个数只带小浮点（MXFP6=E2M3，MXFP8=E4M3）。比“每数全指数”省一半以上位数，比整数动态范围大。</li>
+<li><strong>保留位宽（PBW）决定精度和开销：</strong>PBW 是浮点乘法里“保留参与计算的尾数位数”。PBW 大 → 准但费电费周期；PBW 小 → 省但可能掉精度。不同模型/层/组需要的 PBW 不一样——这就是“自适应”的意义。</li>
+<li><strong>“垂直截断”为什么重要：</strong>浮点乘法要先对齐指数。如果按“斜着”截断尾数，会产生无效位混进加法树（白算）；本论文用“每周期滑 2b”的方式保证截断永远是整列的（垂直）→ 不浪费任何算力。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“low-bit floating-point (FP) formats such as MXFP6 and MXFP8 have emerged as promising alternatives… Deepseek-V3 demonstrated successful FP8-based training”</td>
+<td>低比特浮点 MXFP6/8 是趋势；DeepSeek-V3 用 FP8 完成训练与商用——产业已验证。</td></tr>
+<tr><td class="num">“conventional FP computing architectures rely on fixed preserved bit-width (PBW), constraining both flexibility and efficiency”</td>
+<td>现有浮点架构的保留位宽固定 → 对不同模型/层的需求不灵活、不高效。</td></tr>
+<tr><td class="num">“A serial dual-bit-sliding (SDBS) scheme that enhances FP multiply-accumulate (MAC) computation efficiency by eliminating redundant operations”</td>
+<td>创新①：串行双位滑动，消除冗余运算（垂直截断）。</td></tr>
+<tr><td class="num">“A harmless data mapping (HDM) scheme with a hierarchical hidden-bit decoder… fully utilizes memory capacity”</td>
+<td>创新②：无害数据映射 + 层次化隐藏位解码器，内存容量满用。</td></tr>
+<tr><td class="num">“An adjustable-PBW MXFP-MAC circuit via twin-stage allocation”</td>
+<td>创新③：双级分配实现可调 PBW，精度-效率按层/组权衡。</td></tr>
+<tr><td class="num">“peak energy efficiency of 127.54TFLOPS/W in the MXFP6/6 mode”</td>
+<td>实测：MXFP6/6 峰值能效 127.54 TFLOPS/W。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>SDBS 串行双位滑动</strong>：垂直截断 + ESUM 优先级滑动 + PBW 随周期数伸缩（2~14 周期），6 全加器压缩器（−42.9% 位宽 / −35.9% 面积 / −40% 功耗）；</li>
+<li><strong>HDM 无害数据映射</strong>：MXFP8（9 数/子阵列）与 MXFP6（12 数/子阵列）都塞满同一 18×4 阵列；层次化解码器 −63.1% 面积；</li>
+<li><strong>双级分配</strong>：层级 CGA −14.8%、组级 FGA −29.3% 平均 PBW，精度无损；</li>
+<li><strong>宽范围 PBW（3b→27b）</strong>：BERT 3~9b、LLaMA 11~17b、训练 19~27b（ResNet-18 略胜 BF16）；</li>
+<li><strong>实测成绩</strong>：MXFP6 127.54 / MXFP8 117.42 TFLOPS/W、4.44 TFLOPS/mm²、FoM 提升 2.8–123×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂浮点 CIM 的：从 §4（SDBS）和 §6（双级分配）开始。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要 MXFP 低比特浮点</h2>
+<figure>
+  <img src="assets/diagrams/d01_mxfp_motivation.svg" alt="MXFP 动机" style="max-width:920px">
+  <figcaption>图 1.1　模型规模爆炸 + 低比特浮点的必要性与“自适应位宽”需求。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 一句话背景</div>
+<p>模型参数每两年涨约 10×（GPT-2 1.5B → DeepSeek-V3 671B），访存、带宽、能效全线告急。两个事实把“低比特浮点”推上台前：① INT8 动态范围不够（训练、大模型敏感层掉精度）；② FP16/BF16 太贵（16 位存储/带宽）。MXFP6/MXFP8 用“块共享尺度”在两者之间找到平衡——<strong>8 位（或 6 位）的表面积，接近 16 位的动态范围</strong>。DeepSeek-V3 用 FP8 训练并商用，就是最硬的产业证据。</p>
+</div>
+<p>但问题随之而来：<strong>不同任务需要的精度不一样</strong>。BERT 这类中小模型低位宽就够（省电），LLaMA 8B 需要中位宽（近无损），训练则需要高位宽（保梯度精度）。固定位宽的 FP-CIM 只能按“最坏情况”设计 → 简单任务也花高位宽的钱。所以论文提出两个需求：<strong>① 支持低比特 FP 格式；② 保留位宽（PBW）可调</strong>。</p>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>MXFP 格式基础：块共享尺度与隐藏位</h2>
+
+<h3 id="sec2-1">2.1 块共享尺度（E8M0 共享尺度 SS）</h3>
+<figure>
+  <img src="assets/diagrams/d02_mxfp_format.svg" alt="MXFP 格式" style="max-width:940px">
+  <figcaption>图 2.1　MXFP 格式：一组 32 个数共享一个 E8M0 尺度（SS），每个数只带小浮点（MXFP6 = E2M3，MXFP8 = E4M3）。</figcaption>
+</figure>
+<div class="formula">真实值 = SS × (−1)<sup>S</sup> × 1.M × 2<sup>(E−bias)</sup>　　（SS 为一组 32 个数共享的 8b 尺度）<span class="tag">式 2.1</span></div>
+<p>MXFP（Microscaling，微缩放）是 NVIDIA/AMD/Arm/Intel 等推动的开放格式。核心洞察：<strong>相邻数据的“数量级”通常差不多</strong>，所以没必要每个数都带完整指数——<strong>32 个数共享一个尺度 SS</strong>，每个数只保留自己的符号、小指数和尾数。这样：</p>
+<ul>
+<li>MXFP8（E4M3）= 1 符号 + 4 指数 + 3 尾数，共 8 位/数 → 存储和带宽比 BF16 省一半；</li>
+<li>MXFP6（E2M3）= 1+2+3 = 6 位/数 → 更省；</li>
+<li>动态范围由 SS 撑起来（E8M0 有 8 位指数），比 INT8 大得多。</li>
+</ul>
+
+<h3 id="sec2-2">2.2 隐藏位（Hidden Bit）与正常/次正规数</h3>
+<div class="box warn">
+<div class="bt">⚠️ 一个容易忽略的硬件细节：隐藏位</div>
+<p>浮点数的尾数在“正常数（normal）”下隐含前导 1（1.M），但“次正规数（subnormal）”尾数前导是 0（0.M）。硬件做乘法时必须把隐藏位<strong>真实地解出来</strong>（1 或 0）参与运算——不能假设它恒为 1。这个“隐藏位解码器”如果每个计算单元都放一个大的，面积很可观。本论文的 HDM 用“全局预解码 + 本地小解码”把它摊薄（§5）。</p>
+</div>
+<p>先把隐藏位、符号-数值（SM）与二进制补码（2C）的关系记牢：论文写权重时把权重从 SM 格式转成 2C（{SW, MW[3:0]}），MW[3] 就是隐藏位——它由“指数是否全 0”决定。</p>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>FP-CIM 的三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d03_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 3.1　三大挑战：① 对齐方案的非垂直截断浪费算力；② 变位宽时内存容量浪费；③ 固定 PBW 缺乏灵活性。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_1_动机与挑战.png" alt="论文图 30.1.1">
+  <figcaption>图 3.2　论文原图 Fig. 30.1.1：动机、设计挑战与解决方案。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 对齐浪费算力</td><td>输入对齐方案的“非垂直截断”产生无效位</td><td><strong>SDBS 滑动</strong>：垂直截断、无冗余运算</td></tr>
+<tr><td>② 内存容量浪费</td><td>尾数/指数位宽可变时固定布局不适应</td><td><strong>HDM 映射</strong>：MXFP6/8 都塞满，隐藏位不占位</td></tr>
+<tr><td>③ 位宽不可调</td><td>固定 PBW 无法按任务/层/组自适应</td><td><strong>双级分配</strong>：CGA + FGA 动态分配 PBW</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：SDBS 串行双位滑动</h2>
+
+<h3 id="sec4-1">4.1 垂直截断：为什么“滑动”比“对齐”省算力</h3>
+<figure>
+  <img src="assets/diagrams/d05_vertical_truncation.svg" alt="垂直截断" style="max-width:920px">
+  <figcaption>图 4.1　非垂直截断（斜线位积，有无效位）vs 垂直截断（整列对齐，无浪费）。</figcaption>
+</figure>
+<p>浮点 MAC 的麻烦在“对齐”：输入尾数要按指数差移位再相乘。传统输入对齐方案（[6,7,9,11]）在对齐后直接截断，截断边界是<strong>斜线</strong>——产生一批“半列”的无效位，它们照样进加法树，白白增加位宽和功耗。SDBS 换了个顺序：<strong>让输入 MIN 相对权重 MW 每周期“滑 2b”</strong>，每次滑动产生的部分积天然是<strong>整列（垂直）</strong>的——截断永远落在列边界上，零无效位。</p>
+
+<h3 id="sec4-2">4.2 SDBS 流程与 DBSU</h3>
+<figure>
+  <img src="assets/diagrams/d04_sdbs.svg" alt="SDBS 流程" style="max-width:940px">
+  <figcaption>图 4.2　SDBS FP-MAC 数据流：EA 算指数和 → MF 找最大 → SDT 生成滑动控制 → DBSU 每周期滑 2b → 6 全加器乘积压缩器 → 通道级加法树 → A&N。</figcaption>
+</figure>
+<p>关键设计点：</p>
+<ul>
+<li><strong>ESUM 优先级</strong>：指数和（ESUM）大的输入对结果贡献大，SDT 让它们<strong>更早开始滑动</strong>——高位优先对齐，低位自然截断；</li>
+<li><strong>DBSU（双位滑动单元）</strong>：时钟门控 + 1b 移位器 + MIN 存储模块 + 滑动结果（SR）模块（8T-C2MOS 动态寄存器，省面积省功耗）。初始 MIN 存储 = MIN[4:0]、SR = 符号位；SC 由 0→1 时开时钟，每周期移 2b；ESUM[0] 决定 1b 移位器接法（奇偶对齐）；</li>
+<li><strong>乘积压缩器</strong>：只用 <strong>6 个全加器</strong>把位积压成 4b 值（CVs）→ 加法树输入位宽 −42.9%、面积 −35.9%、功耗 −40.0%；</li>
+<li><strong>PBW = 周期数</strong>：PBW 3b 用 2 个周期、27b 用 14 个周期——<strong>精度直接映射成周期数</strong>，位宽分配器改周期数就能调精度，这是“自适应 PBW”的电路级基础。</li>
+</ul>
+
+<h3 id="sec4-3">4.3 视频与仿真</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_1_3_SDBS流程.png">
+  <source src="assets/videos/v01_sdbs.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · SDBS 双位滑动动画：MIN 每周期右滑 2b，垂直截断地乘出部分积；ESUM 大的输入先滑。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 A · SDBS 滑动乘法（看 MIN 每周期滑 2b）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">MIN 相对 MW 每周期右滑 2 bit</span>
+</div>
+<div class="hint">绿色=权重尾数（不动），蓝色=输入尾数（每周期滑 2b）。每次滑动 = 一次垂直截断的部分积。PBW 越大滑的步数越多（2~14 周期）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_1_3_SDBS流程.png" alt="论文图 30.1.3">
+  <figcaption>图 4.3　论文原图 Fig. 30.1.3：SDBS FP-MAC 流程、DBSU、乘积压缩器与通道级加法树的实现。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：HDM 无害数据映射与层次化隐藏位解码器</h2>
+<figure>
+  <img src="assets/diagrams/d06_hdm.svg" alt="HDM 映射" style="max-width:940px">
+  <figcaption>图 5.1　HDM 无害数据映射：MXFP8（9 数/子阵列）与 MXFP6（12 数/子阵列）都塞满同一 18×4 子阵列；层次化解码器“写时全局预解码、算时本地恢复”。</figcaption>
+</figure>
+<p><strong>问题：</strong>MXFP6 和 MXFP8 的“每数位数”不同（6b vs 8b），如果存储器按一种格式硬编码布局，切到另一种格式就会浪费容量。论文的 <strong>HDM（Harmless Data Mapping，无害数据映射）</strong>让两种格式都“塞满”同一块存储：</p>
+<ul>
+<li><strong>MXFP8（E4M3）</strong>：每个 18 行 × 4 列子阵列放 <strong>9 个数</strong>——偶数行存“符号 + 3b 尾数”，奇数行存“4b 指数”；9 × 8b = 72b 正好等于子阵列容量；</li>
+<li><strong>MXFP6（E2M3）</strong>：每子阵列放 <strong>12 个数</strong>——偶数行存“符号 + 3b 尾数”，奇数行<strong>并排 2 个 MXFP6 指数</strong>；12 × 6b = 72b，同样满用。</li>
+</ul>
+<p><strong>隐藏位解码器（解决 §2.2 的问题）：</strong></p>
+<ul>
+<li><strong>写权重时（全局预解码器，只有 1 个）</strong>：把隐藏位解出来，权重从符号-数值（SM）转成 2C（{SW, MW[3:0]}），然后<strong>丢掉 MW[3]（隐藏位）</strong>，只把 {SW, MW[2:0]} 写进 SRAM；</li>
+<li><strong>计算时（24 个本地小解码器）</strong>：由 {SW, MW[2:0]} 和指数 EW 恢复 MW[3]。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 为什么这是“无害”且“省面积”的？</div>
+<p>① <strong>隐藏位不占存储</strong>：MW[3] 在写权重时算好扔掉，SRAM 不存它 → 每个数省 1 位，内存容量满用；② <strong>解码器面积摊薄</strong>：复杂的隐藏位判断（SM→2C、查指数是否全 0）集中在“只做一次”的全局预解码器里，24 个本地解码器只做简单的“恢复”，总解码器面积比“每个单元都放完整解码器”的直接方案 [7] 减 <strong>63.1%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_1_4_映射与分配.png">
+  <source src="assets/videos/v02_mapping.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · MXFP8/MXFP6 映射动画：同一 18×4 子阵列，两种格式都恰好用满 72b（MXFP8 的奇数行=1 个 4b 指数；MXFP6 的奇数行=2 个 2b 指数并排）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_1_4_映射与分配.png" alt="论文图 30.1.4">
+  <figcaption>图 5.2　论文原图 Fig. 30.1.4：MXFP6/8 重配置映射、层次化隐藏位解码器与层-组双级分配。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🗺 演示 B · MXFP8 / MXFP6 映射对比（同一子阵列，两种格式都塞满）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-8" class="on">MXFP8（9 数/子阵列）</button>
+  <button id="demoB-6">MXFP6（12 数/子阵列）</button>
+  <span class="stat" id="demoB-stat">MXFP8：偶数行=符号+尾数，奇数行=指数</span>
+</div>
+<div class="hint">蓝色格子=被占用；橙色=指数行；空格的格子=该格式下不用的存储位。对比两种格式都恰好用满 72b——切换格式不浪费容量（“无害”）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：双级分配（Twin-Stage Allocation）—— 自适应 PBW</h2>
+<figure>
+  <img src="assets/diagrams/d07_allocation.svg" alt="双级分配" style="max-width:940px">
+  <figcaption>图 6.1　层级粗粒度分配（CGA）+ 组级细粒度分配（FGA）：先按层选 PBW，再按组（共享尺度组）微调。</figcaption>
+</figure>
+<p>有了“PBW = 周期数”的电路基础（§4），还需要<strong>“给谁分配多少位”的决策器</strong>。论文的<strong>双级分配</strong>在两层粒度上找最优 PBW：</p>
+<ul>
+<li><strong>层级粗粒度分配（CGA）</strong>：离线为每一层构建一个小型查表（层 → 最优 PBW），迭代扫描所有层后存进“位宽分配器”。不敏感层用低位宽、敏感层用高位宽 → <strong>LLaMA-3.1 8B 平均 PBW −14.8%、精度无损</strong>；</li>
+<li><strong>组级细粒度分配（FGA）</strong>：MXFP 格式里<strong>每组 32 个数共享一个尺度 SS</strong>，一个累加向量由多组组成。SS 大的组对累加结果贡献大 → 多分配周期（高位宽）；SS 小的组贡献小 → 少分配（低位宽）。按组间尺度差 ΔSS 动态分配 → <strong>平均 PBW 再降 29.3%</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 FGA 的物理直觉：把“算力”花在重要的组上</div>
+<p>浮点累加的本质是“大数吃小数”：SS 大的组（数量级大）决定结果，SS 小的组（数量级小）贡献可忽略。给大组多算几位、小组少算几位，就是<strong>把有限的周期数（算力）优先分配给对结果影响最大的数据</strong>——这是“精度-效率帕累托优化”的教科书式应用。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_1_2_架构与配置.png">
+  <source src="assets/videos/v03_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · MXFP-CIM 数据流动画：全局解码+位宽分配 → ESUM → DBSU 滑动 → 压缩+加法树 → A&N，PBW 随周期数伸缩。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 层级 CGA 位宽分配（按敏感度给每层定 PBW）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">正在查看：层1 embedding（PBW 5b）</span>
+</div>
+<div class="hint">注意力/MLP 层敏感度高 → 给高位宽（11~13b、更多周期）；embedding/head 层不敏感 → 给低位宽（5~9b、更少周期）。PBW 直接映射为计算周期数（2~14）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：54kb、24 个 bank</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　MXFP-CIM 宏架构：控制器 + 全局 FP 解码器 + 位宽分配器 + 共享尺度缓冲 + 累加器/归一化 + 输入缓冲 + 24 个 FP-CIM bank（每 bank = 18×128 分裂 WL 6T-SRAM + 本地解码器 + EPU + 尾数 MAC）。</figcaption>
+</figure>
+<ul>
+<li><strong>规模</strong>：54kb = 24 × 18 × 128b，28nm；</li>
+<li><strong>每 bank</strong>：18 行 × 128 列分裂字线（split-WL）6T-SRAM + 本地解码器 + 指数处理单元（EPU）+ 尾数 MAC 单元（SDBS）；</li>
+<li><strong>配置</strong>：三种模式——① 固定 PBW；② 层级 CGA；③ CGA + 组级 FGA；</li>
+<li><strong>三种 MXFP6/8 组合</strong>，PBW 从 3b 到 17/23/27b 宽范围可调。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_1_2_架构与配置.png" alt="论文图 30.1.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.1.2：配置表、整体结构与双位滑动计算流程。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 为什么“分裂字线（split-WL）”在这里有用？</div>
+<p>MXFP8 与 MXFP6 的“指数行 / 尾数行”布局不同（§5），分裂字线让每行可以独立选通：写 MXFP6 时奇数行按“2 个指数并排”的方式写，写 MXFP8 时按“1 个指数”的方式写——同一个物理阵列，两种逻辑布局，这就是“无害映射”的物理支撑。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 8.1　实测能效：MXFP6/6 峰值 127.54 TFLOPS/W；MXFP8/8 峰值 117.42 TFLOPS/W；LLaMA-3.1 8B 推理 49.53；ResNet-18 训练 19.11 TFLOPS/W。</figcaption>
+</figure>
+<ul>
+<li><strong>面积效率</strong>：4.44 TFLOPS/mm²（MXFP8 @0.9V）；</li>
+<li><strong>频率</strong>：1.2 ns 时钟周期 @0.9V（Shmoo 确认）；</li>
+<li><strong>FoM</strong>（平均能效 × 归一化面积效率 × 存储密度）：相对前作 SRAM FP-CIM [5-11] 提升 <strong>2.8×–123×</strong>；</li>
+<li><strong>精度</strong>：LLaMA-3.1 8B 推理近无损、ResNet-18 @CIFAR-100 训练略优于 BF16。</li>
+</ul>
+<figure>
+  <img src="assets/charts/c02_pbw_mre.png" alt="PBW 与 MRE" style="max-width:860px">
+  <figcaption>图 8.2　平均相对误差（MRE）随 PBW 单调下降（趋势示意）：3~9b 覆盖 BERT 推理、11~17b 覆盖 LLaMA 推理、19~27b 覆盖训练。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_sdbs.png" alt="SDBS 收益" style="max-width:940px">
+  <figcaption>图 8.3　SDBS 收益：滑动对齐 vs 位并行/位串行对齐（面积 3.85×/1.53×、能量 1.44×/1.43×）；6 全加器压缩器（位宽 −42.9%、面积 −35.9%、功耗 −40%）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_5_仿真性能.png" alt="论文图 30.1.5">
+  <figcaption>图 8.4　论文原图 Fig. 30.1.5：仿真性能（面积/能量对比、精度-吞吐权衡）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_6_测量结果.png" alt="论文图 30.1.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.1.6：测量结果与前作对比表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_7_芯片照片.png" alt="论文图 30.1.7">
+  <figcaption>图 8.6　论文原图 Fig. 30.1.7：裸片显微照片与性能汇总表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① FoM 提升跨度 2.8–123× 极大：对比对象包括 CNN 推理与 Transformer 推理、不同位宽、不同工艺——数字只能说明“量级占优”，不能当精确倍数；② “训练略优于 BF16”是有条件的（ResNet-18 @CIFAR-100，特定 PBW 配置），不是普遍结论；③ 能效数字依赖稀疏度/翻转率条件，读论文时先找“测试条件”再比数字。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>MXFP 生态与编译器</strong>：MXFP 是开放标准（NVIDIA/Arm/Intel/AMD 推动），但“每层/每组装什么位宽”目前靠论文的离线查表。做一个自动化的 MXFP 精度-位宽编译器（输入 PyTorch 模型 → 输出 CGA/FGA 配置），是软硬协同的下一个金矿；</li>
+<li><strong>在线自适应</strong>：本文 CGA 是离线的。能否在运行时根据“激活分布/异常值”实时调整 PBW（在线 FGA）？配合轻量监控电路，精度-效率可以更贴近实际数据分布；</li>
+<li><strong>块浮点（Block FP）融合</strong>：MXFP 的 E8M0 已经是“块共享尺度”。把“尺度”从 32 个一组扩展到更大的块（如整行/整层共享），SDBS 的 ESUM 对齐会更简单——这是格式与架构的联合设计空间；</li>
+<li><strong>训练支持深化</strong>：本文证明训练可行（ResNet-18）。训练还需要反向传播（梯度 MAC）、权重更新（写带宽）、优化器状态——把 MXFP-CIM 扩展成“推理+训练一体化”流水线（与 03/17 号论文的 FP 训练方向呼应）；</li>
+<li><strong>与稀疏/异常值结合</strong>：LLM 权重有 outlier（异常值），MXFP 的 E8M0 尺度其实是为 outlier 设计的。把“异常值感知”（19 号论文方向）和自适应 PBW 结合：outlier 组给高位宽、普通组给低位宽；</li>
+<li><strong>更低位宽（MXFP4）与更大动态范围</strong>：MXFP4 已经在研究中（LLM-FP4）。SDBS 滑动 2b 的粒度能否降到 1b 支持 MXFP4？PBW 下限能否降到 1~2b？</li>
+<li><strong>工艺与集成</strong>：28nm → 更先进节点；把 MXFP-CIM 作为计算宏嵌入 SoC（配合 RISC-V 核与 DMA），形成完整的边缘 LLM 推理/微调芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>MXFP（Microscaling Floating-Point，微缩放浮点）</dt><dd>一组 32 个数共享一个 8b 尺度（E8M0）的低比特浮点格式族。</dd>
+<dt>MXFP6 / MXFP8</dt><dd>6 位（E2M3：1 符号+2 指数+3 尾数）/ 8 位（E4M3）格式。</dd>
+<dt>E8M0 共享尺度（SS）</dt><dd>8 位指数、0 位尾数的块尺度，32 个数共享。</dd>
+<dt>保留位宽（PBW, Preserved Bit-Width）</dt><dd>浮点乘法中保留参与计算的尾数位数；PBW 越大越准但越费。</dd>
+<dt>隐藏位（Hidden Bit）</dt><dd>正常数尾数隐含的前导 1；次正规数前导为 0，硬件必须解码。</dd>
+<dt>次正规数（Subnormal）</dt><dd>指数全 0、尾数无隐含 1 的数，隐藏位 = 0。</dd>
+<dt>SDBS（Serial Dual-Bit-Sliding）</dt><dd>串行双位滑动：MIN 每周期滑 2b 的垂直截断乘法。</dd>
+<dt>垂直截断（Vertical Truncation）</dt><dd>截断位置落在整列边界，不产生无效位。</dd>
+<dt>DBSU（Dual-Bit-Sliding Unit）</dt><dd>双位滑动单元：时钟门控 + 1b 移位器 + 寄存器模块。</dd>
+<dt>ESUM（Exponent Sum）</dt><dd>指数和 = 输入指数 + 权重指数；决定滑动优先级。</dd>
+<dt>MF / SDT</dt><dd>最大值查找器 / 滑动目标追踪器（生成滑动控制 SC）。</dd>
+<dt>PC（Product Compressor）</dt><dd>乘积压缩器，本文仅 6 个全加器把位积压成 4b 值。</dd>
+<dt>HDM（Harmless Data Mapping）</dt><dd>无害数据映射：MXFP6/8 都塞满同一子阵列。</dd>
+<dt>层次化解码器</dt><dd>全局预解码（写时）+ 24 本地解码（算时）的隐藏位处理，面积 −63.1%。</dd>
+<dt>CGA（Coarse-Grained Allocation）</dt><dd>层级粗粒度位宽分配（离线查表），平均 PBW −14.8%。</dd>
+<dt>FGA（Fine-Grained Allocation）</dt><dd>组级细粒度位宽分配（按 ΔSS），平均 PBW 再 −29.3%。</dd>
+<dt>分裂字线（Split-WL）</dt><dd>每行独立选通的 SRAM 字线结构，支持双格式布局。</dd>
+<dt>A&N（Accumulator & Normalizer）</dt><dd>累加器与归一化单元。</dd>
+<dt>MRE（Mean Relative Error）</dt><dd>平均相对误差，随 PBW 增大单调下降。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>X. Wang, Y. Du, et al., “A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes,” <em>ISSCC 2026</em>, Paper 30.1. DOI: 10.1109/ISSCC49663.2026.11409034</li>
+<li>B.D. Rouhani et al., “Microscaling Data Formats for Deep Learning,” <em>arXiv:2310.10537</em>, 2023.（MXFP 格式定义 [1]）</li>
+<li>S.-Y. Liu, “LLM-FP4: 4-Bit Floating-Point Quantized Transformers,” <em>arXiv:2310.16836</em>, 2023.（[2]）</li>
+<li>DeepSeek-AI, “DeepSeek-V3 Technical Report,” <em>arXiv:2412.19437</em>, 2025.（FP8 训练商用 [3]）</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-Computing-Unit and Double-Bit 6T-SRAM CIM Macro for Floating-Point CNNs,” <em>ISSCC 2023</em>, pp. 128-129.（前作 [5]）</li>
+<li>W.-S. Khwa et al., “A 16nm 216kb, 188.4TOPS/W and 133.5TFLOPS/W Microscaling Multi-Mode Gain-Cell CIM Macro Edge-AI Devices,” <em>ISSCC 2025</em>, pp. 252-253.（Microscaling CIM 前作 [9]）</li>
+<li>Z. Yue et al., “A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and 2⁻³⁰ Loss for Compound AI,” <em>ISSCC 2025</em>, pp. 256-257.（前作 [10]，本系列 02 号论文）</li>
+<li>X. Wang et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC…,” <em>ISSCC 2025</em>, pp. 254-255.（前作 [11]，本系列 01 号论文）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.1.1–30.1.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（127.54/117.42 TFLOPS/W、63.1%、42.9% 等）均来自论文原文；PBW-MRE 图为趋势示意，已在图中注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   MXFP-CIM 教学教程 · 交互脚本
+   演示 A SDBS 滑动 · 演示 B MXFP 映射 · 演示 C PBW 分配
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · SDBS 滑动乘法
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  const mw = "101101";
+  const mn = "101001";
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "SDBS 双位滑动：MIN 每周期右滑 2b，垂直截断", 30, 24, 15, PAL.white, "left");
+    // MW
+    txt(ctx, "权重 MW（固定）", 60, 60, 13, PAL.green);
+    for (let k = 0; k < 6; k++) {
+      ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+      rrect(ctx, 260 + k * 44, 48, 36, 26, 5); ctx.fill(); ctx.stroke();
+      txt(ctx, mw[k], 260 + k * 44 + 18, 61, 12, PAL.white, "center");
+    }
+    // MIN
+    txt(ctx, "输入 MIN（滑动 " + cyc * 2 + " bit）", 60, 106, 13, PAL.blue);
+    const shift = Math.min(cyc, 6);
+    for (let k = 0; k < 8; k++) {
+      const x0 = 260 + k * 44;
+      const has = k >= shift && k - shift < 6;
+      ctx.fillStyle = has ? "#18344e" : "#1c2638";
+      ctx.strokeStyle = has ? PAL.blue : PAL.line; ctx.lineWidth = 2;
+      rrect(ctx, x0, 94, 36, 26, 5); ctx.fill(); ctx.stroke();
+      if (has) txt(ctx, mn[k - shift], x0 + 18, 107, 12, PAL.white, "center");
+    }
+    // 乘积段
+    ctx.strokeStyle = PAL.line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(60, 150); ctx.lineTo(w - 60, 150); ctx.stroke();
+    // 已滑出的部分积（垂直截断示意）
+    const activeCols = Math.max(1, shift + 1);
+    for (let k = 0; k < 6; k++) {
+      const x0 = 80 + k * 130;
+      const active = k < activeCols;
+      ctx.fillStyle = active ? "#2a2440" : PAL.panel;
+      ctx.strokeStyle = active ? PAL.purple : PAL.line; ctx.lineWidth = 1.5;
+      rrect(ctx, x0, 170, 110, 70, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "部分积 " + k, x0 + 55, 190, 11, active ? PAL.purple : PAL.gray, "center");
+      txt(ctx, active ? "（整列，无无效位）" : "（待滑动）", x0 + 55, 212, 10, active ? PAL.gray : PAL.gray, "center");
+    }
+    txt(ctx, "PBW = 周期数：低 PBW 少滑几步（快），高 PBW 多滑几步（准）", 60, 270, 13, PAL.orange, "left");
+    txt(ctx, "ESUM 大的输入先滑 → 高位优先对齐", 60, 296, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "周期 " + cyc + " · MIN 已滑 " + cyc * 2 + " bit · 已产出 " + activeCols + " 个垂直截断部分积";
+  }
+
+  function tick() { cyc = Math.min(8, cyc + 1); draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 700); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 700);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · MXFP8 / MXFP6 映射
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let m8 = true;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const col = m8 ? PAL.blue : PAL.purple;
+    txt(ctx, m8 ? "MXFP8（E4M3）：9 个数 / 子阵列" : "MXFP6（E2M3）：12 个数 / 子阵列", 30, 24, 15, col, "left");
+    // 子阵列网格 6 行 x 12 列（示意）
+    for (let r = 0; r < 6; r++) {
+      const even = r % 2 === 0;
+      for (let c = 0; c < 12; c++) {
+        const x = 80 + c * 58, y = 60 + r * 36;
+        let used;
+        if (m8) {
+          // 9 个数：占用 9 个尾数槽（偶数行）与 9 个指数槽（奇数行）
+          used = (r < 4 && c < 10) || (r === 4 && c < 8);
+        } else {
+          used = r < 6 && c < 12;
+        }
+        ctx.fillStyle = even ? "#1e3a56" : "#3a2c1e";
+        ctx.strokeStyle = used ? (even ? col : PAL.orange) : PAL.line;
+        ctx.lineWidth = used ? 2 : 1;
+        rrect(ctx, x, y, 50, 30, 5); ctx.fill(); ctx.stroke();
+        if (r === 0 && c === 0) txt(ctx, even ? "符号+尾数" : "指数", x + 25, y + 15, 8.5, PAL.white, "center");
+      }
+    }
+    txt(ctx, m8 ? "9 × 8b = 72b → 子阵列满用" : "12 × 6b = 72b → 子阵列满用（奇数行并排 2 个指数）", 80, 270, 13, PAL.green, "left");
+    txt(ctx, "隐藏位 MW[3] 不占存储（写时全局预解码、算时本地恢复）→ 解码器面积 −63.1%", 80, 296, 12, PAL.gray, "left");
+    if (stat) stat.textContent = m8 ? "MXFP8：偶数行=符号+尾数，奇数行=4b 指数，9 数/阵列" : "MXFP6：偶数行=符号+尾数，奇数行=2 个指数并排，12 数/阵列";
+  }
+
+  const b8 = document.getElementById("demoB-8");
+  const b6 = document.getElementById("demoB-6");
+  if (b8) b8.onclick = function () { m8 = true; b8.classList.add("on"); b6.classList.remove("on"); draw(); };
+  if (b6) b6.onclick = function () { m8 = false; b6.classList.add("on"); b8.classList.remove("on"); draw(); };
+  draw();
+})();
+
+/* ============================================================
+   演示 C · PBW 分配（层 / 组）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  const layers = [
+    { name: "层1 embedding", pbw: 5, sens: 0.2 },
+    { name: "层2 attn", pbw: 11, sens: 0.8 },
+    { name: "层3 mlp", pbw: 13, sens: 0.9 },
+    { name: "层4 attn", pbw: 11, sens: 0.75 },
+    { name: "层5 mlp", pbw: 13, sens: 0.85 },
+    { name: "层6 head", pbw: 9, sens: 0.4 },
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "层级 CGA：按敏感度分配 PBW（不敏感层低位宽、敏感层高位宽）", 30, 24, 15, PAL.orange, "left");
+    layers.forEach((L, i) => {
+      const x = 60 + i * 145;
+      const active = (cyc % layers.length) === i;
+      ctx.fillStyle = active ? "#4a3a26" : PAL.panel;
+      ctx.strokeStyle = active ? PAL.orange : PAL.line; ctx.lineWidth = active ? 2.5 : 1.5;
+      rrect(ctx, x, 60, 130, 130, 10); ctx.fill(); ctx.stroke();
+      txt(ctx, L.name, x + 65, 82, 11.5, PAL.white, "center");
+      // PBW 条
+      const bw = 26 * (L.pbw / 15);
+      ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green;
+      rrect(ctx, x + 15, 100, 100, 16, 5); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = PAL.green;
+      ctx.fillRect(x + 17, 102, bw, 12);
+      txt(ctx, "PBW " + L.pbw + "b", x + 65, 132, 12, active ? PAL.orange : PAL.green, "center");
+      txt(ctx, "敏感度 " + (L.sens * 100).toFixed(0) + "%", x + 65, 152, 10, PAL.gray, "center");
+      txt(ctx, "周期 " + Math.max(2, Math.round(L.pbw / 2)) + " 个", x + 65, 172, 10, PAL.gray, "center");
+    });
+    txt(ctx, "CGA 平均 PBW 较固定高精度：−14.8%（LLaMA-3.1 8B，精度无损）", 60, 224, 13, PAL.green, "left");
+    txt(ctx, "组级 FGA 再按共享尺度 SS 微调：SS 大的组多算、SS 小的组少算 → 再 −29.3%", 60, 250, 13, PAL.orange, "left");
+    txt(ctx, "→ 精度-效率甜点：vs 固定 19b 吞吐 +1.20~1.43×；vs 固定 11b 精度 +1.49×", 60, 278, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "正在查看：" + layers[cyc % layers.length].name + "（PBW " + layers[cyc % layers.length].pbw + "b）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 900); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 900);
+  draw();
+})();
+
+</script>
+</body>
+</html>

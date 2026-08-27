@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">e-OTBP：单时间步在线学习 —— 不再展开整个时间窗口</text>
+
+  <!-- 左：BPTT vs e-OTBP -->
+  <rect x="40" y="80" width="420" height="300" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#123a57" font-size="13.5" font-weight="700">传统 BPTT（按时间展开反向传播）</text>
+  <g font-size="11">
+    <rect x="70" y="126" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="100" y="145" text-anchor="middle" fill="#0e5a8a">TW0</text>
+    <rect x="140" y="126" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="170" y="145" text-anchor="middle" fill="#0e5a8a">TW1</text>
+    <rect x="210" y="126" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="240" y="145" text-anchor="middle" fill="#0e5a8a">TW2</text>
+    <text x="285" y="145" text-anchor="middle" fill="#9aa8bd">……</text>
+    <rect x="310" y="126" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="340" y="145" text-anchor="middle" fill="#0e5a8a">TW31</text>
+    <text x="70" y="185" fill="#c25e2e">• 要保存并展开所有时间步的历史</text>
+    <text x="70" y="207" fill="#c25e2e">• 内存/功耗随 TW 深度线性增长</text>
+    <text x="70" y="237" fill="#c25e2e" font-weight="600">→ 32 个 TW 时内存需求 = 100%</text>
+  </g>
+
+  <!-- 右：e-OTBP -->
+  <rect x="500" y="80" width="420" height="300" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">本文 e-OTBP（资格迹一次性反向传播）</text>
+  <g font-size="11">
+    <rect x="530" y="126" width="120" height="30" rx="5" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="590" y="145" text-anchor="middle" fill="#1d8a5f">单时间步 + 资格迹 ET</text>
+    <rect x="530" y="166" width="120" height="30" rx="5" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="590" y="185" text-anchor="middle" fill="#6b3fa0">输出 Vmem（跨 TW）</text>
+    <text x="530" y="226" fill="#45536b">• 用“资格迹（ET）”压缩时间信息：</text>
+    <text x="530" y="248" fill="#45536b">过去的贡献记在一条迹里，不必逐 TW 展开</text>
+    <text x="530" y="270" fill="#45536b">• 推理时保留的状态直接复用于学习</text>
+    <text x="530" y="300" fill="#1d8a5f" font-weight="600">→ 32 TW 时内存需求仅 26.9%（−73.1%）</text>
+    <text x="530" y="322" fill="#45536b">计算/内存开销 vs BPTT = 4.3% / 3.1%</text>
+    <text x="530" y="352" fill="#6b3fa0" font-weight="600">硬件化：Surr 函数 = 2 个比较器（二值化）</text>
+    <text x="530" y="374" fill="#6b3fa0" font-weight="600">ET 单元 = 循环累加器；转置权重 = 水平加法树</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="404" width="880" height="92" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="432" fill="#0e5a8a" font-size="13.5" font-weight="700">梯度计算（Fig. 18.4.4 顶部）</text>
+  <text x="60" y="458" fill="#45536b" font-size="12.5">层 2 梯度 = 误差 × 对应输入脉冲；层 1 梯度 = 误差经“转置权重 + Surr 函数”回传，再与 ET 结合；</text>
+  <text x="60" y="480" fill="#45536b" font-size="12.5">两组梯度都过“三值量化” → {−1, 0, +1} 三值梯度（§7 的格雷码配合，把写次数压到最低）。</text>
+</svg>

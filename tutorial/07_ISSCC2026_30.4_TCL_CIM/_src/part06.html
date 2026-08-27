@@ -1,0 +1,44 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：10 相分阶段使能 —— 加法器不再空转</h2>
+<figure>
+  <img src="assets/diagrams/d06_10phase.svg" alt="10 相发生器" style="max-width:940px">
+  <figcaption>图 6.1　10 相发生器：10 个上升沿延迟单元（RDC）级联，主时钟上升沿时 Vrst 同步复位，之后 Ph0→Ph1→…→Ph9 依次点亮。一个计算周期 = 10 个相位。</figcaption>
+</figure>
+<p><strong>10 相发生器</strong>由 10 个完全相同的 <strong>上升沿延迟单元（Rising-edge Delay Cell, RDC）</strong>级联而成：Vrst 随主时钟上升沿同步拉高（清零所有相位）再快速拉低；Vdelay 控制每个 RDC 的输入-输出延迟。Vrst 释放后 Ph0 先亮，经过 RDC#0 的延迟 Δtr0 后 Ph1 亮……依次传播到 Ph9。于是一个时钟周期内产生了 10 个等间隔相位。</p>
+<p>这 10 个相位把“一个 8b×8b 乘法”拆成时间上的三幕：</p>
+<table>
+<tr><th>相位</th><th>使能的电路</th><th>干什么</th></tr>
+<tr><td><strong>Ph0~Ph7</strong></td><td>MMU（每个相位一列）</td><td>TCL 逐位传播边沿（乘法部分）</td></tr>
+<tr><td><strong>Ph8</strong></td><td>合并加法器（Combine Adder）</td><td>把 15 个位列和合并成 16b 乘积</td></tr>
+<tr><td><strong>Ph9</strong></td><td>块内加法树（In-Block Adder Tree）</td><td>把 16 个 CIM 单元的乘积相加</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d09_stage_enable.svg" alt="分阶段使能" style="max-width:920px">
+  <figcaption>图 6.2　分阶段使能 vs 全程使能：传统加法器全程开闸被毛刺白烧电；本文 Ph8/Ph9 才开加法，Ph8 前输入强制接地。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么这样能省 42% 能效？</div>
+<ul>
+<li><strong>加法器是“高扇入”电路</strong>：输入一有风吹草动（毛刺、中间值）就翻转，而乘法阶段（Ph0~7）的输入根本还没就绪——传统方案这段时间白烧电；</li>
+<li><strong>分阶段使能</strong>：Ph8/Ph9 之前，用“单刀双掷开关”把合并加法器和加法树的输入<strong>强制接地</strong> → 输入不变，输出不翻转 → 零动态功耗；</li>
+<li>论文仿真了“加法树使能级数 vs 面积/能效”：块内加法树有 4 级，每级都能加相位开关（越省电但越费面积）。折中选<strong>合并加法器 1 级 + 块内加法树 1 级</strong> → 能效 +42%、面积效率只 −6%（帕累托最优点）。</li>
+</ul>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_5_仿真性能.png">
+  <source src="assets/videos/v02_phases.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 10 相时序动画：Ph0~7 逐位做乘法、Ph8 开合并加法器、Ph9 开加法树——加法器只在需要时才通电。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⏱ 演示 B · 10 相发生器时序（交互播放）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">周期 1 · 相位 Ph0</span>
+</div>
+<div class="hint">Ph0~7 红色=逐位乘法（TCL 传播边沿）；Ph8 绿色=合并加法器；Ph9 蓝色=块内加法树。加法器只在 Ph8/Ph9 工作——其余时间输入被强制接地、零翻转。</div>
+</div>
+</section>

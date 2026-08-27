@@ -1,0 +1,39 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：后乘积对齐 —— 把误差从 2⁻¹ 压到 2⁻³⁰</h2>
+<figure>
+  <img src="assets/diagrams/d04_post_align.svg" alt="后乘积对齐" style="max-width:940px">
+  <figcaption>图 4.1　传统“预对齐”（先移尾数再乘，误差注入每个乘积）vs 本文“后乘积对齐”（先乘后对齐，误差只在累加时发生一次）。</figcaption>
+</figure>
+<p>传统浮点 CIM 的处理顺序是：<strong>指数对齐 → 尾数相乘 → 累加</strong>。对齐时的移位会“截断”尾数——这个误差被注入到<strong>每一个</strong>乘积里，N 个乘积就放大 N 次。当数据分布很广（Compound AI 的多模型场景），指数差很大，对齐损失尤其严重。</p>
+<p>本文把顺序改成：<strong>尾数并行相乘 + 指数并行累加 → CIM 出部分积 → 后乘积对齐 → 累加</strong>：</p>
+<ul>
+<li>尾数乘法在 CIM 里并行做（不涉及对齐，无截断）；</li>
+<li>指数加法器算出每个乘积的指数和；</li>
+<li>CIM 生成部分积后，才按指数差<strong>后对齐</strong>——误差只在这一步出现一次；</li>
+<li>MantissaEE 让对齐移位量变小 + 乘积位宽更宽 → 截断损失进一步下降。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 精度账</div>
+<p>证明概念（proof-of-concept）：FP16-MAC 最大误差率 <strong>&lt; 2⁻³⁰</strong>（前作 FP 宏是 2⁻¹，差约 10 亿倍）。实测 SER（信号误差比）= <strong>60.1 dB</strong>（3.14× 于传统 FP-CIM）；应用在 ResNet/MobileNet/注意力等复合模型上，<strong>精度损失平均降低 11.07×</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_3_后乘积对齐.png">
+  <source src="assets/videos/v01_post_align.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 后乘积对齐流程动画：尾数并行乘 → 指数累加 → 乘积后才对齐累加（误差只出现一次）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_4_3_后乘积对齐.png" alt="论文图 14.4.3">
+  <figcaption>图 4.2　论文原图 Fig. 14.4.3：后 CIM 对齐计算流程、误差率证明与对应异质 CIM 宏设计。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🧮 演示 B · 预对齐 vs 后对齐：误差差在哪里</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">预对齐：截断误差进入每个乘积；后对齐：只进一次</span>
+</div>
+<div class="hint">红色=预对齐（每个乘积都带截断误差，累加后误差被放大）；绿色=后对齐（乘积无损，只有最终累加时对齐一次）。</div>
+</div>
+</section>

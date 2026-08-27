@@ -1,0 +1,33 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>波前传播基础：搜索像水波一样扩散</h2>
+<figure>
+  <img src="assets/diagrams/d03_wavefront.svg" alt="波前传播" style="max-width:940px">
+  <figcaption>图 3.1　波前传播：信号从 START 出发按 8 邻接逐层扩散（虚线环 = 波前），遇障碍绕行。路径 CIM 与 MAC-CIM 的本质区别。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 路径 CIM 和前面的 MAC-CIM 有什么不同？</div>
+<table>
+<tr><th></th><th>MAC-CIM（前几篇）</th><th>路径 CIM（本文）</th></tr>
+<tr><td>存什么</td><td>权重</td><td>地图（障碍/起点/终点/拥堵级）</td></tr>
+<tr><td>算什么</td><td>Σ(激活×权重)</td><td>信号传播与选路</td></tr>
+<tr><td>输出</td><td>数值结果</td><td>路径方向</td></tr>
+</table>
+</div>
+<p>每个 PE 记住“信号从哪个方向来”（存进 SRAM_R），波前到达 END 后，<strong>沿方向数据回溯</strong>就能还原整条路径。这个“传播 + 记方向 + 回溯”的框架是理解全文的钥匙。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_2_结构与DDS.png">
+  <source src="assets/videos/v01_wavefront.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 波前传播动画：信号从 START 逐层扩散，遇到障碍绕行。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 波前传播仿真（自动播放）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">波前从 START（绿）逐层扩散</span>
+</div>
+<div class="hint">绿色环=波前已到达的节点；红色=障碍；灰色=未到达。观察波前如何绕过障碍向 END 扩散。</div>
+</div>
+</section>

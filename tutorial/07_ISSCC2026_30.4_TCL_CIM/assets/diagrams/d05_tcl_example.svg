@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">TCL 工作示例：位积 {1,1,0,0,1,0,0,1} → 4 个跳变沿 → 列和 = 4</text>
+
+  <!-- 8 个位积 -->
+  <g font-size="12">
+    <text x="80" y="96" fill="#1a2332" font-weight="600">位积序列（TCL-9 例）：</text>
+    <rect x="220" y="80" width="60" height="30" rx="5" fill="#cfe6f5" stroke="#0e5a8a"/><text x="250" y="100" text-anchor="middle" fill="#0e5a8a">1</text>
+    <rect x="285" y="80" width="60" height="30" rx="5" fill="#cfe6f5" stroke="#0e5a8a"/><text x="315" y="100" text-anchor="middle" fill="#0e5a8a">1</text>
+    <rect x="350" y="80" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="380" y="100" text-anchor="middle" fill="#45536b">0</text>
+    <rect x="415" y="80" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="445" y="100" text-anchor="middle" fill="#45536b">0</text>
+    <rect x="480" y="80" width="60" height="30" rx="5" fill="#cfe6f5" stroke="#0e5a8a"/><text x="510" y="100" text-anchor="middle" fill="#0e5a8a">1</text>
+    <rect x="545" y="80" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="575" y="100" text-anchor="middle" fill="#45536b">0</text>
+    <rect x="610" y="80" width="60" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/><text x="640" y="100" text-anchor="middle" fill="#45536b">0</text>
+    <rect x="675" y="80" width="60" height="30" rx="5" fill="#cfe6f5" stroke="#0e5a8a"/><text x="705" y="100" text-anchor="middle" fill="#0e5a8a">1</text>
+  </g>
+
+  <!-- 相位时间线 -->
+  <text x="80" y="160" fill="#6b3fa0" font-size="13" font-weight="600">相位（每周期一个相位使能一个 MMU）：</text>
+  <g font-size="11">
+    <rect x="80" y="172" width="110" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/><text x="135" y="194" text-anchor="middle" fill="#c25e2e">Ph0 使能 MMU0</text>
+    <rect x="200" y="172" width="110" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/><text x="255" y="194" text-anchor="middle" fill="#c25e2e">Ph1 使能 MMU1</text>
+    <rect x="320" y="172" width="110" height="34" rx="6" fill="#eef7fd" stroke="#b8d9ee"/><text x="375" y="194" text-anchor="middle" fill="#45536b">Ph2 MMU2（0）</text>
+    <rect x="440" y="172" width="110" height="34" rx="6" fill="#eef7fd" stroke="#b8d9ee"/><text x="495" y="194" text-anchor="middle" fill="#45536b">Ph3 MMU3（0）</text>
+    <rect x="560" y="172" width="110" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/><text x="615" y="194" text-anchor="middle" fill="#c25e2e">Ph4 使能 MMU4</text>
+    <rect x="680" y="172" width="110" height="34" rx="6" fill="#eef7fd" stroke="#b8d9ee"/><text x="735" y="194" text-anchor="middle" fill="#45536b">Ph5/6 空</text>
+    <rect x="800" y="172" width="110" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/><text x="855" y="194" text-anchor="middle" fill="#c25e2e">Ph7 使能 MMU7</text>
+  </g>
+
+  <!-- 边沿传播 -->
+  <text x="80" y="250" fill="#0e5a8a" font-size="13" font-weight="600">边沿传播（VDD 起点 → 每遇“1”取反 → CNT 数沿）：</text>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="12">
+    <text x="80" y="280" fill="#45536b">起点（VDD）: ─── 高电平</text>
+    <text x="80" y="306" fill="#1d8a5f">遇 MMU0 (1): ─── → 取反 → 下降沿① → CNT+1</text>
+    <text x="80" y="332" fill="#1d8a5f">遇 MMU1 (1): 低 → 取反 → 上升沿② → CNT+1</text>
+    <text x="80" y="358" fill="#45536b">遇 MMU2~3 (0): 直通，无沿</text>
+    <text x="80" y="384" fill="#1d8a5f">遇 MMU4 (1): 取反 → 下降沿③ → CNT+1</text>
+    <text x="80" y="410" fill="#45536b">遇 MMU5~6 (0): 直通</text>
+    <text x="80" y="436" fill="#1d8a5f">遇 MMU7 (1): 取反 → 上升沿④ → CNT+1</text>
+    <text x="520" y="330" fill="#c25e2e" font-weight="700">CNT 数到 4 个沿</text>
+    <text x="520" y="356" fill="#0e5a8a" font-weight="700">→ 列和 = 4 ✓（1+1+0+0+1+0+0+1 = 4）</text>
+    <text x="520" y="386" fill="#6b3fa0" font-weight="700">8 个位积 → 4b 计数 = 8-to-4 无损压缩</text>
+    <text x="520" y="412" fill="#45536b">对比：加法器阵列压缩 8 个数要 3~4 级 CSA + 进位链；</text>
+    <text x="520" y="436" fill="#45536b">TCL 只有 1 条传播链 + 1 个计数器 → 晶体管数最小化</text>
+  </g>
+</svg>

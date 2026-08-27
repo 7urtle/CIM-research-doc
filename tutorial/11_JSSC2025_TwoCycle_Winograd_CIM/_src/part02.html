@@ -1,0 +1,24 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>乘法分解的演进：1 位 → 3 位 → 5 位</h2>
+<figure>
+  <img src="assets/diagrams/d02_multiplication.svg" alt="乘法分解" style="max-width:940px">
+  <figcaption>图 2.1　三种乘法分解：位串行（1 bit/周期、8 周期）→ Radix4（3 bit/周期、4 周期）→ Radix16（5 bit/周期、2 周期）。</figcaption>
+</figure>
+<div class="formula">位串行：I×W = Σ I[i]·W·2<sup>i</sup><span class="tag">式 2.1</span></div>
+<div class="formula">Radix4：I×W = Σ (−2I[i+1]+I[i]+I[i−1])·W·2<sup>i</sup><span class="tag">式 2.2</span></div>
+<div class="formula">Radix16：I×W = Σ (−8I[i+3]+4I[i+2]+2I[i+1]+I[i]+I[i−1])·W·2<sup>i</sup><span class="tag">式 2.3</span></div>
+<div class="box key">
+<div class="bt">🧠 权衡的本质</div>
+<p>每周期算的位数越多 → 周期越少（吞吐↑）→ 但每周期要处理的“加权部分积”越复杂（翻转↑、功耗↑）。Radix16 把周期压到 2，但部分积里出现 ±3W~±7W 这类“既要移位又要加法”的项——直接实现会让每周期功耗爆炸。<strong>LUT 就是来救这个场的</strong>（§3）。</p>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 A · 三种乘法分解的周期数对比</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">位串行 8 周期 vs Radix4 4 周期 vs Radix16 2 周期</span>
+</div>
+<div class="hint">三条流水线代表三种分解方式，脉冲 = 每个计算周期。观察 Radix16 只需 2 个脉冲就完成 INT8 乘法。</div>
+</div>
+</section>

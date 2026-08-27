@@ -1,0 +1,27 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：SNN 与 CNN，两种网络两种哲学</h2>
+
+<h3 id="sec1-1">1.1 两类网络各有什么优劣</h3>
+<p><strong>CNN（卷积神经网络）</strong>是目前最成熟、精度最高的视觉/语音模型（ResNet、MobileNet 等）。它的计算方式是<strong>稠密</strong>的：每一层的每个输出都要对所有输入做乘法累加（MAC），哪怕输入是 0 也要算一遍。精度高，但每个周期都在“全功率”运转，能效不理想。</p>
+<p><strong>SNN（脉冲神经网络）</strong>模仿生物神经元：输入输出都是<strong>离散脉冲（spike，0/1）</strong>，神经元内部有一个<strong>膜电位</strong>累积器，攒到阈值才“发放”一个脉冲。它有两个诱人的特性：</p>
+<ul>
+<li><strong>事件驱动</strong>：没有脉冲进来 = 不做计算 = 动态功耗为零。实际事件数据（事件相机、音频事件）非常稀疏，SNN 的“平均活动率”极低 → 能效极高；</li>
+<li><strong>时序记忆</strong>：膜电位天然跨时间累积，适合时序/事件流任务（这正是“时间步 timestep”概念的来源，§6 会反复用到）。</li>
+</ul>
+<p>代价是：SNN 训练难、峰值精度通常低于 CNN。</p>
+<figure>
+  <img src="assets/diagrams/d01_snn_vs_cnn.svg" alt="SNN vs CNN" style="max-width:880px">
+  <figcaption>图 1.1　SNN（稀疏脉冲、事件驱动）vs CNN（稠密乘法、高精度）。一个省电、一个准。</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 混合 SNN-CNN 模型：鱼与熊掌兼得</h3>
+<p>既然各有优劣，自然想到“<strong>混合</strong>”：模型前几层用 SNN 处理事件流（省电），后几层用 CNN 做精确分类（提精度），中间做一个“脉冲→值”转换。已有研究（如 Spiking-YOLO 等）证明这种混合模型在精度与能耗之间取得良好平衡，适合边缘推理。</p>
+<figure>
+  <img src="assets/diagrams/d08_hybrid_model.svg" alt="混合 SNN-CNN 模型" style="max-width:900px">
+  <figcaption>图 1.2　混合模型示意：SNN 层（脉冲）→ 脉冲-值转换 → CNN 层（特征）→ 输出。每层可独立选择模式与精度。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 关键矛盾：混合模型对硬件提出“双重人格”要求</div>
+<p>一个加速器要同时会两种“武功”：SNN 的<strong>位宽乘法</strong>（1b 输入 × 8b 权重）和 CNN 的<strong>字宽乘法</strong>（8b 输入 × 8b 权重），还要在层与层之间<strong>随时切换</strong>，并且能效都不能差。做两套电路最省事，但面积翻倍；做一套电路就要发明“双模式共享”的技巧——这正是本论文第一个创新的出发点（§4）。</p>
+</div>
+</section>

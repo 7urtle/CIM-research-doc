@@ -1,0 +1,34 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>Winograd 算法基础：用“变换”换掉乘法</h2>
+<figure>
+  <img src="assets/diagrams/d04_winograd.svg" alt="Winograd 基础" style="max-width:940px">
+  <figcaption>图 4.1　Winograd 核心：空间域卷积 → 变换（加/减/移位）→ 逐元素乘加（EWMM，乘法大幅减少）→ 逆变换。F(m,3) 的三个级别与代价。</figcaption>
+</figure>
+<p>Winograd 是 Toom-Cook 算法的扩展：用<strong>便宜的变换操作</strong>（加、减、移位）配合常数矩阵，把卷积的<strong>乘法次数</strong>降到最低。对于 3×3 卷积、输出块 m×m，记为 F(m,3)：</p>
+<div class="formula">空间域：d × g（每个输出块 9 次乘法）　→　Winograd 域：BᵀdB ⊙ GgGᵀ → Aᵀ[...]A<span class="tag">式 4.1</span></div>
+<ul>
+<li><strong>F(2,3)=F2</strong>：加速 1.92×，INT8 下<strong>无精度损失</strong>，变换开销小；</li>
+<li><strong>F(4,3)=F4</strong>：乘法 ÷4（加速 3.32×），但 INT8 下精度掉 <strong>9.1%</strong>（不可接受）；</li>
+<li><strong>F(6,3)=F6</strong>：加速最高，但变换功耗太高 + 精度损失太大 → 本文不用。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 为什么“变换”便宜？</div>
+<p>BᵀdB、GgGᵀ 这些变换矩阵的元素是 0、±1、±1/2 之类的小常数——乘它们就是<strong>加/减/移位</strong>，几乎不消耗“真正的乘法”。而 EWMM 阶段每个输出点只做一次乘法（F4 时乘法数 ÷4）。所以“变换开销 &lt;&lt; 省下的乘法开销” → 净加速。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_9_Winograd分解与F4.png">
+  <source src="assets/videos/v02_winograd.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · Winograd 流程动画：空间域 → BᵀdB+GgGᵀ 变换 → EWMM → Aᵀ()A 逆变换。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · Winograd F4：乘法从 9 次降到 4 次（÷4）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">空间域 9 乘法 → Winograd 域 4 乘法（÷4）</span>
+</div>
+<div class="hint">步骤 1：空间域 3×3 卷积 = 9 次乘法；步骤 2：变换后 4×4 EWMM 只有 4 个“真乘法”（橙点）；步骤 3：逆变换还原。变换 = 加/减/移位（便宜）。</div>
+</div>
+</section>

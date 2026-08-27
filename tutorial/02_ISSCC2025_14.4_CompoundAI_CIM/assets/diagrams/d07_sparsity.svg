@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">NIM + 动态启动器：静态 2:4 剪枝 + 动态 Booth 池，逼近稀疏理论上限</text>
+
+  <!-- 静态 -->
+  <rect x="40" y="80" width="420" height="280" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">静态稀疏：2:4 压缩 + NIM 路由</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">• 权重剪枝/注意力掩码是“固定稀疏模式”</text>
+    <text x="60" y="164" fill="#45536b">• 用业界通用的 <strong>2:4 压缩</strong>（4 个权重选 2）</text>
+    <text x="60" y="194" fill="#45536b">NIM（网络存内）：</text>
+    <rect x="60" y="206" width="120" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="120" y="225" text-anchor="middle" fill="#0e5a8a">权重单元×4</text>
+    <rect x="200" y="206" width="120" height="30" rx="5" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="260" y="225" text-anchor="middle" fill="#c25e2e">选 2 个输入</text>
+    <text x="60" y="262" fill="#45536b">• 按匹配权重从 4 个单元选 2 个输入元素</text>
+    <text x="60" y="286" fill="#45536b">• 排除 2 条“不可能路径”降低网络复杂度</text>
+    <text x="60" y="316" fill="#45536b">读出数据再 Booth 编码做权重乘法</text>
+  </g>
+
+  <!-- 动态 -->
+  <rect x="500" y="80" width="420" height="280" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">动态稀疏：Booth 池 + 动态启动器</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• 编码项有 4 个字段：</text>
+    <text x="520" y="162" fill="#45536b">　<strong>ID</strong>（选权重）· <strong>sign</strong>（符号翻转）· <strong>valid</strong>（有效掩码）· <strong>SF</strong>（移位偏移）</text>
+    <text x="520" y="192" fill="#45536b">• valid 随机分布 = 动态稀疏</text>
+    <text x="520" y="222" fill="#6b3fa0" font-weight="600">BPLS（Booth 池-道共享）：</text>
+    <text x="520" y="246" fill="#45536b">8/4 个并行输入 × 4/8 个编码项构成 Booth 池，</text>
+    <text x="520" y="268" fill="#45536b">把非零项“重排”到空闲道 → 逼近理想加速</text>
+    <text x="520" y="298" fill="#6b3fa0" font-weight="600">动态启动器：</text>
+    <text x="520" y="322" fill="#45536b">收集有效 Booth 池字段 + 并行前导 1 检测器</text>
+    <text x="520" y="344" fill="#45536b">逐个找有效项 → 只对有效项做选择性 Booth 乘法</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="384" width="880" height="92" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="412" fill="#1d8a5f" font-size="13.5" font-weight="700">收益</text>
+  <text x="60" y="438" fill="#45536b" font-size="12.5">静态 2× + 动态 2.65× = <strong>平均 5.30× 加速</strong>，达到稀疏理论上限（1/稀疏度）的 <strong>92.6%</strong>；</text>
+  <text x="60" y="460" fill="#45536b" font-size="12.5">配合“无预充电双端口位单元（10T）”：稀疏数据 RBL 连续读 0 → 省预充电功耗 → 比 8T 省 1.95×（面积仅 +1.26×）</text>
+</svg>

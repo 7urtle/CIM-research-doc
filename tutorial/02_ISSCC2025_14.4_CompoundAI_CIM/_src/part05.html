@@ -1,0 +1,32 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：全数据路径存内 —— 累加也做进内存</h2>
+
+<h3 id="sec5-1">5.1 AIM（累加存内）：部分和/残差就地累加</h3>
+<figure>
+  <img src="assets/diagrams/d05_aim.svg" alt="AIM" style="max-width:940px">
+  <figcaption>图 5.1　AIM：6T 单元 + 解耦读/累加，CIM 部分和与存储值在伪行内做 AND/NOR + 部分全加并写回——数据不出内存。</figcaption>
+</figure>
+<p>传统 CIM 只做 MAC，部分和/残差要搬回累加器（占 26~72% 功耗）。本文的 <strong>AIM（Accumulate-In-Memory）</strong>把累加也搬进存储：</p>
+<ul>
+<li><strong>6T 单元 + N1/N2/N3</strong>：读与累加路径解耦；CWL+CIMEN 激活时，存储值（1）+ 输入（1）→ CBL 拉高（AND 操作），CBLB 对称做 NOR；</li>
+<li><strong>部分全加器</strong>：复用 AND/NOR 结果简化加法器；求和写回单元 → 就地完成累加；</li>
+<li><strong>INT/FP 双模</strong>：XOR 区分；FP 模式多一步“指数比较对齐”（FP32 时 FA 输出用于对齐/累加/舍入）。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 功耗账</div>
+<p>vs 全数字方案：<strong>INT32 省 38.3%、FP32 省 15.4%</strong> 功耗；部署在混合模型上，系统功耗 <strong>INT 模式 −22.1%、FP 模式 −9.7%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_4_累加存内与混合格式.png">
+  <source src="assets/videos/v02_aim.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · AIM 累加动画：部分和从 CIM 送到 AIM，与存储值就地相加写回——数据不出内存。</div>
+</div>
+
+<h3 id="sec5-2">5.2 混合格式乘法：输入 2C + 权重 SM</h3>
+<figure>
+  <img src="assets/diagrams/d06_hybrid_format.svg" alt="混合格式" style="max-width:920px">
+  <figcaption>图 5.2　三种格式组合：2C(IN)×2C(W) 翻转最多；SM×SM 不适配 CIM；2C(IN)×SM(W)（本文）翻转最少且无“加 1 补偿”。</figcaption>
+</figure>
+<p>乘法的数据格式组合直接影响翻转功耗：输入是每周期广播的“热”数据 → 用 <strong>2 的补码（2C）</strong>适配 CIM 广播结构；权重是驻留的“冷”数据 → 用<strong>符号-数值（SM）</strong>让负权重保持位稀疏。这个组合既免去 SM×SM 对 CIM 的不适配，又避免了 2C×2C 的“加 1 补偿”逻辑——<strong>翻转活动 −5.2%~47.5%、功耗 −6.3%~42.7%</strong>。</p>
+</section>

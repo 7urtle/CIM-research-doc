@@ -1,0 +1,70 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：一条“系统级 DIMC SoC”的完整逻辑链</h3>
+<p>把整篇论文串成一句话：<strong>系统级能效的前提是“整模型装片上”，HUNBN 用 6T 高密度存储满足这个前提，再用分离 MAC、同步操作把宏级能效做上去，最后用四种数据流映射与四级数据结构保证阵列利用率</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：数字 PE 权重搬移贵、寄存器爆炸；DIMC 省搬移但前提是容量够（§1）；</li>
+<li><strong>第一把钥匙（密度）</strong>：foundry 6T pushed-rule → 508 kB/mm²，384 宏共 2.36M 权重 → 整模型装片上（§3）；</li>
+<li><strong>第二把钥匙（宏能效）</strong>：split MAC（定制+综合，面积 −20%）+ 同步操作（免延迟线、降电压）→ 126.3 TOPS/W（§4）；</li>
+<li><strong>第三把钥匙（利用率）</strong>：4 种数据流映射 + 转置卷积支持 + 四级数据结构/滑动窗口/数据前瞻 → U-Net 80% 峰值（§5–6）；</li>
+<li><strong>配套</strong>：部分和精度窗口防溢出、Shmoo 验证鲁棒性（§7）；</li>
+<li><strong>闭环验证</strong>：系统级 24.28 TOPS/W；五工作负载实测（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 系统级视角稀缺——大多数 CIM 论文停在宏级，本篇打通了“密度-能效-利用率”三个乘数；② 工程经济学思维（split MAC、foundry 6T、复用延迟线替代）务实且可复现；③ FoM 定义清晰，让面积效率可比；④ 五工作负载实测（含转置卷积/自编码器）充分。</li>
+<li><strong>弱/局限</strong>：① 对点卷积/深度卷积（MobileNet 类）能效差一个数量级（1.9 vs 19 TOPS/W）——这是硬件结构的固有限制；② 4-bit 精度为主，高位宽（8-bit）系统能效未验证；③ 系统级 24 TOPS/W 是随机数据，真实模型上 U-Net 19、ResNet8 13.6——有折扣；④ 16nm 相对先进工艺（5nm/4nm）面积密度仍有差距。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>点卷积/深度卷积专项支持</strong>：MobileNet 类模型能效只有 U-Net 的 1/10。可加专用 1×1 映射模式或“MAC 复用 + 通道并行”结构，把点卷积利用率提上去；</li>
+<li><strong>混合位宽 / 动态精度</strong>：4-bit 已验证，可扩展 2–8 bit 可配（类似第 13 篇），并按层选择精度模式（§7 的窗口思想推广到位宽）；</li>
+<li><strong>多核扩展</strong>：单 DIMC 簇 → 多簇 + 片间互联（可参考第 12 篇 TensorCIM 的 MCM），支持更大模型与流水线并行；</li>
+<li><strong>支持 Transformer / 注意力</strong>：HUNBN 的滑动窗口数据结构可扩展为注意力窗（如 Swin）；Q·K 点积、Softmax、LayerNorm 的 DIMC 映射是开放问题；</li>
+<li><strong>在线学习 / 微调</strong>：权重一次性写入是静态推理；若支持片上权重更新（写辅助电路 + 可逆数据流），可做端侧微调；</li>
+<li><strong>先进工艺与 3D 集成</strong>：16nm → 更先进工艺 + 3D 堆叠 SRAM，进一步提升 508 kB/mm² 密度；</li>
+<li><strong>自动化数据流生成</strong>：把 §5 的 4 种映射情形推广为“给定任意层参数自动生成最优映射与搬移计划”的编译器（软硬件协同工具链）。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>DIMC（Digital In-Memory Compute）</td><td>数字存内计算：用数字逻辑在存储阵列内完成乘加。</td></tr>
+<tr><td>SoC（System-on-Chip）</td><td>片上系统：把处理器核、加速器、内存、接口集成到一颗芯片。</td></tr>
+<tr><td>PE（Processing Element）</td><td>处理单元：传统加速器的基本计算单元（乘加器）。</td></tr>
+<tr><td>pushed-rule 6T 单元</td><td>工艺设计规则压到最小的标准 6 管 SRAM 单元（密度最高）。</td></tr>
+<tr><td>FoM（Figure of Merit）</td><td>本论文定义为 (MB/mm²)×(#MAC/mm²)，衡量面积利用率。</td></tr>
+<tr><td>Split MAC Workflow</td><td>分离 MAC 流程：位级乘法/早期加法树定制，后期累加综合。</td></tr>
+<tr><td>同步 DIMC 操作</td><td>预充脉冲与字线脉冲分两个时钟周期，免延迟线。</td></tr>
+<tr><td>刷新（Refresh）</td><td>读后 BL 为浮空节点，周期性在 WL 上插脉冲恢复全摆幅。</td></tr>
+<tr><td>BL / BLB</td><td>位线/反相位线：SRAM 的差分读/写线；本论文用它做双位乘法。</td></tr>
+<tr><td>格雷码（Gray Code）</td><td>相邻值只差 1 位的编码；用于译码器减少 WL 翻转。</td></tr>
+<tr><td>PixelPack</td><td>32 通道像素打包（128 bit，与 SRAM 字长对齐）。</td></tr>
+<tr><td>RowList / ColList / MapList</td><td>特征图四级结构：行链表 / 32 通道组 / 整图。</td></tr>
+<tr><td>滑动窗口（Sliding Window）</td><td>相邻输出共享输入，用三深度寄存器缓存窗口数据复用。</td></tr>
+<tr><td>数据前瞻（Look-ahead）</td><td>提前取下一像素的数据，弥补转置卷积的带宽缺口。</td></tr>
+<tr><td>weight-stationary 数据流</td><td>权重固定不动、输入流动的映射方式，最大化权重复用。</td></tr>
+<tr><td>转置卷积（Transposed Conv）</td><td>上采样卷积：输入插零后卷积，放大特征图尺寸。</td></tr>
+<tr><td>U-Net</td><td>编码器-解码器 + 跳跃连接的图像分割网络。</td></tr>
+<tr><td>Shmoo 图</td><td>电压-频率扫描的通过/失败图，用于评估芯片鲁棒性。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算（4-bit MAC 口径）。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：W. Jiang et al., “HUNBN, a 16-nm Digital In-Memory-Compute SoC for Edge CNN Application Achieving 24 TOPs/W (4b) at System Level,” IEEE JSSC, vol. 60, no. 7, pp. 2434–2445, Jul. 2025. DOI: 10.1109/JSSC.2025.3557967</li>
+<li>[23] MediaTek 12-macro DIMC SoC（超分/降噪 CNN 工作负载，12b 23.2 TOPS/W）——本文“省 28% 功耗”与竞品对比依据。</li>
+<li>[28] Axelera：4-DIMC-core SoC，512×512 8b 矩阵乘（位串行），宏级 15 TOPS/W。</li>
+<li>[15] D. Wang et al., “DIMC: 2219TOPS/W 2569F²/b digital in-memory computing macro in 28nm based on approximate arithmetic hardware,” ISSCC 2022.（近似数字 CIM 对比）</li>
+<li>[30] 模型量化工具（MobileNetV1/DS-CNN/深自编码器按此量化到 4b）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读本系列教程第 12 篇（TensorCIM 多芯粒）对比“系统级”与“多芯粒”两种扩展路径；② 读 [23]（MediaTek SoC）对比另一条 DIMC SoC 设计路线；③ 动手尝试：用 Python 模拟 PixelPack/RowList 的 bank 分配与滑动窗口取数，验证 mod-3 分布的无冲突性；或对 4 种映射情形写个小调度器，统计每种情形的宏利用率。</p>
+</div>
+</section>

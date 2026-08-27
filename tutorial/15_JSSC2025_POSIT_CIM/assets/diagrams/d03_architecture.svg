@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">PD-CIM 宏总体架构（论文 Fig.4）</text>
+
+  <!-- left: BRPU + encoder/decoder -->
+  <rect x="40" y="84" width="220" height="300" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="150" y="110" fill="#d08a10" font-size="13.5" font-weight="700">BRPU</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">双向 regime 处理单元</text>
+    <text x="60" y="156" fill="#45536b">shift-OR 简化 codec</text>
+    <rect x="60" y="170" width="180" height="40" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="150" y="186" text-anchor="middle" fill="#a06510">regime 提取</text>
+    <text x="150" y="202" text-anchor="middle" fill="#a06510">双向移位控制</text>
+    <text x="60" y="236" fill="#45536b">FP→POSIT 编码器</text>
+    <text x="60" y="256" fill="#45536b">POSIT→FP 解码器</text>
+    <text x="60" y="284" fill="#1d8a5f" font-size="11" font-weight="600">regime 存全局 SRAM（数字处理）</text>
+    <text x="60" y="304" fill="#45536b">尾数存 CIM 阵列（MAC）</text>
+    <text x="60" y="336" fill="#d08a10" font-size="10.5" font-weight="600">BRPU 面积 9.45% · 功耗 9.51%</text>
+    <text x="60" y="356" fill="#45536b">（vs 传统 codec 省 67.8% 面积）</text>
+  </g>
+
+  <!-- center: 16 CIM cores -->
+  <rect x="280" y="84" width="400" height="300" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="480" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">16 个 CIM 核（CPCS CIM 阵列）</text>
+  <g font-size="11">
+    <text x="300" y="134" fill="#45536b">每核 16 个 CIM 阵列；每阵列 8×48 子阵列</text>
+    <g>
+      <rect x="300" y="146" width="52" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="326" y="163" text-anchor="middle" fill="#1d8a5f">阵列</text><text x="326" y="178" text-anchor="middle" fill="#1d8a5f">×16</text>
+      <rect x="360" y="146" width="52" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <rect x="420" y="146" width="52" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="462" y="168" fill="#7f93ad">…</text>
+      <rect x="474" y="146" width="52" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="540" y="160" fill="#45536b">核 ×16</text>
+    </g>
+    <text x="300" y="216" fill="#45536b">4b CIM 单元；每行 48b = 12 个 CIM 单元</text>
+    <text x="300" y="238" fill="#1d8a5f" font-size="11" font-weight="600">三种工作模式：</text>
+    <text x="300" y="258" fill="#45536b">① 3b 模式（存 3b 尾数）→ 双位 MAC</text>
+    <text x="300" y="278" fill="#45536b">② 2–4b 关联模式（借空闲单元）→ 双位 MAC</text>
+    <text x="300" y="298" fill="#45536b">③ 正常模式（4b 满尾数）→ 单位串行</text>
+    <text x="300" y="330" fill="#1d8a5f" font-size="11" font-weight="600">CPCS：预计算关键位存空闲单元 → 每周期双位 MAC</text>
+    <text x="300" y="352" fill="#45536b">负载控制器/关键位计算/3:8 译码器仅在加载时工作（1.6% 开销）</text>
+    <text x="300" y="374" fill="#45536b">16 KB CIM 阵列；每周期激活 8 KB → 16384 个 4b 单元</text>
+  </g>
+
+  <!-- right: CASU + SRAM -->
+  <rect x="700" y="84" width="220" height="300" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="810" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">CASU + 全局 SRAM</text>
+  <g font-size="11.5">
+    <rect x="720" y="128" width="180" height="56" rx="8" fill="#f5f0fc" stroke="#6b3fa0"/>
+    <text x="810" y="150" text-anchor="middle" fill="#6b3fa0">16 个加法树 + CASU</text>
+    <text x="810" y="170" text-anchor="middle" fill="#45536b" font-size="10.5">循环交替调度 OR 累加</text>
+    <rect x="720" y="198" width="180" height="56" rx="8" fill="#eef4fa" stroke="#0e5a8a"/>
+    <text x="810" y="220" text-anchor="middle" fill="#0e5a8a">28 kB 全局 SRAM</text>
+    <text x="810" y="240" text-anchor="middle" fill="#45536b" font-size="10.5">存 regime / 激活 / 结果</text>
+    <rect x="720" y="268" width="180" height="56" rx="8" fill="#eef4fa" stroke="#0e5a8a"/>
+    <text x="810" y="290" text-anchor="middle" fill="#0e5a8a">顶层控制器</text>
+    <text x="810" y="310" text-anchor="middle" fill="#45536b" font-size="10.5">调度 / 模式选择</text>
+    <text x="720" y="356" fill="#6b3fa0" font-size="10.5" font-weight="600">CASU：加法树功耗 23.4%→12.3%</text>
+    <text x="720" y="374" fill="#45536b" font-size="10.5">面积开销仅 2.3%</text>
+  </g>
+
+  <!-- data flow -->
+  <rect x="40" y="404" width="880" height="130" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="430" fill="#0e5a8a" font-size="14" font-weight="700">计算流程</text>
+  <g font-size="12.5">
+    <text x="60" y="458" fill="#45536b">① 主机分析数据分布 → 选 POSIT 格式（POSIT(16,2)/(16,3)/(8,1)/(8,2)）→ FP-to-POSIT 编码器转换</text>
+    <text x="60" y="484" fill="#45536b">② 权重加载：regime 存全局 SRAM、尾数存 CIM 阵列；CPCS 同步预计算关键位存空闲单元</text>
+    <text x="60" y="510" fill="#45536b">③ 计算：BRPU 做 shift-OR regime 处理 → CPCS 阵列双位 MAC → CASU 对齐 + OR/加法混合累加</text>
+    <text x="60" y="526" fill="#1d8a5f" font-weight="600">④ POSIT-to-FP 解码器恢复标准 FP 输出 → 兼容现有 AI 处理器；POSIT16 由两个 POSIT8 融合（硬件×2）</text>
+  </g>
+</svg>

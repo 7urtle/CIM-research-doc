@@ -1,0 +1,71 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：一条“算法-电路协同近似”的完整逻辑链</h3>
+<p>把整篇论文串成一句话：<strong>既然数字 CIM 的乘法太贵，那就换一个不需要乘法的算法（L1 距离），再为这个算法量身打造一套从分解式、位串行数据流到动态比较器的硬件</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：数字 CIM 乘法成本二次膨胀 + 电路近似伤精度 + 位级稀疏浪费（§2）；</li>
+<li><strong>算法地基</strong>：L1 距离替代点积（AdderNet），乘法消失、逼近能力相当（§3）；</li>
+<li><strong>架构优化</strong>：预计算分解 |x−w| = x+w−2·min(x,w)，减法/绝对值 → 最小选择，Σw 预存、Σx 共享（§4）；</li>
+<li><strong>电路实现</strong>：位串行比较 + MinMUX + 提前停止吃稀疏（§6）；动态逻辑改进比较器把电荷共享误差阈值从 2 提到 6（§7）；</li>
+<li><strong>软件配合</strong>：权重截断（+86× 稀疏度）、共享尺度量化、激活正则化（≤5 个「1」，0.9% 激活需处理）（§8）；</li>
+<li><strong>闭环验证</strong>：102 TOPS/W、4.4 TOPS/mm²、CIFAR-10 91.71% / ImageNet 74.8%，精度损失 &lt;0.1%（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 创新角度新——不是“把乘法做快”而是“让乘法不发生”；② 从算法到电路每一层都有对应收益，逻辑自洽；③ 首次 L1 距离 CIM + 首次 8-bit 超 100 TOPS/W 过 ImageNet；④ 部署流程免重训练，实用。</li>
+<li><strong>弱/局限</strong>：① 只在卷积网络（ResNet 风格）上验证，未覆盖 Transformer/注意力；② 能效峰值依赖较高稀疏度（10% 输入 + 50% 权重），实际负载可能打折；③ 逐层映射（无跨层流水）限制了整体吞吐；④ 面积效率 4.4 TOPS/mm² 相比 5nm 级全数字 CIM（如 4790 TOPS/mm²/b）仍有差距——工艺代差与算法取舍使然。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>扩展到 Transformer / 大语言模型</strong>：L1 距离能否用于注意力（Q·K 点积 → L1 相似度）？残差结构与更大动态范围的量化误差如何控制？这是 AdderNet 系列（Adder Attention [29]）已开始探索、但硬件 CIM 尚未充分覆盖的方向；</li>
+<li><strong>动态位宽 / 混合粒度</strong>：2–8 b 位宽可配已验证，可进一步做“层间/块间自适应位宽”甚至“逐通道位宽”，把线性成本优势用到极致；</li>
+<li><strong>multiply-less 与 MAC 混合架构</strong>：并非所有算子都适合 L1（如归一化、Softmax），设计“L1 核 + 传统 MAC 核”混合的异构 CIM，按层动态切换；</li>
+<li><strong>支持在线训练 / 微调</strong>：L1 距离的梯度是符号函数（不可导处需平滑近似），硬件上做“前向 L1 + 反向近似梯度”的片上微调（[23] 的一步浮点微调思路可结合）；</li>
+<li><strong>双层稀疏调度</strong>：输入稀疏 × 权重稀疏联合利用——本工作已吃权重位稀疏，若再结合激活稀疏（输入稀疏）与提前终止，能效可进一步翻倍；</li>
+<li><strong>更先进工艺与三维集成</strong>：28nm 原型 → 5nm/4nm（参考 [17][18] 的工艺演进），配合 3D 堆叠提升容量与带宽，逼近全数字 CIM 的密度；</li>
+<li><strong>误差建模与自动正则化</strong>：把动态比较器电荷共享误差建成统计模型，训练时自动注入等效噪声 → 省掉手工正则化，精度/能耗权衡更优。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>CIM（Compute-in-Memory）</td><td>存内计算：把计算电路放进存储阵列，减少数据搬移。</td></tr>
+<tr><td>MVM（Matrix-Vector Multiply）</td><td>矩阵-向量乘，神经网络的核心运算原语。</td></tr>
+<tr><td>Multiply-Less NN</td><td>免乘法神经网络：用 L1 距离等加法运算替代乘加。</td></tr>
+<tr><td>L1 距离（曼哈顿距离）</td><td>Σ|x−w|，绝对差之和；本论文用它替代点积。</td></tr>
+<tr><td>AdderNet</td><td>CVPR 2020 提出的加法网络，本论文算法基础。</td></tr>
+<tr><td>预计算（Precalculation）</td><td>把静态可算的项（如 Σw）提前算好存起来，实时只算最便宜的项。</td></tr>
+<tr><td>WSUM</td><td>权重和 Σw，编译期预计算、存在 SRAM 额外列（15 单元/列）。</td></tr>
+<tr><td>ActACCU / MinACCU</td><td>激活累加器（Σx，广播共享）/ 最小值累加器（Σmin，时钟门控）。</td></tr>
+<tr><td>ABS-ASM</td><td>绝对值装配单元：汇合 Σx、Σw、2Σmin 输出部分和。</td></tr>
+<tr><td>MinSEL / MinMUX</td><td>最小值选择单元 / 最小值多路选择器（传输门实现）。</td></tr>
+<tr><td>位串行（Bit-Serial）</td><td>按位（MSB 优先）逐周期处理的数据流，位宽可配。</td></tr>
+<tr><td>动态逻辑（Dynamic Logic）</td><td>预充-求值型电路，面积小、速度快，但有电荷共享问题。</td></tr>
+<tr><td>电荷共享（Charge Sharing）</td><td>寄生电容与输出节点共享电荷导致电压跌落的效应。</td></tr>
+<tr><td>提前停止（Early Stop）</td><td>比较分出大小后停止预充/读取权重位，省读功耗。</td></tr>
+<tr><td>8T SRAM</td><td>8 管 SRAM 单元，本论文用于权重存储与读端口优化。</td></tr>
+<tr><td>激活正则化</td><td>限制激活二进制中「1」的个数（≤5），抑制电荷共享误差。</td></tr>
+<tr><td>PTQ（Post-Training Quantization）</td><td>训练后量化：不需重训练，直接量化部署。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算，能效单位（本论文 1 次比较+累加计 2 OPs）。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：H. Diao et al., “A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference,” IEEE JSSC, vol. 60, no. 2, pp. 695–705, Feb. 2025. DOI: 10.1109/JSSC.2024.3433417（ISSCC'23 [19] 期刊扩展版）</li>
+<li>[19] Y. He et al., “A 28nm 38-to-102-TOPS/W 8b multiply-less approximate digital SRAM compute-in-memory macro for neural-network inference,” ISSCC 2023, pp. 130–132.（前作：本论文改进其动态比较器）</li>
+<li>[28] H. Chen et al., “AdderNet: Do we really need multiplications in deep learning?” CVPR 2020, pp. 1465–1474.（AdderNet 原始论文）</li>
+<li>[34] H. Chen et al., “Universal adder neural networks,” arXiv:2105.14202.（L1 算子逼近能力证明）</li>
+<li>[15] D. Wang et al., “DIMC: 2219TOPS/W 2569F²/b digital in-memory computing macro in 28nm based on approximate arithmetic hardware,” ISSCC 2022.（电路级近似对比对象）</li>
+<li>[35] Y. Wang et al., “AdderNet and its minimalist hardware design for energy-efficient artificial intelligence,” arXiv:2101.10015.（权重/激活 2⁻⁵–2³ 分布依据）</li>
+<li>[16] Y.-D. Chih et al., “An 89TOPS/W and 16.3TOPS/mm² all-digital SRAM-based full-precision compute-in-memory macro in 22nm,” ISSCC 2021.（数字 CIM 早期代表）</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 AdderNet 原文 [28] 与 Universal Adder NN [34]，理解 L1 的逼近能力；② 再读前作 [19]（ISSCC 短文），对比改进前后比较器；③ 想了解数字 CIM 全貌，可对照阅读 [16][17][18]（全数字 SRAM CIM 系列）。硬件仿真入门可尝试用 Verilog 实现本论文的位串行比较器 + MinMUX，用 0.54–0.9 V 的电压扫描复现误差行为。</p>
+</div>
+</section>

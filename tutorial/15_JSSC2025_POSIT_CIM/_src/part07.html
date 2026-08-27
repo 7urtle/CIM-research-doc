@@ -1,0 +1,36 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>精度表现与三招的适配性</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① POSIT16/POSIT8 在不同模型上的精度表现；② 为什么 ViT-B 精度损失略高（softmax 敏感）；③ CPCS/CASU 能否用于标准 FP 和传统 POSIT 处理器。</p>
+</div>
+
+<h3>7.1 精度结果（论文表 I）</h3>
+<table>
+<tr><th>场景</th><th>精度 vs FP32</th><th>说明</th></tr>
+<tr><td>ResNet18 训练（POSIT16）</td><td>仅掉 <strong>0.04%</strong></td><td>训练也能用 POSIT16 保持精度</td></tr>
+<tr><td>ViT-B 推理（POSIT8）</td><td>掉 <strong>0.14%</strong></td><td>注意力的 softmax 对精度敏感</td></tr>
+<tr><td>ViT-B 推理（POSIT8 vs FP16）</td><td>几乎一致</td><td>比 FP8 高 4.76%</td></tr>
+</table>
+<p>要点：POSIT8 的精度几乎与 FP16 相同、显著超过 FP8——因为 POSIT 动态分配位宽，能适配注意力计算的特定数据分布。三模型整体：PD-CIM 省能 <strong>7.94×</strong>。</p>
+
+<h3>7.2 为什么 GPT-2 / ViT-B 推理能效 &gt; ResNet18 训练？</h3>
+<ul>
+<li>训练用 POSIT16 → 存储访问能耗 2×（8 位 vs 16 位）；</li>
+<li>POSIT16 吞吐只有 POSIT8 的一半 → 能效打折。</li>
+</ul>
+
+<h3>7.3 适配性：三招不止用于 POSIT-CIM（论文 §VIII）</h3>
+<div class="box key">
+<div class="bt">💡 适配标准 FP 数据</div>
+<p>CPCS 和 CASU 可直接用于 FP16：把 FP16 视为<strong>固定 10 位尾数的 POSIT16</strong> → 3b 优先分区切 10 位尾数为三段 → 预计算存储实现双位 MAC；对齐后重叠位 &lt;4 时用 OR 替代加法。</p>
+</div>
+<div class="box key">
+<div class="bt">💡 适配经典 POSIT DNN 处理器</div>
+<p>BRPU 与 CASU 可用于所有 POSIT 处理器（regime 处理是所有 POSIT 处理器的大开销）。在 CIM 中收益更明显：因为 CIM 把 MAC 面积功耗压下去后，regime/加法树的比例更突出。CASU 的循环调度依赖 CIM 的位串行计算（经典处理器偏爱并行乘法，收益较小）。</p>
+</div>
+
+<h3>7.4 单宏 vs 多宏系统</h3>
+<p>16 个 PD-CIM 经总线连 LPDDR3-800（6.4 GB/s），按<strong>张量并行</strong>分派任务 → 近线性扩展到 <strong>15.3×</strong>（单宏）。这验证了 PD-CIM 作为“可扩展计算引擎”的系统集成能力。</p>
+</section>

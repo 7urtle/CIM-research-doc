@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Compound AI（复合式 AI）：多个小模型组合，替代一个巨模型</text>
+
+  <!-- 左：单一巨模型 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">传统路线：单一巨模型（Monolithic LLM）</text>
+  <rect x="40" y="108" width="420" height="210" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="150" y="140" width="200" height="80" rx="10" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="250" y="172" text-anchor="middle" fill="#c25e2e" font-size="13" font-weight="600">7.2B 参数巨模型</text>
+    <text x="250" y="196" text-anchor="middle" fill="#45536b">参数量爆炸 · 边缘部署困难</text>
+    <text x="60" y="262" fill="#45536b">• 模型越大越准，但体积/成本/能耗</text>
+    <text x="60" y="286" fill="#45536b">　都指数级增长 → 边缘放不下</text>
+  </g>
+
+  <!-- 右：复合 -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">Compound AI：多个专精小模型组合</text>
+  <rect x="500" y="108" width="420" height="210" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11">
+    <rect x="530" y="140" width="100" height="60" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="580" y="164" text-anchor="middle" fill="#1d8a5f" font-weight="600">小模型 A</text>
+    <text x="580" y="182" text-anchor="middle" fill="#45536b">（卷积）</text>
+    <rect x="650" y="140" width="100" height="60" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="700" y="164" text-anchor="middle" fill="#1d8a5f" font-weight="600">小模型 B</text>
+    <text x="700" y="182" text-anchor="middle" fill="#45536b">（注意力）</text>
+    <rect x="770" y="140" width="120" height="60" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="830" y="164" text-anchor="middle" fill="#1d8a5f" font-weight="600">小模型 C</text>
+    <text x="830" y="182" text-anchor="middle" fill="#45536b">（ResNet 类）</text>
+    <text x="530" y="232" fill="#45536b">• 例：RevCol 融合多个卷积模型，在 ImageNet 上</text>
+    <text x="530" y="254" fill="#45536b">　比 7.2B 巨模型还高 1.64% 精度</text>
+    <text x="530" y="286" fill="#1d8a5f" font-weight="600">→ 每个小模型都小，可跑在边缘；</text>
+    <text x="530" y="306" fill="#1d8a5f" font-weight="600">→ 组合起来精度不输巨模型！</text>
+  </g>
+
+  <rect x="40" y="342" width="880" height="104" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="370" fill="#0e5a8a" font-size="13.5" font-weight="700">对硬件的新要求（本论文的出发点）</text>
+  <text x="60" y="396" fill="#45536b" font-size="12.5">① 多个模型 = <strong>多种数据分布</strong>（不是单一高斯）→ 浮点对齐方案必须对分布不敏感；</text>
+  <text x="60" y="418" fill="#45536b" font-size="12.5">② 模型间融合（残差、部分和、注意力掩码）→ 数据在片内频繁流动 → 累加必须“就地做”；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">③ 每个模型稀疏模式不同（剪枝 2:4、注意力掩码）→ 稀疏加速要通用，不能只对一种模式有效。</text>
+</svg>

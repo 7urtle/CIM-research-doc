@@ -1,0 +1,58 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>NN 部署流程与基准演示</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 五步部署流程（含重训练补偿）；② 逐层映射方法；③ 三个任务的精度结果（分类/检测）。</p>
+</div>
+
+<h3>7.1 部署流程（论文 Fig.20a）</h3>
+<ol>
+<li><strong>PyTorch 训练</strong>：标准流程得到 FP32 multiply-less 预训练模型；</li>
+<li><strong>截断 BF16</strong>：权重与输入截断到 BF16；</li>
+<li><strong>无损钳位</strong>：权重钳到 [0,Xmax]，负权重并入 WSUM（§5.1）；</li>
+<li><strong>预对齐</strong>：映射到同一 CIM core 的权重找局部最大指数 WE_max 并预对齐；</li>
+<li><strong>重训练补偿</strong>：用 BF16 精度重训模型（输入也按协同对齐流程对齐），再重新钳位/预对齐，直到精度与 FP32 相当才部署。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_20_部署流程与重训.png" alt="部署流程与重训">
+<figcaption>图 18 · 论文 Fig.20：(a) NN 模型部署流程 (b) 重训练对推理精度的提升。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么重训练能补偿预对齐损失？</div>
+<p>预对齐把同一 core 的权重尾数对齐到 WE_max，会引入精度损失。用 BF16 精度重训练（ResNet-20 5 epochs、ResNet-50 10 epochs）让网络“适应”这种对齐 → 损失完全补偿。Fig.20b 显示重训练后精度回到基线。Fig.21 佐证：74.3% 的输入尾数、89% 的权重尾数移位 &lt;5 位——重训练后同 core 权重更集中 → 预对齐损失小。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig17_21_尾数移位分布.png" alt="尾数移位分布">
+<figcaption>图 19 · 论文 Fig.21：输入与权重的尾数移位分布。</figcaption>
+</figure>
+
+<h3>7.2 逐层映射（论文 Fig.22）</h3>
+<ul>
+<li>16 列 = 16 个输出通道的权重尾数，每列存 128 个不同输入通道的权重；</li>
+<li>推理时 128 个 BF16 输入并行送入，与 16 列权重同时计算；</li>
+<li>每时钟周期输出 16 个 UBF16 部分和（Psum）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_22_逐层映射.png" alt="逐层映射">
+<figcaption>图 20 · 论文 Fig.22：逐层 NN 映射方法。</figcaption>
+</figure>
+
+<h3>7.3 基准演示（表 II）</h3>
+<table>
+<tr><th>任务/模型</th><th>精度</th><th>vs FP32 基线</th></tr>
+<tr><td>图像分类 ResNet-20 / CIFAR-10</td><td><strong>91.84%</strong></td><td>无损失</td></tr>
+<tr><td>图像分类 ResNet-50 / ImageNet</td><td><strong>75.00%</strong></td><td>无损失</td></tr>
+<tr><td>目标检测 FCOS / COCO</td><td><strong>36.8% mAP</strong></td><td>仅 −0.2% mAP</td></tr>
+</table>
+<p>三个任务都与 FP32 基线相当——证明算法-电路协同优化的有效性。</p>
+
+<figure>
+<img src="assets/diagrams/d07_deployment.svg" alt="部署教学图">
+<figcaption>教学图 7 · 部署流程、逐层映射与基准结果。</figcaption>
+</figure>
+</section>

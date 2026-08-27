@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">POSIT 动态特性带来的三大挑战（论文 Fig.3）</text>
+
+  <!-- challenge 1 -->
+  <rect x="40" y="84" width="290" height="210" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">挑战① regime 处理能耗 +2.62×</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">固定位宽 FP：指数处理简单</text>
+    <text x="60" y="156" fill="#45536b">POSIT：需要 extract + codec</text>
+    <g>
+      <rect x="70" y="170" width="80" height="30" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="110" y="190" text-anchor="middle" fill="#a0402e" font-size="10.5">前导 0/1 检测</text>
+      <text x="162" y="180" fill="#45536b">→</text>
+      <rect x="176" y="170" width="80" height="30" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="216" y="184" text-anchor="middle" fill="#a0402e" font-size="10.5">温度计→十进制</text>
+      <text x="216" y="196" text-anchor="middle" fill="#a0402e" font-size="10.5">（译码）</text>
+    </g>
+    <text x="60" y="230" fill="#45536b">MAC 时：提取 R → 译码 → 计算 → 再编码成温度计码</text>
+    <text x="60" y="250" fill="#e66e5a" font-weight="600">→ 比 FP 指数处理多耗 2.62× 能耗</text>
+    <text x="60" y="278" fill="#e66e5a" font-size="11" font-weight="600">对策：BRPU 用移位+OR 简化 codec（§4）</text>
+  </g>
+
+  <!-- challenge 2 -->
+  <rect x="345" y="84" width="290" height="210" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="365" y="110" fill="#d08a10" font-size="13.5" font-weight="700">挑战② CIM 单元欠利用 41.3%</text>
+  <g font-size="11.5">
+    <text x="365" y="136" fill="#45536b">CIM 阵列按固定位宽尾数设计（如 4b/单元）</text>
+    <text x="365" y="156" fill="#45536b">POSIT 尾数位宽动态变化 → 浪费</text>
+    <g>
+      <!-- cells -->
+      <rect x="370" y="172" width="40" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="390" y="190" text-anchor="middle" fill="#1d8a5f" font-size="9">4b</text>
+      <rect x="414" y="172" width="40" height="26" fill="#fdeeda" stroke="#f0a030"/><text x="434" y="190" text-anchor="middle" fill="#a06510" font-size="9">3b+X</text>
+      <rect x="458" y="172" width="40" height="26" fill="#fdeeda" stroke="#f0a030"/><text x="478" y="190" text-anchor="middle" fill="#a06510" font-size="9">2b+XX</text>
+      <rect x="502" y="172" width="40" height="26" fill="#fdeeda" stroke="#f0a030"/><text x="522" y="190" text-anchor="middle" fill="#a06510" font-size="9">3b+X</text>
+      <text x="560" y="190" fill="#45536b" font-size="10">X=空闲</text>
+    </g>
+    <text x="365" y="220" fill="#45536b">POSIT(8,1) 中 61.9% 的尾数 ≤3b（4b 单元存不满）</text>
+    <text x="365" y="240" fill="#45536b">POSIT16 尾数 0–12b，按 12b 设计浪费达 85.7%</text>
+    <text x="365" y="260" fill="#45536b">动态分区单元路由复杂度 O(N²) 不可行</text>
+    <text x="365" y="280" fill="#d08a10" font-size="11" font-weight="600">对策：CPCS 用空闲单元存关键位 → 双位 MAC（§5）</text>
+  </g>
+
+  <!-- challenge 3 -->
+  <rect x="650" y="84" width="270" height="210" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="670" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">挑战③ 加法树能耗浪费 62.5%</text>
+  <g font-size="11.5">
+    <text x="670" y="136" fill="#45536b">动态对齐后的两个尾数乘积：</text>
+    <text x="670" y="156" fill="#45536b">无重叠位 → 全加器做 X+0=X</text>
+    <g>
+      <text x="670" y="182" fill="#45536b" font-family="monospace">  A = 10110</text>
+      <text x="670" y="200" fill="#45536b" font-family="monospace">+ B = 00001</text>
+      <line x1="670" y1="206" x2="760" y2="206" stroke="#45536b"/>
+      <text x="670" y="224" fill="#1d8a5f" font-family="monospace">= 10111 = A|B</text>
+    </g>
+    <text x="670" y="248" fill="#45536b">X+0 的加法器翻转是冗余的</text>
+    <text x="670" y="268" fill="#45536b">16b 加法器 174.38 nW vs 16b OR 29.75 nW</text>
+    <text x="670" y="288" fill="#6b3fa0" font-size="11" font-weight="600">对策：CASU 用 OR 替代加法（§6）</text>
+  </g>
+
+  <!-- bottom -->
+  <rect x="40" y="314" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="340" fill="#0e5a8a" font-size="14" font-weight="700">三个挑战的量化来源</text>
+  <g font-size="12.5">
+    <text x="60" y="370" fill="#45536b">① regime 处理：extract（前导检测）+ codec（温度计↔十进制译码）+ 再编码，逻辑链长、能耗大（2.62× vs FP 指数）；</text>
+    <text x="60" y="398" fill="#45536b">② 单元欠利用：POSIT(8,1) 的 2/3/4 位尾数占多数 → 按 4b 设计时 61.9% 的单元存不满 → 平均欠利用 41.3%；</text>
+    <text x="60" y="426" fill="#45536b">③ 加法树浪费：28.4% 的对齐结果完全无重叠位 → 加法可被 OR 替代；加法器功耗是 OR 的 5.86× → 浪费 62.5%；</text>
+    <text x="60" y="462" fill="#1d8a5f" font-weight="600">本论文三招（BRPU / CPCS / CASU）分别对应三个挑战，一一攻破：</text>
+    <text x="60" y="490" fill="#45536b">BRPU 省 40.3% regime 能耗 · CPCS 提升 63.0% 单元利用率 · CASU 省 56.9% 加法树能耗（摘要口径）</text>
+  </g>
+</svg>

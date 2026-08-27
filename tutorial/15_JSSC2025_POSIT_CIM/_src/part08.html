@@ -1,0 +1,106 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>芯片实测与 SOTA 对比</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 芯片规格（工艺/电压/频率/性能）；② 功耗面积分解的三处改善；③ 与 SOTA FP-CIM 的能效/速度对比。</p>
+</div>
+
+<h3>8.1 芯片规格（论文 Fig.14）</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 1.41 mm²</td></tr>
+<tr><td>电压 / 功耗</td><td>0.55–1.0 V / 5.5–237 mW</td></tr>
+<tr><td>最高频率 / 峰值性能</td><td>419 MHz / 3.86 TOPS（POSIT8）· 1.91 TOPS（POSIT16）</td></tr>
+<tr><td>CIM 阵列</td><td>16 KB；每周期激活 8 KB → 16384 个 4b 单元</td></tr>
+<tr><td>平均尾数位宽</td><td>POSIT8 3.55 位 → 平均 3.55 周期/计算</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>83.23 TFLOPS/W</strong> @ POSIT(8,1)（0.65V / 260 MHz）</td></tr>
+</table>
+<p>算力来源：16384 单元 × 419 MHz × 2 ÷ 3.55 = 3.86 TOPS（每周期 1 乘 1 加计 2 OPs）。</p>
+
+<figure>
+<img src="assets/figs/fig15_14_芯片照片与总结.png" alt="芯片照片与总结">
+<figcaption>图 14 · 论文 Fig.14：芯片显微照片与性能总结。</figcaption>
+</figure>
+
+<h3>8.2 功耗与面积分解（论文 Fig.15）</h3>
+<table>
+<tr><th>模块</th><th>优化前/后功耗占比</th><th>面积占比</th></tr>
+<tr><td>CIM 阵列</td><td><strong>56.3% → 41.2%</strong></td><td>—</td></tr>
+<tr><td>加法树</td><td><strong>23.4% → 12.3%</strong></td><td>+2.3%</td></tr>
+<tr><td>BRPU（shift-OR）</td><td>9.51%</td><td>9.45%（比传统 codec 小 67.8%）</td></tr>
+</table>
+<p>三个模块的功耗占比都被压下去了，而面积开销（CASU 2.3%）几乎可忽略——三招都是“小面积换大能效”。</p>
+
+<figure>
+<img src="assets/figs/fig15_15_功耗面积分解.png" alt="功耗面积分解">
+<figcaption>图 15 · 论文 Fig.15：PD-CIM 功耗与面积分解。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_measurements.svg" alt="实测教学图">
+<figcaption>教学图 8 · 芯片规格、功耗面积分解与 SOTA 对比。</figcaption>
+</figure>
+
+<h3>8.3 三招的独立贡献（论文 Fig.17/18）</h3>
+<table>
+<tr><th>技术</th><th>贡献（ResNet18 训练，POSIT16）</th></tr>
+<tr><td>BRPU</td><td>能效 3.48→6.75 TFLOPS/W（1.94×）；三模型平均 +29.7%，双向调度再 +39%</td></tr>
+<tr><td>CPCS</td><td>系统能效平均 +1.46×（最高 1.96×）；吞吐 +38.2%（+24.7% 关联、+1.34× 分区）</td></tr>
+<tr><td>CASU</td><td>系统能效 → 27.61 TFLOPS/W（2.08×）；OR 替代省 82.9%、循环调度再省 31.3%</td></tr>
+</table>
+<p>叠加后：CIM 核峰值 83.23 TFLOPS/W（POSIT8）。</p>
+
+<figure>
+<img src="assets/figs/fig15_17_三特性性能评估.png" alt="三特性性能评估">
+<figcaption>图 16 · 论文 Fig.17：三大特性的性能评估。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig15_18_组合评估能效提升.png" alt="组合评估能效提升">
+<figcaption>图 17 · 论文 Fig.18：组合评估的能效提升。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_gains.svg" alt="能效提升教学图">
+<figcaption>教学图 7 · BRPU / CPCS / CASU 各自的实测贡献。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_三招贡献.png" alt="三招贡献图">
+<figcaption>数据图 2 · 三招逐步叠加的能效提升（示意，依据论文 Fig.18）。</figcaption>
+</figure>
+
+<h3>8.4 与 SOTA 对比（论文表 II/III）</h3>
+<p><strong>表 II（ViT-B / ImageNet，12 层同口径）</strong>：</p>
+<table>
+<tr><th>方案</th><th>相对时间</th><th>相对能耗</th></tr>
+<tr><td>FP16-CIM（基线）</td><td>100%</td><td>100%</td></tr>
+<tr><td>数字 POSIT8（无 CIM）</td><td>−48.4%</td><td>−38.9%</td></tr>
+<tr><td>POSIT8-CIM（无优化）</td><td>再 −37.9%</td><td>再 −19.0%</td></tr>
+<tr><td><strong>PD-CIM（本论文）</strong></td><td colspan="2">vs 无优化 POSIT8-CIM：<strong>1.98× 加速、3.35× 省能</strong></td></tr>
+</table>
+<p>精确口径：PD-CIM vs 无优化 POSIT8-CIM：<strong>1.98× 加速、3.35× 省能</strong>；vs FP16-CIM 总节省更可观。</p>
+<p><strong>表 III（SOTA FP-CIM 处理器）</strong>：</p>
+<ul>
+<li>同等精度下 PD-CIM 能效最高 <strong>83.23 TFLOPS/W</strong>；</li>
+<li>vs [15]：平均能效 41.5 TFLOPS/W（超 <strong>2.36×</strong>）、加速 <strong>3.51×</strong>（419 MHz 是其 2.68× + 双位 MAC 1.31×）；</li>
+<li>vs [16]（同 50% 稀疏）：超 2.6×；vs [17]：超 2.46×；</li>
+<li>16-PD-CIM 系统线性扩展 15.3×。</li>
+</ul>
+
+<figure>
+<img src="assets/charts/c01_数据格式对比.png" alt="数据格式对比图">
+<figcaption>数据图 1 · 数据格式的精度-能耗权衡（示意，依据论文图 1/2）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_SOTA对比.png" alt="SOTA对比图">
+<figcaption>数据图 3 · 与 SOTA FP-CIM 的能效对比（依据论文表 III）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 全文总结、适配性讨论与未来方向。</figcaption>
+</figure>
+</section>

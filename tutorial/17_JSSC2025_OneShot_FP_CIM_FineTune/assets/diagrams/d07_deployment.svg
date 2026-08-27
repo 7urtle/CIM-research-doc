@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">NN 部署流程与基准演示（论文 Fig.20–22）</text>
+
+  <!-- flow -->
+  <rect x="40" y="84" width="880" height="150" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">自定义离线部署流程（论文 Fig.20a）</text>
+  <g font-size="11.5">
+    <rect x="60" y="128" width="150" height="44" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="135" y="146" text-anchor="middle" fill="#1d8a5f" font-size="10.5">① PyTorch 训练</text>
+    <text x="135" y="162" text-anchor="middle" fill="#45536b" font-size="9.5">FP32 multiply-less</text>
+    <rect x="222" y="128" width="140" height="44" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="292" y="146" text-anchor="middle" fill="#1d8a5f" font-size="10.5">② 截断 BF16</text>
+    <text x="292" y="162" text-anchor="middle" fill="#45536b" font-size="9.5">权重+输入</text>
+    <rect x="374" y="128" width="160" height="44" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="454" y="146" text-anchor="middle" fill="#a06510" font-size="10.5">③ 无损钳位 [0,Xmax]</text>
+    <text x="454" y="162" text-anchor="middle" fill="#45536b" font-size="9.5">负权重并入 WSUM</text>
+    <rect x="546" y="128" width="160" height="44" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="626" y="146" text-anchor="middle" fill="#a06510" font-size="10.5">④ 找 WE_max 预对齐</text>
+    <text x="626" y="162" text-anchor="middle" fill="#45536b" font-size="9.5">同 core 权重对齐</text>
+    <rect x="718" y="128" width="160" height="44" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="798" y="146" text-anchor="middle" fill="#1d8a5f" font-size="10.5">⑤ 重训练补偿</text>
+    <text x="798" y="162" text-anchor="middle" fill="#45536b" font-size="9.5">BF16 精度重训</text>
+    <text x="60" y="206" fill="#45536b">重训练（Fig.20b）：ResNet-20 5 epochs、ResNet-50 10 epochs → 预对齐精度损失完全补偿 → 与 FP32 基线等效</text>
+  </g>
+
+  <!-- mapping -->
+  <rect x="40" y="254" width="430" height="160" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="280" fill="#0e5a8a" font-size="13.5" font-weight="700">逐层映射（论文 Fig.22）</text>
+  <g font-size="11.5">
+    <text x="60" y="308" fill="#45536b">16 列 = 16 输出通道尾数；每列 128 个输入通道权重</text>
+    <text x="60" y="330" fill="#45536b">128 个 BF16 输入并行 → 与 16 列权重同时算</text>
+    <text x="60" y="352" fill="#45536b">每周期输出 16 个 UBF16 部分和（Psum）</text>
+    <text x="60" y="382" fill="#1d8a5f" font-weight="600">尾数移位分布（Fig.21）：74.3% 输入、89% 权重移位 &lt;5 位</text>
+    <text x="60" y="404" fill="#45536b">→ 重训练后同 core 权重更集中 → 预对齐损失小</text>
+  </g>
+
+  <!-- benchmarks -->
+  <rect x="490" y="254" width="430" height="160" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="280" fill="#6b3fa0" font-size="13.5" font-weight="700">NN 基准（表 II）</text>
+  <g font-size="11.5">
+    <line x1="510" y1="296" x2="900" y2="296" stroke="#c9d8ea"/>
+    <line x1="510" y1="296" x2="510" y2="400" stroke="#c9d8ea"/>
+    <line x1="680" y1="296" x2="680" y2="400" stroke="#c9d8ea"/>
+    <text x="595" y="312" text-anchor="middle" fill="#6b3fa0">任务/模型</text>
+    <text x="790" y="312" text-anchor="middle" fill="#6b3fa0">精度（FP32 基线）</text>
+    <text x="595" y="336" text-anchor="middle" fill="#45536b">分类 ResNet-20 CIFAR-10</text>
+    <text x="790" y="336" text-anchor="middle" fill="#1d8a5f" font-weight="700">91.84%（无损失）</text>
+    <text x="595" y="360" text-anchor="middle" fill="#45536b">分类 ResNet-50 ImageNet</text>
+    <text x="790" y="360" text-anchor="middle" fill="#1d8a5f" font-weight="700">75.00%（无损失）</text>
+    <text x="595" y="384" text-anchor="middle" fill="#45536b">检测 FCOS COCO</text>
+    <text x="790" y="384" text-anchor="middle" fill="#1d8a5f" font-weight="700">36.8% mAP（−0.2%）</text>
+  </g>
+
+  <!-- fine-tune results -->
+  <rect x="40" y="434" width="880" height="100" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="460" fill="#0e5a8a" font-size="14" font-weight="700">ODFC 微调恢复（论文 Fig.23/24）</text>
+  <g font-size="12.5">
+    <text x="60" y="488" fill="#45536b">MNIST 训练 99.1% → MNIST-M 测试 13.8%（环境变化）→ ODFC 片上微调 10 epochs → <tspan fill="#1d8a5f" font-weight="700">84.3%</tspan></text>
+    <text x="60" y="512" fill="#45536b">训练损失逐 epoch 下降、精度逐 epoch 恢复 → 边缘环境变化的鲁棒性大幅提升（预对齐误差对微调影响远小于从头训练）</text>
+  </g>
+</svg>

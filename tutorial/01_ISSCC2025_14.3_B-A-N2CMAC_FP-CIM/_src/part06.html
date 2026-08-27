@@ -1,0 +1,40 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新②：格式混合 N2CMAC —— 非二进制补码 MAC</h2>
+
+<h3 id="sec6-1">6.1 符号-数值权重：负数的存储格式决定功耗</h3>
+<figure>
+  <img src="assets/diagrams/d09_sign_magnitude.svg" alt="2C vs 符号-数值" style="max-width:920px">
+  <figcaption>图 6.1　同一个 −7：2 的补码 = 1111 1001（数值位几乎全 1，翻转多）；符号-数值 = 1 000 0111（只翻符号位，数值位保持稀疏）。</figcaption>
+</figure>
+<p>传统数字 MAC 用 <strong>2 的补码（2C）</strong>表示有符号数，负数 = 正数取反加 1 → 数值位被“填满 1”。在加法树里，全 1 的输入意味着每个周期大量位翻转 → 动态功耗高。本论文把权重改成<strong>符号-数值（sign-magnitude）格式</strong>：符号位与数值位分开存储，负权重只是“符号位 = 1”，数值位保持原样。</p>
+<div class="box key">
+<div class="bt">💡 收益 1：位级稀疏性 1.83×</div>
+<p>ResNet50 的负 INT8 权重在符号-数值格式下，位级稀疏性（为 0 的比例）相比 2C 提升 <strong>1.83×</strong>。稀疏 = 少翻转 = 少动态功耗——这是纯存储格式带来的“免费”省电。</p>
+</div>
+
+<h3 id="sec6-2">6.2 有符号 MAC = 无符号 MAC + 符号补偿</h3>
+<figure>
+  <img src="assets/diagrams/d07_n2cmac.svg" alt="N2CMAC 流程" style="max-width:940px">
+  <figcaption>图 6.2　格式混合 N2CMAC 四步流程：① GIN 提供；② LC 串行转换+符号处理；③ DMU 乘 |MW| 并累加；④ CA&Q 移位累加 + 符号补偿 → MACV。</figcaption>
+</figure>
+<p>数学上：A × W = A × |W| × sign(W)。于是：</p>
+<div class="formula">有符号 MAC = Σ A·|W|·sign(W) =（无符号 MAC）+（符号补偿项）<span class="tag">式 6.1</span></div>
+<ul>
+<li><strong>无符号 MAC</strong>：DMU 只处理正尾数（权重数值位 × 输入），加法树不需要符号位扩展、求负等逻辑——省符号计算开销；</li>
+<li><strong>符号补偿</strong>：在 CA&Q 里统一加回。补偿值可以“多花 2 个周期算出”或“离线预置”，并且在<strong>多个计算周期之间共享</strong>——摊薄到几乎为零。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 收益 2：计算周期与电路开销双降</div>
+<p>N2CMAC 让不同网络的所需计算周期减少：ViT（DeiT-S）@ImageNet 上 8b/10b 输入各减少 <strong>19.80% / 16.50%</strong>。电路层面：相比典型 2C MAC，功耗 −1.96×、延迟 −1.25×、面积 −1.18×。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_4_N2CMAC计算.png">
+  <source src="assets/videos/v02_n2cmac.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 格式混合 N2CMAC 四步流程动画：广播输入 → 串行转换 → 无符号乘加 → 补偿累加。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_4_N2CMAC计算.png" alt="论文图 14.3.4">
+  <figcaption>图 6.3　论文原图 Fig. 14.3.4：格式混合 N2CMAC 详细实现（上）与三种计算模式的存储器配置与波形（下）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

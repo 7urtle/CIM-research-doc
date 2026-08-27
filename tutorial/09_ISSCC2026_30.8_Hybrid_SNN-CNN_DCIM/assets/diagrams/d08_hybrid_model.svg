@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">混合 SNN-CNN 模型：层与层之间“按需切换模式”</text>
+
+  <!-- 模型示意 -->
+  <rect x="40" y="80" width="880" height="180" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <!-- SNN 层 -->
+    <rect x="70" y="120" width="110" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="125" y="148" text-anchor="middle" fill="#0e5a8a" font-weight="600">SNN 层 1</text>
+    <text x="125" y="168" text-anchor="middle" fill="#45536b">IF/LIF</text>
+    <rect x="70" y="200" width="110" height="26" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="125" y="217" text-anchor="middle" fill="#45536b">1b 脉冲输出</text>
+    <rect x="210" y="120" width="110" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="265" y="148" text-anchor="middle" fill="#0e5a8a" font-weight="600">SNN 层 2</text>
+    <text x="265" y="168" text-anchor="middle" fill="#45536b">IQIF</text>
+    <rect x="210" y="200" width="110" height="26" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="265" y="217" text-anchor="middle" fill="#45536b">1b 脉冲输出</text>
+    <!-- 转换 -->
+    <path d="M180,155 H210" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M320,155 H350" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="350" y="120" width="130" height="96" rx="8" fill="#fdf3e7" stroke="#e8a33d" stroke-width="2"/>
+    <text x="415" y="150" text-anchor="middle" fill="#c25e2e" font-weight="600">脉冲→值转换</text>
+    <text x="415" y="172" text-anchor="middle" fill="#45536b">（Spike-to-Value）</text>
+    <text x="415" y="196" text-anchor="middle" fill="#45536b">把脉冲率转为 8b 值</text>
+    <!-- CNN 层 -->
+    <path d="M480,155 H510" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="510" y="120" width="130" height="70" rx="8" fill="#fdf3e7" stroke="#c25e2e" stroke-width="2"/>
+    <text x="575" y="148" text-anchor="middle" fill="#c25e2e" font-weight="600">CNN 层 3</text>
+    <text x="575" y="168" text-anchor="middle" fill="#45536b">INT8 卷积</text>
+    <rect x="510" y="200" width="130" height="26" rx="6" fill="#fdf3e7" stroke="#c25e2e"/>
+    <text x="575" y="217" text-anchor="middle" fill="#45536b">8b 特征输出</text>
+    <rect x="660" y="120" width="110" height="70" rx="8" fill="#fdf3e7" stroke="#c25e2e" stroke-width="2"/>
+    <text x="715" y="148" text-anchor="middle" fill="#c25e2e" font-weight="600">CNN 层 4</text>
+    <text x="715" y="168" text-anchor="middle" fill="#45536b">分类头</text>
+    <path d="M640,155 H660" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M770,155 H810" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="810" y="120" width="90" height="70" rx="8" fill="#eefaf3" stroke="#1d8a5f" stroke-width="2"/>
+    <text x="855" y="148" text-anchor="middle" fill="#1d8a5f" font-weight="600">输出</text>
+    <text x="855" y="168" text-anchor="middle" fill="#45536b">预测结果</text>
+  </g>
+
+  <!-- 切换逻辑 -->
+  <rect x="40" y="284" width="880" height="96" rx="10" fill="#eef7fd" stroke="#b8d9ee"/>
+  <text x="60" y="312" fill="#0e5a8a" font-size="13" font-weight="700">模式与精度如何“逐层自适应”？</text>
+  <text x="60" y="338" fill="#45536b" font-size="12.5">• 模型运行前把每一层标注为 {SNN-IF / SNN-LIF / SNN-IQIF / CNN-INT4 / CNN-INT8}；</text>
+  <text x="60" y="360" fill="#45536b" font-size="12.5">• 硬件按层配置：CMDM-LCC 的 BW/WW 模式、INT4/INT8 映射、DM-MPDBU 的神经元函数；</text>
+  <text x="60" y="376" fill="#45536b" font-size="12.5">• 事件驱动的输入段用 SNN（省电），精度关键段用 CNN（准）→ 精度-能效按层权衡</text>
+
+  <rect x="40" y="396" width="880" height="52" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="480" y="420" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="600">本论文价值：一个宏同时装下两种模型的计算模式，切换零硬件开销 → 首个硅验证的多比特混合 SNN-CNN 全数字 SRAM-CIM</text>
+  <text x="480" y="440" text-anchor="middle" fill="#45536b" font-size="11.5">（对比：模拟 CIM 的膜电位单元受工艺波动影响大；之前的数字方案只支持单一 MPDB 类型）</text>
+</svg>

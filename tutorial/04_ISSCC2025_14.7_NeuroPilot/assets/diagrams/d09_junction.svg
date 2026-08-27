@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="420" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">交汇（Junction）与回溯（Trace-back）：路径怎么“拼”出来</text>
+
+  <!-- 交汇 -->
+  <rect x="40" y="80" width="420" height="200" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#c25e2e" font-size="13.5" font-weight="700">交汇信号（Junction）</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">• 当 PE 同时收到“来自 START”和“来自 END”的信号：</text>
+    <text x="60" y="166" fill="#45536b">→ 该 PE 成为交汇点，产生 junction 信号；</text>
+    <text x="60" y="192" fill="#45536b">→ 去激活该 PE（不再传播），并产生行列信号</text>
+    <text x="60" y="218" fill="#45536b">标记交汇位置（行列编码器定位）；</text>
+    <text x="60" y="244" fill="#45536b">→ OPC 预充电在此终止（波前已交汇）</text>
+  </g>
+
+  <!-- 回溯 -->
+  <rect x="500" y="80" width="420" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">回溯（Trace-back）</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• 每个 PE 在传播时把“信号从哪个方向来”</text>
+    <text x="520" y="166" fill="#45536b">存进 SRAM_R（方向数据）；</text>
+    <text x="520" y="192" fill="#45536b">• 从交汇点向 START 端：沿方向数据反向走；</text>
+    <text x="520" y="218" fill="#45536b">• 从交汇点向 END 端：同理；</text>
+    <text x="520" y="244" fill="#45536b">→ 两段拼接 = 完整最短路径</text>
+  </g>
+
+  <!-- 示意图 -->
+  <rect x="40" y="300" width="880" height="96" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="328" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么“方向数据”要存进 SRAM 而不是 DFF？</text>
+  <text x="60" y="354" fill="#45536b" font-size="12.5">DFF 每个 bit 需要 ~20 个晶体管且面积大；本文用 6T SRAM + 本地复位 + 反相写入器存方向 ——</text>
+  <text x="60" y="376" fill="#45536b" font-size="12.5">同样功能面积大幅缩小；配合动态逻辑核心（MOS 电容高密度）→ PE 面积仅 213.6 μm²（PPA 全胜 DFF 方案）。</text>
+</svg>

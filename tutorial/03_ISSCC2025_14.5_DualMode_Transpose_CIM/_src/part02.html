@@ -1,0 +1,17 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>转置 CIM（T-CIM）的三大挑战</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① FF/BP 电路不共享；② INT 训练精度不足；③ 模拟 CIM 的 PVT 问题 + 密度/面积权衡。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_1_挑战与动机.png" alt="论文图 14.5.1">
+  <figcaption>图 2.2　论文原图 Fig. 14.5.1：转置 CIM 宏的挑战与本工作动机。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① MAC 不复用</td><td>前作 FF/BP 各一套电路（转置阵列 [7,8]）</td><td>CWM-SRAM：单端口 + 循环映射，一套 MAC 通吃</td></tr>
+<tr><td>② INT 精度不足</td><td>INT 训练精度低；预对齐 FP 有截断损失</td><td>SFME + VWPA：四格式统一 + 最小截断窗口</td></tr>
+<tr><td>③ PVT + 密度/面积</td><td>模拟 CIM 受 PVT 影响；数字 CIM 的 MD/AF 权衡难</td><td>DMBP-MAC：双模位并行 + 中心对称布局，紧凑集成进 SRAM</td></tr>
+</table>
+</section>

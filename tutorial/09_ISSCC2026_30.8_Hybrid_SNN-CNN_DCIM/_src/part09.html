@@ -1,0 +1,59 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<p>读完这篇论文，往哪些方向还能继续做？以下是几个有研究价值的方向：</p>
+<ol>
+<li><strong>在线学习与本地适配</strong>：本文是纯推理宏。SNN 的时序特性天然适合 online learning（如 STDP 类规则）。在 CMDM-LCC 里加入“权重就地更新”路径，让宏能边推理边学——但要注意权重更新会破坏 WSC 的“驻留”假设，需要与 PS-WR-ODM 联合设计；</li>
+<li><strong>更丰富的神经元模型</strong>：IF/LIF/IQIF 之外，还有自适应阈值、双指数突触、随机神经元等模型。把 DM-MPDBU 做成“可编程动力学”单元（小处理器/查表），或增加模型库，能覆盖更多 SNN 算法；</li>
+<li><strong>端到端混合模型编译栈</strong>：论文支持“逐层自适应精度/模式选择”，但没有给出自动化的编译器。做一个从 PyTorch 混合模型 → 层标注（SNN/CNN、INT4/INT8、神经元类型）→ 宏配置的编译工具链，是软件-硬件协同的价值洼地；</li>
+<li><strong>稀疏性与事件驱动的深度融合</strong>：SNN 的稀疏红利目前主要靠“输入为 0 自然省电”。如果加法树能显式跳过零 MAC（activation/weight sparsity skip），能效还能再翻几倍——但需要硬件检测电路，要与 CMDM-LCC 的 MUX 乘法器协同设计；</li>
+<li><strong>多 bank 调度与动态电压频率缩放</strong>：16 个 bank 之间如何分配层/通道？能否按 bank 负载做 DVFS？SNN 事件突发时如何调度？这些系统级问题论文没有展开，是很好的补充方向；</li>
+<li><strong>扩展到更大的混合模型（CNN+SNN+Transformer）</strong>：边缘 LLM 时代，混合模型可能还包括注意力层。CMDM-LCC 的“双模式”能否扩展到“三模式”？数据映射的折中思想能否推广到“token × 时间步”的二维遍历？</li>
+<li><strong>工艺升级与密度提升</strong>：16nm → 更先进节点，SRAM 密度和频率都能提升；同时保持“数字可综合”特性，快速移植。也可以探索把宏和 RISC-V 内核做进同一个 SoC，形成完整的边缘 AI 芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>SNN（Spiking Neural Network，脉冲神经网络）</dt><dd>输入输出为离散脉冲（0/1），神经元膜电位累积到阈值发放；事件驱动、极省电。</dd>
+<dt>CNN（Convolutional Neural Network）</dt><dd>卷积神经网络，稠密乘法累加，精度高。</dd>
+<dt>Hybrid SNN-CNN Model</dt><dd>混合模型：部分层 SNN、部分层 CNN，在精度与能耗间平衡。</dd>
+<dt>Membrane Potential（膜电位, MP）</dt><dd>神经元的累积器，输入脉冲不断累加，撞阈值则发放清零。</dd>
+<dt>MPDB（Membrane Potential Dynamics Behavior）</dt><dd>膜电位动力学行为（积分、泄漏、比较阈值、发放）。</dd>
+<dt>DM-MPDBU</dt><dd>本文的数字多膜电位动力学单元，一套硬件支持 IF/LIF/IQIF 三种模型。</dd>
+<dt>IF / LIF / IQIF</dt><dd>积分发放 / 泄漏积分发放 / 整数二次积分发放——三种神经元动力学模型。</dd>
+<dt>Timestep（时间步, TS）</dt><dd>SNN 把时间切成离散步，每步输入一批脉冲。</dd>
+<dt>BW-IN / WW-IN</dt><dd>位宽输入（1b 脉冲）乘法 / 字宽输入（8b 值）乘法。</dd>
+<dt>CMDM-LCC（Cross-Model Dual-Mode Local Computing Cell）</dt><dd>本文的跨模型双模式本地计算单元：两个 MUX 乘法器 + TR + SaA，SNN/CNN 共用。</dd>
+<dt>TR（Toggle Reducer，翻转缩减器）</dt><dd>INT8 模式下消除冗余信号翻转的电路，降低动态功耗。</dd>
+<dt>SaA（Shift-and-Add，移位相加）</dt><dd>CNN 模式下做字宽累积（8b 输入的部分积按位组合）。</dd>
+<dt>RIB（Reconfigurable Inference Block）</dt><dd>可重构推理块：2kb SRAM + WSC + 8 个 CMDM-LCC + SaA。</dd>
+<dt>WSC（Weight Stationary Cell）</dt><dd>权重驻留单元：让权重留在 SRAM 阵列内，减少搬移。</dd>
+<dt>CFD-SC-RC</dt><dd>本文架构：紧凑全数字 SNN-CNN 可重构计算，共享 MAC 电路。</dd>
+<dt>PSUM（Partial Sum，部分和）</dt><dd>MAC 累加的中间结果，需要缓冲存储。</dd>
+<dt>PS-WR-ODM</dt><dd>本文数据映射：PSUM 存储-权重复用优化，按块（block）折中两个极端。</dd>
+<dt>TS-first / Reuse-first</dt><dd>时间步优先（PSUM 小、权重能耗高）/ 权重复用优先（PSUM 大、权重能耗低）。</dd>
+<dt>FoM（Figure of Merit）</dt><dd>综合指标。本文：FoM1=能效/(面积×延迟)，FoM2=精度×能效/(面积×延迟)，FoM3=输入精度×权重精度×能效。</dd>
+<dt>SRAM-DCIM / SRAM-ACIM</dt><dd>SRAM 数字存内计算 / SRAM 模拟存内计算。</dd>
+<dt>Shmoo 图</dt><dd>扫描电压-频率（或其他参数对）的功能通过/失败图，用于测量最大工作频率。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y.-K. Yeh, J.-W. Su, et al., “A 16nm, 1Mb, 1-to-8b-Configurable 444.21 TOPS/W Fully Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing,” <em>ISSCC 2026</em>, Paper 30.8. DOI: 10.1109/ISSCC49663.2026.11409250</li>
+<li>C. Zha et al., “A Reconfigurable Digital Compute-In-Memory Heterogeneous Macro for Differential Frame Convolution and Spiking Neural Network,” <em>ISCAS</em>, 2025. （前作混合方案 [4]）</li>
+<li>S. Kim et al., “C-DNN: A 24.5-85.8TOPS/W Complementary-Deep-Neural-Network Processor with Heterogeneous CNN/SNN Core Architecture…,” <em>ISSCC 2023</em>, pp. 334-335.</li>
+<li>S. Kim, S. Park, B. Na, S. Yoon, “Spiking-YOLO: Spiking Neural Network for Energy-efficient Object Detection,” <em>AAAI 2020</em>, vol. 34, no. 7.</li>
+<li>W.-C. Wu et al., “Integer Quadratic Integrate-and-Fire (IQIF): A Neuron Model for Digital Neuromorphic Systems,” <em>AICAS 2021</em>. （IQIF 模型出处 [9]）</li>
+<li>S. Kim et al., “SNPU: An Energy-Efficient Spike Domain Deep-Neural-Network Processor With Two-Step Spike Encoding and Shift-and-Accumulation Unit,” <em>JSSC</em>, vol. 58, no. 10, 2023. （权重复用映射 [10]）</li>
+<li>K. Park et al., “A 701.7 TOPS/W Compute-in-Memory Processor With Time-Domain Computing for Spiking Neural Network,” <em>IEEE TCAS-I</em>, vol. 72, no. 1, 2025. （时域 SNN-CIM 对比 [11]）</li>
+<li>H. Fu et al., “NeuC-CIM: A 1.3pJ/SOP Neuromorphic Charge-Domain Compute-in-Memory Macro for Spiking Neural Network,” <em>IEEE Symp. VLSI Circuits</em>, 2025. （电荷域 SNN-CIM 对比 [12]）</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm² and 3.78Mb/mm² Fully-Digital Compute-in-Memory Macro Supporting INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-573. （数字 CIM 对比 [7]）</li>
+<li>P. Chen et al., “A 22nm Delta-Sigma Computing-In-Memory (ΔΣCIM) SRAM Macro… 21.38TOPS/W for 8b-MAC Edge AI Processing,” <em>ISSCC 2023</em>, pp. 140-141. （模拟 CIM 对比 [8]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.8.1–30.8.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有“实测数字”均来自论文原文；仿真收益数字（FoM1/FoM2、面积/能效相对值）来自论文 Fig. 30.8.5 的描述，教程图表为重新绘制。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

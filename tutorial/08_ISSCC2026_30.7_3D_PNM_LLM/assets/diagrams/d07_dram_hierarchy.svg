@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">DRAM 存储层次：从 subarray 到 2048b 总线，数据怎么“流”到逻辑层</text>
+
+  <!-- 层次结构 -->
+  <g font-size="11.5">
+    <!-- Bank -->
+    <rect x="60" y="90" width="840" height="120" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="1.8" filter="url(#sh)"/>
+    <text x="80" y="114" fill="#0e5a8a" font-weight="700">DRAM 块（512Mb）= 8 个 bank</text>
+    <!-- Segment -->
+    <rect x="90" y="130" width="380" height="64" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="280" y="152" text-anchor="middle" fill="#0e5a8a" font-weight="600">bank = 8 个 segment</text>
+    <!-- Subarray -->
+    <rect x="110" y="162" width="120" height="26" rx="5" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="170" y="179" text-anchor="middle" fill="#1d8a5f">16 个 subarray</text>
+    <rect x="240" y="162" width="100" height="26" rx="5" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="290" y="179" text-anchor="middle" fill="#c25e2e">512-SA 级</text>
+    <text x="350" y="172" fill="#45536b">两个相邻 subarray 共享</text>
+    <text x="350" y="188" fill="#45536b">一个 512-SA 级 → LDQ</text>
+    <!-- MDQ -->
+    <rect x="500" y="130" width="380" height="64" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="690" y="152" text-anchor="middle" fill="#6b3fa0" font-weight="600">MDQ_sel 选择 → 二级 SA → 16b RDL</text>
+    <text x="500" y="178" fill="#45536b">每个 segment 输出 16b；8 段 × 8 bank × 2 die = 2048b/BG</text>
+  </g>
+
+  <!-- 数据通路 -->
+  <g>
+    <rect x="60" y="240" width="840" height="120" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="1.8" filter="url(#sh)"/>
+    <text x="80" y="264" fill="#1d8a5f" font-weight="700">RDL → 3D 路径 → 逻辑层</text>
+    <rect x="90" y="278" width="190" height="40" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="185" y="303" text-anchor="middle" fill="#1d8a5f" font-weight="600">DRAM_N 的 RDL → 直连 HB</text>
+    <rect x="310" y="278" width="240" height="40" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="430" y="303" text-anchor="middle" fill="#c25e2e" font-weight="600">DRAM_F 的 RDL → HB-TSV-HB 链</text>
+    <rect x="580" y="278" width="290" height="40" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="725" y="303" text-anchor="middle" fill="#0e5a8a" font-weight="600">3D DRAM PHY（同步器+电平转换）</text>
+    <path d="M280,298 H310" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M550,298 H580" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="60" y="390" width="840" height="86" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="80" y="418" fill="#0e5a8a" font-size="13" font-weight="700">为什么要这么多级？——DRAM 内部访问的本质</text>
+  <text x="80" y="442" fill="#45536b" font-size="12.5">DRAM 位元按“行”组织：一次激活（ACT）把整行读入行缓冲，再从行缓冲里挑列（列选）。</text>
+  <text x="80" y="464" fill="#45536b" font-size="12.5">512-SA 级让两个相邻 subarray 共享读出放大 → 少一半读出电路；二级 SA + MDQ 挑出目标列 → 尽量一次激活多拿数据（2048b）</text>
+</svg>

@@ -1,0 +1,17 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：Compound AI —— 用“组合”替代“巨型化”</h2>
+<figure>
+  <img src="assets/diagrams/d01_compound_ai.svg" alt="Compound AI" style="max-width:920px">
+  <figcaption>图 1.1　单一巨模型 vs 复合式 AI（多个专精小模型）：后者精度不输、每个都小到能上边缘。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么 Compound AI 是边缘部署的机会？</div>
+<p>模型越大越准，但参数爆炸让边缘芯片装不下、跑不动。Compound AI 反其道而行：<strong>用多个“专精小模型”组合</strong>——每个模型只负责一个子任务（视觉、语言、注意力等），模型间做少量融合。Berkeley 的博客（2024）把这种转变叫“从单一模型到复合 AI 系统”。对芯片设计者来说，这意味着：</p>
+<ul>
+<li>每个小模型都能独立部署（本宏 16 个核正好对应 16 个小模型）；</li>
+<li>核间只需“加法器级”的融合（残差、部分和），通信开销小；</li>
+<li>总精度看组合效果，不依赖单个巨模型。</li>
+</ul>
+</div>
+<p>但复合模型也给 CIM 带来新问题：多个模型 = 多种数据分布、多种稀疏模式、频繁的残差/部分和流动——这正是论文三大挑战的由来（§2）。</p>
+</section>

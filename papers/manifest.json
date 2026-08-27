@@ -1,0 +1,774 @@
+[
+  {
+    "index": 1,
+    "title": "ISSCC 2025 14.3 — A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers",
+    "doi": "10.1109/isscc49661.2025.10904738",
+    "matched_title": "14.3 A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers",
+    "match_score": 0.981,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904738.pdf?arnumber=10904738"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904738"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "01_ISSCC 2025 14.3 — A 28nm 17.83-to-62.84TFLOPS_W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904738.pdf?arnumber=10904738",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904738",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10904738/;jsessionid=5D8ECE311E7D12D0CE830838C041E61B)"
+      }
+    ],
+    "bytes": 1618164,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904738"
+  },
+  {
+    "index": 2,
+    "title": "ISSCC 2025 14.4 — A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and <2^-30 Loss for Compound AI",
+    "doi": "10.1109/isscc49661.2025.10904702",
+    "matched_title": "14.4 A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and &lt;2<sup>-30</sup> Loss for Compound AI",
+    "match_score": 0.922,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904702.pdf?arnumber=10904702"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904702"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "02_ISSCC 2025 14.4 — A 51.6TFLOPs_W Full-Datapath CIM Macro Approaching Sparsity Bound and _2^-30 Loss for Compound AI.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904702.pdf?arnumber=10904702",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10904702/;jsessionid=89E99B09548E5E4F7387678526C1DFAF)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904702",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10904702/;jsessionid=2958023B270D41E6F89BBC07ED9C0F4B)"
+      }
+    ],
+    "bytes": 1358951,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904702"
+  },
+  {
+    "index": 3,
+    "title": "ISSCC 2025 14.5 — A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference",
+    "doi": "10.1109/isscc49661.2025.10904659",
+    "matched_title": "14.5 A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference",
+    "match_score": 0.982,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904659.pdf?arnumber=10904659"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904659"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "03_ISSCC 2025 14.5 — A 28nm 192.3TFLOPS_W Accurate_Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inferen.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904659.pdf?arnumber=10904659",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904659",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10904659/;jsessionid=C749D24D108D5502675FE31476515391)"
+      }
+    ],
+    "bytes": 1566069,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904659"
+  },
+  {
+    "index": 4,
+    "title": "ISSCC 2025 14.7 — NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching",
+    "doi": "10.1109/isscc49661.2025.10904805",
+    "matched_title": "14.7 NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching",
+    "match_score": 0.983,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904805.pdf?arnumber=10904805"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904805"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "04_ISSCC 2025 14.7 — NeuroPilot_ A 28nm, 69.4fJ_node and 0.22ns_node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Directi.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/10904417/10904496/10904805.pdf?arnumber=10904805",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904805",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10904805/;jsessionid=8B04EB5D8AD420B6A57D4C87AAD6D2AD)"
+      }
+    ],
+    "bytes": 1621922,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10904805"
+  },
+  {
+    "index": 5,
+    "title": "ISSCC 2026 18.4 — SpikeRAM Compute-Near/In-Memory",
+    "doi": "10.1109/isscc49663.2026.11409002",
+    "matched_title": "ISSCC 2024 Session 34 Overview: Compute-In-Memory",
+    "match_score": 0.557,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409002"
+    ],
+    "status": "downloaded",
+    "file": "05_ISSCC 2026 18.4 — SpikeRAM Compute-Near_In-Memory.pdf",
+    "errors": [],
+    "bytes": 3309023,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409002"
+  },
+  {
+    "index": 6,
+    "title": "ISSCC 2026 30.1 — A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes",
+    "doi": "10.1109/isscc49663.2026.11409034",
+    "matched_title": "30.1 A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes",
+    "match_score": 0.983,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409034.pdf?arnumber=11409034"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409034"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "06_ISSCC 2026 30.1 — A 28nm 127.54TFLOPS_W MXFP6 and 117.42TFLOPS_W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-S.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409034.pdf?arnumber=11409034",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409034",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11409034/;jsessionid=8B602413D065C4F440FA4C519FF99344)"
+      }
+    ],
+    "bytes": 3010337,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409034"
+  },
+  {
+    "index": 7,
+    "title": "ISSCC 2026 30.4 — A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices",
+    "doi": "10.1109/isscc49663.2026.11409281",
+    "matched_title": "30.4 A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices",
+    "match_score": 0.985,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409281.pdf?arnumber=11409281"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409281"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "07_ISSCC 2026 30.4 — A 28nm 106.85TOPS_W and 77.68TFLOPS_W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-C.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409281.pdf?arnumber=11409281",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409281",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11409281/;jsessionid=6E13DE839332C022D289D588C77C9ACE)"
+      }
+    ],
+    "bytes": 2911088,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409281"
+  },
+  {
+    "index": 8,
+    "title": "ISSCC 2026 30.7 — A 1.2GHz 12.77GB/s/mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications",
+    "doi": "10.1109/isscc49663.2026.11409184",
+    "matched_title": "A 1.2GHz 12.77GB/s/mm\n                    <sup>2</sup>\n                    3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications",
+    "match_score": 0.949,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409184.pdf?arnumber=11409184"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409184"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "08_ISSCC 2026 30.7 — A 1.2GHz 12.77GB_s_mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409184.pdf?arnumber=11409184",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11409184/;jsessionid=C106F95FF2A424F234D104120C4EC43C)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409184",
+        "error": "HTTP Error 502: Bad Gateway"
+      }
+    ],
+    "bytes": 2496069,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409184"
+  },
+  {
+    "index": 9,
+    "title": "ISSCC 2026 30.8 — A 16nm, 1Mb, 1-to-8b-Configurable 444.21TOPS/W Fully-Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing",
+    "doi": "10.1109/isscc49663.2026.11409250",
+    "matched_title": "A 16nm, 1Mb, 1-to-8b-Configurable 444.21TOPS/W Fully Digital SRAM Compute-in-Memory Macro for Hybrid SNN-CNN Edge Computing",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409250.pdf?arnumber=11409250"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409250"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "09_ISSCC 2026 30.8 — A 16nm, 1Mb, 1-to-8b-Configurable 444.21TOPS_W Fully-Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409250.pdf?arnumber=11409250",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409250",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11409250/;jsessionid=B002DFAC252731DDB5109E55597CE533)"
+      }
+    ],
+    "bytes": 2687891,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409250"
+  },
+  {
+    "index": 10,
+    "title": "ISSCC 2026 30.9 — A 147TOPS/W, 250TOPS/mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A CMOS",
+    "doi": "10.1109/isscc49663.2026.11409207",
+    "matched_title": "30.9 A 147TOPS/W, 250TOPS/mm\n                    <sup>2</sup>\n                    , Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A Technology",
+    "match_score": 0.921,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409207.pdf?arnumber=11409207"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409207"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "10_ISSCC 2026 30.9 — A 147TOPS_W, 250TOPS_mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantizati.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/11408863/11408946/11409207.pdf?arnumber=11409207",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409207",
+        "error": "HTTP Error 502: Bad Gateway"
+      }
+    ],
+    "bytes": 2320465,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11409207"
+  },
+  {
+    "index": 11,
+    "title": "JSSC 2025 — A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro",
+    "doi": null,
+    "matched_title": "A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro Featuring Winograd-Domain Convolution and Macro-Level Parallel Dual-Side Sparsity",
+    "match_score": 0.687,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10562243"
+    ],
+    "status": "downloaded",
+    "file": "11_JSSC 2025 — A 28-nm 19.9-to-258.5-TOPS_W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro.pdf",
+    "errors": [],
+    "bytes": 4190707,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10562243"
+  },
+  {
+    "index": 12,
+    "title": "JSSC 2025 — TensorCIM: Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration",
+    "doi": "10.1109/jssc.2024.3406569",
+    "matched_title": "TensorCIM: Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/10857664/10555118.pdf?arnumber=10555118"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10555118"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "12_JSSC 2025 — TensorCIM_ Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/10857664/10555118.pdf?arnumber=10555118",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10555118/;jsessionid=6EDDED84DB6482528DD4A1EEB0E8CF29)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10555118",
+        "error": "HTTP Error 502: Bad Gateway"
+      }
+    ],
+    "bytes": 4109063,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10555118"
+  },
+  {
+    "index": 13,
+    "title": "JSSC 2025 — A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference",
+    "doi": "10.1109/jssc.2024.3433417",
+    "matched_title": "A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/10857664/10622078.pdf?arnumber=10622078"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10622078"
+      ],
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx7/10067248/10067251/10067305.pdf?arnumber=10067305"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10067305"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "13_JSSC 2025 — A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/10857664/10622078.pdf?arnumber=10622078",
+        "error": "HTTP Error 502: Bad Gateway"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10622078",
+        "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>"
+      },
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx7/10067248/10067251/10067305.pdf?arnumber=10067305",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10067305/;jsessionid=B4CE100400D2EE47B1B178ADD952A615)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10067305",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10067305/;jsessionid=2F822A5522AC0BE4ADEBABD0CD92270D)"
+      }
+    ],
+    "bytes": 3325101,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10622078"
+  },
+  {
+    "index": 14,
+    "title": "JSSC 2025 — HUNBN, a 16-nm Digital In-Memory-Compute SoC for Edge CNN Application Achieving 24 TOPs/W (4b) at System Level",
+    "doi": "10.1109/jssc.2025.3557967",
+    "matched_title": "HUNBN, a 16-nm Digital In-Memory-Compute SoC for Edge CNN Application Achieving 24 TOPs/W (4b) at System Level",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11071629/10966027.pdf?arnumber=10966027"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10966027"
+      ],
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/10719398/10719399/10719477.pdf?arnumber=10719477"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10719477"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "14_JSSC 2025 — HUNBN, a 16-nm Digital In-Memory-Compute SoC for Edge CNN Application Achieving 24 TOPs_W (4b) at System Level.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11071629/10966027.pdf?arnumber=10966027",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10966027/;jsessionid=17A56B1F0C51ECCD2723B8B76B46083D)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10966027",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10966027/;jsessionid=C8053E7F6AB0A2DED44F86C790D2578E)"
+      },
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/10719398/10719399/10719477.pdf?arnumber=10719477",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10719477/;jsessionid=7681CF13125F19AF13245577F87B4C32)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10719477",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10719477/;jsessionid=45A8AEBC919FB65F6B6E1B13827B276C)"
+      }
+    ],
+    "bytes": 3555512,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10966027"
+  },
+  {
+    "index": 15,
+    "title": "JSSC 2025 — An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications",
+    "doi": "10.1109/jssc.2025.3532654",
+    "matched_title": "An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11095840/10873364.pdf?arnumber=10873364"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10873364"
+      ],
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx7/10454133/10454267/10454567.pdf?arnumber=10454567"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10454567"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "15_JSSC 2025 — An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11095840/10873364.pdf?arnumber=10873364",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10873364/;jsessionid=50CBE55366B0FAA7DF28C613DC29137F)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10873364",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10873364/;jsessionid=EE8C0B5E33F0A1E84F203834EB18EABA)"
+      },
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx7/10454133/10454267/10454567.pdf?arnumber=10454567",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10454567/;jsessionid=E38E85D5F604B562EE5E7C062E97B02B)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10454567",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10454567/;jsessionid=4C6A6EA699B4C67C5502BECDF1EF15E0)"
+      }
+    ],
+    "bytes": 7253265,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10873364"
+  },
+  {
+    "index": 16,
+    "title": "JSSC 2025 — Digital In-Memory Compute for Machine Learning Inference and Training",
+    "doi": "10.1109/jssc.2025.3534753",
+    "matched_title": "Compute-in-Memory for AI: From Inference to Training",
+    "match_score": 0.617,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10876380"
+    ],
+    "status": "downloaded",
+    "file": "16_JSSC 2025 — Digital In-Memory Compute for Machine Learning Inference and Training.pdf",
+    "errors": [],
+    "bytes": 2662522,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10876380"
+  },
+  {
+    "index": 17,
+    "title": "JSSC 2025 — A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI",
+    "doi": "10.1109/jssc.2024.3522304",
+    "matched_title": "A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11142458/10829928.pdf?arnumber=10829928"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10829928"
+      ],
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx7/10528947/10528954/10528985.pdf?arnumber=10528985"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10528985"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "17_JSSC 2025 — A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11142458/10829928.pdf?arnumber=10829928",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10829928/;jsessionid=0CCC64ED85044D6C9170C4996435A251)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10829928",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10829928/;jsessionid=5A171138F0745CD3651166946B5CCB94)"
+      },
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx7/10528947/10528954/10528985.pdf?arnumber=10528985",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10528985/;jsessionid=A97E260BAB0161EB16AE59AF35FC2415)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10528985",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10528985/;jsessionid=D98C88735BF27E16A75E94F35D3A38DA)"
+      }
+    ],
+    "bytes": 3753602,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10829928"
+  },
+  {
+    "index": 18,
+    "title": "JSSC 2025 — A 65-nm Digital Stochastic Compute-in-Memory CNN Processor With 8-bit Precision",
+    "doi": "10.1109/jssc.2025.3554554",
+    "matched_title": "A 65-nm Digital Stochastic Compute-in-Memory CNN Processor With 8-bit Precision",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielam/4/11183661/10949867-aam.pdf"
+      ],
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11183661/10949867.pdf?arnumber=10949867"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10949867"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "18_JSSC 2025 — A 65-nm Digital Stochastic Compute-in-Memory CNN Processor With 8-bit Precision.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielam/4/11183661/10949867-aam.pdf",
+        "error": "not PDF (37392 bytes, final=https://ieeexplore.ieee.org/Xplore/login.jsp?url=%2Fielam%2F4%2F11183661%2F10949867-aam.pdf&authDecision=-2147483648)"
+      },
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11183661/10949867.pdf?arnumber=10949867",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10949867/;jsessionid=EFF2159C64EC51349462AF35CCE878E5)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10949867",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/10949867/;jsessionid=60281D8F516880FC797344EA29034758)"
+      }
+    ],
+    "bytes": 3048211,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=10949867"
+  },
+  {
+    "index": 19,
+    "title": "JSSC 2026 — A 22-nm 109.3-to-249.5-TFLOPS/W Outlier-Aware Floating-Point SRAM Compute-in-Memory Macro for Large Language Models",
+    "doi": "10.1109/jssc.2025.3571315",
+    "matched_title": "A 22-nm 109.3-to-249.5-TFLOPS/W Outlier-Aware Floating-Point SRAM Compute-in-Memory Macro for Large Language Models",
+    "match_score": 1.0,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11368630/11016687.pdf?arnumber=11016687"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11016687"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "19_JSSC 2026 — A 22-nm 109.3-to-249.5-TFLOPS_W Outlier-Aware Floating-Point SRAM Compute-in-Memory Macro for Large Language Models.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11368630/11016687.pdf?arnumber=11016687",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11016687/;jsessionid=18DD2B348B5DB5AA7083D3699719C485)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11016687",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11016687/;jsessionid=66F71EFA32A0452A64BA77F09C8B3D97)"
+      }
+    ],
+    "bytes": 6499969,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11016687"
+  },
+  {
+    "index": 20,
+    "title": "JSSC 2026 — ETCIM: Error-Tolerant Digital CIM Processor",
+    "doi": "10.1109/jssc.2025.3566283",
+    "matched_title": "Radiation tolerant digital signal processor transformation",
+    "match_score": 0.64,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11007640"
+    ],
+    "status": "downloaded",
+    "file": "20_JSSC 2026 — ETCIM_ Error-Tolerant Digital CIM Processor.pdf",
+    "errors": [],
+    "bytes": 4214882,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11007640"
+  },
+  {
+    "index": 21,
+    "title": "JSSC 2026 — An Area-Efficient Lookup-Table-Based eDRAM Digital CIM",
+    "doi": "10.1109/jssc.2025.3595012",
+    "matched_title": "An Area-Efficient Lookup-Table -Based eDRAM Digital CIM Macro for Neural Network Inference",
+    "match_score": 0.755,
+    "candidate_urls": [
+      [
+        "crossref-pdf",
+        "https://ieeexplore.ieee.org/ielx8/4/11457062/11128902.pdf?arnumber=11128902"
+      ],
+      [
+        "ieee",
+        "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11128902"
+      ]
+    ],
+    "status": "downloaded",
+    "file": "21_JSSC 2026 — An Area-Efficient Lookup-Table-Based eDRAM Digital CIM.pdf",
+    "errors": [
+      {
+        "source": "crossref-pdf",
+        "url": "https://ieeexplore.ieee.org/ielx8/4/11457062/11128902.pdf?arnumber=11128902",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11128902/;jsessionid=A65CD2DE38841797784B9688258C0289)"
+      },
+      {
+        "source": "ieee",
+        "url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11128902",
+        "error": "not PDF (0 bytes, final=https://ieeexplore.ieee.org/document/11128902/;jsessionid=7D2AB8BB917F9B54F889CEB630A934C9)"
+      }
+    ],
+    "bytes": 6358990,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11128902"
+  },
+  {
+    "index": 22,
+    "title": "JSSC 2026 — 17 TFLOPS/mm² SRAM-Based INT8 and FP16 Digital Compute-in-Memory",
+    "doi": "10.1109/jssc.2025.3646072",
+    "matched_title": "A 3nm 125 Tops/W-29 TFLOPS/W, 90 TOPS/mm<sup>2</sup>-17 TFLOPS/mm<sup>2</sup> SRAM-Based INT8 and FP16 Digital-CIM Compiler with Multi-Weight Update/Cycle",
+    "match_score": 0.519,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11316899"
+    ],
+    "status": "downloaded",
+    "file": "22_JSSC 2026 — 17 TFLOPS_mm² SRAM-Based INT8 and FP16 Digital Compute-in-Memory.pdf",
+    "errors": [],
+    "bytes": 2497294,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11316899"
+  },
+  {
+    "index": 23,
+    "title": "JSSC Early Access 2026 — Digital Transpose SRAM CIM",
+    "doi": "10.1109/jssc.2026.3679560",
+    "matched_title": "APX-DREAM-CIM: An Approximate Digital SRAM-Based CIM Accelerator for Edge AI",
+    "match_score": 0.317,
+    "candidate_urls": [
+      "ieee",
+      "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11475654"
+    ],
+    "status": "downloaded",
+    "file": "23_JSSC Early Access 2026 — Digital Transpose SRAM CIM.pdf",
+    "errors": [],
+    "bytes": 3624826,
+    "source": "chrome-session",
+    "final_url": "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=11475654"
+  },
+  {
+    "index": 24,
+    "title": "JSSC Early Access 2026 — PROTEUS General-Purpose Digital CIM",
+    "doi": null,
+    "matched_title": "A General Purpose Digital Traffic Simulator",
+    "match_score": 0.718,
+    "candidate_urls": [],
+    "status": "missing",
+    "file": null,
+    "errors": []
+  }
+]

@@ -1,0 +1,73 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：One-Shot 计算方案——1 周期完成 FP 运算</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 传统 8 周期 vs one-shot 1 周期的流水对比；② 为什么最小选择让位并行可行；③ 位并行利用输入相关性的额外红利。</p>
+</div>
+
+<h3>3.1 周期对比（论文 Fig.4）</h3>
+<p>传统预对齐 FP-CIM 的步骤③用位串行：8 位尾数每周期送 1 位 → 8 周期，步骤①②④的电路闲置 7 个周期。One-Shot 方案：</p>
+<ul>
+<li><strong>最小选择足够简单</strong> → 位并行数据流（8 位同时送）硬件开销可接受；</li>
+<li>输入对齐、尾数计算、INT→FP 转换<strong>各 1 周期</strong> → 流水线化 FP 计算；</li>
+<li>总吞吐提升 <strong>8×</strong>、硬件利用率 100%。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_4_一次计算方案对比.png" alt="一次计算方案对比">
+<figcaption>图 4 · 论文 Fig.4：传统 FP-CIM 计算方案（BF16）与 one-shot 计算方案对比。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_oneshot.svg" alt="oneshot教学图">
+<figcaption>教学图 3 · 8 周期 vs 1 周期，以及位并行的额外红利。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig17_4_一次计算方案对比.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · One-Shot 计算：传统位串行 8 周期 vs 本论文位并行最小选择 1 周期。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · One-Shot 流水（8 周期 vs 1 周期）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">传统位串行：步骤③第 1/8 位 vs One-Shot：3 级流水各 1 周期</span>
+</div>
+<div class="hint">左侧传统：步骤③（尾数 MAC）位串行 8 周期，每周期只算 1 位（红色高亮），①②④电路闲置 87.5%；右侧 One-Shot：3 级流水（输入对齐→最小选择→INT→FP）各 1 周期，8 位并行 → 吞吐 8×、利用率 100%。</div>
+</div>
+
+<figure>
+<img src="assets/charts/c01_one_shot.png" alt="one-shot周期对比图">
+<figcaption>数据图 1 · One-Shot 计算：总周期 11 → 3（依据论文 Fig.4）。</figcaption>
+</figure>
+
+<h3>3.2 位并行利用输入相关性降翻转率</h3>
+<p>位并行计算还能利用 NN 输入的相关性（论文 Fig.7a）：</p>
+<ul>
+<li>相邻输入数据常相似：<strong>MSB 更可能相同</strong>（翻转率低）、LSB 变化多（翻转率高）；</li>
+<li>位并行把 MSB 一起处理 → 平均翻转率低于位串行（位串行从 MSB 到 LSB 逐个算，无法利用相关性）；</li>
+<li>不同数据集/模型验证：输入对齐后的平均翻转率显著降低 → 功耗下降。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_7_翻转率与一次计算评估.png" alt="翻转率与一次计算评估">
+<figcaption>图 5 · 论文 Fig.7：(a) 不同数据集/模型的平均翻转率 (b) one-shot 计算方案的性能评估。</figcaption>
+</figure>
+
+<h3>3.3 性能对比（论文 Fig.7b）</h3>
+<p>与位串行乘法 FP-CIM 基线对比（post-synthesis，28nm/0.9V/180MHz）：</p>
+<ul>
+<li><strong>面积 −2.8× · 能耗 −3.4×</strong>；</li>
+<li>来源：乘法器/加法树被最小选择器替代，位并行减少了周期和闲置。</li>
+</ul>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 最小选择足够简单 → 位并行 1 周期（原 8 周期）→ 吞吐 8×、利用率 100%；② 位并行利用 MSB 相关性降翻转率；③ vs 位串行乘法基线：面积 −2.8×、能耗 −3.4×。但“最小选择”本身仍要抠成本——下一节的 ParMS 就是干这个的。</p>
+</div>
+</section>

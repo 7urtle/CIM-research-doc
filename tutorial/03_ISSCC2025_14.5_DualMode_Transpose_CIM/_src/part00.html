@@ -1,0 +1,57 @@
+<section class="chapter" id="sec0">
+<h1 class="title">训练/推理双模式转置浮点存内计算零基础精讲：一套电路，前向反向通吃
+<span class="en">A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference（ISSCC 2025 · Paper 14.5）</span></h1>
+<div class="meta">论文作者：Yiyang Yuan, Bingxin Zhang 等 · 中科院微电子所 + 国科大 + 北京理工大学 + 澳门大学（通讯作者：李晓然、张锋）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.5
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>大多数 CIM 只做<strong>推理</strong>。但<strong>片上训练/微调</strong>（实时响应、省电、隐私）才是边缘 AI 的下一站。训练比推理多一个“反向传播（BP）”：误差梯度要乘<strong>转置后的权重矩阵</strong>——CIM 里“权重转置”是出了名的硬骨头。这篇中科院微电子所的工作用一个 <strong>28nm 转置数字 6T-SRAM CIM 宏</strong>解决：</p>
+<ol>
+<li><strong>CWM-SRAM（循环权重映射）</strong>：权重按行循环右移存储，<strong>FF 读“行”、BP 读“对角”＝转置</strong>——一套单端口 SRAM、一套 MAC 电路，前向反向完全复用；</li>
+<li><strong>SFME（有符号定点尾数编码）+ VWPA（向量级预对齐）</strong>：把 FP8/BF16/INT4/INT8 四种格式统一进 4b/8b 整数通路（首个四格式统一 FP-CIM），预对齐截断损失大幅降低；</li>
+<li><strong>DMBP-MAC（精确/近似双模式位并行 MAC）</strong>：近似模式丢部分和 + 低位 OR → 速度 +12%、功耗 −31%（NMED 仅 5.3%），按应用自由切换。</li>
+</ol>
+<p>实测：峰值 <strong>192.3 TFLOPS/W</strong>（FP8，近似模式，0.55V）、2.5ns 访问时间。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>训练 = FF + BP：</strong>前向（FF）和推理一样；反向（BP）要算“误差梯度 × 权重转置”。转置意味着读数据的“方向”变了——在普通 SRAM 里，行向访问容易、列向（转置）访问极难。</li>
+<li><strong>“循环映射”是转置的巧解：</strong>把每行权重循环右移存储后，读“对角线”正好等于读“转置后的行”。存储没变、只改读取方向 → 单端口 SRAM 就能同时服务 FF 和 BP。</li>
+<li><strong>浮点可以“伪装”成整数：</strong>预对齐后，浮点尾数变成“有符号定点数”（SFME），4b/8b 的整数乘法器直接复用——FP 的 MAC 硬件几乎免费，这就是“一格式四精度”的电路基础。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“On-device training offers advantages such as real-time response, power saving, and user-privacy protection. The training process primarily involves two phases: feed-forward (FF) and backpropagation (BP). BP requires the multiplication of the error gradient with the transposed weight matrix”</td>
+<td>片上训练的好处（实时/省电/隐私）；训练 = 前向 + 反向，反向需要“梯度 × 转置权重”。</td></tr>
+<tr><td class="num">“Previous work uses separate circuits for FF and BP, thereby diminishing area and energy efficiency due to lack of MAC circuit reuse”</td>
+<td>挑战 1：前作 FF/BP 两套电路，MAC 不复用 → 面积能效双输。</td></tr>
+<tr><td class="num">“Prior work is limited to integer (INT) formats; research indicates that INT representation can significantly reduce accuracy during training”</td>
+<td>挑战 2：前作只支持 INT，而 INT 训练精度低（需要 FP）。</td></tr>
+<tr><td class="num">“A cyclic-weight-mapping 6T-SRAM array (CWM-SRAM) that enables array transpose operations thus reusing MAC circuits for FF and BP”</td>
+<td>方案 1：循环权重映射 SRAM → 转置操作 → FF/BP 复用 MAC。</td></tr>
+<tr><td class="num">“A DCIM architecture with a signed fixed-point mantissa encoding (SFME) and a vector-wise pre-alignment (VWPA) that supports FP8, BF16, INT4, and INT8”</td>
+<td>方案 2：SFME + VWPA → 四种格式统一（首个）。</td></tr>
+<tr><td class="num">“An accurate/approximate dual-mode bit-parallel MAC circuit (DMBP-MAC)… to improve MD, access speed, AF, and EF”</td>
+<td>方案 3：精确/近似双模式位并行 MAC → 提升密度/速度/面积/能效。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>CWM-SRAM 循环权重映射</strong>：单端口 6T-SRAM（1 端口 4b/单元 64×64），FF 读行/BP 读对角 → MAC 电路完全复用（对比前作 [7,8] 省面积省功耗）；</li>
+<li><strong>SFME + VWPA</strong>：首个同时支持 INT4/INT8/FP8/BF16 的 FP-CIM；VWPA 让预对齐截断窗口最小化，精确模式精度优于逐层预对齐 [1]；</li>
+<li><strong>DMBP-MAC</strong>：BAM 近似乘法器 + LOA 加法树，精确/近似双模（+12% 速度 / −31% 功耗 / NMED 5.3%），中心对称布局缓解布线；</li>
+<li><strong>实测成绩</strong>：192.3 TFLOPS/W（FP8）、2.5ns 访问；FP8 是“精度 × 能效”最佳格式（精度略低于 INT8/BF16 但远高于 INT4，能效最优）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“转置读取”和“SFME 统一格式”是最值得细品的两个设计。</p>
+</div>
+</section>

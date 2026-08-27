@@ -1,0 +1,23 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>MantissaEE 格式：把指数“折叠”进尾数，一格式三精度</h2>
+<figure>
+  <img src="assets/diagrams/d03_mantissae.svg" alt="MantissaEE" style="max-width:940px">
+  <figcaption>图 3.1　FP16（1+5+10）→ 16b MantissaEE：尾数按指数低 2 位（E[1:0]）移位后拼接，兼容 FP8/INT8。</figcaption>
+</figure>
+<p>浮点 CIM 做乘法的难点在于“对齐需要知道指数差”。MantissaEE 的思路：<strong>把指数的低位直接“折进”尾数的移位里</strong>，形成一个统一宽度的表示：</p>
+<div class="formula">MantissaEE = 尾数右移 E[1:0] 位后再拼接（16b）<span class="tag">式 3.1</span></div>
+<ul>
+<li><strong>兼容三种精度</strong>：FP16 的尾数移位后得到 16b MantissaEE；FP8（E4M3）和 INT8 可以直接映射到同一宽度 → 一个 ME-CIM 阵列服务三种格式；</li>
+<li><strong>指数分布折叠</strong>：对齐所需的有效指数宽度变小（低位已经进了尾数），后续对齐移位量减小；</li>
+<li><strong>同排存储</strong>：MantissaEE 与指数存在 ME-CIM 同一行，并行做乘/加；阵列里集成 XOR/AND（Booth 乘法 + 全加器所需的逻辑），按精度激活外围移位器/部分全加器完成剩余逻辑。</li>
+</ul>
+<div class="demo">
+<div class="dhead">🔬 演示 A · MantissaEE 转换（拖动指数低位看尾数怎么移位）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">指数低 2 位 E[1:0]：</label><input id="demoA-e" type="range" min="0" max="3" value="2" style="flex:1;accent-color:#6b3fa0">
+  <span class="stat" id="demoA-stat">E[1:0]=2 → 尾数右移 2 位后拼成 MantissaEE</span>
+</div>
+<div class="hint">E[1:0] 越大，尾数移位越多（对齐量被“预折叠”进尾数）。这样乘法后只需对“剩余指数差”做小量对齐。</div>
+</div>
+</section>

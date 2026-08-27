@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">预计算（Precalculation）L1 方案：把减法+绝对值换成「最小选择」</text>
+
+  <!-- 传统方案 -->
+  <rect x="40" y="84" width="430" height="196" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="14" font-weight="700">传统 L1 计算：(a) 每位做减法+绝对值</text>
+  <g font-size="12">
+    <rect x="70" y="128" width="80" height="40" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="110" y="152" text-anchor="middle" fill="#a0402e">减法器</text>
+    <text x="170" y="140" fill="#45536b">x−w</text>
+    <rect x="210" y="128" width="80" height="40" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="250" y="145" text-anchor="middle" fill="#a0402e">取绝对值</text>
+    <text x="250" y="160" text-anchor="middle" fill="#a0402e">|·|</text>
+    <text x="310" y="140" fill="#45536b">→ 累加</text>
+    <text x="60" y="200" fill="#45536b">多位加法器面积大；绝对值运算打断位串行 →</text>
+    <text x="60" y="222" fill="#45536b">难以利用位分布稀疏性</text>
+    <text x="60" y="252" fill="#e66e5a" font-weight="600">两位多比特加法器 + 多路选择 → 面积大</text>
+  </g>
+
+  <!-- 新方案 -->
+  <rect x="490" y="84" width="430" height="196" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="14" font-weight="700">预计算方案：(b) 只做最小选择</text>
+  <g font-size="12">
+    <text x="510" y="136" fill="#45536b">|x−w| = x + w − 2·min(x,w)</text>
+    <rect x="510" y="148" width="150" height="40" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="585" y="172" text-anchor="middle" fill="#1d8a5f">比较器 min(x,w)</text>
+    <text x="680" y="160" fill="#45536b">Σx 由 ActACCU 算（共享）</text>
+    <text x="680" y="180" fill="#45536b">Σw 编译期算好（WSUM）</text>
+    <text x="510" y="216" fill="#45536b">每个阵列只需 15 个额外 SRAM 单元存 WSUM</text>
+    <text x="510" y="238" fill="#45536b">Σmin 结果 ×2 与 Σx、Σw 在 ABS-ASM 汇合</text>
+    <text x="510" y="260" fill="#1d8a5f" font-weight="600">→ 面积比传统方案省 1.5×</text>
+  </g>
+
+  <!-- 权重截断 -->
+  <rect x="40" y="300" width="880" height="216" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="326" fill="#6b3fa0" font-size="14" font-weight="700">权重截断：把负权重归零并并入 WSUM（利用 ReLU 激活非负）</text>
+  <g font-size="12">
+    <text x="60" y="356" fill="#45536b">Σ|xi−wi| = Σ|xi − clamp(wi, 0, wmax)| + Σ|wi|</text>
+    <text x="60" y="378" fill="#45536b">ReLU 激活 xi ≥ 0 → 截断后的 w′ = clamp(w,0,wmax) ≥ 0 → 无符号位、无补码</text>
+    <text x="60" y="400" fill="#45536b">被截掉的 Σ|wi| 常数并入 WSUM → 等效计算不变</text>
+    <text x="60" y="428" fill="#1d8a5f" font-weight="600">好处 ①：权重中「0」增多 → 位级稀疏度大增</text>
+    <text x="80" y="450" fill="#45536b">ResNet-20 / CIFAR-10：预计算后权重稀疏度提升 86×</text>
+    <text x="60" y="478" fill="#1d8a5f" font-weight="600">好处 ②：非负 → 位宽降低（无符号位）、电路简化</text>
+    <text x="80" y="500" fill="#45536b">读 SRAM 时连续 0 → 位线保持预充电压 → 读功耗降低</text>
+  </g>
+</svg>

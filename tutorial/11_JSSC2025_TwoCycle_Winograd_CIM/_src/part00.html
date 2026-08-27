@@ -1,0 +1,56 @@
+<section class="chapter" id="sec0">
+<h1 class="title">两周期数字存内计算处理器零基础精讲：电路、算法、数据，三层各破一关
+<span class="en">A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro Featuring Winograd-Domain Convolution and Macro-Level Parallel Dual-Side Sparsity（IEEE JSSC, vol.60, no.1, 2025）</span></h1>
+<div class="meta">论文作者：Hao Wu, Yong Chen, Yiyang Yuan, Jinshan Yue, Xinghua Wang, Xiaoran Li, Feng Zhang · 中科院微电子所 + 国科大 + 澳大 + 清华 + 北理工
+&nbsp;|&nbsp; 发表：IEEE Journal of Solid-State Circuits（JSSC），vol. 60, no. 1, 2025（早期公开 2024-06）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>CiM 的能效很高，但<strong>吞吐一直被“计算周期数”拖累</strong>：一个 INT8 MAC 结果要多个周期才能拼出来（位串行 8 周期、Booth 4 周期）。这篇 IMECAS 的 JSSC 长文从<strong>三个层级</strong>各出一招，把“吞吐-能效”的矛盾逐一化解：</p>
+<ol>
+<li><strong>电路级：Radix16 + LUT 数字 CIM 宏</strong>——一次处理 5 位激活，INT8 MAC 只需 <strong>2 个周期</strong>；用查表（LUT）实现最贵的 ±3W~±7W 部分积 → 动态功耗 −21.7%、完整 MAC 功耗 −2.44×；</li>
+<li><strong>微架构级：混合 Winograd（F2+F4 按层选）</strong>——用“变换”换掉乘法（F4 时乘法 ÷4）；按层混合避免 F4 的精度崩盘 → ResNet34 <strong>2.59× 加速、精度仅掉 0.6%</strong>；</li>
+<li><strong>数据级：MDPS 宏级并行双端稀疏</strong>——激活侧“连续 4 零跳过”、权重侧“水平压缩不存稀疏”→ 50% 双端稀疏时<strong>能效 3.11×</strong>。</li>
+</ol>
+<p>28nm 原型：<strong>峰值 258.5 TOPS/W</strong>（0.6V/116MHz）、19.9~258.5 TOPS/W 范围、归一化吞吐比 SOTA 高 2.55~7.08×。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>CiM 的吞吐 = 周期数的倒数：</strong>频率和 MAC 数固定后，一个 MAC 结果要几个周期，吞吐就是几分之一。所以“两周期宏”= 直接让吞吐翻 2~4 倍。</li>
+<li><strong>Winograd 是“用便宜运算换贵运算”：</strong>卷积的“乘法”很贵，Winograd 先用加/减/移位把数据变换到另一个域，在那里乘法变少（F4 减少 4 倍），算完再变换回来。关键是变换本身几乎不耗电。</li>
+<li><strong>稀疏 = 跳过而不是算：</strong>激活/权重里很多 0，跳过它们（而不是让加法器白算）就是最直接的省电。难点在“刚性阵列”上怎么灵活跳过——MDPS 的答案是“宏级调度 + 压缩重排”。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“current CiM schemes generally suffer from limited throughput… the key reason is that the CiM macro calculation must iterate through multiple cycles”</td>
+<td>CiM 吞吐受限的核心原因：宏计算必须迭代多个周期才出完整 MAC 结果。</td></tr>
+<tr><td class="num">“we present a Radix16-based digital-CiM macro with look-up table (LUT) optimization to reduce dynamic power consumption”</td>
+<td>贡献 1：Radix16 宏 + LUT 优化（两周期 + 低动态功耗）。</td></tr>
+<tr><td class="num">“we devise a hybrid Winograd microarchitecture and dataflow that supports (2, 3) and (4, 3) Winograd convolution”</td>
+<td>贡献 2：混合 Winograd（F2+F4）微架构与数据流，精度与减载的折中。</td></tr>
+<tr><td class="num">“we propose a macrolevel parallel dual-side sparse CiM core… to reduce the input cycle of activation data and improve the mapping efficiency of the weight data”</td>
+<td>贡献 3：宏级并行双端稀疏核——压缩激活输入周期、提升权重映射效率。</td></tr>
+<tr><td class="num">“achieves a peak system energy efficiency of 19.9–258.5-TOPS/W… 2.55–7.08× higher than other state-of-the-art CiM processors”</td>
+<td>实测：峰值 258.5 TOPS/W（0.6-1.1V、78-287MHz），归一化吞吐比 SOTA 高 2.55~7.08×。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>Radix16 + LUT 两周期宏</strong>：5 bit/周期、INT8 两周期；LUT 覆盖 53.3% 的“移位+加法”部分积 → 动态功耗 −21.7%、完整 MAC 功耗 −2.44×、宏级能效比 +1.84~2.44×；</li>
+<li><strong>混合 Winograd</strong>：F2/F4 按层选择 + 核分解（&gt;3×3）+ 激活分段（stride=2）+ PCO 映射 → ResNet34 2.59× 加速、精度 −0.6%；</li>
+<li><strong>MDPS 双端稀疏</strong>：ISPU（bit-mask + tile 压缩）+ PPRS（权重水平压缩重排）+ OMB（结果合并）→ 50% 双端稀疏 3.11× 能效（面积/功耗仅 +4.5%/+7.8%）；</li>
+<li><strong>三级技术解耦</strong>：电路/微架构/数据三级优化彼此独立，可单独复用、可与其他算法级稀疏正交叠加；</li>
+<li><strong>实测</strong>：258.5 TOPS/W 峰值、2.55~7.08× 归一化吞吐、Winograd+稀疏叠加 8.05×（ResNet34）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级三层优化”的范文——读的时候注意每个创新点分别对应哪一层、解决什么矛盾。</p>
+</div>
+</section>

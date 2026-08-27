@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="440" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">数字域 FP-CIM 的三大挑战（论文 Fig. 14.3.1 的问题定义）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="220" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：精度与复用性</text>
+    <text x="60" y="148" fill="#45536b" font-size="12">对齐操作依赖“每个数的指数”，</text>
+    <text x="60" y="170" fill="#45536b" font-size="12">指数因人而异 → 输入没法整齐地</text>
+    <text x="60" y="192" fill="#45536b" font-size="12">广播给所有列复用；</text>
+    <text x="60" y="222" fill="#45536b" font-size="12">要么牺牲精度（截断对齐），</text>
+    <text x="60" y="244" fill="#45536b" font-size="12">要么牺牲复用率（每列单独处理）</text>
+    <text x="60" y="282" fill="#c25e2e" font-size="12.5" font-weight="600">→ 对齐与 CIM 的“广播复用”结构冲突</text>
+
+    <rect x="340" y="90" width="280" height="220" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：并行对齐开销</text>
+    <text x="360" y="148" fill="#45536b" font-size="12">传统方案在外围用“减法器 + 桶形</text>
+    <text x="360" y="170" fill="#45536b" font-size="12">移位器”并行对齐 → 面积大、</text>
+    <text x="360" y="192" fill="#45536b" font-size="12">功耗高，或吞吐受损；</text>
+    <text x="360" y="222" fill="#45536b" font-size="12">外围对齐电路成为 FP-CIM 的</text>
+    <text x="360" y="244" fill="#45536b" font-size="12">面积/性能瓶颈</text>
+    <text x="360" y="282" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“嵌入式 + 面积高效”的对齐方案</text>
+
+    <rect x="640" y="90" width="280" height="220" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：MAC 动态功耗</text>
+    <text x="660" y="148" fill="#45536b" font-size="12">2 的补码（2C）格式下，负数权重</text>
+    <text x="660" y="170" fill="#45536b" font-size="12">= 全位取反+1 → 位级稀疏性差，</text>
+    <text x="660" y="192" fill="#45536b" font-size="12">加法树里翻转活动率高；</text>
+    <text x="660" y="222" fill="#45536b" font-size="12">另外符号位计算（求负、符号扩展）</text>
+    <text x="660" y="244" fill="#45536b" font-size="12">本身也是额外开销</text>
+    <text x="660" y="282" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“非 2 补码”（N2CMAC）降低活动率</text>
+  </g>
+
+  <rect x="40" y="332" width="880" height="86" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="360" fill="#1d8a5f" font-size="13.5" font-weight="700">本论文的三招对应：① 广播输入 + 嵌入式轻量转换器（ESICU）② 自适应 2b 串行对齐 ③ 格式混合 N2CMAC</text>
+  <text x="60" y="386" fill="#45536b" font-size="12.5">实测：BF16 62.84 TFLOPS/W（28nm）——把“浮点精度”做成了“整数级能效”</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">“全可综合”（Fully Synthesizable）到底是什么意思？</text>
+
+  <!-- 左侧：传统定制设计 -->
+  <text x="240" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">传统全定制 / 半定制（Analog 或定制 SRAM 宏）</text>
+  <g>
+    <rect x="50" y="110" width="190" height="54" rx="9" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+    <text x="145" y="133" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">电路原理图设计</text>
+    <text x="145" y="152" text-anchor="middle" fill="#6b7a93" font-size="11">晶体管级</text>
+    <path d="M240,137 H270" stroke="#c25e2e" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="275" y="110" width="190" height="54" rx="9" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+    <text x="370" y="133" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">定制版图（Layout）</text>
+    <text x="370" y="152" text-anchor="middle" fill="#6b7a93" font-size="11">手工画晶体管/单元</text>
+    <path d="M465,137 H495" stroke="#c25e2e" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="500" y="110" width="190" height="54" rx="9" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+    <text x="595" y="133" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">DRC/LVS 验证</text>
+    <text x="595" y="152" text-anchor="middle" fill="#6b7a93" font-size="11">几十轮手工迭代</text>
+    <path d="M690,137 H720" stroke="#c25e2e" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="725" y="110" width="190" height="54" rx="9" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+    <text x="820" y="133" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">流片验证</text>
+    <text x="820" y="152" text-anchor="middle" fill="#6b7a93" font-size="11">发现问题→回到第一步</text>
+  </g>
+  <rect x="50" y="182" width="865" height="74" rx="10" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="70" y="206" fill="#c25e2e" font-size="13" font-weight="600">痛点：</text>
+  <text x="70" y="228" fill="#45536b" font-size="12.5">① 工作量巨大、周期以“人年”计；② 每换一个工艺节点，全部版图要重画、重新验证；</text>
+  <text x="70" y="248" fill="#45536b" font-size="12.5">③ 模拟/定制电路对 PVT 敏感，设计经验难以传承和复用</text>
+
+  <!-- 右侧：可综合 -->
+  <text x="720" y="282" text-anchor="middle" fill="#0e5a8a" font-size="15" font-weight="700">可综合设计（Synthesizable）＝ 用代码描述硬件</text>
+  <g>
+    <rect x="50" y="298" width="190" height="56" rx="9" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="145" y="322" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">RTL 描述（Verilog）</text>
+    <text x="145" y="342" text-anchor="middle" fill="#6b7a93" font-size="11">只写“要什么逻辑”</text>
+    <path d="M240,326 H270" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="275" y="298" width="190" height="56" rx="9" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="370" y="322" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">逻辑综合</text>
+    <text x="370" y="342" text-anchor="middle" fill="#6b7a93" font-size="11">映射到标准单元库</text>
+    <path d="M465,326 H495" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="500" y="298" width="190" height="56" rx="9" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="595" y="322" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">布局布线（APR）</text>
+    <text x="595" y="342" text-anchor="middle" fill="#6b7a93" font-size="11">工具自动摆放连线</text>
+    <path d="M690,326 H720" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+    <rect x="725" y="298" width="190" height="56" rx="9" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="820" y="322" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">签核 → GDSII</text>
+    <text x="820" y="342" text-anchor="middle" fill="#6b7a93" font-size="11">时序/功耗/DRC 全自动</text>
+  </g>
+  <rect x="50" y="372" width="865" height="74" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="70" y="396" fill="#1d8a5f" font-size="13" font-weight="600">收益：</text>
+  <text x="70" y="418" fill="#45536b" font-size="12.5">① 设计周期从“年”缩短到“周~月”；② 换工艺 = 换标准单元库 + 重新综合，几天完成；</text>
+  <text x="70" y="438" fill="#45536b" font-size="12.5">③ 本论文连“存储单元”都用标准锁存单元实现 → 整个加速器 100% 可综合</text>
+</svg>

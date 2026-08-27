@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">可中断 12T 多比特锁存单元（Interruptible 12T Multibit Latch）</text>
+
+  <!-- 锁存电路 -->
+  <text x="60" y="92" fill="#123a57" font-size="14" font-weight="700">① 锁存器（Latch）＝ 两个交叉耦合反相器（共 12 个晶体管）</text>
+  <rect x="60" y="104" width="400" height="230" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <!-- 反相器 1 -->
+  <rect x="120" y="150" width="70" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.6"/>
+  <text x="155" y="178" text-anchor="middle" fill="#0e5a8a" font-size="12">INV1</text>
+  <!-- 反相器 2 -->
+  <rect x="280" y="150" width="70" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.6"/>
+  <text x="315" y="178" text-anchor="middle" fill="#0e5a8a" font-size="12">INV2</text>
+  <!-- 交叉耦合 -->
+  <path d="M190,172 H240" stroke="#0e5a8a" stroke-width="1.8"/>
+  <path d="M240,172 V238 H190" stroke="#0e5a8a" stroke-width="1.8"/>
+  <path d="M280,172 H350" stroke="#0e5a8a" stroke-width="1.8"/>
+  <path d="M350,172 V238 H280" stroke="#0e5a8a" stroke-width="1.8"/>
+  <path d="M240,238 V250 H315" stroke="#0e5a8a" stroke-width="1.8"/>
+  <!-- 输入 -->
+  <text x="120" y="110" fill="#45536b" font-size="12">数据 D</text>
+  <path d="M155,116 V150" stroke="#c25e2e" stroke-width="1.8"/>
+  <rect x="128" y="112" width="54" height="18" rx="4" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="155" y="125" text-anchor="middle" fill="#c25e2e" font-size="10">写使能 WE</text>
+  <!-- 输出 -->
+  <path d="M350,172 H420" stroke="#1d8a5f" stroke-width="1.8"/>
+  <text x="425" y="178" fill="#1d8a5f" font-size="12">Q（1b）</text>
+  <text x="80" y="282" fill="#45536b" font-size="11.5">“可中断”（Interruptible）：WE 断开时锁存保持，写操作可以随时暂停/恢复</text>
+  <text x="80" y="302" fill="#45536b" font-size="11.5">→ 低压下写入依然稳健（本论文最低 400 mV 还能正常写）</text>
+
+  <!-- 多比特 -->
+  <text x="500" y="92" fill="#123a57" font-size="14" font-weight="700">② 多比特（Multibit）：一个单元存多个位</text>
+  <rect x="500" y="104" width="420" height="230" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <g>
+    <rect x="530" y="130" width="120" height="60" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="590" y="154" text-anchor="middle" fill="#1a2332" font-size="12">高密度多比特</text>
+    <text x="590" y="172" text-anchor="middle" fill="#6b7a93" font-size="11">锁存单元</text>
+    <text x="590" y="186" text-anchor="middle" fill="#6b7a93" font-size="10">（4b / 组）</text>
+    <rect x="680" y="130" width="120" height="60" rx="6" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="740" y="154" text-anchor="middle" fill="#1a2332" font-size="12">普通 1b</text>
+    <text x="740" y="172" text-anchor="middle" fill="#6b7a93" font-size="11">锁存单元</text>
+    <text x="740" y="186" text-anchor="middle" fill="#6b7a93" font-size="10">（1b / 组）</text>
+    <path d="M650,160 H680" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  </g>
+  <text x="520" y="220" fill="#45536b" font-size="12">同样存 12b 权重编码：</text>
+  <text x="520" y="240" fill="#45536b" font-size="12">4b 高密度单元只需 3 个单元；1b 单元需要 12 个</text>
+  <text x="520" y="260" fill="#45536b" font-size="12">→ 高密度多比特单元省连线、省面积</text>
+  <rect x="520" y="276" width="380" height="42" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="710" y="296" text-anchor="middle" fill="#1d8a5f" font-size="12" font-weight="600">论文实现 5 种锁存类型，高密度多比特占比 95.5%</text>
+  <text x="710" y="312" text-anchor="middle" fill="#45536b" font-size="11.5">→ 权重存储面积 −20%</text>
+
+  <rect x="60" y="360" width="860" height="90" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="490" y="386" text-anchor="middle" fill="#0e5a8a" font-size="13" font-weight="700">为什么用锁存单元而不是 SRAM 位单元？</text>
+  <text x="490" y="410" text-anchor="middle" fill="#45536b" font-size="12.5">① 锁存器是标准单元库成员 → “全可综合”；SRAM 宏是定制 IP，无法综合</text>
+  <text x="490" y="432" text-anchor="middle" fill="#45536b" font-size="12.5">② 锁存器低压写入稳健（可中断写）、读取简单；代价是单元面积比 6T SRAM 大</text>
+</svg>

@@ -1,0 +1,38 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：DDR4 兼容接口与 RISC-V 计算引擎</h2>
+
+<h3 id="sec5-1">5.1 一个芯片，两种身份：PNM 开/关</h3>
+<p>很多 PNM 研究最“劝退”产业的一点是：要专用驱动、专用接口、专用软件栈。本论文用 <strong>DDR4 协议兼容</strong>化解集成难题：</p>
+<figure>
+  <img src="assets/diagrams/d08_ddr4_cmd.svg" alt="DDR4 兼容" style="max-width:900px">
+  <figcaption>图 5.1　芯片双身份：PNM 开启 = 近存计算模式（主机用扩展命令触发 ACC）；PNM 关闭 = 普通 DDR4 DRAM。</figcaption>
+</figure>
+<ul>
+<li><strong>两条新增命令</strong>（仍走 DDR4 命令格式）：<strong>T-ACC</strong>（触发指定加速器开始执行）、<strong>Act-Reg</strong>（设置配置寄存器）；</li>
+<li>主机照常访问 DRAM、通过 <strong>DDR 兼容接口</strong>管理 ACC——不需要专用硬件驱动；</li>
+<li>PNM 关闭时，芯片就是<strong>普通主机 DRAM</strong>（用户甚至不用感知它是个计算芯片）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 设计哲学：给“内存”加计算，而不是给“计算芯片”加内存</div>
+<p>市面上 GPU/NPU 是“算力芯片 + 外接内存”；本论文反着来：<strong>把计算引擎塞进内存芯片</strong>，对外保持内存的“职业素养”。这样主机软件可以渐进式迁移：先用它当内存，再逐步把 GEMM 卸载给 ACC——部署路径平滑。</p>
+</div>
+
+<h3 id="sec5-2">5.2 ACC 计算引擎：RISC-V + 自定义 FPU + DMA</h3>
+<p>每个 BG 的计算模块里有 <strong>2 个 ACC</strong>，每个 ACC 是：</p>
+<figure>
+  <img src="assets/diagrams/d05_acc.svg" alt="ACC 与内存控制器" style="max-width:940px">
+  <figcaption>图 5.2　计算模块内部：ACC（RISC-V 内核 + L1 缓存 + 自定义 FPU + DMA + SRAM 系统内存）+ 存储控制器（命令调度器、开放页、2048b 缓冲、刷新控制）+ 3D DRAM PHY。</figcaption>
+</figure>
+<ul>
+<li><strong>RISC-V 内核</strong>：支持通用指令（可编程！不是固定功能），sqrt 等由内核软实现；</li>
+<li><strong>自定义 FPU</strong>：硬件加速 LLM 的关键浮点指令 <strong>fadd / fsub / fmul / fdiv</strong>——GEMM 的 MAC 和 softmax/layernorm 都用得上；</li>
+<li><strong>L1 指令/数据缓存</strong>：降低指令与局部数据访问延迟；</li>
+<li><strong>SRAM 系统内存</strong>：挂在内存总线上，作为 ACC 的本地暂存；</li>
+<li><strong>DMA 模块</strong>：LLM 有大量<strong>连续 load/store</strong>，DMA 负责在“系统内存 ↔ 3D DRAM”之间批量搬运，让内核专注计算。</li>
+</ul>
+<p>存储控制器这边：命令调度器 FSM 采用<strong>开放页策略（open-page）</strong>（行激活后保持打开，后续访问同一行免激活）并加了 <strong>2048b 缓冲</strong>——命中（buf_hit）就直接从缓冲返回，整次 DRAM 访问都省了。刷新调度由可编程配置模块管理。</p>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么用可编程 RISC-V 而不是固定 GEMM 引擎？（提示：灵活性——能跑 layernorm、softmax、其他算子；代价是效率，所以配了专用 FPU 补性能。）② 2048b 缓冲什么时候命中率高？（提示：连续顺序访问——正好是 LLM 权重读取的模式！）</p>
+</div>
+</section>

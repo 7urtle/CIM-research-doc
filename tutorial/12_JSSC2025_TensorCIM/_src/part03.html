@@ -1,0 +1,42 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：REGM —— 冗余消除采集管理</h2>
+<figure>
+  <img src="assets/diagrams/d03_regm.svg" alt="REGM" style="max-width:940px">
+  <figcaption>图 3.1　SpG 工作流：访问张量重排（局部性）→ REGM 动态维护高频特征/归约结果在 CIM 中。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_7_SpG重排序示例.png" alt="论文图7">
+  <figcaption>图 3.2　论文原图 Fig. 7：访问张量与 SpG 工作负载重分区（最大化特征局部性）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p><strong>第一步：访问张量重排。</strong>SpG 的“访问张量”每行记录一次采集-归约需要的特征位置（GCN = 邻接矩阵、DLRM = 用户交互矩阵）。由于图有社区结构、用户偏好有聚类，<strong>把相似行重排到一起</strong>（locality-enhancing reordering），再打包成四组分给四个芯粒 → 每个芯粒主要访问<strong>本地 DRAM</strong>，跨芯粒访问大幅减少。</p>
+<p><strong>第二步：REGM 冗余消除。</strong>即使重排后，特征仍会被反复取、归约结果仍会被反复算。REGM 的关键部件：</p>
+<ul>
+<li><strong>高频特征过滤器</strong>：统计每个特征未来的访问次数，超过阈值 → 留在 CIM；低频 → 驱逐候选 FIFO（地址仅 8b，开销可忽略）；</li>
+<li><strong>归约冗余推测器</strong>：统计归约结果（如 f0+f3）的未来复用次数 → 高复用结果存入 CIM；</li>
+<li><strong>归约复用生成器</strong>：后续采集直接复用已存结果 → 免重复归约。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d08_gathering.svg" alt="冗余消除采集" style="max-width:920px">
+  <figcaption>图 3.3　Chiplet0 案例：高频特征 f0/f1/f3 与高复用归约 f0+f3 维护在 CIM 中（Fig. 8）。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">📊 REGM 收益（GCN Pubmed 四芯粒）</div>
+<p>DRAM 访问 <strong>−1.74×</strong>、跨芯粒访问 <strong>−3.55×</strong>、归约操作 <strong>−1.35×</strong>。全芯片面积/功耗占比仅 3.6% / 5.7%。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_7_SpG重排序示例.png">
+  <source src="assets/videos/v01_regm.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · REGM 采集动画：高频特征住进 CIM、归约结果复用、低频特征被驱逐。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · REGM 冗余消除（高频特征入 CIM + 归约复用）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">高频特征（≥3 次）驻留 CIM；低频走 DRAM；归约结果复用</span>
+</div>
+<div class="hint">绿色=高频特征（住在 CIM，直接读）；红色=低频特征（每次都要从 DRAM 取）；f0+f3 的归约结果被缓存复用。→ DRAM 访问 −1.74×、跨芯粒 −3.55×。</div>
+</div>
+</section>

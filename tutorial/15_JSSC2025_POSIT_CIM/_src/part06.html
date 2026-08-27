@@ -1,0 +1,89 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：CASU——用 OR 替代加法，还不够就“调度出”无重叠</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么无重叠位的加法等于 OR；② 提前检测怎么扩大 OR 的适用范围（重叠位 ≤4 且不全为 1）；③ 循环交替调度怎么“制造”无重叠（(n−1) 个 OR + 1 个加法）。</p>
+</div>
+
+<h3>6.1 OR 替代：无重叠位时 X+0 = X|0（论文 Fig.11）</h3>
+<p>尾数乘积按 regime 对齐后相加。当两个对齐结果<strong>没有重叠位</strong>时，每个全加器都在做 X+0=X——结果是冗余的，逐位 OR 就能得到相同输出：</p>
+<ul>
+<li>16-bit 加法器 174.38 nW vs 16-bit OR 29.75 nW（TSMC 28nm, 400MHz）→ <strong>OR 省 82.9%</strong>；</li>
+<li>POSIT8 尾数短 → <strong>28.4%</strong> 的对齐结果无重叠位（FP8 因尾数长几乎总是重叠）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_11_OR累加.png" alt="OR累加">
+<figcaption>图 11 · 论文 Fig.11：无重叠位尾数的 OR 累加，以及提前检测的替代条件。</figcaption>
+</figure>
+
+<h3>6.2 提前检测：有重叠位也能用 OR</h3>
+<p>两个操作数 A、B 有重叠位时，如果<strong>重叠位不同时为 1</strong>，A[1]+B[3] 仍然等于 A[1]|B[3]：</p>
+<ul>
+<li>单个重叠位满足“替代条件”的概率 = 3/4（只有 11 不行）；</li>
+<li>n 个重叠位全部满足 = (3/4)ⁿ → n=4 时只有 23.7%，且检测开销随位数线性增长 → <strong>检测 4 位最优</strong>；</li>
+<li>结果：对<strong>有重叠位</strong>的操作数也减少了 36.1% 的加法器。</li>
+</ul>
+
+<h3>6.3 循环交替调度：把重叠“错开”（论文 Fig.12）</h3>
+<p>如果重叠位全为 1（无法用 OR），CASU 用<strong>循环交替调度</strong>：</p>
+<ul>
+<li>M0=W0×A0 与 M1=W1×A1 有 1 个重叠位 → 同步位串行时每一位都重叠 → 都要加法器；</li>
+<li>把 A0 的位串行计算<strong>循环移位 1 位</strong>（A0[0:n] → A0[1:n], A0[0]）→ CIM 算 A0[i+1] 与 A1[i] → 当 i&lt;n 时 W0×A0[i+1] 与 W1×A1[i] <strong>无重叠</strong>；</li>
+<li>重叠只在 W0×A0[0] + W1×A1[n]（1 个加法器）；</li>
+<li>n 次加法 → <strong>(n−1) 个 OR + 1 个加法器</strong>。</li>
+</ul>
+<p>效果：无重叠率 +36.4%、计算功率 −31.3%。</p>
+
+<figure>
+<img src="assets/figs/fig15_12_循环交替调度OR累加.png" alt="循环交替调度OR累加">
+<figcaption>图 12 · 论文 Fig.12：循环交替调度的 OR 累加——循环移位 A0 制造无重叠。</figcaption>
+</figure>
+
+<h3>6.4 CASU 架构与控制流（论文 Fig.13）</h3>
+<p>CASU = 两个对齐单元 + 工作模式控制器 + 循环计算调度器：</p>
+<ol>
+<li>对齐单元接收 BRPU 输出的 R0D、R1D，计算 |R0D−R1D|；</li>
+<li>假设 R0D &gt; R1D → 把 W1×A1 右移 |R0D−R1D| 位对齐到 W0×A0；</li>
+<li>重叠位数 = n − |R0D−R1D|（n 为乘积位宽）；</li>
+<li>控制器决策：</li>
+</ol>
+<ul>
+<li>重叠 ≤ 0 → <strong>纯 OR 模式</strong>；</li>
+<li>0 &lt; 重叠 &lt; 4 → 检查替代条件（重叠位是否全非 1）：满足 → OR 模式；不满足 → 循环调度加法模式；</li>
+<li>重叠 &gt; 4 → 循环调度加法模式（(n−1) OR + 1 加法）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_13_CASU架构与控制流.png" alt="CASU架构与控制流">
+<figcaption>图 13 · 论文 Fig.13：CASU 架构与计算控制流程。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_casu.svg" alt="CASU教学图">
+<figcaption>教学图 6 · OR 替代、提前检测与循环交替调度的完整原理。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig15_11_OR累加.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · CASU OR 累加：无重叠位加法 = OR；重叠位不全为 1 也可 OR；否则循环交替调度制造无重叠。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · CASU：OR 替代加法</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">纯 OR（无重叠）</span>
+</div>
+<div class="hint">模式 1（无重叠）：A 与 B 占位错开 → A+B=A|B，加法器做 X+0 纯属浪费 → 用 OR（省 82.9%）；模式 2（重叠含 11）：必须加法器 → 提前检测（非全 1 仍可 OR）或循环交替调度；模式 3（循环调度）：错开位串行顺序 → (n−1) 个 OR + 1 个加法。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 无重叠 → OR（省 82.9%）；② 提前检测 4 位（重叠位非全 1 也可 OR，省 36.1% 加法器）；③ 循环交替调度（错开位串行顺序，制造无重叠，(n−1) OR + 1 加法）。加法树功耗占比 23.4%→12.3%，面积开销仅 2.3%。</p>
+</div>
+</section>

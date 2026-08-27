@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">HUNBN 实测结果 · 与 SOTA 对比 · 总结</text>
+
+  <!-- results -->
+  <rect x="40" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">基础实测（TSMC 16nm FinFET）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">核心面积 1.9×1.9 mm² · 200 MHz sign-off · 0.88V 最高 165 MHz</text>
+    <text x="60" y="162" fill="#45536b">宏级能效（随机数据）：<tspan fill="#1d8a5f" font-weight="700">126.3 TOPS/W</tspan></text>
+    <text x="60" y="186" fill="#45536b">系统级能效（含片内所有能耗源，不含 IO）：<tspan fill="#1d8a5f" font-weight="700">24.28 TOPS/W</tspan></text>
+    <text x="60" y="210" fill="#45536b">存储密度 508 kB/mm² · 计算密度 1.27K MAC/mm²</text>
+    <text x="60" y="234" fill="#45536b">FoM=(MB/mm²)×(#MAC/mm²)=<tspan fill="#1d8a5f" font-weight="700">0.64K</tspan>（比最佳竞品高 20%）</text>
+    <text x="60" y="262" fill="#45536b">7 片样片能效-频率测量（Fig.17）；Shmoo 4 片（Fig.16）</text>
+    <text x="60" y="290" fill="#45536b">最大 29 TOPS/W @ 0.42 TOPS（特征图 ≥24 饱和）</text>
+  </g>
+
+  <!-- workloads -->
+  <rect x="490" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#6b3fa0" font-size="14" font-weight="700">端到端工作负载实测</text>
+  <g font-size="11.5">
+    <line x1="510" y1="126" x2="900" y2="126" stroke="#c9d8ea"/>
+    <line x1="510" y1="126" x2="510" y2="280" stroke="#c9d8ea"/>
+    <line x1="640" y1="126" x2="640" y2="280" stroke="#c9d8ea"/>
+    <line x1="760" y1="126" x2="760" y2="280" stroke="#c9d8ea"/>
+    <text x="575" y="142" text-anchor="middle" fill="#6b3fa0">模型</text>
+    <text x="700" y="142" text-anchor="middle" fill="#6b3fa0">能效(TOPS/W)</text>
+    <text x="830" y="142" text-anchor="middle" fill="#6b3fa0">吞吐/能耗</text>
+    <text x="575" y="166" text-anchor="middle" fill="#45536b">U-Net</text>
+    <text x="700" y="166" text-anchor="middle" fill="#1d8a5f" font-weight="700">19</text>
+    <text x="830" y="166" text-anchor="middle" fill="#45536b">155 fps · 0.11 mJ/帧</text>
+    <text x="575" y="190" text-anchor="middle" fill="#45536b">ResNet8</text>
+    <text x="700" y="190" text-anchor="middle" fill="#1d8a5f" font-weight="700">13.6</text>
+    <text x="830" y="190" text-anchor="middle" fill="#45536b">8.44K fps · 1.5 µJ/帧</text>
+    <text x="575" y="214" text-anchor="middle" fill="#45536b">MobileNetV1</text>
+    <text x="700" y="214" text-anchor="middle" fill="#d08a10" font-weight="700">1.9</text>
+    <text x="830" y="214" text-anchor="middle" fill="#45536b">2.88K fps · 3.7 µJ/帧</text>
+    <text x="575" y="238" text-anchor="middle" fill="#45536b">DS-CNN</text>
+    <text x="700" y="238" text-anchor="middle" fill="#d08a10" font-weight="700">2.08</text>
+    <text x="830" y="238" text-anchor="middle" fill="#45536b">2.44K fps · 5.09 µJ/帧</text>
+    <text x="575" y="262" text-anchor="middle" fill="#45536b">深自编码器</text>
+    <text x="700" y="262" text-anchor="middle" fill="#d08a10" font-weight="700">0.9</text>
+    <text x="830" y="262" text-anchor="middle" fill="#45536b">30.8K fps · 0.17 µJ/帧</text>
+    <text x="510" y="290" fill="#45536b" font-size="10.5">点卷积/深度卷积占主导 → 阵列欠利用 → 能效低；U-Net 达峰值 80%，ResNet8 57%</text>
+  </g>
+
+  <!-- summary -->
+  <rect x="40" y="334" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">创新点与设计哲学总结</text>
+  <g font-size="12.5">
+    <text x="60" y="390" fill="#1d8a5f" font-weight="600">① 高密度存储：foundry pushed-rule 6T → 508 kB/mm² → 整个边缘 CNN 装进片上</text>
+    <text x="80" y="412" fill="#45536b">系统级能效的前提：权重不搬移（省掉 weight loading 能耗）</text>
+    <text x="60" y="440" fill="#1d8a5f" font-weight="600">② 宏级能效：split MAC（定制+综合分工，面积 −20%）+ 同步操作（免延迟线、可降电压）</text>
+    <text x="60" y="468" fill="#1d8a5f" font-weight="600">③ 数据流灵活：4 种映射情形 + 转置卷积支持 + 四级数据结构 + 滑动窗口/数据前瞻</text>
+    <text x="60" y="496" fill="#45536b">U-Net 80% / ResNet8 57% 峰值 → “灵活数据流支持”的量化证据</text>
+    <text x="60" y="520" fill="#45536b">未来方向：① 支撑点卷积/深度卷积的专用模式（MobileNet 类能效低）；② 更低位宽/混合精度；③ 多核扩展与 RISC-V 异构调度</text>
+  </g>
+</svg>

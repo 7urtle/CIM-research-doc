@@ -1,0 +1,34 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 7.1　峰值代数能效：INT8 85.0 TOPS/W、INT16 14.2 TOPS/W、FP32 8.3 TFLOPS/W（0.65V/175MHz、稀疏 GCN Pubmed）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_breakdown.png" alt="技术分解" style="max-width:860px">
+  <figcaption>图 7.2　技术分解：SpG 优化省 3.55×、SpA 优化省 5.95×、GCN 总省 4.58×、DLRM 总省 3.52×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_utilization.png" alt="利用率" style="max-width:860px">
+  <figcaption>图 7.3　宏内利用率：17.6% → 33.2%（ILA）→ 95.4%（联合）· 加速 5.28×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d07_results.svg" alt="结果汇总" style="max-width:940px">
+  <figcaption>图 7.4　实测与对比汇总。</figcaption>
+</figure>
+<ul>
+<li><strong>芯片</strong>：28nm，3.88×3.20 mm²，0.6~1.0V，115~290MHz，29.10~166.84 mW；MCM 四芯粒、320Mb/s 跨芯粒带宽；</li>
+<li><strong>峰值性能</strong>：单芯粒 0.89 TOPS(INT8) / 0.15 TOPS(INT16) / 0.09 TFLOPS(FP32)；四芯粒 3.56 / 0.59 / 0.37；</li>
+<li><strong>能效</strong>：85.0 TOPS/W（INT8，= TSMC 数字 CIM [5] 的 2.17×）、8.3 TFLOPS/W（FP32，= [16] 的 2.24×）；</li>
+<li><strong>采集效率</strong>：3.7 nJ/Gather（GCN）· 2.3 nJ/Gather（DLRM）· 比模拟 [16] 低 9.49×；</li>
+<li><strong>总能耗</strong>：GCN 0.31 mJ（= [16] 的 5.64× 更低）；NN-only 平均加速 2.61×、省能 2.43×。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig12_23_技术分解.png" alt="论文图23">
+  <figcaption>图 7.5　论文原图 Fig. 23：GCN/DLRM 上的技术分解分析。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① “能效 = 等效操作数 ÷ 实际能耗”的口径里，<strong>被跳过的零也算进操作数</strong>——这是论文与前作一致的做法，但会让稀疏模型的能效虚高，跨论文比较要看清口径；② MCM 系统的对比对象 [16] 是“模拟”出来的（不是硅验证），9.49× 这种数字要谨慎引用；③ “SpG 与 SpA 能耗占比相当”（GCN 46%/54%）说明只优化一半不够——这是论文强调“联合优化”的论据。</p>
+</div>
+</section>

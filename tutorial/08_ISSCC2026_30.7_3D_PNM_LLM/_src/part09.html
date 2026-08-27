@@ -1,0 +1,56 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>计算强度提升：从“访存引擎”到“真 GEMM 引擎”</strong>：本文 ACC 是通用 RISC-V + FPU，GEMM 主要靠软件循环 + DMA 喂数据。下一步可以在逻辑片上加入专用 MAC 阵列（如脉动阵列），把“带宽优势”直接变成“算力优势”——带宽已经是 12.77 GB/s/mm²，算力却还有上升空间；</li>
+<li><strong>更大的 3D 堆叠</strong>：2 DRAM + 1 逻辑是起点。往 4~8 层 DRAM、多片逻辑的方向堆，容量上到 8GB/16GB，配合多芯片 DIMM，就能在终端塞下更大模型；</li>
+<li><strong>LLM 全算子加速</strong>：论文只评估 GEMM。Attention（softmax、矩阵乘）、layernorm、KV cache 管理等算子在终端 LLM 里占比不低，把这些也搬进 ACC/加专用单元，才是完整方案；</li>
+<li><strong>软硬件协同编译栈</strong>：DDR4 命令扩展（T-ACC/Act-Reg）有了硬件钩子，但还没有编译器自动把 PyTorch 模型映射到 BG/ACC 分配 + DMA 调度。做一个“LLM → 3D PNM”的自动编译器是软件侧的金矿；</li>
+<li><strong>与 CiM 融合</strong>：3D PNM 解决“带宽”，CiM 解决“搬移”。如果逻辑片里再嵌入数字 CiM 宏（像 09/10 号论文那样），把权重就地计算，能效还能再上一个台阶——这是“近存 + 存内”的融合方向；</li>
+<li><strong>先进工艺与散热/良率工程</strong>：逻辑片换成更先进节点（如 5nm/3nm）直接提速；但 3D 堆叠的散热（多层 die 热量集中）和测试成本需要系统级方案，这也是产业落地的关键问题；</li>
+<li><strong>安全与隐私</strong>：终端 LLM 卖点是数据不出设备。PNM 芯片作为“内存+计算”一体设备，天然适合做受保护计算区域（TEE 式隔离）——把模型权重和用户数据都锁在片内。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>LLM（Large Language Model，大语言模型）</dt><dd>参数量数十亿起的语言模型，推理以 GEMM 为主。</dd>
+<dt>PNM（Processing-Near-Memory，近存计算）</dt><dd>把计算单元放到存储器旁边，缩短访存路径。</dd>
+<dt>PIM / CiM</dt><dd>Processing-In-Memory / Compute-In-Memory：计算放进存储阵列内部（更激进）；本文属于“近存”路线。</dd>
+<dt>Memory-Intensive（内存密集）</dt><dd>任务性能被访存带宽而非算力限制。</dd>
+<dt>Generation Stage（生成阶段）</dt><dd>LLM 逐 token 输出的阶段；batch=1 时数据复用极低。</dd>
+<dt>GEMM（General Matrix Multiply）</dt><dd>通用矩阵乘 C=A×B，LLM 的主导算子。</dd>
+<dt>3D 堆叠（3D Stacking）</dt><dd>把多片已制造完成的 die 垂直叠放并用垂直互连打通。</dd>
+<dt>HB（Hybrid Bonding，混合键合）</dt><dd>晶圆间金属-金属直接键合，互连密度极高（本设计 pitch 3μm）。</dd>
+<dt>TSV（Through-Silicon Via，硅通孔）</dt><dd>垂直穿过硅片的金属过孔（本设计 mini-TSV，pitch 5μm）。</dd>
+<dt>BG（BankGroup）</dt><dd>本设计的基本块：两片 512Mb DRAM + 一个计算模块，共 1Gb。</dd>
+<dt>RDL（Reduced/Row Data Line）</dt><dd>DRAM 段输出的数据线（本设计 16b/段），汇总为 2048b/BG。</dd>
+<dt>SA（Sense Amplifier，读出放大器）</dt><dd>DRAM 读出信号放大的关键电路；本设计两 subarray 共享 512-SA 级。</dd>
+<dt>ACC（Accelerator，加速器）</dt><dd>本设计逻辑片上的计算引擎：RISC-V + FPU + DMA。</dd>
+<dt>FPU（Floating-Point Unit）</dt><dd>浮点运算单元；本文自定义加速 fadd/fsub/fmul/fdiv。</dd>
+<dt>DMA（Direct Memory Access）</dt><dd>不经过 CPU 内核的批量数据搬运模块。</dd>
+<dt>开放页策略（Open-Page Policy）</dt><dd>DRAM 行激活后保持打开，同行后续访问免预充电/激活。</dd>
+<dt>buf_hit / 2048b 缓冲</dt><dd>最近访问数据的片上缓冲；命中时免去整次 DRAM 访问。</dd>
+<dt>PHY（Physical Layer，物理层）</dt><dd>接口的模拟前端。本设计 3D DRAM PHY 只需同步+电平转换。</dd>
+<dt>DDR4 兼容 / T-ACC / Act-Reg</dt><dd>对外保持 DDR4 协议；两条扩展命令分别触发 ACC、设置配置寄存器。</dd>
+<dt>带宽密度（GB/s/mm²）</dt><dd>单位面积可提供的带宽，3D 堆叠的核心指标（本设计 12.77）。</dd>
+<dt>FoM（Figure of Merit）</dt><dd>综合性能指标；本文 FoM 相对前作 3D PNM 7.33×、active interposer 5.13×。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y. Cao, J. Jiang, et al., “A 1.2GHz 12.77GB/s/mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications,” <em>ISSCC 2026</em>, Paper 30.7. DOI: 10.1109/ISSCC49663.2026.11409184</li>
+<li>C. Li et al., “H2-LLM: Hardware-Dataflow Co-Exploration for Heterogeneous Hybrid-Bonding-based Low-Batch LLM Inference,” <em>ISCA</em>, 2025.（低 batch LLM 数据流研究）</li>
+<li>H. Shin et al., “McDRAM: Low Latency and Energy-Efficient Matrix Computations in DRAM,” <em>IEEE TCAD</em>, vol. 37, no. 11, 2018.（DRAM 内计算前作）</li>
+<li>F. Devaux, “The True Processing In Memory Accelerator,” <em>IEEE Hot Chips</em>, 2019.（UPMEM PIM）</li>
+<li>Y.-C. Kwon et al., “A 20nm 6GB Function-In-Memory DRAM, Based on HBM2 with a 1.2TFLOPS Programmable Computing Unit…,” <em>ISSCC 2021</em>, pp. 350-351.（HBM 内计算前作）</li>
+<li>S. Lee et al., “A 1ynm 1.25V 8Gb, 16Gb/s/pin GDDR6-based Accelerator-in-Memory supporting 1TFLOPS MAC Operation…,” <em>ISSCC 2022</em>, pp. 176-177.</li>
+<li>D. Niu et al., “184QPS/W 64Mb/mm² 3D Logic-to-DRAM Hybrid Bonding with Process-Near-Memory Engine for Recommendation System,” <em>ISSCC 2022</em>, pp. 462-463.（3D 近存前作）</li>
+<li>B. Jiao et al., “SHINSAI: A 586mm² Reusable Active TSV Interposer with Programmable Interconnect Fabric and 512Mb 3D Underdeck Memory,” <em>ISSCC 2025</em>, pp. 612-613.（active interposer 对比 [7]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM/近存计算方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.7.1–30.7.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（12.77 GB/s/mm²、0.67 pJ/b、延迟、GEMM 加速等）均来自论文原文；对比图中的 HBM3E/GDDR6/LPDDR4 数值为按论文给出的倍数/缩减比例反推的换算参考值，已在图中注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 8 张（assets/diagrams/）· 数据图 4 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

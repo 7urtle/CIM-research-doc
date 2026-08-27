@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">SCIM 位单元与阵列：10T 单元 + wired-OR 累加（论文 Fig.7）</text>
+
+  <!-- cell -->
+  <rect x="40" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">10T SCIM 位单元</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">标准 6T SRAM（存储激活位 a）</text>
+    <text x="60" y="158" fill="#45536b">+ 每对级联 nMOS = 1 个 AND（乘法）</text>
+    <text x="60" y="180" fill="#45536b">两套乘法器：a×wp（CPWLP）与 a×wn（CPWLN）</text>
+    <g>
+      <rect x="70" y="194" width="150" height="50" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="145" y="214" text-anchor="middle" fill="#1d8a5f" font-size="10.5">6T SRAM（存 a）</text>
+      <text x="145" y="232" text-anchor="middle" fill="#45536b" font-size="10">标准单元设计</text>
+      <rect x="240" y="194" width="150" height="50" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+      <text x="315" y="214" text-anchor="middle" fill="#a06510" font-size="10.5">级联 nMOS ×2</text>
+      <text x="315" y="232" text-anchor="middle" fill="#45536b" font-size="10">a &amp; wp / a &amp; wn</text>
+    </g>
+    <text x="60" y="280" fill="#1d8a5f" font-size="11.5" font-weight="600">数字 CIM 每存储位 ~20 额外晶体管 vs SCIM 仅 +4 晶体管</text>
+  </g>
+
+  <!-- array -->
+  <rect x="490" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">阵列：wired-OR 累加（伪 nMOS 预充）</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">共享计算端口（CPP/CPN）跨 256 个单元 → wired-OR</text>
+    <text x="510" y="158" fill="#45536b">CPWLP/N 垂直走线、同列共享</text>
+    <text x="510" y="186" fill="#45536b">预充：计算端口预充到 VDD、CPWL 接地</text>
+    <text x="510" y="208" fill="#45536b">求值：关预充 pMOS、使能 CPWL 驱动</text>
+    <text x="510" y="230" fill="#1d8a5f" font-weight="600">任一单元导通 → 计算端口放电到地（结果=1）</text>
+    <text x="510" y="252" fill="#45536b">全不导通 → 仅漏电（最差 PVT 仅 12 mV 跌落）</text>
+    <text x="510" y="274" fill="#45536b">简单反相器作感放 + 缓冲 → 容忍噪声/耦合</text>
+  </g>
+
+  <!-- macro spec -->
+  <rect x="40" y="324" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="350" fill="#0e5a8a" font-size="14" font-weight="700">宏规格与计算</text>
+  <g font-size="12.5">
+    <text x="60" y="380" fill="#45536b">宏 = 32 行 × 256 列；每行做两个 256 长点积（正/负流）；每宏 <tspan fill="#1d8a5f" font-weight="700">16.4k MAC 单元</tspan></text>
+    <text x="60" y="408" fill="#45536b">时序约束：预充到感放锁存的延迟 = 计算线到感放输出的传播延迟（最坏：仅 1 个单元导通、255 个不导通）</text>
+    <text x="60" y="436" fill="#45536b">FSM 计数可编程系统时钟数控制延迟；感放输出 1-bit → 触发器寄存</text>
+    <text x="60" y="472" fill="#1d8a5f" font-weight="600">OR 累加 = 1-bit 逻辑 → 无 ADC → 无 ADC 面积/功耗</text>
+    <text x="60" y="498" fill="#45536b">数字 CIM 免 ADC 但每存储位需 ~20 晶体管（乘法器+加法树）；SCIM 单元仅 +4 晶体管 + wired-OR 免费累加</text>
+  </g>
+</svg>

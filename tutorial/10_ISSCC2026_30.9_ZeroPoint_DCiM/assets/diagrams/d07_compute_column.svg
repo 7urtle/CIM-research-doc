@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="640" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">单个计算列内部：双缓冲权重 + Booth 选择器 + 4 级流水（128 路 MAC）</text>
+
+  <!-- 阶段条 -->
+  <g>
+    <rect x="40" y="72" width="210" height="34" rx="8" fill="#0e5a8a"/>
+    <text x="145" y="94" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">第 1 级（外围，32 列共享）</text>
+    <rect x="270" y="72" width="210" height="34" rx="8" fill="#0f7cb6"/>
+    <text x="375" y="94" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">第 2 级（bank 内）</text>
+    <rect x="500" y="72" width="210" height="34" rx="8" fill="#0f7cb6"/>
+    <text x="605" y="94" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">第 3 级（bank 内）</text>
+    <rect x="730" y="72" width="210" height="34" rx="8" fill="#e8a33d"/>
+    <text x="835" y="94" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">第 4 级（列内）</text>
+  </g>
+
+  <!-- Stage1 -->
+  <rect x="40" y="120" width="210" height="120" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="145" y="146" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="700">128 个转换单元</text>
+  <text x="145" y="168" text-anchor="middle" fill="#45536b" font-size="11.5">无符号 8b → 有符号 8b</text>
+  <text x="145" y="186" text-anchor="middle" fill="#45536b" font-size="11.5">（MSB 条件取反 = 减 128）</text>
+  <text x="145" y="204" text-anchor="middle" fill="#45536b" font-size="11.5">+ 零点偏置合并</text>
+  <text x="145" y="224" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">→ 128 × 8b 有符号激活</text>
+
+  <path d="M250,180 H280" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="265" y="168" text-anchor="middle" fill="#6b7a93" font-size="10">广播</text>
+
+  <!-- 权重存储（双缓冲） -->
+  <rect x="285" y="120" width="400" height="120" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="485" y="142" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="700">权重存储器（每列）：2 组 × 128 权重 × 12b Booth 选择</text>
+  <rect x="300" y="152" width="170" height="62" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="385" y="172" text-anchor="middle" fill="#1a2332" font-size="12" font-weight="600">权重组 A（计算中）</text>
+  <text x="385" y="192" text-anchor="middle" fill="#6b7a93" font-size="10.5">12T 多比特锁存</text>
+  <text x="385" y="206" text-anchor="middle" fill="#6b7a93" font-size="10.5">128 组 Booth 选择</text>
+  <rect x="500" y="152" width="170" height="62" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="585" y="172" text-anchor="middle" fill="#1a2332" font-size="12" font-weight="600">权重组 B（后台写入）</text>
+  <text x="585" y="192" text-anchor="middle" fill="#6b7a93" font-size="10.5">32 周期写完一组</text>
+  <text x="585" y="206" text-anchor="middle" fill="#6b7a93" font-size="10.5">写不打断计算</text>
+  <text x="485" y="232" text-anchor="middle" fill="#45536b" font-size="10.5">静态 2:1 多路选择器只在计算开始时读一次 → 降低读功耗</text>
+
+  <!-- 静态 MUX + Booth 选择器 -->
+  <path d="M685,180 H712" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+  <rect x="715" y="120" width="225" height="120" rx="10" fill="#f5f0fc" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="827" y="144" text-anchor="middle" fill="#6b3fa0" font-size="12.5" font-weight="700">静态 2:1 MUX +</text>
+  <text x="827" y="162" text-anchor="middle" fill="#6b3fa0" font-size="12.5" font-weight="700">Booth 选择器 ×128</text>
+  <text x="827" y="186" text-anchor="middle" fill="#45536b" font-size="11">选择激活组 → 用存储的</text>
+  <text x="827" y="202" text-anchor="middle" fill="#45536b" font-size="11">12b 选择码生成部分积</text>
+  <text x="827" y="220" text-anchor="middle" fill="#45536b" font-size="11">（每个乘法 4 个部分积）</text>
+
+  <!-- Stage2/3/4 数据流 -->
+  <rect x="40" y="268" width="900" height="210" rx="10" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="294" fill="#0f7cb6" font-size="13" font-weight="700">第 2 级：32 路 CSA 加法树（先“跨乘数”相加）　　→　第 3 级：移位合并（对齐部分积相加）</text>
+
+  <!-- 4 banks -->
+  <g font-size="11">
+    <rect x="60" y="306" width="200" height="92" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="160" y="326" text-anchor="middle" fill="#0e5a8a" font-weight="700">Bank 0（32 个乘法）</text>
+    <text x="160" y="346" text-anchor="middle" fill="#45536b">4 对齐 × 32 路 CSA</text>
+    <text x="160" y="362" text-anchor="middle" fill="#45536b">跨乘数相加</text>
+    <text x="160" y="384" text-anchor="middle" fill="#0f7cb6">第3级：移位合并 → 32 路点积</text>
+    <rect x="290" y="306" width="200" height="92" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="390" y="326" text-anchor="middle" fill="#0e5a8a" font-weight="700">Bank 1（32 个乘法）</text>
+    <text x="390" y="346" text-anchor="middle" fill="#45536b">4 对齐 × 32 路 CSA</text>
+    <text x="390" y="362" text-anchor="middle" fill="#45536b">跨乘数相加</text>
+    <text x="390" y="384" text-anchor="middle" fill="#0f7cb6">第3级：移位合并 → 32 路点积</text>
+    <rect x="520" y="306" width="200" height="92" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="620" y="326" text-anchor="middle" fill="#0e5a8a" font-weight="700">Bank 2（32 个乘法）</text>
+    <text x="620" y="346" text-anchor="middle" fill="#45536b">4 对齐 × 32 路 CSA</text>
+    <text x="620" y="362" text-anchor="middle" fill="#45536b">跨乘数相加</text>
+    <text x="620" y="384" text-anchor="middle" fill="#0f7cb6">第3级：移位合并 → 32 路点积</text>
+    <rect x="750" y="306" width="170" height="92" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="835" y="326" text-anchor="middle" fill="#0e5a8a" font-weight="700">Bank 3（32 个乘法）</text>
+    <text x="835" y="346" text-anchor="middle" fill="#45536b">4 对齐 × 32 路 CSA</text>
+    <text x="835" y="362" text-anchor="middle" fill="#45536b">跨乘数相加</text>
+    <text x="835" y="384" text-anchor="middle" fill="#0f7cb6">第3级：移位合并 → 32 路点积</text>
+  </g>
+
+  <!-- Stage4 -->
+  <g>
+    <path d="M160,398 L160,420" stroke="#e8a33d" stroke-width="2"/>
+    <path d="M390,398 L390,420" stroke="#e8a33d" stroke-width="2"/>
+    <path d="M620,398 L620,420" stroke="#e8a33d" stroke-width="2"/>
+    <path d="M835,398 L835,420" stroke="#e8a33d" stroke-width="2"/>
+    <rect x="60" y="424" width="880" height="56" rx="10" fill="#fdf3e7" stroke="#e0a96a" stroke-width="2"/>
+    <text x="500" y="448" text-anchor="middle" fill="#c25e2e" font-size="13" font-weight="700">第 4 级：Σ 4 个 bank（完成 128 路 MAC）+ 三个零点修正项（② C_W·ΣA_s ③ C_A·ΣW_s ④ N·C_A·C_W）</text>
+    <text x="500" y="468" text-anchor="middle" fill="#45536b" font-size="11.5">→ 输出通道结果（每列每周期 1 个 128 路点积）</text>
+  </g>
+
+  <rect x="40" y="556" width="900" height="64" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="580" fill="#0e5a8a" font-size="12.5" font-weight="600">流水线为什么是 4 级？</text>
+  <text x="60" y="602" fill="#45536b" font-size="12">吞吐与功耗的平衡优化：第 1 级转换（外围）、第 2~3 级完成 32 路 bank 结果、第 4 级 bank 求和与修正项。</text>
+</svg>

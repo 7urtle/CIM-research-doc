@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">安全评估：CPA 与 DPA（论文 Fig.9–11）</text>
+
+  <!-- CPA -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">相关功耗分析（CPA）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">攻击者控制一个变化输入（激活），试图恢复固定秘密（权重）</text>
+    <text x="60" y="162" fill="#45536b">对每个猜测的密钥值算与功耗测量的相关性</text>
+    <text x="60" y="186" fill="#45536b">未保护：正确密钥（红）相关性显著最高</text>
+    <text x="60" y="210" fill="#1d8a5f" font-weight="600">保护后：正确密钥与错误猜测（灰）不可区分</text>
+    <text x="60" y="238" fill="#45536b">乘法/加法树/累加器各级流水、ASCON 密码全部通过</text>
+    <text x="60" y="262" fill="#45536b">测试平台：Chip Whisperer CW305（高 SNR 定向攻击）</text>
+  </g>
+
+  <!-- DPA -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">差分功耗分析（DPA / TVLA）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">比较「固定秘密」与「随机秘密」操作时的侧信道差异</text>
+    <text x="510" y="162" fill="#45536b">T 值（Welch t-test）大 → 存在可利用的数据相关泄漏</text>
+    <text x="510" y="190" fill="#e66e5a" font-weight="600">未保护：&lt;5000 个样本就有显著差异（T 值大）</text>
+    <text x="510" y="218" fill="#1d8a5f" font-weight="600">保护后：超过 100 万样本 T 值仍小 → 无证据存在泄漏</text>
+    <text x="510" y="246" fill="#45536b">高 SNR 定向测试（独立流水级、低背景切换）</text>
+    <text x="510" y="270" fill="#45536b">→ 真实场景（并行操作+无关活动降低 SNR）更安全</text>
+  </g>
+
+  <!-- result -->
+  <rect x="40" y="304" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">安全结果汇总</text>
+  <g font-size="12.5">
+    <text x="60" y="360" fill="#45536b">· 所有计算子块（乘法、加法树、累加器两级流水、ASCON）CPA 下正确密钥与错误猜测不可区分（Fig.9）</text>
+    <text x="60" y="388" fill="#45536b">· ASIC 片上 DPA：保护实现 100 万+ 样本 T 值小；未保护 5000 样本即显著（Fig.11）</text>
+    <text x="60" y="416" fill="#45536b">· PUF 密钥读出的 TMV FSM：CNN 攻击预测密钥的 RMSE 显著增大（表 II，布尔共享+差分逻辑）</text>
+    <text x="60" y="452" fill="#1d8a5f" font-weight="600">→ 所有实际攻击者在超过 100 万采样下仍无法攻破（侧信道安全）</text>
+    <text x="60" y="480" fill="#45536b">功耗 SCA 安全直接转化为 EM SCA 安全（共享计算空间太近，EM 探针无法分辨）</text>
+    <text x="60" y="506" fill="#45536b">FPGA 上的算法性安全同样适用于定制 IC（Boolean 共享是算法性的）</text>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：54kb、24 个 bank</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　MXFP-CIM 宏架构：控制器 + 全局 FP 解码器 + 位宽分配器 + 共享尺度缓冲 + 累加器/归一化 + 输入缓冲 + 24 个 FP-CIM bank（每 bank = 18×128 分裂 WL 6T-SRAM + 本地解码器 + EPU + 尾数 MAC）。</figcaption>
+</figure>
+<ul>
+<li><strong>规模</strong>：54kb = 24 × 18 × 128b，28nm；</li>
+<li><strong>每 bank</strong>：18 行 × 128 列分裂字线（split-WL）6T-SRAM + 本地解码器 + 指数处理单元（EPU）+ 尾数 MAC 单元（SDBS）；</li>
+<li><strong>配置</strong>：三种模式——① 固定 PBW；② 层级 CGA；③ CGA + 组级 FGA；</li>
+<li><strong>三种 MXFP6/8 组合</strong>，PBW 从 3b 到 17/23/27b 宽范围可调。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_1_2_架构与配置.png" alt="论文图 30.1.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.1.2：配置表、整体结构与双位滑动计算流程。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 为什么“分裂字线（split-WL）”在这里有用？</div>
+<p>MXFP8 与 MXFP6 的“指数行 / 尾数行”布局不同（§5），分裂字线让每行可以独立选通：写 MXFP6 时奇数行按“2 个指数并排”的方式写，写 MXFP8 时按“1 个指数”的方式写——同一个物理阵列，两种逻辑布局，这就是“无害映射”的物理支撑。</p>
+</div>
+</section>

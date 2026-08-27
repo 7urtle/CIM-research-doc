@@ -1,0 +1,62 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>安全基础：Boolean 共享与阈值实现</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 3 份 Boolean 共享怎么让功耗不泄露数据；② 阈值实现（TI）的三条性质（正确性/非完备性/均匀性）；③ 为什么 AND 门是难点、均匀性为什么需要刷新。</p>
+</div>
+
+<h3>2.1 Boolean 共享：把秘密拆成看似随机的份</h3>
+<p>类似密码学多方计算：n 方分信息，至少 x 方串通才能恢复。用 Boolean 掩码时，每个数字比特拆成 n 份，所有份一起（XOR）才恢复原值：</p>
+<p class="formula">b = b1 ⊕ b2 ⊕ b3</p>
+<ul>
+<li>单独观察任何一份都看似随机（与 b 无关）；</li>
+<li>每个逻辑函数也拆成子函数，每个子函数只操作输入份的<strong>严格子集</strong> → 任何子电路都碰不到完整秘密；</li>
+<li>结果：整个电路的功耗与真实数据无关。</li>
+</ul>
+<p>本论文用 <strong>3 份共享</strong>实现一阶安全（攻击者被限制为一阶攻击，无法收集高阶攻击所需数据——这对并行度极高的 IMC 尤其合适）。需要更高阶安全时可扩展更多份。</p>
+
+<figure>
+<img src="assets/diagrams/d02_sharing.svg" alt="共享教学图">
+<figcaption>教学图 2 · Boolean 共享的三条性质，以及 IMC 为什么不能要随机比特。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig16_1_安全宏框图.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · Boolean 共享（3 份拆分）与 XNOR 乘法：为什么线性门让安全免费。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · Boolean 共享（3 份）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">b=0，共享 (…)，b1⊕b2⊕b3=…</span>
+</div>
+<div class="hint">每个秘密比特 b 拆成 3 份（b1,b2,b3），XOR 恢复。下方功耗条显示单份功耗随机波动——单独观察任何一份都看不出 b，子电路只碰严格子集（非完备性）→ 总功耗与真实数据无关。</div>
+</div>
+
+<h3>2.2 阈值实现（TI）的三条性质</h3>
+<p>一种特殊的 Boolean 共享——TI——提供<strong>可证明的</strong>多阶 SCA 安全，但开销大。对函数 t = F(b,c) 的共享 (t1,t2,t3) = Fsh((b1,b2,b3),(c1,c2,c3))，要求：</p>
+<table>
+<tr><th>性质</th><th>含义</th></tr>
+<tr><td><strong>正确性</strong></td><td>若 b=b1⊕b2⊕b3、c=c1⊕c2⊕c3，则 t=t1⊕t2⊕t3（共享计算恢复正确结果）</td></tr>
+<tr><td><strong>非完备性</strong></td><td>每个子函数 Fj 只用输入份的严格子集 → 任何子电路都不含完整秘密</td></tr>
+<tr><td><strong>均匀性</strong></td><td>任意非共享输入下共享表示分布均匀 → 只有非共享值分布的偏差会贡献到共享版偏差</td></tr>
+</table>
+
+<h3>2.3 难点：AND 门不满足均匀性</h3>
+<p>像 <strong>AND</strong> 这样的常见函数，在最小共享数下输入均匀但输出不均匀。两个常规解法都贵：</p>
+<ol>
+<li><strong>加共享数</strong>：电路大幅膨胀；</li>
+<li><strong>输出刷新</strong>：用独立随机比特重新生成均匀输入 → 每周期都要随机比特。</li>
+</ol>
+<p>对 IMC 的百万并行 MAC，这两条路都走不通。本论文用<strong>放宽的均匀性要求</strong>（近似均匀）配合<strong>原生安全的线性 XNOR 门</strong>解决——这正是下一节的核心。</p>
+
+<div class="box key">
+<div class="bt">💡 近似均匀性为什么对 IMC 可接受？</div>
+<p>IMC 有大量并行操作、权重/激活互不相关 → 攻击者信噪比（SNR）比传统加速器更低。计算性（而非数学性）的均匀性就足够：实际攻击采样有限，微小偏差不会导致信息泄露。</p>
+</div>
+</section>

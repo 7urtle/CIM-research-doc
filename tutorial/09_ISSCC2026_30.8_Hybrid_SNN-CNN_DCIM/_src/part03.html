@@ -1,0 +1,55 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>SNN 神经元模型基础：膜电位、阈值与发放</h2>
+
+<h3 id="sec3-1">3.1 膜电位：神经元的“记忆水桶”</h3>
+<p>理解本文的 DM-MPDBU（多膜电位动力学单元）之前，必须先理解 SNN 神经元的抽象模型。一个神经元每步做三件事：</p>
+<ol>
+<li><strong>积分（Integrate）</strong>：把这一步收到的输入脉冲加权求和，累加进“膜电位” MP[t]（Membrane Potential）；</li>
+<li><strong>判断（Fire?）</strong>：MP[t] 是否 ≥ 阈值 θ？是则输出一个脉冲（spike=1），并把 MP 清零（reset）；</li>
+<li><strong>动力学（Dynamics）</strong>：不同模型在这个“累积过程”里加入不同的修正（泄漏、非线性项）——这正是 IF/LIF/IQIF 的区别。</li>
+</ol>
+<div class="formula">MP[t] = MP[t−1] + Σ<sub>i</sub> w<sub>i</sub>·spike<sub>i</sub>[t]　　→　若 MP[t] ≥ θ：输出 1，MP[t] ← 0<span class="tag">式 3.1</span></div>
+
+<h3 id="sec3-2">3.2 三种神经元模型：IF / LIF / IQIF</h3>
+<table>
+<tr><th>模型</th><th>核心差异</th><th>适用场景</th></tr>
+<tr><td><strong>IF</strong>（Integrate-and-Fire）</td><td>最简单的“纯积分”：只加不减，撞阈值就发放清零</td><td>简单脉冲生成，省硬件</td></tr>
+<tr><td><strong>LIF</strong>（Leaky IF）</td><td>每一步先“泄漏”一点（MP 减去泄漏量）再积分：没有输入时 MP 缓慢衰减</td><td>滤除时间噪声（防伪脉冲触发）</td></tr>
+<tr><td><strong>IQIF</strong>（Integer Quadratic IF）</td><td>积分时叠加一个“整数二次项”IQ，让 MP 轨迹非线性（靠近阈值加速/减速）</td><td>精度要求更高的任务</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d02_neuron_models.svg" alt="神经元模型" style="max-width:900px">
+  <figcaption>图 3.1　IF / LIF / IQIF 的膜电位轨迹示意。橙色竖条为输入脉冲；曲线撞到红色阈值线就“发放清零”。</figcaption>
+</figure>
+<p>论文中 DM-MPDBU 实现的 IQIF 具体公式（全部是整数运算，硬件友好）：</p>
+<div class="formula">若 MP[t] &lt; p<sub>deth</sub>：　IQ = (α×rest − MP[t]) &gt;&gt; 3<br>否则：　IQ = (β×(MP[t] − thresh)) &gt;&gt; 3<span class="tag">式 3.2</span></div>
+<p>其中 p<sub>deth</sub>（de-threshold，去阈值）、rest（静息电位）、thresh（阈值）、α、β 都是可配置参数；“&gt;&gt;3”是整数右移 3 位 = 除以 8，避免了小数运算——这就是“Integer”（整数）二字的由来。当 MP 较低时（&lt; p<sub>deth</sub>），IQ 让 MP 缓慢爬升；MP 较高时，IQ 让 MP 更快逼近阈值——形成非线性加速。</p>
+<div class="box key">
+<div class="bt">🧠 为什么“多模型支持”有价值？</div>
+<p>不同 SNN 模型用不同神经元动力学：简单任务 IF 就够，噪声环境要 LIF，精度敏感任务要 IQIF。如果硬件只支持一种（前作 [4] 就是），模型设计师就被绑死了。DM-MPDBU 用一套数字电路 + 配置位同时支持三种 → “通用 SNN 硬件”的底气。</p>
+</div>
+
+<h3 id="sec3-3">3.3 交互演示 A：亲手调神经元参数，看膜电位怎么涨</h3>
+<div class="demo">
+<div class="dhead">🧠 演示 A · 膜电位仿真（IF / LIF / IQIF 可切换，参数可调）</div>
+<canvas id="demoA" width="980" height="360"></canvas>
+<div class="dbar">
+  <button id="demoA-if" class="on">IF</button>
+  <button id="demoA-lif">LIF</button>
+  <button id="demoA-iqif">IQIF</button>
+  <label class="hint" style="margin:0">阈值：</label><input id="demoA-th" type="range" min="4" max="16" value="8" style="flex:1;accent-color:#0f7cb6">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">IF 模式 · 播放中</span>
+</div>
+<div class="hint">橙色竖条 = 输入脉冲（1b spike）；曲线 = 膜电位。切到 LIF 观察“无输入时膜电位回落”，切到 IQIF 观察阈值附近的非线性加速。拖动阈值看发放频率变化。</div>
+</div>
+
+<h3 id="sec3-4">3.4 视频演示：三种神经元的膜电位动画</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_3_CMDM-LCC与MPDBU.png">
+  <source src="assets/videos/v01_neuron.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 神经元模型动画：先逐个演示 IF/LIF/IQIF 的膜电位轨迹，再三模并排对比同一输入脉冲序列下的差异（LIF 的泄漏、IQIF 的非线性）。</div>
+</div>
+</section>

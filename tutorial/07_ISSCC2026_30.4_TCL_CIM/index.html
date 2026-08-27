@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：转移计数行（TCL）位并行 CIM 宏（ISSCC 2026 30.4）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2026 30.4 基于转移计数行的位并行数字 CIM 宏的位列加法、符号位嵌入、10 相分阶段使能与实测分析。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">位并行存内计算（TCL）零基础精讲</div>
+    <div class="t2">ISSCC 2026 · Session 30 · Paper 30.4</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：位串行 vs 位并行 CIM</a>
+  <a class="sec" href="#sec2">02 · 位并行 CIM 的三大挑战</a>
+  <a class="sec" href="#sec3">03 · 外积与位列加法</a>
+  <a class="sec" href="#sec4">04 · 创新①：TCL 转移计数行</a>
+  <a class="sub" href="#sec4-1">4.1 TCL 结构与规则</a>
+  <a class="sub" href="#sec4-2">4.2 工作示例与交互仿真</a>
+  <a class="sec" href="#sec5">05 · 创新②：总线 TCL 嵌入符号位</a>
+  <a class="sec" href="#sec6">06 · 创新③：10 相分阶段使能</a>
+  <a class="sec" href="#sec7">07 · 系统架构与数据流</a>
+  <a class="sub" href="#sec7-1">7.1 宏架构</a>
+  <a class="sub" href="#sec7-2">7.2 INT8 / BF16 两种模式</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">转移计数行（TCL）位并行存内计算零基础精讲：用“数边沿”代替“数 1”
+<span class="en">A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices（ISSCC 2026 · Paper 30.4）</span></h1>
+<div class="meta">论文作者：Lichen Feng, Yunlong Liu, Lin Wu, Dong Li, Zhangming Zhu · 西安电子科技大学
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.4
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>这是一篇“<strong>位并行</strong>”数字 SRAM CIM 论文，来自西安电子科技大学。位并行 CIM 直接按 8b 完整字做乘法（不用逐位串行），但面临“位列加法布线拥塞、符号位处理费面积、加法树空转费电”三大难题。论文用一个很巧妙的电路——<strong>TCL（Transition-Counting-Line，转移计数行）</strong>逐一化解：</p>
+<ul>
+<li><strong>数边沿代替数 1</strong>：把一列的位积串成链，让一个跳变沿沿着链传播，每遇到一个“1”就取反一次 → 计数器数沿的个数 = 列和！无损、零加法器、位积为 0 时完全静止（稀疏自适应）；</li>
+<li><strong>总线 TCL 嵌入符号位扩展</strong>：2 的补码有符号 MAC 的符号扩展直接“借用”TCL-14 的 MMU，只多 2.95% 面积、零额外延迟；</li>
+<li><strong>10 相分阶段使能</strong>：一个周期内 Ph0~7 逐位做乘法、Ph8 才开合并加法器、Ph9 才开加法树 → 加法器不空转 → 能效 +42%。</li>
+</ul>
+<p>28nm 实测：<strong>INT8 106.85 TOPS/W</strong>、<strong>BF16 77.68 TFLOPS/W</strong>、面积效率 1.24 TFLOPS/mm²。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>乘法 = 外积 + 位列求和：</strong>8b×8b 乘法产生 64 个“位积”（每对输入位相乘），按斜线分成 15 个“位列”（同移位位置）。把每个位列里的 1 数出来，就是乘法的部分和。所以“数 1 的个数”就是乘法的核心运算。</li>
+<li><strong>数 1 可以不靠加法器：</strong>本论文的妙招是把一列的位积串成一条链，一个电平“边沿”从头走到尾，每经过一个“1”就翻转一次。翻转了几次 = 有几个 1 = 列和。计数器（CNT）数沿即可——这比 8 输入加法器省太多晶体管。</li>
+<li><strong>让电路“按需工作”= 省电：</strong>10 相发生器把“乘法（Ph0~7）”“合并加法（Ph8）”“树加法（Ph9）”拆成时间上的三个阶段，没轮到的电路被强制接地不翻转——CMOS 动态功耗 ∝ 翻转次数，不翻转就不耗电。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“bit-parallel CIM directly matches the data format of computing systems, eliminating the parallel-to-serial conversion and specialized weight mapping strategies… It can also reduce the MSB toggle rate”</td>
+<td>位并行 CIM 直接按完整字计算：省掉串并转换、省掉特殊权重映射，还因为高位（MSB）不常翻转而省功耗。</td></tr>
+<tr><td class="num">“(1) For 8b MAC, bit-parallel CIM suffers from routing congestion… A tradeoff between throughput and area overhead is required. Approximate compressors… with accuracy loss”</td>
+<td>挑战 1：8b 位列加法布线拥塞；多周期 INT4 或 ADC 压缩都要在吞吐/面积间取舍；近似压缩器丢精度。</td></tr>
+<tr><td class="num">“(2) Handling sign bits for 2's-complementary MAC… demands large extra area or additional cycles”</td>
+<td>挑战 2：2C 有符号 MAC 的符号位处理要么费面积、要么费周期。</td></tr>
+<tr><td class="num">“(3) intermediates induce unnecessary toggling in high-fan-in adders, resulting in power inefficiency”</td>
+<td>挑战 3：乘法/压缩的中间结果让高扇入加法器无谓翻转，功耗浪费。</td></tr>
+<tr><td class="num">“106.85TOPS/W for INT8 and 77.68TFLOPS/W for BF16”</td>
+<td>实测：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W（28nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>TCL 无损位列压缩器</strong>：以“转移计数”实现 8-to-4 无损位列加法，晶体管数最小化、稀疏自适应（0 不翻转）；</li>
+<li><strong>总线 TCL 符号位嵌入</strong>：P<sub>m7</sub> 被 TCL-7~14 复用，2C 有符号 MAC 只多 2.95% 面积、零额外延迟；</li>
+<li><strong>10 相分阶段使能</strong>：MMU（Ph0~7）→ 合并加法器（Ph8）→ 加法树（Ph9）分时工作，能效 +42%、面积效率仅 −6%；</li>
+<li><strong>实测成绩</strong>：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W、1.24 TFLOPS/mm²、FoM1 提升 1.25–2.88×、FoM2 提升 2.20–19.9×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂数字 CIM 的：从 §3（外积）和 §4（TCL 原理）开始，这是本文最巧妙的电路创意。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：位串行 vs 位并行 CIM</h2>
+<p>数字 SRAM CIM 做“8b×8b 乘法”有两条路线：</p>
+<figure>
+  <img src="assets/diagrams/d01_bit_serial_vs_parallel.svg" alt="位串行 vs 位并行" style="max-width:920px">
+  <figcaption>图 1.1　位串行 CIM（1b 单元、串行累加、需要串并转换）vs 位并行 CIM（8b 整存、1 周期乘法、直接匹配数据格式）。</figcaption>
+</figure>
+<ul>
+<li><strong>位串行（Bit-Serial）</strong>：单元只存/算 1 位，8b 乘法拆成 8 个 1b 周期串行完成。优点是单元极小、面积效率高；缺点是① 需要“并行→串行”转换电路和特殊权重映射；② 高位（MSB）每周期翻转、功耗高；③ 吞吐低（1 周期只算 1 位）。</li>
+<li><strong>位并行（Bit-Parallel，本文）</strong>：8b 权重整存，1 周期完成 8b×8b。优点：直接匹配软件数据格式（无串并转换）、MSB 翻转率低、吞吐高；缺点：位列加法布线拥塞、符号位处理难、加法树空转。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 为什么“MSB 翻转率低”能省电？</div>
+<p>有符号数据的高位（符号位和附近位）在相邻数据之间通常变化很小（比如 0.0012 → 0.0013，高位都是 0）。位串行方案把每个位都平等地扫一遍，高位也跟着翻转；位并行方案一次读完整字，高位本来就不动 → 动态功耗天然更低。这是位并行在“功耗账”上赢的第一分。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>位并行 CIM 的三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 位列加法布线拥塞（现有招数各有代价）；② 2C 符号位处理费面积/周期；③ 加法树空转费电。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_1_挑战与方案.png" alt="论文图 30.4.1">
+  <figcaption>图 2.2　论文原图 Fig. 30.4.1：位并行 CIM 的挑战与本文解决方案。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>现有方案及其代价</th><th>本文对策</th></tr>
+<tr><td>① 布线拥塞 + 位列加法</td><td>多周期 INT4 拼接（吞吐降）· ADC 压缩器（面积大）· 近似压缩器（丢精度）</td><td><strong>TCL 无损压缩</strong>：数沿代替数 1，面积最小、无损、稀疏自适应</td></tr>
+<tr><td>② 符号位处理</td><td>额外符号阵列（面积大）· 额外周期（吞吐降）</td><td><strong>总线 TCL 嵌入</strong>：P<sub>m7</sub> 复用做符号扩展，+2.95% 面积、零延迟</td></tr>
+<tr><td>③ 加法器空转</td><td>加法树全程开闸，毛刺白烧电</td><td><strong>10 相分阶段使能</strong>：Ph8/Ph9 才开加法 → 能效 +42%</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>核心概念：外积与位列加法——乘法器的“位级解剖”</h2>
+<p>要理解 TCL，先看 8b×8b 乘法在“位级”长什么样。两个 8b 数相乘，先做 <strong>外积（outer product）</strong>：</p>
+<figure>
+  <img src="assets/diagrams/d03_outer_product.svg" alt="外积与位列" style="max-width:940px">
+  <figcaption>图 3.1　8b×8b 外积：64 个位积 P[m][n] = X[m]×W[n] 排成 8×8 网格；按“斜对角线”（相同移位位置）分成 15 个位列，每列求和就是部分积。</figcaption>
+</figure>
+<div class="formula">X × W = Σ<sub>k=0..14</sub> (列 k 的位积和) × 2<sup>k</sup><span class="tag">式 3.1</span></div>
+<p>于是乘法变成两件事：</p>
+<ol>
+<li><strong>生成位积</strong>：P[m][n] = X[m] × W[n]，就是“与门”（1×1=1 仅当两者都是 1）；</li>
+<li><strong>位列求和</strong>：把每一列（斜线）上的位积加起来——<strong>这一列有几个 1，列和就是几</strong>。第 k 列最多有 8 个位积（中间列最宽）。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 “数 1 的个数”是乘法的核心</div>
+<p>传统数字乘法器用 <strong>压缩器（compressor）树</strong>（如 CSA 3:2 压缩器）把每列的 1 逐层加起来——8 个输入要 3~4 级压缩 + 进位传播。本论文的 TCL 换个思路：<strong>把“有几个 1”编码成“一个边沿翻转几次”</strong>，用一个计数器数沿——这就是下章的主角。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：TCL（Transition-Counting-Line）—— 用“数边沿”代替“数 1”</h2>
+
+<h3 id="sec4-1">4.1 TCL 结构与工作规则</h3>
+<figure>
+  <img src="assets/diagrams/d04_tcl.svg" alt="TCL 结构" style="max-width:940px">
+  <figcaption>图 4.1　TCL = 8 个 MMU（乘-选单元）级联 + 末端计数器 CNT。每个 MMU 由“乘法段”和“多路选择段”组成：MIn 串接、首端接 VDD、末端接 CNT。</figcaption>
+</figure>
+<p>每个 <strong>MMU（Multiply-Multiplex Unit，乘-选单元）</strong>干两件事：</p>
+<ul>
+<li><strong>乘法段</strong>：算位积 P<sub>mn</sub> = X[m] × W[n]（就是个与门）；</li>
+<li><strong>多路选择段</strong>：当 <strong>Ph<sub>k</sub>=1 且 P<sub>mn</sub>=1</strong> 时走 <strong>Path1</strong>：输出 = 输入取反（产生一个跳变沿）；否则走 <strong>Path2</strong>：原样直通。</li>
+</ul>
+<p>所有 MMU 的多路选择段<strong>级联</strong>成一条链：第一个 MMU 的输入 MIn 接 VDD（高电平起点），最后一个 MMU 的输出 MOut 接计数器 CNT。于是：</p>
+<div class="box key">
+<div class="bt">💡 核心机制：跳变次数 = 列和</div>
+<p>一个高电平从链头出发，每经过一个“位积=1”的 MMU 就被取反一次（高→低 或 低→高），经过“位积=0”的 MMU 则原样通过。<strong>最终到达 CNT 的跳变沿个数 = 这一列里 1 的个数 = 列和</strong>。CNT 把 8 个输入位编码成 4b 计数值 → 这就是“8-to-4 无损压缩”。</p>
+</div>
+
+<h3 id="sec4-2">4.2 工作示例与交互仿真</h3>
+<figure>
+  <img src="assets/diagrams/d05_tcl_example.svg" alt="TCL 工作示例" style="max-width:940px">
+  <figcaption>图 4.2　示例：位积 {1,1,0,0,1,0,0,1} → 4 个跳变沿 → CNT = 4 = 列和。相位 Ph0~Ph7 逐位使能 MMU。</figcaption>
+</figure>
+<p>注意相位的作用：10 相发生器（§6）让 <strong>Ph0~Ph7 每个相位只使能一个 MMU</strong>（TCL-9 例：Ph0 使能 MMU0、Ph1 使能 MMU1……）。这样边沿在链上的传播是<strong>串行、分时</strong>的——每个相位恰好推进一格，时间上可预测，CNT 在每个相位结束后采样一次。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_3_TCL与10相发生器.png">
+  <source src="assets/videos/v01_tcl.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · TCL 转移计数动画：边沿沿 MMU 链传播，遇到 1 取反、遇到 0 直通；CNT 数沿得到列和。注意“0 的 MMU 完全不翻转”。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · TCL 位列求和仿真（8 位输入，看边沿传播与计数）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <button id="demoA-sparse">换一组稀疏输入</button>
+  <span class="stat" id="demoA-stat">列和 = 数到的跳变沿个数</span>
+</div>
+<div class="hint">橙色方块=位积 1（会使边沿取反），灰色=0（直通）。观察 CNT 计数与“非零位数”一致。切换稀疏输入看“0 多 → 翻转少 → 省电”。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_4_3_TCL与10相发生器.png" alt="论文图 30.4.3">
+  <figcaption>图 4.3　论文原图 Fig. 30.4.3：TCL 与 10 相发生器的电路结构与工作流程。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：总线 TCL 嵌入符号位扩展 —— 2C 有符号 MAC 只多 2.95% 面积</h2>
+<figure>
+  <img src="assets/diagrams/d07_sign_embed.svg" alt="符号位嵌入" style="max-width:920px">
+  <figcaption>图 5.1　总线 TCL：TCL-14（符号位列）的 8 个 MMU 同时充当 TCL-7~14 的符号扩展位——P<sub>07</sub> 被复用 8 次、P<sub>17</sub> 复用 7 次……零额外延迟。</figcaption>
+</figure>
+<p>2 的补码有符号乘法有个“讨厌的尾巴”：<strong>符号位扩展</strong>。负权重的最高位位积 P<sub>m7</sub> 必须被“复制”到更高的每一个位列（因为符号位代表负数，要扩展成全 1 或参与修正）。传统做法是单独做一套符号扩展电路（面积大）或加周期（吞吐降）。</p>
+<p>本文发现：<strong>TCL-14 的 8 个 MMU 本来就是“符号位列”的压缩器</strong>（它负责 P<sub>m7</sub>，m=0~7 的求和）。让这些 MMU 的输出<strong>同时接入 TCL-7~14 的链</strong>——即“总线 TCL（bus TCL）”，就实现了符号扩展的嵌入：</p>
+<ul>
+<li>P<sub>07</sub>（m=0 的符号位积）需要参与 TCL-7~14 共 8 个列的求和 → 复用到 8 个 TCL；</li>
+<li>P<sub>17</sub> → 复用 7 次（TCL-8~14）；……以此类推，正好是 2C 乘法里符号扩展的规律；</li>
+<li>再配两个小机关：反相权重 W<sub>n</sub>' 接到“取反 MMU”（处理负权重的符号）、TCL-7 的 CNT 初值设为 XIN[7]——补全 2C 乘法的修正项。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧮 有符号/无符号切换成本</div>
+<p>切换只需要 <strong>7 个传输门 + 8 个 2:1 多路选择器</strong>：有符号时连接 P<sub>m7</sub>、CNT 初值 = XIN[7]；无符号时断开、CNT 初值 = 0。总面积开销仅 <strong>2.95%</strong>，且零额外延迟。论文还用 10k 次 Monte Carlo 仿真验证：MMU 传播延迟恒小于 RDC 延迟 → PVT 波动下 TCL 计数不会出错。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_4_4_符号嵌入与使能电路.png" alt="论文图 30.4.4">
+  <figcaption>图 5.2　论文原图 Fig. 30.4.4：总线 TCL 的符号位嵌入与合并加法器/块内加法树的使能电路。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🔬 演示 C · 2C vs 符号-数值：同一个 −7，位级稀疏性差多少</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">2C 非零位 6 vs 符号-数值 4（本例 −7）</span>
+</div>
+<div class="hint">2 的补码里 −7 = 1111 1001，数值位被“填满”；符号-数值 −7 = 1 000 0111，只有符号位翻转。TCL 链上“0 直通不翻转”→ 符号-数值格式让负权重更省电。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：10 相分阶段使能 —— 加法器不再空转</h2>
+<figure>
+  <img src="assets/diagrams/d06_10phase.svg" alt="10 相发生器" style="max-width:940px">
+  <figcaption>图 6.1　10 相发生器：10 个上升沿延迟单元（RDC）级联，主时钟上升沿时 Vrst 同步复位，之后 Ph0→Ph1→…→Ph9 依次点亮。一个计算周期 = 10 个相位。</figcaption>
+</figure>
+<p><strong>10 相发生器</strong>由 10 个完全相同的 <strong>上升沿延迟单元（Rising-edge Delay Cell, RDC）</strong>级联而成：Vrst 随主时钟上升沿同步拉高（清零所有相位）再快速拉低；Vdelay 控制每个 RDC 的输入-输出延迟。Vrst 释放后 Ph0 先亮，经过 RDC#0 的延迟 Δtr0 后 Ph1 亮……依次传播到 Ph9。于是一个时钟周期内产生了 10 个等间隔相位。</p>
+<p>这 10 个相位把“一个 8b×8b 乘法”拆成时间上的三幕：</p>
+<table>
+<tr><th>相位</th><th>使能的电路</th><th>干什么</th></tr>
+<tr><td><strong>Ph0~Ph7</strong></td><td>MMU（每个相位一列）</td><td>TCL 逐位传播边沿（乘法部分）</td></tr>
+<tr><td><strong>Ph8</strong></td><td>合并加法器（Combine Adder）</td><td>把 15 个位列和合并成 16b 乘积</td></tr>
+<tr><td><strong>Ph9</strong></td><td>块内加法树（In-Block Adder Tree）</td><td>把 16 个 CIM 单元的乘积相加</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d09_stage_enable.svg" alt="分阶段使能" style="max-width:920px">
+  <figcaption>图 6.2　分阶段使能 vs 全程使能：传统加法器全程开闸被毛刺白烧电；本文 Ph8/Ph9 才开加法，Ph8 前输入强制接地。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么这样能省 42% 能效？</div>
+<ul>
+<li><strong>加法器是“高扇入”电路</strong>：输入一有风吹草动（毛刺、中间值）就翻转，而乘法阶段（Ph0~7）的输入根本还没就绪——传统方案这段时间白烧电；</li>
+<li><strong>分阶段使能</strong>：Ph8/Ph9 之前，用“单刀双掷开关”把合并加法器和加法树的输入<strong>强制接地</strong> → 输入不变，输出不翻转 → 零动态功耗；</li>
+<li>论文仿真了“加法树使能级数 vs 面积/能效”：块内加法树有 4 级，每级都能加相位开关（越省电但越费面积）。折中选<strong>合并加法器 1 级 + 块内加法树 1 级</strong> → 能效 +42%、面积效率只 −6%（帕累托最优点）。</li>
+</ul>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_5_仿真性能.png">
+  <source src="assets/videos/v02_phases.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 10 相时序动画：Ph0~7 逐位做乘法、Ph8 开合并加法器、Ph9 开加法树——加法器只在需要时才通电。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⏱ 演示 B · 10 相发生器时序（交互播放）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">周期 1 · 相位 Ph0</span>
+</div>
+<div class="hint">Ph0~7 红色=逐位乘法（TCL 传播边沿）；Ph8 绿色=合并加法器；Ph9 蓝色=块内加法树。加法器只在 Ph8/Ph9 工作——其余时间输入被强制接地、零翻转。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：4 个 bank、两种模式</h2>
+
+<h3 id="sec7-1">7.1 宏架构</h3>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　TCL-CIM 宏架构：全局控制器 + SRAM 读写控制器 + 全局输入缓冲 + BF16 指数后处理；4 个 CIM bank，每 bank = 本地 10 相发生器 + 块外加法树 + 4 个 CIM 块（每块 16 个 CIM 单元 + 块内加法树）。</figcaption>
+</figure>
+<ul>
+<li><strong>CIM 单元</strong>：16×8b 6T-SRAM（整存不切片的 8b 权重）+ 计算单元（64 个 MMU + 15 个 CNT + 合并加法器）；</li>
+<li><strong>数据路径</strong>：16 个 CIM 单元各出 1 个 16b 乘积 → 块内加法树（16×16b → 20b）→ 块外加法树（4×20b → 22b MACV）；</li>
+<li><strong>10 相发生器</strong>：每个 bank 本地一个，驱动本 bank 所有 TCL 和加法树分阶段工作。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_4_2_宏架构.png" alt="论文图 30.4.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.4.2：TCL 数字 SRAM CIM 宏的整体架构。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 INT8 / BF16 两种模式</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_6_测量结果.png">
+  <source src="assets/videos/v03_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 数据流动画：INT8 模式（64 特征 → 4 bank → 4 个 22b MACV）与 BF16 模式（指数预对齐 → 尾数 MACV → 指数后处理 → FP32）。</div>
+</div>
+<table>
+<tr><th>模式</th><th>输入</th><th>bank 内容</th><th>输出</th><th>流水</th></tr>
+<tr><td><strong>INT8</strong></td><td class="num">64 个特征（8b）</td><td class="num">64×4 个预读 8b 权重</td><td class="num">每周期 4 个 22b MACV</td><td>直接乘累加</td></tr>
+<tr><td><strong>BF16</strong></td><td class="num">BF16（指数预对齐 [1]）</td><td class="num">预对齐权重的尾数</td><td class="num">4 尾数 MACV → FP32</td><td>三级流水（每周期 1 个 FP32）</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 位并行 + BF16：整数乘法器直接复用</div>
+<p>BF16 的尾数乘法（7 位尾数 + 隐含位 ≈ 8b 有效位）在预对齐后就是普通的 8b×8b 无符号乘法——<strong>完全复用 INT8 的 TCL 计算单元</strong>，只需外围加“指数预对齐 + 指数后处理”两级。这就是“一个宏支持 INT8 和 BF16”的硬件代价极小化的原因。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　实测能效：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W（条件：90% 输入稀疏、10% 翻转率、50% 权重稀疏）。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：4.1 ns @ 0.9V（BF16 输入/权重，FP32 输出）；</li>
+<li><strong>面积效率</strong>：1.24 TFLOPS/mm²（BF16，0.55V/0.9V）；</li>
+<li><strong>工艺</strong>：28nm CMOS，32kb 宏；</li>
+<li><strong>精度</strong>：BF16 模式 ViT-B @ImageNetV2 81.05%、ResNet50 @ImageNetV2 81.19%。</li>
+</ul>
+<figure>
+  <img src="assets/charts/c02_fom.png" alt="FoM 提升" style="max-width:860px">
+  <figcaption>图 8.2　FoM1（精度×TOPS/W×TOPS/mm²）提升 1.25–2.88×；FoM2（TFLOPS/W×TFLOPS/mm²）提升 2.20–19.9×（对比前作有符号 CIM [2,3,6,7]）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_tcl_fom.png" alt="MAC cell FoM" style="max-width:920px">
+  <figcaption>图 8.3　8b 位并行 MAC 单元的 FoM（能效/晶体管数）对比：TCL 以最少晶体管实现位列加法，FoM 提升 1.66–1.87×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_5_仿真性能.png" alt="论文图 30.4.5">
+  <figcaption>图 8.4　论文原图 Fig. 30.4.5：MAC 单元仿真性能与实测能效（不同翻转率/稀疏度）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_6_测量结果.png" alt="论文图 30.4.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.4.6：测量结果与前作对比表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_7_芯片照片.png" alt="论文图 30.4.7">
+  <figcaption>图 8.6　论文原图 Fig. 30.4.7：裸片显微照片与性能汇总。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 能效数字是在“90% 输入稀疏 + 10% 翻转率 + 50% 权重稀疏”的<strong>理想活动率</strong>下测的——稀疏数据本来就不耗电，这个条件对 TCL 这类“稀疏自适应”电路特别有利，对比时先看条件；② FoM2 提升 2.20–19.9× 跨度极大，说明对比对象跨度也大（不同位宽、不同架构），不是单一相对值；③ 81% 的 ViT-B/ResNet50 精度是“该宏在 BF16 模式能跑出的精度”，用于证明精度无损，不代表网络极限精度。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>TCL 的位宽扩展与通用化</strong>：本文 TCL 做 8b×8b 的 15 位列。扩展到 INT12/INT16（23/31 位列）、FP16 尾数、块浮点（block FP），TCL 的“数沿”机制是否依然划算？位数越多，链越长，单周期 10 相是否够？这是最自然的延伸；</li>
+<li><strong>多相发生器省电化的极限</strong>：10 相由 RDC 链产生，相位间隔是“模拟延迟”而不是时钟 → 有 PVT 敏感性（论文用 Monte Carlo 验证了裕量）。更先进的方案：用更少相位、或把相位数量做成可配置（乘法位数可调）；</li>
+<li><strong>稀疏计算深度融合</strong>：TCL 对“位积为 0”天然省电，但激活/权重“整字为 0”的跳过（skip）还没有。在 TCL 链上加“整列全零检测”，跳过全零列，能效还能再上一个台阶；</li>
+<li><strong>与浮点/训练结合</strong>：本文 BF16 靠外围指数对齐+后处理。能否把 TCL 扩展到“按需对齐”的浮点（像 01 号论文那样内嵌对齐）？训练场景的梯度计算（符号变化频繁）对 TCL 的稀疏假设是挑战；</li>
+<li><strong>编译器与活动率感知调度</strong>：能效强依赖输入稀疏/翻转率。做一个“按数据分布选模式/选电压”的运行时调度器（稀疏层低压高能效、稠密层高压保吞吐），把 TCL 的稀疏红利变成系统级收益；</li>
+<li><strong>与 3D/近存结合</strong>：TCL 计算单元面积小（晶体管最少），非常适合作为 3D 近存（08 号论文路线）逻辑层里的“计算块”——两个方向可以合成一个大芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>位串行（Bit-Serial）</dt><dd>按位逐周期计算，单元小但需串并转换、MSB 翻转多。</dd>
+<dt>位并行（Bit-Parallel）</dt><dd>整字一次计算，直接匹配数据格式，MSB 翻转率低。</dd>
+<dt>外积（Outer Product）</dt><dd>两个数的各位两两相乘得到位积矩阵；8b×8b → 64 个位积。</dd>
+<dt>位列（Bit Column）</dt><dd>同移位位置的位积集合；8b×8b 共 15 个位列。</dd>
+<dt>位列加法（Bit-Column Addition）</dt><dd>把一列位积求和（数 1 的个数），是乘法器的核心。</dd>
+<dt>压缩器（Compressor）</dt><dd>把多个输入位压缩成和与进位的电路（如 3:2 CSA）；TCL 是另一种“无损压缩”。</dd>
+<dt>TCL（Transition-Counting-Line，转移计数行）</dt><dd>本文核心：级联 MMU + 计数器，用跳变沿个数编码列和。</dd>
+<dt>MMU（Multiply-Multiplex Unit）</dt><dd>乘-选单元：与门算位积 + 选择器决定取反/直通。</dd>
+<dt>CNT（Counter）</dt><dd>计数器，数跳变沿得列和（4b 输出）。</dd>
+<dt>8-to-4 无损压缩</dt><dd>8 个位积 → 4b 列和，无精度损失。</dd>
+<dt>总线 TCL（Bus TCL）</dt><dd>TCL-14 的 MMU 复用到 TCL-7~14 实现符号位扩展。</dd>
+<dt>符号位扩展（Sign Extension）</dt><dd>2C 负数的最高位复制到更高位；本文嵌入总线 TCL 实现。</dd>
+<dt>RDC（Rising-edge Delay Cell）</dt><dd>上升沿延迟单元；10 个级联组成 10 相发生器。</dd>
+<dt>10 相（10-Phase）</dt><dd>一个计算周期的 10 个相位：Ph0~7 乘法、Ph8 合并、Ph9 加法树。</dd>
+<dt>分阶段使能（Stage-Wise Enabling）</dt><dd>按相位开关电路，未轮到就强制接地 → 能效 +42%。</dd>
+<dt>MACV（MAC Value）</dt><dd>乘累加结果（本文 22b）。</dd>
+<dt>稀疏自适应</dt><dd>输入为 0 时电路不翻转（TCL 的天然属性）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>L. Feng, Y. Liu, L. Wu, D. Li, Z. Zhu, “A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices,” <em>ISSCC 2026</em>, Paper 30.4. DOI: 10.1109/ISSCC49663.2026.11409281</li>
+<li>X. Wang et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC…,” <em>ISSCC 2025</em>, pp. 254-255.（前作 [2]，本系列 01 号论文）</li>
+<li>X. Chen et al., “A 28nm 64kb Bit-Rotated Hybrid-CIM Macro with an Embedded Sign-Bit-Processing Array…,” <em>ISSCC 2025</em>, pp. 260-261.（前作 [3]）</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm²… INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-573.（数字 CIM [4]）</li>
+<li>Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based Floating-Point SRAM CIM Macro with Logarithm Bit-Width Residual ADC,” <em>ISSCC 2024</em>, pp. 576-577.（ADC 压缩对比 [5]）</li>
+<li>Y. Yuan et al., “A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” <em>ISSCC 2025</em>, pp. 258-259.（前作 [6]）</li>
+<li>P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-Compute Macro…,” <em>ISSCC 2023</em>, pp. 126-127.（前作 [7]）</li>
+<li>D. Wang et al., “DIMC: 2219TOPS/W 2569F²/b Digital In-Memory Computing Macro in 28nm Based on Approximate Arithmetic Hardware,” <em>ISSCC 2022</em>, pp. 266-267.（近似压缩器 [10]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.4.1–30.4.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（106.85 TOPS/W、77.68 TFLOPS/W、42%、2.95% 等）均来自论文原文；图表中“归一化”数值均已在图中注明依据。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   TCL-CIM 教学教程 · 交互脚本
+   演示 A TCL 数沿 · 演示 B 10 相时序 · 演示 C 稀疏对比
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · TCL 数沿
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let bits = [1, 1, 0, 0, 1, 0, 0, 1];
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const c = cyc % 8;
+    txt(ctx, "TCL 数沿演示 · 位积 = [" + bits.join(",") + "]", 30, 24, 15, PAL.white, "left");
+    // MMU 链
+    let level = 1;
+    for (let k = 0; k < 8; k++) {
+      const x0 = 90 + k * 100;
+      const active = k === c;
+      const col = bits[k] === 1 ? PAL.red : PAL.gray;
+      ctx.fillStyle = active ? "#3a2a26" : PAL.panel;
+      ctx.strokeStyle = col; ctx.lineWidth = active ? 2.5 : 1.5;
+      rrect(ctx, x0, 70, 88, 80, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "MMU" + k, x0 + 44, 90, 12, col, "center");
+      txt(ctx, "P=" + bits[k], x0 + 44, 110, 12, PAL.white, "center");
+      if (active) {
+        txt(ctx, bits[k] ? "取反!" : "直通", x0 + 44, 132, 11, bits[k] ? PAL.orange : PAL.gray, "center");
+      }
+      if (k > 0) {
+        ctx.strokeStyle = PAL.line; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x0 - 12, 110); ctx.lineTo(x0, 110); ctx.stroke();
+      }
+    }
+    // 起点 VDD 与终点 CNT
+    ctx.strokeStyle = PAL.green; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(70, 110); ctx.lineTo(90, 110); ctx.stroke();
+    txt(ctx, "VDD", 45, 100, 11, PAL.green, "center");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+    rrect(ctx, 890, 70, 70, 80, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "CNT", 925, 110, 12, PAL.orange, "center");
+    // 当前电平与计数
+    const seen = bits.slice(0, c + 1);
+    const cnt = seen.filter(b => b === 1).length;
+    const parity = cnt % 2;
+    ctx.strokeStyle = PAL.blue; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(90 + c * 100 + 44, 60); ctx.lineTo(90 + c * 100 + 44, 175); ctx.stroke();
+    txt(ctx, "电平（VDD 起点，每遇 1 取反）：" + (parity === 0 ? "高" : "低"), 90, 190, 14, PAL.blue, "left");
+    txt(ctx, "CNT 已数到 " + cnt + " 个沿 = 前 " + (c + 1) + " 位中 1 的个数", 90, 216, 14, PAL.orange, "left");
+    txt(ctx, "完整 8 位列和 = " + bits.reduce((a, b) => a + b, 0), 90, 242, 15, PAL.green, "left");
+    txt(ctx, "0 的 MMU 直通不翻转 → 稀疏自适应省电", 90, 270, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "列和 " + bits.reduce((a, b) => a + b, 0) + " · 非零位 " + bits.reduce((a, b) => a + b, 0) + " 个";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  const bSparse = document.getElementById("demoA-sparse");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 500); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (bSparse) bSparse.onclick = function () {
+    bits = [1, 0, 0, 0, 1, 0, 0, 0];
+    cyc = 0; draw();
+  };
+  if (play) timer = setInterval(tick, 500);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 10 相时序
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const cur = cyc % 10;
+    txt(ctx, "10 相发生器 · 当前相位 Ph" + cur, 30, 24, 15, PAL.orange, "left");
+    for (let k = 0; k < 10; k++) {
+      const x0 = 60 + k * 88;
+      const active = k === cur;
+      const col = k < 8 ? PAL.red : (k === 8 ? PAL.green : PAL.blue);
+      ctx.fillStyle = active ? "#4a3826" : PAL.panel;
+      ctx.strokeStyle = active ? col : PAL.line;
+      ctx.lineWidth = active ? 2.5 : 1.5;
+      rrect(ctx, x0, 60, 78, 70, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "Ph" + k, x0 + 39, 82, 13, active ? col : PAL.gray, "center");
+      const role = k < 8 ? "MMU" + k : (k === 8 ? "合并加" : "加法树");
+      txt(ctx, role, x0 + 39, 104, 11, PAL.white, "center");
+    }
+    // 波形
+    for (let k = 0; k < 10; k++) {
+      const x0 = 60 + k * 88;
+      ctx.fillStyle = k <= cur ? PAL.orange : "#28384e";
+      ctx.fillRect(x0 + 8, 170, 70, 10);
+    }
+    const phaseInfo = cur < 8
+      ? "Ph" + cur + "：使能 MMU" + cur + "，边沿向链尾推进一格（乘法）"
+      : cur === 8 ? "Ph8：打开合并加法器（此前输入强制接地，无毛刺）" : "Ph9：打开块内加法树 → 生成 16b 乘积";
+    txt(ctx, phaseInfo, 60, 210, 14, PAL.white, "left");
+    txt(ctx, "加法器只在 Ph8/Ph9 工作 → 其余时间零翻转 → 能效 +42%", 60, 238, 13, PAL.green, "left");
+    txt(ctx, "对比：传统方案加法器全程开闸，乘法阶段的毛刺白烧电", 60, 262, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "周期 " + (cyc + 1) + " · 相位 Ph" + cur;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 600);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 稀疏对比（无符号/有符号示例）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const c = cyc % 12;
+    // 两种权重示例
+    const twosW = [1, 1, 1, 1, 1, 0, 0, 1];       // -7 in 2C
+    const magW = [1, 0, 0, 0, 0, 1, 1, 1];         // -7 in sign-mag (1 000 0111)
+    txt(ctx, "同一权重 −7 的两种存储格式（位级稀疏性对比）", 30, 24, 15, PAL.white, "left");
+    txt(ctx, "2 的补码：1111 1001（数值位几乎全 1）", 60, 60, 13, PAL.red);
+    for (let k = 0; k < 8; k++) {
+      const x0 = 380 + k * 42;
+      ctx.fillStyle = twosW[k] ? "rgba(230,110,90,0.75)" : "rgba(230,110,90,0.15)";
+      ctx.fillRect(x0, 48, 34, 26);
+      txt(ctx, twosW[k], x0 + 17, 61, 11, PAL.white, "center");
+    }
+    txt(ctx, "符号-数值：1 000 0111（只有符号位+数值）", 60, 110, 13, PAL.green);
+    for (let k = 0; k < 8; k++) {
+      const x0 = 380 + k * 42;
+      ctx.fillStyle = magW[k] ? "rgba(60,190,140,0.75)" : "rgba(60,190,140,0.15)";
+      ctx.fillRect(x0, 98, 34, 26);
+      txt(ctx, magW[k], x0 + 17, 111, 11, PAL.white, "center");
+    }
+    const ones2c = twosW.reduce((a, b) => a + b, 0);
+    const onesMag = magW.reduce((a, b) => a + b, 0);
+    txt(ctx, "2C 非零位：" + ones2c + "/8", 60, 160, 14, PAL.red);
+    txt(ctx, "符号-数值非零位：" + onesMag + "/8", 60, 188, 14, PAL.green);
+    txt(ctx, "→ 2C 的负权重把位“填满”→ 加法树/MMU 翻转多；符号-数值保持稀疏 → TCL 链上 0 直通、更省电", 60, 230, 13, PAL.gray);
+    txt(ctx, "（论文实测：符号-数值比 2C 的负权重位级稀疏性提升 1.83×，见 01 号论文 §6）", 60, 256, 12, PAL.gray);
+    if (stat) stat.textContent = "2C 非零位 " + ones2c + " vs 符号-数值 " + onesMag + "（本例 −7）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 800); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 800);
+  draw();
+})();
+
+</script>
+</body>
+</html>

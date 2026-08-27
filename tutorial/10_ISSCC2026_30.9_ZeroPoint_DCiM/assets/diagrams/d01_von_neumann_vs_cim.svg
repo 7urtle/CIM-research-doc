@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <marker id="arrr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b3403f"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.18"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+
+  <!-- 标题 -->
+  <rect x="20" y="16" width="920" height="52" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="48" text-anchor="middle" fill="#fff" font-size="19" font-weight="700">冯·诺依曼瓶颈 vs 存内计算（CiM）：数据在哪算在哪</text>
+
+  <!-- ===== 左侧：传统架构 ===== -->
+  <text x="230" y="96" text-anchor="middle" fill="#b3403f" font-size="16" font-weight="700">传统冯·诺依曼架构（数据搬来搬去）</text>
+  <rect x="60" y="112" width="150" height="66" rx="10" fill="#fff" stroke="#b3403f" stroke-width="2" filter="url(#sh)"/>
+  <text x="135" y="140" text-anchor="middle" fill="#1a2332" font-size="14" font-weight="600">主存 DRAM</text>
+  <text x="135" y="162" text-anchor="middle" fill="#6b7a93" font-size="11.5">权重存在这里</text>
+  <rect x="270" y="112" width="150" height="66" rx="10" fill="#fff" stroke="#b3403f" stroke-width="2" filter="url(#sh)"/>
+  <text x="345" y="140" text-anchor="middle" fill="#1a2332" font-size="14" font-weight="600">计算单元 ALU/MAC</text>
+  <text x="345" y="162" text-anchor="middle" fill="#6b7a93" font-size="11.5">算完还要搬回去</text>
+
+  <path d="M210,145 H270" stroke="#b3403f" stroke-width="2.4" marker-end="url(#arrr)"/>
+  <path d="M270,145 H210" stroke="#b3403f" stroke-width="2.4" marker-end="url(#arrr)"/>
+  <text x="240" y="128" text-anchor="middle" fill="#b3403f" font-size="11.5">权重数据</text>
+  <text x="240" y="178" text-anchor="middle" fill="#b3403f" font-size="11.5">每层都要来回搬</text>
+
+  <rect x="60" y="200" width="360" height="88" rx="10" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.5"/>
+  <text x="240" y="224" text-anchor="middle" fill="#c25e2e" font-size="13.5" font-weight="700">问题 1：存储墙（Memory Wall）</text>
+  <text x="240" y="246" text-anchor="middle" fill="#45536b" font-size="12.5">访存能耗 ≫ 计算能耗：1 次 DRAM 访问 ≈ 200 pJ，</text>
+  <text x="240" y="266" text-anchor="middle" fill="#45536b" font-size="12.5">而 1 次 8bit 乘法 ≈ 1 pJ，差 2 个数量级以上</text>
+  <rect x="60" y="300" width="360" height="60" rx="10" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.5"/>
+  <text x="240" y="324" text-anchor="middle" fill="#c25e2e" font-size="13.5" font-weight="700">问题 2：带宽墙（Bandwidth Wall）</text>
+  <text x="240" y="346" text-anchor="middle" fill="#45536b" font-size="12.5">AI 计算密度增长远超 DRAM 带宽增长，数据喂不饱计算</text>
+
+  <text x="240" y="392" text-anchor="middle" fill="#45536b" font-size="13" font-weight="600">→ AI 推理 60%~90% 的能量和时间花在“搬数据”上</text>
+
+  <!-- ===== 右侧：CIM ===== -->
+  <text x="720" y="96" text-anchor="middle" fill="#1d8a5f" font-size="16" font-weight="700">存内计算 CiM（算力搬进存储器）</text>
+
+  <rect x="500" y="112" width="380" height="150" rx="12" fill="#eefaf3" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <rect x="520" y="128" width="150" height="52" rx="8" fill="#fff" stroke="#1d8a5f" stroke-width="1.6"/>
+  <text x="595" y="152" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">权重存储器</text>
+  <text x="595" y="170" text-anchor="middle" fill="#6b7a93" font-size="11">权重“躺在”存储里</text>
+  <rect x="690" y="128" width="170" height="52" rx="8" fill="#fff" stroke="#1d8a5f" stroke-width="1.6"/>
+  <text x="775" y="152" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">宽加法树 / MAC 阵列</text>
+  <text x="775" y="170" text-anchor="middle" fill="#6b7a93" font-size="11">就在存储单元旁边</text>
+  <path d="M670,154 H690" stroke="#1d8a5f" stroke-width="2.4" marker-end="url(#arr)"/>
+  <text x="500" y="212" fill="#1d8a5f" font-size="12.5">激活值广播进来，和存储的权重直接相乘累加（MAC）</text>
+  <text x="500" y="234" fill="#1d8a5f" font-size="12.5">每列一次完成 N 路乘法+累加，超高并行度</text>
+  <text x="500" y="254" fill="#6b7a93" font-size="11.5">（本论文：一个计算列一次完成 128 路 MAC）</text>
+
+  <rect x="500" y="280" width="380" height="80" rx="10" fill="#eefaf3" stroke="#bfe6d2" stroke-width="1.5"/>
+  <text x="690" y="304" text-anchor="middle" fill="#1d8a5f" font-size="13.5" font-weight="700">收益</text>
+  <text x="690" y="328" text-anchor="middle" fill="#45536b" font-size="12.5">省掉权重搬移 → 能效大幅提升（TOPS/W 提高 10~100×）</text>
+  <text x="690" y="348" text-anchor="middle" fill="#45536b" font-size="12.5">计算并行度 = 存储列数 → 面积效率（TOPS/mm²）也很高</text>
+
+  <text x="720" y="392" text-anchor="middle" fill="#45536b" font-size="13" font-weight="600">→ 本论文 147 TOPS/W 能效 + 250 TOPS/mm² 面积效率</text>
+
+  <rect x="20" y="416" width="920" height="40" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="480" y="441" text-anchor="middle" fill="#0e5a8a" font-size="13">一句话：CiM 把“冯·诺依曼瓶颈”里的数据搬移，换成“算力嵌入存储”，从而同时提升能效与吞吐。</text>
+</svg>

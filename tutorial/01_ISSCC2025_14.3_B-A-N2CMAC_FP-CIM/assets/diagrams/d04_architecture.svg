@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">B-A-N2CMAC FP-CIM 宏架构：16 个三重堆叠阵列共享一组广播输入</text>
+
+  <!-- 层次输入缓冲 -->
+  <rect x="40" y="80" width="240" height="120" rx="10" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="160" y="104" text-anchor="middle" fill="#6b3fa0" font-size="13" font-weight="700">层次化输入缓冲</text>
+  <text x="160" y="130" text-anchor="middle" fill="#45536b" font-size="11.5">GIN = 8b 并行指数（EIN）</text>
+  <text x="160" y="150" text-anchor="middle" fill="#45536b" font-size="11.5">+ 2b 串行尾数（MIN）</text>
+  <text x="160" y="172" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">广播给 16 个 TS-A 复用</text>
+  <path d="M280,140 H340" stroke="#6b3fa0" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="310" y="128" text-anchor="middle" fill="#6b7a93" font-size="10.5">GIN</text>
+
+  <!-- 16 个 TS-A -->
+  <rect x="345" y="80" width="575" height="260" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="365" y="104" fill="#0e5a8a" font-size="13" font-weight="700">16 × TS-A（三重堆叠阵列），每个算 1 个输出通道</text>
+  <g font-size="10.5">
+    <rect x="365" y="116" width="170" height="204" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="450" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">TS-A 0</text>
+    <rect x="377" y="146" width="146" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="450" y="167" text-anchor="middle" fill="#c25e2e">ESICU 转换单元</text>
+    <rect x="377" y="188" width="146" height="50" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="450" y="206" text-anchor="middle" fill="#1d8a5f">16×256 6T SRAM</text>
+    <text x="450" y="224" text-anchor="middle" fill="#45536b">（权重阵列）</text>
+    <rect x="377" y="246" width="146" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="450" y="264" text-anchor="middle" fill="#6b3fa0">N2CMACU</text>
+    <text x="450" y="280" text-anchor="middle" fill="#45536b">MAC 单元</text>
+    <rect x="365" y="110" width="0" height="0" rx="0"/>
+    <rect x="555" y="116" width="90" height="204" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="600" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">TS-A 1</text>
+    <text x="600" y="220" text-anchor="middle" fill="#45536b">（同左）</text>
+    <text x="660" y="220" text-anchor="middle" fill="#9aa8bd" font-size="14">……</text>
+    <rect x="700" y="116" width="200" height="204" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="800" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">TS-A 15</text>
+    <text x="800" y="220" text-anchor="middle" fill="#45536b">（同左）</text>
+  </g>
+
+  <!-- CA&Q -->
+  <rect x="40" y="240" width="240" height="100" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="160" y="266" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">CA&Q</text>
+  <text x="160" y="290" text-anchor="middle" fill="#45536b" font-size="11.5">校准累加器 + 量化器</text>
+  <text x="160" y="310" text-anchor="middle" fill="#45536b" font-size="11.5">多周期累加 + 符号补偿</text>
+  <text x="160" y="330" text-anchor="middle" fill="#45536b" font-size="11.5">（BF16A:23b / BF16B:21b / INT8:20b）</text>
+  <path d="M280,290 H345" stroke="#1d8a5f" stroke-width="2.4" marker-end="url(#ar)"/>
+
+  <!-- 输出 -->
+  <rect x="40" y="380" width="240" height="80" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="160" y="408" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">外围电路</text>
+  <text x="160" y="432" text-anchor="middle" fill="#45536b" font-size="11.5">读/写控制 · 列选择 · 模式配置</text>
+  <text x="160" y="450" text-anchor="middle" fill="#45536b" font-size="11.5">（BF16A / BF16B / INT8 三计算模式）</text>
+
+  <rect x="345" y="380" width="575" height="80" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="365" y="406" fill="#0e5a8a" font-size="12.5" font-weight="600">为什么“广播复用”重要？</text>
+  <text x="365" y="430" fill="#45536b" font-size="12">前作 [2,3] 的浮点输入不能跨阵列复用 → 阵列利用率低。本设计把输入拆成</text>
+  <text x="365" y="450" fill="#45536b" font-size="12">“并行指数 + 串行尾数”，16 个 TS-A 共享同一份 GIN → 利用率最大化。</text>
+</svg>

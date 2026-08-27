@@ -1,0 +1,33 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：双级分配（Twin-Stage Allocation）—— 自适应 PBW</h2>
+<figure>
+  <img src="assets/diagrams/d07_allocation.svg" alt="双级分配" style="max-width:940px">
+  <figcaption>图 6.1　层级粗粒度分配（CGA）+ 组级细粒度分配（FGA）：先按层选 PBW，再按组（共享尺度组）微调。</figcaption>
+</figure>
+<p>有了“PBW = 周期数”的电路基础（§4），还需要<strong>“给谁分配多少位”的决策器</strong>。论文的<strong>双级分配</strong>在两层粒度上找最优 PBW：</p>
+<ul>
+<li><strong>层级粗粒度分配（CGA）</strong>：离线为每一层构建一个小型查表（层 → 最优 PBW），迭代扫描所有层后存进“位宽分配器”。不敏感层用低位宽、敏感层用高位宽 → <strong>LLaMA-3.1 8B 平均 PBW −14.8%、精度无损</strong>；</li>
+<li><strong>组级细粒度分配（FGA）</strong>：MXFP 格式里<strong>每组 32 个数共享一个尺度 SS</strong>，一个累加向量由多组组成。SS 大的组对累加结果贡献大 → 多分配周期（高位宽）；SS 小的组贡献小 → 少分配（低位宽）。按组间尺度差 ΔSS 动态分配 → <strong>平均 PBW 再降 29.3%</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 FGA 的物理直觉：把“算力”花在重要的组上</div>
+<p>浮点累加的本质是“大数吃小数”：SS 大的组（数量级大）决定结果，SS 小的组（数量级小）贡献可忽略。给大组多算几位、小组少算几位，就是<strong>把有限的周期数（算力）优先分配给对结果影响最大的数据</strong>——这是“精度-效率帕累托优化”的教科书式应用。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_1_2_架构与配置.png">
+  <source src="assets/videos/v03_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · MXFP-CIM 数据流动画：全局解码+位宽分配 → ESUM → DBSU 滑动 → 压缩+加法树 → A&N，PBW 随周期数伸缩。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 层级 CGA 位宽分配（按敏感度给每层定 PBW）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">正在查看：层1 embedding（PBW 5b）</span>
+</div>
+<div class="hint">注意力/MLP 层敏感度高 → 给高位宽（11~13b、更多周期）；embedding/head 层不敏感 → 给低位宽（5~9b、更少周期）。PBW 直接映射为计算周期数（2~14）。</div>
+</div>
+</section>

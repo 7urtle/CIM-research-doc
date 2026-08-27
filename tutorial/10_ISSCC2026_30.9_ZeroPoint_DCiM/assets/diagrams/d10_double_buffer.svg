@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="460" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">双缓冲（Double Buffering）：计算与权重更新并行，零停顿</text>
+
+  <!-- 时间线 -->
+  <line x1="80" y1="150" x2="900" y2="150" stroke="#45536b" stroke-width="2"/>
+  <text x="70" y="145" fill="#45536b" font-size="12" text-anchor="end">时间</text>
+  <g font-size="11">
+    <!-- 周期刻度 -->
+    <line x1="120" y1="144" x2="120" y2="156" stroke="#45536b" stroke-width="1.4"/>
+    <text x="120" y="172" text-anchor="middle" fill="#6b7a93">0</text>
+    <line x1="280" y1="144" x2="280" y2="156" stroke="#45536b" stroke-width="1.4"/>
+    <text x="280" y="172" text-anchor="middle" fill="#6b7a93">32</text>
+    <line x1="440" y1="144" x2="440" y2="156" stroke="#45536b" stroke-width="1.4"/>
+    <text x="440" y="172" text-anchor="middle" fill="#6b7a93">64</text>
+    <line x1="600" y1="144" x2="600" y2="156" stroke="#45536b" stroke-width="1.4"/>
+    <text x="600" y="172" text-anchor="middle" fill="#6b7a93">96</text>
+    <line x1="760" y1="144" x2="760" y2="156" stroke="#45536b" stroke-width="1.4"/>
+    <text x="760" y="172" text-anchor="middle" fill="#6b7a93">128</text>
+  </g>
+
+  <!-- 权重组 A -->
+  <text x="70" y="92" fill="#1d8a5f" font-size="12.5" font-weight="600">权重组 A</text>
+  <rect x="120" y="78" width="640" height="28" rx="6" fill="#eefaf3" stroke="#1d8a5f" stroke-width="1.6"/>
+  <text x="440" y="97" text-anchor="middle" fill="#1d8a5f" font-size="12" font-weight="600">参与计算（从 0 周期开始，128 路 MAC 连续进行）</text>
+  <rect x="760" y="78" width="120" height="28" rx="6" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.6"/>
+  <text x="820" y="97" text-anchor="middle" fill="#c25e2e" font-size="11">被替换</text>
+
+  <!-- 权重组 B -->
+  <text x="70" y="212" fill="#c25e2e" font-size="12.5" font-weight="600">权重组 B</text>
+  <rect x="120" y="196" width="160" height="28" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+  <text x="200" y="215" text-anchor="middle" fill="#6b3fa0" font-size="11">空闲/旧权重</text>
+  <rect x="280" y="196" width="160" height="28" rx="6" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.6"/>
+  <text x="360" y="215" text-anchor="middle" fill="#c25e2e" font-size="11.5" font-weight="600">后台写入新权重（32 周期）</text>
+  <rect x="440" y="196" width="160" height="28" rx="6" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.6"/>
+  <text x="520" y="215" text-anchor="middle" fill="#c25e2e" font-size="11.5" font-weight="600">写另一组新权重</text>
+  <rect x="600" y="196" width="160" height="28" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+  <text x="680" y="215" text-anchor="middle" fill="#6b3fa0" font-size="11">等待切换</text>
+  <rect x="760" y="196" width="120" height="28" rx="6" fill="#eefaf3" stroke="#1d8a5f" stroke-width="1.6"/>
+  <text x="820" y="215" text-anchor="middle" fill="#1d8a5f" font-size="11" font-weight="600">切换到 B 计算</text>
+
+  <!-- 注释 -->
+  <g font-size="12.5">
+    <text x="120" y="262" fill="#45536b">• 完整写一组权重 = 32 个周期（每周期写 4 个权重的 Booth 选择码）</text>
+    <text x="120" y="286" fill="#45536b">• 计算在权重组 A 上进行的同时，组 B 在后台写入 → 计算永不因更新权重而停顿</text>
+    <text x="120" y="310" fill="#45536b">• 只要“计算耗时 &gt; 写一组权重耗时”，加速器就处于“计算功耗主导”状态 → 能效最高</text>
+    <text x="120" y="334" fill="#45536b">• 随着连续计算周期变多，写功耗占比可降到 1% → 接近纯计算功耗 → 峰值能效 147~254 TOPS/W</text>
+  </g>
+
+  <!-- 底部说明 -->
+  <rect x="60" y="364" width="840" height="76" rx="10" fill="#eef7fd" stroke="#b8d9ee"/>
+  <text x="480" y="390" text-anchor="middle" fill="#0e5a8a" font-size="13" font-weight="700">读路径：静态 2:1 MUX（Static 2:1 MUX）</text>
+  <text x="480" y="414" text-anchor="middle" fill="#45536b" font-size="12.5">只有“计算开始”那一刻才通过 MUX 读取选中的权重组，之后整组权重在锁存中保持稳定</text>
+  <text x="480" y="432" text-anchor="middle" fill="#45536b" font-size="12.5">→ 避免每个周期都读存储 → 读功耗显著下降</text>
+</svg>

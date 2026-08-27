@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">SNN vs CNN：一个省电但精度低，一个精度高但费电</text>
+
+  <!-- 左侧 SNN -->
+  <text x="250" y="94" text-anchor="middle" fill="#0e5a8a" font-size="16" font-weight="700">SNN（脉冲神经网络）</text>
+  <rect x="40" y="108" width="420" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="136" fill="#0e5a8a" font-size="13" font-weight="700">核心：神经元用“脉冲（spike）”通信</text>
+  <g font-size="12">
+    <line x1="80" y1="170" x2="200" y2="170" stroke="#0e5a8a" stroke-width="2"/>
+    <line x1="80" y1="170" x2="80" y2="155" stroke="#0e5a8a" stroke-width="2"/>
+    <line x1="115" y1="170" x2="115" y2="155" stroke="#0e5a8a" stroke-width="2"/>
+    <line x1="150" y1="170" x2="150" y2="155" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="80" y="145" text-anchor="middle" fill="#0e5a8a" font-size="10">1</text>
+    <text x="115" y="145" text-anchor="middle" fill="#0e5a8a" font-size="10">0</text>
+    <text x="150" y="145" text-anchor="middle" fill="#0e5a8a" font-size="10">1</text>
+    <text x="80" y="192" fill="#45536b">时间</text>
+  </g>
+  <text x="60" y="226" fill="#45536b" font-size="12">• 输入是 0/1 脉冲序列（事件驱动），没有脉冲就不算</text>
+  <text x="60" y="248" fill="#45536b" font-size="12">• 神经元膜电位累积到阈值才“发放”一个脉冲</text>
+  <text x="60" y="270" fill="#45536b" font-size="12">• 输入活动率极低（稀疏）→ 动态功耗极低</text>
+  <text x="60" y="300" fill="#0e5a8a" font-size="12.5" font-weight="600">优点：事件驱动、超低功耗、适合神经形态硬件</text>
+  <text x="60" y="322" fill="#c25e2e" font-size="12.5" font-weight="600">缺点：训练难、精度通常低于 CNN</text>
+
+  <!-- 右侧 CNN -->
+  <text x="710" y="94" text-anchor="middle" fill="#c25e2e" font-size="16" font-weight="700">CNN（卷积神经网络）</text>
+  <rect x="500" y="108" width="420" height="230" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11">
+    <rect x="530" y="140" width="60" height="50" fill="none" stroke="#c25e2e" stroke-width="1.5"/>
+    <rect x="560" y="165" width="60" height="50" fill="none" stroke="#c25e2e" stroke-width="1.5"/>
+    <rect x="590" y="190" width="60" height="50" fill="none" stroke="#c25e2e" stroke-width="1.5"/>
+    <rect x="620" y="215" width="60" height="50" fill="none" stroke="#c25e2e" stroke-width="1.5"/>
+    <rect x="650" y="240" width="60" height="50" fill="none" stroke="#c25e2e" stroke-width="1.5"/>
+    <text x="660" y="145" fill="#45536b">特征图</text>
+  </g>
+  <text x="520" y="320" fill="#45536b" font-size="12">• 每个像素 × 每个权重都要算（稠密乘法累加）</text>
+  <text x="520" y="322" fill="#45536b" font-size="12"></text>
+  <text x="520" y="326" fill="#c25e2e" font-size="12.5" font-weight="600">优点：精度高、训练成熟（ResNet/MobileNet）</text>
+  <text x="520" y="348" fill="#c25e2e" font-size="12.5" font-weight="600">缺点：每层都全量计算 → 能效低</text>
+
+  <!-- 底部 -->
+  <rect x="40" y="360" width="880" height="120" rx="12" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="480" y="388" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">混合 SNN-CNN 模型：鱼与熊掌兼得</text>
+  <text x="480" y="414" text-anchor="middle" fill="#45536b" font-size="12.5">用 CNN 处理精度敏感的部分（图像识别、语音识别），用 SNN 处理事件驱动的部分</text>
+  <text x="480" y="436" text-anchor="middle" fill="#45536b" font-size="12.5">（事件相机输出、稀疏特征、时序滤波）→ 整体在精度与能耗之间取得平衡</text>
+  <text x="480" y="462" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">但混合模型 = 两种计算模式 = 传统硬件要么做两套电路（面积大），要么不支持 → 本论文的出发点</text>
+</svg>

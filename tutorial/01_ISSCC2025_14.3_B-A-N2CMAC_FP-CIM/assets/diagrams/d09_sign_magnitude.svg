@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="440" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">2 的补码 vs 符号-数值：负权重的“位级稀疏性”差别</text>
+
+  <!-- 2C -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">2 的补码（2C）格式存 -7</text>
+  <rect x="40" y="108" width="420" height="150" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="13">
+    <text x="70" y="140" fill="#45536b">+7 = 0000 0111</text>
+    <text x="70" y="168" fill="#c25e2e" font-weight="700">-7 = 1111 1001（取反+1）</text>
+    <text x="70" y="200" fill="#45536b">数值位几乎全是 1 → 翻转活动率高</text>
+    <text x="70" y="228" fill="#c25e2e" font-weight="600">位级稀疏性差（大部分位是 1）</text>
+  </g>
+
+  <!-- 符号-数值 -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">符号-数值格式存 -7</text>
+  <rect x="500" y="108" width="420" height="150" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="13">
+    <text x="530" y="140" fill="#45536b">+7 = 0 000 0111（符号 0 + 数值）</text>
+    <text x="530" y="168" fill="#1d8a5f" font-weight="700">-7 = 1 000 0111（只翻符号位！）</text>
+    <text x="530" y="200" fill="#45536b">数值位保持原样 → 加法树只处理无符号数</text>
+    <text x="530" y="228" fill="#1d8a5f" font-weight="600">位级稀疏性好（小值权重多为 0 位）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="286" width="880" height="132" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="314" fill="#0e5a8a" font-size="13.5" font-weight="700">两个连锁收益</text>
+  <text x="60" y="342" fill="#45536b" font-size="12.5">① <strong>位级稀疏性提升 1.83×</strong>（ResNet50 负 INT8 权重）：负数不再把位“填满”，加法树翻转减少；</text>
+  <text x="60" y="366" fill="#45536b" font-size="12.5">② <strong>无符号 MAC</strong>：DMU/加法树不再需要符号位处理（求负、符号扩展），计算周期减少</text>
+  <text x="60" y="390" fill="#45536b" font-size="12.5">（ViT 8b/10b 输入各 −19.80%/−16.50% 周期）；符号补偿在 CA&amp;Q 里统一加回，多周期共享。</text>
+  <text x="60" y="412" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 相比典型 2C MAC：功耗 −1.96×、延迟 −1.25×、面积 −1.18×</text>
+</svg>

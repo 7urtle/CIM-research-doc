@@ -1,0 +1,70 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：把 FP-CIM 的“乘法”和“对齐”都干掉</h3>
+<p>把整篇论文串成一句话：<strong>FP-CIM 慢在尾数乘法（8 周期）、贵在指数对齐（127 个比较器）、脆在环境变化（精度暴跌）→ 分别用 multiply-less 最小选择（1 周期）、协同对齐（免 XE_max）、ODFC 片上微调（精度恢复）解决</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：预对齐 FP-CIM 的尾数 MAC 位串行 8 周期 → 87.5% 闲置；FP/INT 转换贵；环境变化掉精度（§1–2）；</li>
+<li><strong>创新① 吞吐</strong>：multiply-less（L1 距离 → 最小选择）→ 位并行 1 周期 → 8× 吞吐；ParMS 把最小选择做薄（§3–4）；</li>
+<li><strong>创新② 转换</strong>：无损钳位 + WE_max 预对齐（免 127 比较器）+ UBF16（归一化 16→8 位）（§5）；</li>
+<li><strong>创新③ 训练</strong>：ODFC 多轮更新 + 时分复用 + 保损失 FP 加法 → 13.8%→84.3%（§6）；</li>
+<li><strong>闭环</strong>：128 TFLOPS/W、7.02 TFLOPS/mm²、三任务零精度损失（§7–8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 首次 FP-CIM one-shot（1 周期 FP 运算）；② 把 multiply-less 从 INT（第 13 篇）系统推到 FP 并补上训练，是前作的完整进化；③ 三招环环相扣、每招都有量化收益；④ 有差异化卖点（片上微调）；⑤ 测试全面（三任务 + 微调恢复 + 层级分析）。</li>
+<li><strong>弱/局限</strong>：① 局限在 L1 距离网络（不能直接加速通用点积模型）；② 128 TFLOPS/W 是峰值（依赖稀疏度）；③ ODFC 训练能效 1.71 TFLOPS/W 远低于推理——训练天生贵；④ 未覆盖 Transformer/注意力；⑤ 微调恢复 84.3% 未回到原始 99.1%（预对齐误差仍在）。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>扩展到 Transformer / 注意力</strong>：multiply-less 的 L1 注意力（Adder Attention）在硬件上如何映射？softmax 的指数运算与最小选择如何结合？</li>
+<li><strong>更高精度</strong>：UBF16 → FP16/FP32 扩展（尾数更长，ParMS 需要更多位、协同对齐更复杂）；</li>
+<li><strong>更强的片上训练</strong>：ODFC 支持更大模型、更复杂优化器（Adam/自适应学习率）、甚至全模型训练；</li>
+<li><strong>与安全结合</strong>（联动第 16 篇）：片上微调 + 权重加密 + 防侧信道——边缘 AI 的安全训练；</li>
+<li><strong>多宏系统级扩展</strong>：单引擎 → 多引擎（tensor 并行 + 训练流水线），配合第 12 篇的 MCM 思路；</li>
+<li><strong>动态稀疏 / 动态位宽</strong>：ParMS 的稀疏感知变体 + 层间位宽自适应，进一步压缩能耗。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>One-Shot 计算</td><td>1 个周期完成 FP 运算（输入对齐+尾数计算+INT→FP 各 1 周期流水）。</td></tr>
+<tr><td>Multiply-Less NN</td><td>免乘法神经网络：用 L1 距离替代点积（第 13 篇基础）。</td></tr>
+<tr><td>L1 距离</td><td>Σ|xi−wi|，分解为 Σxi+Σwi−2Σmin(xi,wi)。</td></tr>
+<tr><td>ParMS</td><td>8-bit 并行最小选择器（比较单元+8 选择单元，进位前瞻）。</td></tr>
+<tr><td>G/P 信号</td><td>进位前瞻的生成/传播信号，用于最小选择的比较树。</td></tr>
+<tr><td>LESS 信号</td><td>比较结果：W 是否小于 X，控制选择单元。</td></tr>
+<tr><td>ManAU</td><td>尾数对齐单元：用权重最大指数对齐输入尾数。</td></tr>
+<tr><td>ITFU</td><td>INT→FP 转换单元：16 位整数 → UBF16。</td></tr>
+<tr><td>UBF16</td><td>无符号 BF16：最高位=尾数 MSB（非符号位），简化归一化。</td></tr>
+<tr><td>WE_max</td><td>权重最大指数（每 CIM core 离线预存，用于对齐输入）。</td></tr>
+<tr><td>XE_max</td><td>输入最大指数（传统步骤①要在线找，本文免除）。</td></tr>
+<tr><td>无损钳位</td><td>负权重→0、超上限→Xmax（最小选择语义下无损）。</td></tr>
+<tr><td>InADD</td><td>128 输入 8 位加法树，计算 Σxi 并共享。</td></tr>
+<tr><td>WSUM</td><td>权重和 Σwi 的预存（SRAM 额外列）。</td></tr>
+<tr><td>ACC-ASU</td><td>累加-装配单元：汇合 Σxi、Σwi、2Σmin。</td></tr>
+<tr><td>ODFC</td><td>片上微调核心：轻量训练硬件（128 轮顺序更新）。</td></tr>
+<tr><td>保损失 FP 加法</td><td>对齐误差保留到下一级加法，降低多级求和损失。</td></tr>
+<tr><td>重训练补偿</td><td>BF16 精度重训模型，补偿预对齐的精度损失。</td></tr>
+<tr><td>FoM</td><td>数据精度 × 面积效率 × 能效（本文改进 5×）。</td></tr>
+<tr><td>TFLOPS/W</td><td>每瓦每秒万亿次浮点运算（1 最小选择+累加计 2 Ops）。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：H. Diao et al., “A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI,” IEEE JSSC, vol. 60, no. 9, pp. 3403–3414, Sep. 2025. DOI: 10.1109/JSSC.2024.3522304（CICC'24 短文 [19] 期刊扩展版）</li>
+<li>[14] Y. He et al., “A 28nm 38-to-102-TOPS/W 8b multiply-less approximate digital SRAM compute-in-memory macro for neural-network inference,” ISSCC 2023（本文基线，即本系列第 13 篇前作）</li>
+<li>[25] H. Chen et al., “AdderNet: Do we really need multiplications in deep learning?” CVPR 2020（multiply-less 算法来源）</li>
+<li>[26] H. Chen et al., “Universal adder neural networks,” arXiv（L1 算子表达力证明）</li>
+<li>[21] / [22] 对比的 SOTA FP-CIM（预对齐 / 位并行乘法）</li>
+<li>[19] 本团队 CICC'24 短文（one-shot FP multiply-less 前期版本）</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读本系列第 13 篇（multiply-less INT CIM）理解 L1 距离与最小选择的硬件分解；② 读 AdderNet 原文 [25] 与 Universal Adder NN [26]；③ 动手：用 Python 实现 BF16 → UBF16 转换和 WE_max 预对齐，验证无损钳位对最小选择结果无影响；④ 用 Verilog 实现 8 位 ParMS 的比较树（G/P 展开），对比与综合比较器的面积；⑤ 与本系列第 16 篇（安全 IMC）对照：能效 vs 安全的权衡。</p>
+</div>
+</section>

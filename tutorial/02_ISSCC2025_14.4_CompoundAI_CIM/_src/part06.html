@@ -1,0 +1,37 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：NIM + 动态启动器 —— 静态与动态稀疏双管齐下</h2>
+<figure>
+  <img src="assets/diagrams/d07_sparsity.svg" alt="稀疏加速" style="max-width:940px">
+  <figcaption>图 6.1　静态稀疏（2:4 剪枝 + NIM 路由）与动态稀疏（Booth 池 + 动态启动器）的组合。</figcaption>
+</figure>
+<p><strong>静态稀疏（权重剪枝、注意力掩码）</strong>：用业界最通用的 <strong>2:4 压缩</strong>（4 个权重保留 2 个），保持跨模型兼容。NIM（网络存内）按匹配权重从 4 个单元中选 2 个输入元素，并<strong>排除两条“不可能路径”</strong>降低网络复杂度；读出的数据再 Booth 编码做权重乘法。</p>
+<p><strong>动态稀疏（激活/编码项的随机稀疏）</strong>：每个编码项有 4 个字段——<strong>ID</strong>（选择匹配权重）、<strong>sign</strong>（SM 符号翻转）、<strong>valid</strong>（有效掩码）、<strong>SF</strong>（移位偏移）。valid 的分布是随机的（动态稀疏）。两个机制处理：</p>
+<ul>
+<li><strong>BPLS（Booth 池-道共享）</strong>：8/4 个并行输入 × 4/8 个编码项构成 Booth 池，把非零项<strong>重排</strong>到空闲道 → 消除“稀疏导致的空道”，逼近理想加速；</li>
+<li><strong>动态启动器</strong>：收集有效 Booth 池字段，<strong>并行前导 1 检测器</strong>逐个找出有效项，只对有效项做选择性 Booth 编码乘法（ID 选权重、XOR 翻符号、AND 掩码、SF 提供移位）。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 加速账</div>
+<p>静态 2× + 动态 2.65× = <strong>平均 5.30× 加速</strong>（>2.7× 于前作），达到稀疏理论上限（1/稀疏度）的 <strong>92.6%</strong>——“实际与理论加速的差距”被基本抹平。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_5_稀疏加速.png">
+  <source src="assets/videos/v03_sparsity.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 稀疏加速动画：静态 2:4 选路 + 动态 Booth 池重排 + 前导 1 启动器。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_4_5_稀疏加速.png" alt="论文图 14.4.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.4.5：静态/动态稀疏感知加速、NIM、稀疏感知单元与动态启动器设计。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 2:4 静态稀疏路由（NIM 选择）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">4 个权重选 2 个有效（2:4）</span>
+</div>
+<div class="hint">每 4 个权重保留 2 个（黄色=有效）。NIM 只路由有效项到计算路径，并排除两条“不可能路径”简化网络。</div>
+</div>
+</section>

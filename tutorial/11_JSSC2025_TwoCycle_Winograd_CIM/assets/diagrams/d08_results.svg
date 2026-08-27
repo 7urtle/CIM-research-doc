@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">实测结果：258.5 TOPS/W 的“三级技术栈”</text>
+
+  <!-- 技术栈 -->
+  <rect x="40" y="80" width="440" height="280" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">三项技术的各自贡献（ResNet34@ImageNet）</text>
+  <g font-size="11.5">
+    <rect x="60" y="122" width="380" height="40" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="250" y="144" text-anchor="middle" fill="#c25e2e">电路级 Radix16+LUT：完整 MAC 功耗 −2.44×</text>
+    <rect x="60" y="172" width="380" height="40" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="250" y="194" text-anchor="middle" fill="#0e5a8a">微架构级混合 Winograd：加速 2.59×（精度 −0.6%）</text>
+    <rect x="60" y="222" width="380" height="40" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="250" y="244" text-anchor="middle" fill="#6b3fa0">数据级 MDPS：50% 双端稀疏 → 能效 3.11×</text>
+    <rect x="60" y="272" width="380" height="56" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="250" y="294" text-anchor="middle" fill="#1d8a5f" font-weight="600">三者叠加（Winograd + 50/50 稀疏）：</text>
+    <text x="250" y="316" text-anchor="middle" fill="#1d8a5f" font-weight="600">ResNet34 8.05× / ResNet50 4.85× 加速</text>
+  </g>
+
+  <!-- 芯片 -->
+  <rect x="500" y="80" width="420" height="280" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">28nm 原型芯片</text>
+  <g font-size="11.5">
+    <rect x="520" y="122" width="180" height="36" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="610" y="144" text-anchor="middle" fill="#1d8a5f">面积 6.02 mm²</text>
+    <rect x="720" y="122" width="180" height="36" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="810" y="144" text-anchor="middle" fill="#1d8a5f">0.6~1.1V · 78~287MHz</text>
+    <text x="520" y="200" fill="#45536b">• 峰值系统能效 <strong>258.5 TOPS/W</strong>（0.6V、116MHz）；</text>
+    <text x="520" y="226" fill="#45536b">• 范围 19.9~258.5 TOPS/W（随电压/负载）；</text>
+    <text x="520" y="252" fill="#45536b">• 精度损失 vs FP 基线：ResNet34 −0.65%、ResNet50 −2.15%；</text>
+    <text x="520" y="278" fill="#45536b">• 归一化峰值吞吐：比 SOTA 高 2.55~7.08×；</text>
+    <text x="520" y="310" fill="#45536b">• 能效换算到 28nm/0.6V 后仍领先 2.55~7.08×。</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="384" width="880" height="72" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="412" fill="#0e5a8a" font-size="13" font-weight="700">为什么归一化吞吐是“公平”的指标？</text>
+  <text x="60" y="438" fill="#45536b" font-size="12.5">归一化峰值吞吐 = 1 /（计算周期数 × 其他技术增益）——只与“宏周期数”和“技术增益”有关，</text>
+  <text x="60" y="458" fill="#45536b" font-size="12.5">剥离了频率/MAC 数差异（Table IV/V 详解）；这是对比 CiM 处理器的更公平标尺。</text>
+</svg>

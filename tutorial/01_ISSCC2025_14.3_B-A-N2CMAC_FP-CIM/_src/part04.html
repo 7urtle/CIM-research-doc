@@ -1,0 +1,27 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>宏架构总览：16 个三重堆叠阵列 + 层次输入缓冲</h2>
+<figure>
+  <img src="assets/diagrams/d04_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 4.1　B-A-N2CMAC FP-CIM 宏：层次化输入缓冲（GIN 广播）→ 16 个 TS-A（每个 = ESICU + 16×256 6T SRAM + N2CMACU）→ CA&Q（校准累加器+量化器）+ 外围电路。</figcaption>
+</figure>
+<ul>
+<li><strong>16 个 TS-A（三重堆叠阵列）</strong>：每个 TS-A 计算 1 个输出通道，内部 = 嵌入式串行输入转换单元（ESICU）+ 16×256 6T SRAM 阵列 + 格式混合非 2 补码 MAC 单元（N2CMACU）；</li>
+<li><strong>层次化输入缓冲</strong>：对外提供 <strong>GIN</strong>（Global Input）= <strong>8b 并行指数输入 EIN + 2b 串行尾数输入 MIN</strong>；</li>
+<li><strong>CA&Q（校准累加器与量化器）</strong>：负责多周期累加、符号补偿与量化输出（BF16A:23b / BF16B:21b / INT8:20b）；</li>
+<li><strong>外围电路</strong>：读写控制、列选择、三种计算模式配置。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 为什么“广播复用”是本文卖点？</div>
+<p>前作 [2,3] 的浮点输入因为“每个输入要按自己的指数对齐”，没法直接广播给多个阵列 → 阵列利用率低（很多周期空转）。本文把输入拆成“<strong>并行指数 + 串行尾数</strong>”，指数走并行总线、尾数走串行流水，<strong>一份 GIN 同时喂 16 个 TS-A</strong>——复用率拉满，这是标题里 “Broadcast”（广播）的由来。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_2_宏架构.png">
+  <source src="assets/videos/v03_bcast.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 广播数据流动画：一份 GIN（8b 指数 + 2b 串行尾数）从层次输入缓冲广播给 16 个 TS-A，每个 TS-A 各算一个输出通道。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_2_宏架构.png" alt="论文图 14.3.2">
+  <figcaption>图 4.2　论文原图 Fig. 14.3.2：宏整体结构、关键特性与 BF16/INT8 可重构。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

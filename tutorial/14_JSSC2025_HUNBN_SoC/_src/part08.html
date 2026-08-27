@@ -1,0 +1,99 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测结果与端到端工作负载</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 基础实测指标（宏级/系统级能效、密度、FoM）；② 特征图尺寸与核尺寸对能效的影响规律；③ 五种工作负载的能效差异及原因。</p>
+</div>
+
+<h3>8.1 基础测量</h3>
+<p>芯片用 TSMC 16nm FinFET 制造，200 MHz sign-off 速度设计（省电优先），核心面积 1.9×1.9 mm²。论文 Fig.15 是测量设置与芯片照片（SODIMM 适配板 + 电流表测能效）。</p>
+<figure>
+<img src="assets/figs/fig14_15_测试平台与芯片照片.png" alt="测试平台与芯片照片">
+<figcaption>图 16 · 论文 Fig.15：测量设置与芯片照片。</figcaption>
+</figure>
+<p>论文 Fig.17 给出 7 个样片在不同频率下的能效（输入与权重为纯随机数）：</p>
+<ul>
+<li><strong>宏级能效：126.3 TOPS/W</strong>（4-bit MAC）；</li>
+<li><strong>系统级能效：24.28 TOPS/W</strong>（含片内所有能耗源，除 IO 电源域）；</li>
+<li>存储密度 508 kB/mm²、计算密度 1.27 K MAC 单元/mm²；</li>
+<li>FoM = (MB/mm²)×(#MAC/mm²) = <strong>0.64K</strong>，比最佳竞品高 <strong>20%</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_17_能效频率图.png" alt="能效频率图">
+<figcaption>图 17 · 论文 Fig.17：七个样片的能效 vs 频率（SoC 级与宏级）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c01_能效对比.png" alt="能效对比图">
+<figcaption>数据图 1 · 宏级 vs 系统级能效对比（依据论文摘要与表 I）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_FoM对比.png" alt="FoM对比图">
+<figcaption>数据图 2 · 面积利用率 FoM 对比（本工作 0.64K，比最佳竞品高 20%；竞品数值为示意）。</figcaption>
+</figure>
+
+<h3>8.2 不同层类型的评估</h3>
+<h4>特征图尺寸的影响（论文 Fig.18）</h4>
+<p>固定核 FX=FY=3、C=32、K=32，输入/权重稀疏 50%：小特征图时能效/吞吐低（频繁行切换 + DIMC 停顿，时钟功耗与静态能耗主导）；随特征图增大能效显著提升，<strong>约 24 后趋于饱和</strong>（控制功耗开销可忽略），最大 <strong>29 TOPS/W @ 0.42 TOPS</strong>。结论：除非特征图极小，SoC 能满负荷工作。</p>
+
+<figure>
+<img src="assets/figs/fig14_18_能效特征图尺寸.png" alt="能效特征图尺寸">
+<figcaption>图 18 · 论文 Fig.18：能效与吞吐 vs 特征图尺寸。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_特征图尺寸.png" alt="特征图尺寸图">
+<figcaption>数据图 3 · 能效/吞吐 vs 特征图尺寸（趋势示意，依据论文 Fig.18）。</figcaption>
+</figure>
+
+<h4>核尺寸与通道数的影响（论文 Fig.19）</h4>
+<p>固定 K=32 扫描 FX/FY 与 C：<strong>C 为 32 的倍数、FX/FY 为 3 的倍数时最省能</strong>（与 Case 1/2 的映射对齐）；FX=FY=1（点卷积）时硬件资源严重欠利用 → 能效大幅下降。这是“映射匹配度”的又一证据。</p>
+
+<figure>
+<img src="assets/figs/fig14_19_能效通道核尺寸.png" alt="能效通道核尺寸">
+<figcaption>图 19 · 论文 Fig.19：能效与吞吐 vs 输入通道数与核尺寸。</figcaption>
+</figure>
+
+<h3>8.3 端到端工作负载</h3>
+<p>论文把完整模型映射上片，实测五种工作负载（表见教学图 9）：</p>
+<table>
+<tr><th>模型</th><th>能效（TOPS/W）</th><th>吞吐/每帧能耗</th><th>说明</th></tr>
+<tr><td><strong>U-Net</strong></td><td><strong>19</strong>（平均系统级）</td><td>155 帧/s · 0.11 mJ/帧</td><td>定制 4-bit 模型（精度掉 &lt;1%）；长跳跃连接在片上高效实现；达峰值 80%</td></tr>
+<tr><td><strong>ResNet8</strong></td><td><strong>13.6</strong>（卷积层）</td><td>8.44K 帧/s · 1.5 µJ/帧</td><td>全连接层换成 3×3 卷积（论文 Fig.20）；达峰值 57%</td></tr>
+<tr><td><strong>MobileNetV1</strong></td><td>1.9</td><td>2.88K 帧/s · 3.7 µJ/帧</td><td>点卷积/深度卷积主导 → 阵列欠利用</td></tr>
+<tr><td><strong>DS-CNN</strong></td><td>2.08</td><td>2.44K 帧/s · 5.09 µJ/帧</td><td>同上</td></tr>
+<tr><td><strong>深自编码器</strong></td><td>0.9</td><td>30.8K 帧/s · 0.17 µJ/帧</td><td>所有 GEMM 换成近似卷积</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig14_20_FC层替换.png" alt="FC层替换">
+<figcaption>图 20 · 论文 Fig.20：把全连接层替换为 3×3 输入特征图上的卷积（等效计算）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig14_21_四种模型性能.png" alt="四种模型性能">
+<figcaption>图 21 · 论文 Fig.21：U-Net、ResNet8、MobileNetV1、DS-CNN 的性能分析。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig14_22_深度自编码器性能.png" alt="深度自编码器性能">
+<figcaption>图 22 · 论文 Fig.22：深度自编码器的性能分析。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 实测结果汇总、工作负载对比与设计哲学总结。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 数据告诉我们什么？</div>
+<ul>
+<li><strong>数据流匹配度决定能效天花板</strong>：U-Net/ResNet8（3×3 为主）19/13.6 TOPS/W vs MobileNetV1/DS-CNN（点卷积为主）~2 TOPS/W —— 差一个数量级；</li>
+<li><strong>系统级能效 ≈ 宏级能效 × 利用率</strong>：U-Net 80% 峰值、ResNet8 57% 峰值，就是“灵活数据流支持”的量化回报；</li>
+<li><strong>FoM 0.64K 的意义</strong>：同等工作量所需芯片面积更小 → 省面积可转成降成本或加功能。</li>
+</ul>
+</div>
+</section>

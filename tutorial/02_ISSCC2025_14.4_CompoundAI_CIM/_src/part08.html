@@ -1,0 +1,33 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 8.1　能效：峰值 51.6 TFLOPS/W（含稀疏+无预充电单元）、基础 16.2 TFLOPS/W、复合模型部署平均 5.55~12.54 TFLOPS/W（图中为范围中值示意）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_ser.png" alt="SER" style="max-width:860px">
+  <figcaption>图 8.2　SER 60.1 dB = 前作 3.14×；FP16-MAC 最大误差 &lt; 2⁻³⁰（前作 2⁻¹）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_sparsity.png" alt="稀疏加速" style="max-width:860px">
+  <figcaption>图 8.3　稀疏加速：静态 2× + 动态 2.65× = 5.30×，达理论上限（1/稀疏度）的 92.6%。</figcaption>
+</figure>
+<ul>
+<li><strong>工艺/面积</strong>：28nm，2.67 mm²，224kb 异质宏；</li>
+<li><strong>能效</strong>：峰值 51.6 TFLOPS/W、2.44 TFLOPS/mm²；复合模型平均 5.55~12.54 TFLOPS/W；</li>
+<li><strong>精度</strong>：SER 60.1 dB、误差率 &lt;0.6%（所有测试模型平均）；</li>
+<li><strong>FoM</strong>（SER × 系统吞吐/面积/功耗）：比前作 FP-CIM 高 <strong>&gt;5.72×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_4_6_测量结果.png" alt="论文图 14.4.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.4.6：代表性模型测量结果、Shmoo 图与前作对比表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_4_7_芯片照片.png" alt="论文图 14.4.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.4.7：裸片显微照片与硬件规格表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 51.6 TFLOPS/W 依赖“稀疏数据 + 无预充电单元”的组合条件，和 16.2 TFLOPS/W 的基础值差异巨大——读论文先弄清“哪个数字在什么条件下测得”；② 2⁻³⁰ 是“证明概念”下的误差上界，实际 SER 60.1 dB 是 64×64 采样的平均值；③ Compound AI 的“5.55~12.54 TFLOPS/W”跨模型范围说明复合模型的负载差异很大，性能报告要看分布而不是只看峰值。</p>
+</div>
+</section>

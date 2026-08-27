@@ -1,0 +1,90 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：一个周期内，4096 个 MAC 是怎么“跑”完的</h2>
+
+<h3 id="sec7-1">7.1 架构总览：128 进、32 出、2 组权重</h3>
+<p>把前面所有零件拼起来，就是论文 Fig. 30.9.1 的加速器组织：</p>
+<ul>
+<li><strong>输入侧</strong>：128 个输入通道（128 个激活），每个周期进来一组 128 个 8b 零点量化值；</li>
+<li><strong>转换级</strong>：128 个转换单元做无符号→有符号映射 + 零点偏置合并（§4.2）；</li>
+<li><strong>广播总线</strong>：转换后的 128 个有符号激活广播到全部 32 个计算列；</li>
+<li><strong>计算阵列</strong>：32 个计算列（= 32 个输出通道），每列内部：2 组权重（12T 锁存，双缓冲）→ 静态 2:1 MUX → Booth 选择器 ×128 → 4 个 bank（每 bank 32 路 MAC 的 CSA 树）→ 第 4 级求和 + 零点修正项；</li>
+<li><strong>输出侧</strong>：每列每周期输出 1 个 128 路点积结果，32 列共 32 个输出通道结果。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="系统架构总图" style="max-width:920px">
+  <figcaption>图 7.1　DCiM 加速器整体架构（本教程根据论文 Fig. 30.9.1 文字描述重绘）。每列每周期 128 路 MAC，32 列共 4096 MAC。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧮 吞吐量自洽性验证（重要！学会自己验算论文数字）</div>
+<p>吞吐 = 每周期 MAC 数 × 频率 × 每 MAC 2 次运算<br>
+= 32 列 × 128 路 × 2.62 GHz × 2 ops<br>
+= 4096 × 2.62×10⁹ × 2 ≈ <strong>21.5 × 10¹² ops/s = 21.5 TOPS</strong> ✓ 与论文一致。</p>
+<p>面积效率 = 21.5 TOPS / 0.0856 mm² ≈ <strong>251 ≈ 250 TOPS/mm²</strong> ✓。<br>
+这个“自洽性检验”是读芯片论文的基本功：任何声称的吞吐/能效/面积数字，都能用架构参数推出来对得上。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_1_架构组织.png" alt="论文图 30.9.1">
+  <figcaption>图 7.2　论文原图 Fig. 30.9.1：支持零点量化 8b 无符号/有符号激活与权重的 DCiM 加速器组织。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 4 级流水线：128 路 MAC 怎么分四步走</h3>
+<p>论文在“吞吐与功耗的平衡”下把 128 路 MAC 拆成 <strong>4 级流水线</strong>（图 d07）：</p>
+<figure>
+  <img src="assets/diagrams/d07_compute_column.svg" alt="计算列与流水线" style="max-width:940px">
+  <figcaption>图 7.3　单个计算列内部：双缓冲权重 → 静态 MUX → Booth 选择器 → 4 bank × 32 路 CSA → 第 4 级求和与修正。流水线级次用颜色区分。</figcaption>
+</figure>
+<table>
+<tr><th>级</th><th>做什么</th><th>数据宽度/规模</th><th>位置</th></tr>
+<tr><td><strong>第 1 级</strong></td><td>无符号→有符号转换 + 零点偏置合并（MSB 取反）</td><td>128 个 8b 激活</td><td>外围（32 列共享）</td></tr>
+<tr><td><strong>第 2 级</strong></td><td>Booth 部分积生成；每个 bank 内 32 路 CSA“先跨乘数相加”（同对齐的部分积先并）</td><td>128 乘法 → 512 部分积</td><td>每个计算列内</td></tr>
+<tr><td><strong>第 3 级</strong></td><td>“移位合并”：把每个乘法自己的 4 个错位部分积和合并</td><td>每 bank 得 1 个 32 路点积</td><td>每个计算列内</td></tr>
+<tr><td><strong>第 4 级</strong></td><td>Σ 4 个 bank（凑成 128 路 MAC）+ 三个零点修正项</td><td>1 个点积结果</td><td>每个计算列内</td></tr>
+</table>
+<p>为什么要“先跨乘数、后移位置换”而不是反过来？想象 32 个乘法的部分积：先按<strong>相同对齐位置</strong>把 32 个乘数相加（列方向并），再做 4 个错位的合并（行方向并）——这样 CSA 树的每一层都只处理“对齐好”的数，进位链最短、布线最规整，延迟和面积都更优。这是加法树设计的经典手法。</p>
+<figure>
+  <img src="assets/diagrams/d11_pipeline.svg" alt="4 级流水线" style="max-width:920px">
+  <figcaption>图 7.4　4 级流水线时空图：每周期有一组新数据进入第 1 级，4 个周期后从第 4 级流出——流水线“填满”后每周期都出一个结果。</figcaption>
+</figure>
+
+<div class="demo">
+<div class="dhead">⏱ 演示 E · 4 级流水线时空图（拖动周期滑块看数据组移动）</div>
+<canvas id="demoE" width="980" height="300"></canvas>
+<div class="dbar">
+  <input id="demoE-slider" type="range" min="0" max="9" value="0" style="flex:1;accent-color:#0f7cb6">
+  <button id="demoE-play" class="on">▶ 自动播放</button>
+  <button id="demoE-reset">重置</button>
+  <span class="stat" id="demoE-stat">周期 1 · 数据组 A 进入第 1 级</span>
+</div>
+<div class="hint">5 组数据（A–E）依次进入流水线。观察：第 4 个周期开始每组都流出 1 个结果（吞吐=1 结果/周期），而单组延迟始终是 4 周期。这就是“延迟”和“吞吐”的区别。</div>
+</div>
+<div class="box info">
+<div class="bt">🧠 流水线填满后：延迟 4 周期，吞吐 1 结果/周期</div>
+<p>单看一组数据，从进入到输出要 4 个周期（延迟 latency = 4）；但流水线一旦填满，<strong>每个周期都有一组新的结果从第 4 级流出</strong>（吞吐 throughput = 1/周期）。对推理加速器来说，吞吐远比延迟重要。论文的 4 级选择是“吞吐 × 功耗”的平衡：级数太少则单级组合逻辑太长、频率上不去；级数太多则寄存器开销和流水线功耗上升。</p>
+</div>
+
+<h3 id="sec7-3">7.3 交互演示 D：亲手“跑”一列的数据流</h3>
+<div class="demo">
+<div class="dhead">⚙ 演示 D · 一个计算列的数据流仿真（可交互）</div>
+<canvas id="demoD" width="980" height="380"></canvas>
+<div class="dbar">
+  <button id="demoD-play" class="on">▶ 自动运行</button>
+  <button id="demoD-step">单步（1 周期）</button>
+  <button id="demoD-reset">重置</button>
+  <span class="stat" id="demoD-stat">周期 0 / 等待开始</span>
+</div>
+<div class="hint">绿色块=激活（128 个），紫色块=权重（128 个，双缓冲两组），蓝块=部分积/CSA 树，橙色块=输出。观察：激活进入第 1 级转换 → 广播 → 4 个 bank 并行算 → 第 4 级求和出结果；同时注意第二组权重在后台被写入（进度条）。</div>
+</div>
+
+<h3 id="sec7-4">7.4 视频演示：完整数据流流水线</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_9_3_零点量化数学.png">
+  <source src="assets/videos/v02_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · DCiM 数据流流水线工作流程：128 个激活 → 第 1 级转换 → 广播到 32 个计算列 → 每列 4 bank 并行 MAC → 第 4 级求和与修正 → 输出。循环 14 个周期，观察每周期 4096 MAC 的持续吞吐。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么第 2、3 级要各占一个流水级而不是合并？提示：128 个乘法 × 4 部分积 = 512 个部分积的加法树深度。② 如果输入通道扩到 256（8 个 bank），第 4 级会变成什么样？面积和延迟各增加多少？③ 双缓冲的 32 周期写入和 4 级流水线的启动延迟（4 周期）有什么关系？谁才是系统“启动”时的瓶颈？</p>
+</div>
+</section>

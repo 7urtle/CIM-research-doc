@@ -1,0 +1,17 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>EVS 事件相机基础（如果第一次接触）</h2>
+<p>EVS（Event-based Vision Sensor）也叫“事件相机”。它和传统相机的工作方式完全不同：</p>
+<table>
+<tr><th>维度</th><th>传统帧相机</th><th>EVS 事件相机</th></tr>
+<tr><td>输出</td><td>整幅图像（每帧所有像素）</td><td>事件流（只有亮度变化的像素）</td></tr>
+<tr><td>时间</td><td>固定帧率（如 30 fps）</td><td>异步，μs 级时间戳</td></tr>
+<tr><td>数据量</td><td>大（冗余多）</td><td>稀疏（只在变化时输出）</td></tr>
+<tr><td>功耗</td><td>与场景无关（恒定）</td><td>与活动量成正比（静态≈0）</td></tr>
+<tr><td>隐私</td><td>记录完整图像</td><td>只记录变化边缘</td></tr>
+</table>
+<p>一个事件 =（像素坐标 x, y, 时间戳, 极性 +/−），表示“这个像素的亮度上升/下降超过阈值”。事件流直接就是 SNN 的脉冲输入——这是“感算一体”的物理基础。</p>
+<div class="box key">
+<div class="bt">💡 本文的 EVS 指标怎么读？</div>
+<p>片上 EVS：<strong>3.8 MEps</strong>（每秒产生 380 万个事件——事件率，代表传感器吞吐）和 <strong>130.9 dB 动态范围</strong>（能分辨的最亮与最暗之比，dB 数越高越好；普通相机约 60~70 dB）。这些数字说明这颗 EVS 足够“快”且“看得广”，能支撑签名笔迹这类高速微小运动。</p>
+</div>
+</section>

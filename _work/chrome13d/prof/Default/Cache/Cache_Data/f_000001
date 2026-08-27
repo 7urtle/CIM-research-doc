@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：Multiply-Less 近似 SRAM CIM 宏（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 Multiply-Less 近似数字 SRAM CIM 宏的 L1 距离计算、预计算分解、位串行比较与动态逻辑改进比较器。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">Multiply-Less 近似 CIM 宏零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.2 · 北大+清华</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：CIM 与数据搬移</a>
+  <a class="sec" href="#sec2">02 · 近似数字 CIM 三大挑战</a>
+  <a class="sec" href="#sec3">03 · 创新①：Multiply-Less NN</a>
+  <a class="sec" href="#sec4">04 · 创新②：预计算 L1 方案</a>
+  <a class="sec" href="#sec5">05 · 系统架构与数据流</a>
+  <a class="sec" href="#sec6">06 · 创新③：位串行+提前停止</a>
+  <a class="sec" href="#sec7">07 · 改进动态比较器</a>
+  <a class="sec" href="#sec8">08 · 部署流程与实测</a>
+  <a class="sec" href="#sec9">09 · 总结 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">Multiply-Less 近似 SRAM 存内计算宏零基础精讲：把“乘法”从神经网络里拿掉
+<span class="en">A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference（IEEE JSSC, vol.60, no.2, 2025）</span></h1>
+<div class="meta">论文作者：Haikang Diao, Yifan He, Xuan Li, Chen Tang, Wenbin Jia, Jinshan Yue, Haoyang Luo, Jiahao Song, Xueqing Li, Huazhong Yang, Hongyang Jia, Yongpan Liu, Yuan Wang, Xiyuan Tang（北京大学 + 清华大学 + 中科院微电子所 + UCSD）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 2, 2025（ISSCC'23 [19] 的期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>数字 CIM（存内计算）做神经网络推理时，<strong>乘法器 + 加法树</strong>占掉大量面积和能耗，而且乘法成本随位宽<strong>二次膨胀</strong>。本论文（北大唐希源组 + 清华刘勇攀组等）换了一条完全不同的路：<strong>从算法上把乘法“拿掉”</strong>——用 AdderNet 的 L1 距离（曼哈顿距离）替代点积，再配上一整套“从算法到电路”的协同近似设计：</p>
+<ol>
+<li><strong>算法级 multiply-less NN</strong>：用 L1 距离 |x−w| 替代点积 x·w，彻底免掉乘法器；</li>
+<li><strong>预计算 L1 计算方案</strong>：把 |x−w| 分解成 x + w − 2·min(x,w)，Σw 编译期算好、Σx 共享累加、实时只剩“最小选择”→ 面积省 <strong>1.5×</strong>、权重稀疏度提升 <strong>86×</strong>；</li>
+<li><strong>位串行比较 + 动态逻辑改进比较器</strong>：MSB 优先比较，一旦分出大小就<strong>提前停止</strong>读权重位 → 读端口省电 <strong>1.8×</strong>；改进比较器比静态逻辑比较器面积 <strong>−1.7×</strong>、功耗 <strong>−4.1×</strong>。</li>
+</ol>
+<p>28nm 实测：<strong>102 TOPS/W</strong> 峰值能效（8-bit）、<strong>4.4 TOPS/mm²</strong> 面积效率；CIFAR-10 ResNet-20 达 <strong>91.71%</strong>、ImageNet ResNet-50 达 <strong>74.8%</strong>，与 32-bit 浮点相比精度损失 &lt;0.1%。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“免乘法”不是玄学，是数学等价变换：</strong>点积 Σx·w 和 L1 距离 Σ|x−w| 都能衡量“输入与模板的匹配程度”。CNN 卷积核做的是“投影匹配”，AdderNet 做的是“距离匹配”——两者响应形状相似，所以 L1 可以近似替代点积而精度不掉（图 3/4）。</li>
+<li><strong>硬件最怕“乘法”，不怕“比较”：</strong>乘法器面积随位宽平方增长（进位部分积多），而比较器/加法器随位宽线性增长。把乘法换成比较，硬件成本就从 O(n²) 降到 O(n)。这是整篇论文的“省钱逻辑”。</li>
+<li><strong>稀疏性可以“白捡”：</strong>普通网络不做稀疏训练也有天然位级稀疏（权重比特大量为 0）。预计算截断把负权重归零后，0 更多了 → 读位线不用放电 → 白省电。这就是“算法近似换来电路收益”的闭环。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“existing work still faces various challenges, such as the digital logic overhead caused by the multiply-add operations (OPs) and structural sparsity”</td>
+<td>现有数字 CIM 的痛点：乘加运算带来的数字逻辑开销大，且结构性稀疏利用不足。</td></tr>
+<tr><td class="num">“This article presents a 2-to-8-b scalable approximate digital SRAM-based CIM macro co-designed with a multiply-less neural network (NN) approach”</td>
+<td>本论文：2–8 位可扩展的近似数字 SRAM CIM 宏，与“免乘法 NN”算法协同设计。</td></tr>
+<tr><td class="num">“It incorporates dynamic-logic-based approximate circuits for the logic area and energy saving by eliminating multiplications”</td>
+<td>用动态逻辑近似电路省面积省能耗，手段是“消除乘法”。</td></tr>
+<tr><td class="num">“achieves peak multiply-accumulate (MAC)-level energy efficiency of 102 TOPS/W for 8-b operations”</td>
+<td>28nm 实测：8-bit 运算峰值能效 102 TOPS/W。</td></tr>
+<tr><td class="num">“achieving the accuracy of 91.74% and 74.8% with 8-bit weights and activations”</td>
+<td>8-bit 权/激活下，ResNet-20 在 CIFAR-10 达 91.74%，ResNet-50 在 ImageNet 达 74.8%。（正文表 II 中 CIFAR-10 为 91.71%）</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>算法-电路协同的 multiply-less NN 部署</strong>：不靠电路硬扛乘法，而是改算法（L1 距离）让乘法根本不需要发生；</li>
+<li><strong>预计算（precalculation）L1 计算方案</strong>：把绝对差计算重写成“求和 + 最小选择”，Σw 编译期预存（每列仅 15 个额外 SRAM 单元）、Σx 激活累加器共享 → 面积 −1.5×、权重稀疏度 +86×；</li>
+<li><strong>位串行最小选择数据流</strong>：MSB 优先位串行比较，面积/能耗随位宽<strong>线性</strong>扩展（突破二次成本）；</li>
+<li><strong>动态逻辑改进比较器 + 提前停止</strong>：交换 ACT/WB 位置把电荷共享误差阈值从 2 个高-高对提高到 6 个，激活正则化放宽到 ≤5 个「1」（[19] 为 ≤3）→ 只需 0.9% 激活被正则化（[19] 需 15%），精度显著提升；</li>
+<li><strong>完整实测</strong>：102 TOPS/W、4.4 TOPS/mm²、CIFAR-10 91.71%、ImageNet 74.8%，vs 近似数字 CIM [15] 能效 6.58×、面积效率 1.7×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“算法-电路协同设计（co-design）”的教科书级例子——先问“算法能不能变简单”，再问“电路怎么把简单算法跑得快”。读时注意三点：L1 为什么能替代点积（§3）、预计算分解怎么省硬件（§4）、动态比较器误差从哪来（§5/7）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要 CIM，为什么数字 CIM 有“乘法成本”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 神经网络推理的瓶颈为什么是“数据搬移”？② CIM 怎么解决搬移问题、有几大类？③ 数字 CIM 的乘法器/加法树为什么贵、贵在哪？</p>
+</div>
+
+<h3>1.1 神经网络的本质：大规模矩阵-向量乘（MVM）</h3>
+<p>从图像分类到语音识别，现代 AI 应用有一个共同点：计算极度依赖<strong>高维矩阵与张量</strong>的运算，其中最核心的原语是<strong>矩阵-向量乘（Matrix-Vector Multiply, MVM）</strong>。以一层卷积为例：</p>
+<p class="formula">Y = W·X</p>
+<p>其中 W 是权重矩阵（例如 128×128），X 是输入激活向量（128×1）。一次推理要在<strong>每一层</strong>都做这样的乘法，而一个网络有几十上百层——权重被<strong>反复</strong>读取使用。问题的关键就在这里：</p>
+<div class="box warn">
+<div class="bt">⚠️ 冯·诺依曼瓶颈</div>
+<p>传统架构里，计算单元（ALU）和存储器是分开的。做一次 MVM，要把权重从存储器搬到计算单元，算完再把结果搬回去。Horowitz 在 ISSCC 2014 的著名报告指出：<strong>数据搬移的能耗远大于计算本身的能耗</strong>（一次 32-bit DRAM 访问约几百 pJ，而一次 8-bit 乘加只有约 1 pJ 量级）。MVM 的计算强度低、权重复用度高，所以性能被<strong>访存带宽</strong>卡死——这就是“冯·诺依曼瓶颈”。</p>
+</div>
+<p>图 1（论文 Fig.1）直观画出了这个区别：左边冯·诺依曼架构里数据和权重在“存储 ↔ 计算”之间来回搬；右边 CIM 把计算单元“塞进”存储阵列里，权重就地参与运算。</p>
+<figure>
+<img src="assets/figs/fig13_1_VonNeumann与CIM对比.png" alt="冯诺依曼与CIM对比">
+<figcaption>图 1 · 论文 Fig.1：冯·诺依曼架构（左）与 CIM（右）的差别——CIM 把处理单元放进存储单元，就地完成运算，省掉权重搬移。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 两个直觉</div>
+<ul>
+<li><strong>CIM 的两个好处：</strong>① 权重不出阵列 → 省数据搬移能耗；② 输入向量可以同时激活多行 → 天然获得大带宽（一行一行算 vs 一次算一整列）。</li>
+<li><strong>CIM 的代价：</strong>每个存储单元都要挂计算电路 → 单元变大、密度下降、写入/读取控制变复杂。所以 CIM 设计是“省搬移”与“加硬件”之间的博弈。</li>
+</ul>
+</div>
+
+<h3>1.2 CIM 的两大流派：模拟 vs 数字</h3>
+<p>按“怎么做乘加”分类，CIM 主要分两大流派：</p>
+<table>
+<tr><th style="width:22%">流派</th><th style="width:30%">怎么做乘法</th><th>优点 / 缺点</th></tr>
+<tr><td><strong>模拟 CIM（电流域）</strong></td><td>用位单元晶体管的导通电流调制（权重→电流），多行电流自然求和</td><td>密度高；但受 PVT 工艺偏差影响，精度受限</td></tr>
+<tr><td><strong>模拟 CIM（电荷域）</strong></td><td>电容预充实现乘法、电荷重分布实现累加</td><td>较电流域更稳；仍需 ADC 读出</td></tr>
+<tr><td><strong>数字 CIM</strong></td><td>用数字逻辑（乘法器 + 加法树）完成乘加</td><td>精度高、鲁棒、易集成；但数字逻辑面积/能耗大</td></tr>
+</table>
+<p>模拟 CIM 的一个通病是<strong>读出需要 ADC</strong>（把模拟量转成数字），而 ADC 在位数提高时面积和功耗暴涨。数字 CIM 用纯数字逻辑做乘加，不需要 ADC，但代价是<strong>乘法器和加法树吃掉大量面积和能耗</strong>。数字 CIM 的演进（论文引言回顾）：</p>
+<ul>
+<li>[16] 最早的数字 CIM：混合加法器支持全精度 MAC；</li>
+<li>[17] 12T SRAM，5nm 工艺，支持同时写和 CIM 运算；</li>
+<li>[20] 引入动态逻辑做各种位级运算，减小电路面积；</li>
+<li>但“乘法器和加法树”始终是数字 CIM 的面积/能耗大头。</li>
+</ul>
+
+<h3>1.3 数字 CIM 的“乘法成本”：二次膨胀</h3>
+<p>数字 CIM 有两种实现乘法的典型方式，各有各的二次成本（论文 Fig.2(b)，我们的数据图 c01 画出了趋势）：</p>
+<div class="box warn">
+<div class="bt">⚠️ 为什么是“二次”？</div>
+<ul>
+<li><strong>位并行（bit-parallel）：</strong>乘法器把两个 n 位数的每一位两两相乘再相加 → 部分积个数 ∝ n²，硬件面积 ∝ n²；</li>
+<li><strong>位串行（bit-serial）：</strong>把乘法展开成“按位乘再移位累加” → 需要 n×m 个周期，周期数 ∝ n²。</li>
+</ul>
+<p>所以不管位并行还是位串行，<strong>“面积 × 周期”这个面积效率指标都随位宽二次增长</strong>。位串行 CIM 虽然能把乘法器简化为 NOR 门（乘数与被乘数按位与），但计算周期大增。这是限制数字 CIM 面积效率进一步突破的根本原因。</p>
+</div>
+<p>面对这个“乘法成本”，业界尝试过两条路：</p>
+<ol>
+<li><strong>近似计算</strong>（如 DIMC [15]）：用 OR / OR-AND 简单逻辑门替代加法树的多级加法器。能省 56% 晶体管，但在 CIFAR-10 上损失 3.5% 精度——<strong>电路级近似是以精度换效率</strong>；</li>
+<li><strong>块/数据级稀疏</strong>（[21][22]）：跳过连续零权重/激活。但需要额外的稀疏训练和额外硬件，且粒度粗。</li>
+</ol>
+<p>本论文的立场很鲜明：<strong>电路级近似和粗粒度稀疏都不够好</strong>——前者伤精度，后者要额外训练。作者选择从<strong>算法层面</strong>把乘法彻底消灭（multiply-less），再针对新算法的特性设计电路。这就是下一节的“三大挑战”要讲的内容。</p>
+
+<figure>
+<img src="assets/diagrams/d01_motivation.svg" alt="背景动机">
+<figcaption>教学图 1 · 冯·诺依曼瓶颈与数字 CIM 的乘法二次成本（示意）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c01_面积周期积_位宽缩放.png" alt="面积周期积位宽缩放">
+<figcaption>数据图 1 · 面积-周期积 vs 位宽（示意，依据论文 Fig.2(b)）：位并行/位串行都二次增长，本论文 multiply-less 线性扩展。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① MVM 是神经网络的核心原语，被数据搬移卡脖子 → CIM 把计算搬进存储；② 模拟 CIM 密度高但需 ADC、受偏差影响，数字 CIM 精度高但数字逻辑贵；③ 数字 CIM 的乘法成本随位宽<strong>二次膨胀</strong>，是效率上限的元凶 → 本论文选择“免乘法”算法来根治。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>近似数字 CIM 的三大挑战：本论文的切入点</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解论文要解决的三件事：① 电路级近似的误差怎么伤精度；② 乘法二次成本怎么卡效率；③ 位级稀疏性为什么“看得见吃不着”。读完应能复述论文 Fig.2 的三张子图。</p>
+</div>
+
+<h3>2.1 挑战一：电路级近似的计算误差</h3>
+<p>上一节提到，业界已经有人尝试用<strong>近似加法树</strong>来省数字逻辑面积。论文 Fig.2(a) 画了两种做法：</p>
+<ul>
+<li><strong>纯 OR 近似</strong>：把加法树的多级加法器直接换成 OR 门；</li>
+<li><strong>交错 OR/AND 近似</strong>：OR 与 AND 门交错替换。</li>
+</ul>
+<p>图 2(a) 里 S1、S2、S3 分别表示“用单级 / 双级 / 三级逻辑门”替代对应级数的加法器。例如 S2 表示用一个<strong>四输入逻辑门</strong>替代两级加法器来完成四输入的求和。直觉上：4 个数相加，精确结果需要真正的进位加法树，而一个 4 输入 OR 门只能回答“有没有任何一位是 1”——所以这种替代必然引入误差。</p>
+<div class="box warn">
+<div class="bt">⚠️ 电路级近似的问题：效率上去了，精度下来了</div>
+<p>OR/AND 近似能把晶体管数减少 56%，但代价是 CIFAR-10 上 3.5% 的精度损失（论文引 [15] DIMC 的数据）。更麻烦的是，这种误差是<strong>逐位随机注入</strong>的，网络没有机会“适应”它。作者的判断是：<strong>电路级近似是一条“效率-精度”互相伤害的路</strong>。</p>
+</div>
+<p>本论文的应对：不做电路级近似，而是做<strong>算法级近似</strong>——把乘加运算本身换成“L1 距离”，让误差来源从“电路瞎算”变成“算法近似”，而算法近似是<strong>可以在训练时被网络吸收的</strong>（AdderNet 系列工作已经证明）。这是“算法-电路协同”的第一层含义。</p>
+
+<h3>2.2 挑战二：乘法随位宽二次膨胀</h3>
+<p>这一节在 §1.3 已经详细讲过，这里从“挑战”的角度再强调一点：论文 Fig.2(b) 画了<strong>面积-周期积</strong>（一个衡量面积效率的指标）随位宽的变化，无论位并行还是位串行都二次增长。关键句子：</p>
+<div class="box key">
+<div class="bt">💡 “The quadratic-growth multiplication cost limits further area efficiency improvements for digital CIM.”</div>
+<p>翻译：乘法成本的二次增长，限制了数字 CIM 面积效率的进一步提升。作者对此的解法是——<strong>用 multiply-less 的矩阵-向量运算实现 NN 推理，保证面积/能耗随位宽线性扩展</strong>（Fig.2(b) 中的绿线，见教学图 1 与数据图 c01）。</p>
+</div>
+
+<h3>2.3 挑战三：位级稀疏性未被利用</h3>
+<p>稀疏性分几个粒度：</p>
+<table>
+<tr><th>粒度</th><th>例子</th><th>问题</th></tr>
+<tr><td>块/数据级（coarse）</td><td>连续几个零权重、整块零激活 [21][24]</td><td>需要专门的稀疏训练 + 额外硬件</td></tr>
+<tr><td><strong>位级（fine, bit-level）</strong></td><td>每个权重比特的 0/1 分布</td><td><strong>天然存在但此前没人利用</strong></td></tr>
+</table>
+<p>论文 Fig.2(c) 的核心观察：一个<strong>普通 CNN 层（不做稀疏训练）</strong>的权重比特统计，分布<strong>严重偏向 0</strong>——即大部分比特是 0。这种非结构化的位级稀疏：</p>
+<ul>
+<li>不需要稀疏训练就能获得（白捡的）；</li>
+<li>粒度极细（每个比特），比块级稀疏更“密”；</li>
+<li>但之前数字 CIM 因为存储布局是“整行整列”的结构化排布，<strong>没法利用</strong>这种位级稀疏。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 作者的思路</div>
+<p>既然位级稀疏“看得见吃不着”，那就<strong>专门设计电路和数据流去“吃”它</strong>：① 位串行数据流让每个比特都能被单独处理；② 比较器一旦分出大小就提前停止读权重位（跳过连续 0 的预充/读取）；③ 预计算把负权重截断为 0，让权重比特里的 0 更多（§4 详述）。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_2_三大挑战.png" alt="三大挑战">
+<figcaption>图 2 · 论文 Fig.2：近似数字 CIM 的三大挑战。(a) 电路级近似的误差；(b) 高位宽下乘法导致的收益退化；(c) 位级稀疏性利用不足。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d02_challenges.svg" alt="三大挑战对策">
+<figcaption>教学图 2 · 三大挑战与本论文的对策：算法级近似（L1）、线性扩展、位级稀疏利用。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>三大挑战对应三大对策：① 电路近似伤精度 → 改做<strong>算法级近似</strong>；② 乘法二次成本 → <strong>免乘法</strong>算法线性扩展；③ 位级稀疏浪费 → 位串行 + <strong>提前停止</strong>专门吃稀疏。三者环环相扣，共同指向“multiply-less 近似 CIM”这个整体方案。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：Multiply-Less 神经网络——用 L1 距离替代点积</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解 AdderNet 的核心思想（L1 距离卷积）、为什么它能替代传统卷积而不掉精度、以及它在硬件上带来的“乘法消失”红利。这是全文的理论地基。</p>
+</div>
+
+<h3>3.1 从“点积卷积”到“加法卷积”</h3>
+<p>传统卷积核（ConvNet kernel）对输入特征图的一个窗口做的是<strong>点积（内积）</strong>：</p>
+<p class="formula">Y(m,n,t) = Σ<sub>i,j,k</sub> X(m+i, n+j, k) · W(i,j,k,t)</p>
+<p>点积的几何含义是<strong>投影</strong>：衡量输入窗口与卷积核的“方向一致性”——两者越“像”，点积越大。AdderNet（Chen et al., CVPR 2020，论文引 [28]）提出一个大胆问题：<strong>深度学习真的需要乘法吗？</strong>它的答案是：用<strong>L1 距离（曼哈顿距离）</strong>替代点积：</p>
+<p class="formula">Y(m,n,t) = − Σ<sub>i,j,k</sub> |X(m+i, n+j, k) − W(i,j,k,t)|</p>
+<p>L1 距离的几何含义是<strong>距离</strong>：输入窗口与卷积核越接近，距离越小；加负号后就是“相似度”——<strong>越像，输出越大</strong>，与点积的行为一致。关键区别：L1 距离只需要<strong>减法和绝对值</strong>，完全不需要乘法。</p>
+
+<figure>
+<img src="assets/figs/fig13_3_AdderNet核示例.png" alt="AdderNet核示例">
+<figcaption>图 3 · 论文 Fig.3：AdderNet 核示例——用 L1 距离计算也能得到与卷积核相似的输出（例如都能检测/强化对角边缘）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么 L1 距离能和点积一样“工作”？</div>
+<p>论文 Fig.4 解释了数学直觉：固定权重单位向量、旋转输入单位向量，分别画点积结果与 L1 距离结果，两条响应曲线<strong>形状相似</strong>（都在输入与权重对齐时达到峰值/最大相似度）。文献 [34] 甚至给出了定量证明：L1 距离算子与 CNN 具有<strong>相同的逼近能力（approximation capacity）</strong>。所以对神经网络推理而言，CNN 核可以被 AdderNet 核近似替代——而硬件实现能省掉最贵的乘法器。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_4_CNN与AdderNet相似性.png" alt="CNN与AdderNet相似性">
+<figcaption>图 4 · 论文 Fig.4：固定权重单位向量、旋转输入单位向量时，点积（ConvNet MAC）与 L1 距离（AdderNet）响应相似。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_multiply_less.svg" alt="L1距离与点积">
+<figcaption>教学图 3 · 点积卷积 vs L1 距离卷积的计算对比，以及 |x−w| = x + w − 2·min(x,w) 的分解预览。</figcaption>
+</figure>
+
+<h3>3.2 AdderNet 的实用性证据</h3>
+<p>论文表 I 汇总了 ConvNets 与 AdderNets 的性能对比：AdderNet 在多种模型（CNN、Transformer）和多种任务（图像分类、目标检测、超分、压缩等，论文引 [28]–[33]）上都验证了有效性，精度与传统 CNN 相当、可扩展性良好。例如 AdderNet 在 ImageNet 上能达到与传统 ResNet 相近的精度。</p>
+<div class="box warn">
+<div class="bt">⚠️ 但是——算法便宜了，硬件还不会用</div>
+<p>AdderNet 是算法工作，它证明了“免乘法”在软件上可行。但把它落到硬件时，L1 距离的朴素实现（每位做减法 → 取绝对值 → 累加）仍然需要<strong>多位加法器和绝对值单元</strong>，面积依然不小；而且绝对值运算破坏了位串行数据流的连续性（无法利用位级稀疏）。所以“算法好”不等于“硬件好”——这正是本论文创新②（§4）要解决的事。</p>
+</div>
+
+<h3>3.3 multiply-less 的硬件红利</h3>
+<ul>
+<li><strong>乘法器消失</strong>：比较/减法/绝对值电路的面积随位宽<strong>线性</strong>增长，而不是平方增长 → 面积-周期积从 O(n²) 降到 O(n)；</li>
+<li><strong>无符号位</strong>：配合 ReLU 激活非负的性质（§4.3 的截断），权重和激活都非负 → 不需要符号位和补码 → 位宽减少、电路简化；</li>
+<li><strong>位级稀疏可吃</strong>：L1 的“比较”天然是按位比较，配合位串行数据流，连续 0 权重位可以直接跳过（§6 详述）。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_3_AdderNet核示例.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 点积 vs L1 距离：3×3 卷积核在输入特征图上滑动，两种算法输出对比（乘法 vs 减法）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 卷积核滑动：点积 vs L1 距离</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">滑动窗口 @0：点积=…，L1 距离=…</span>
+</div>
+<div class="hint">黄色框=3×3 滑动窗口。左列是输入特征图窗口的 9 个值与卷积核；中间列对比两种算法：点积需要 9 次乘法，L1 距离只需减法+绝对值，且两者响应方向一致（越匹配输出越大）。→ 乘法消失、硬件成本从平方降到线性。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 点积=投影，L1 距离=负距离，两者“越像越大”的行为一致；② 文献证明 L1 距离算子与 CNN 逼近能力相当，AdderNet 在多种模型/任务上精度不掉；③ 硬件上 L1 只需减法/比较，乘法消失 → 成本从平方降到线性。但朴素 L1 硬件仍有多位加法器，需要创新②进一步优化。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新②：预计算（Precalculation）L1 计算方案——把减法+绝对值换成“最小选择”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 朴素 L1 硬件为什么不够好；② 数学恒等式 |x−w| = x + w − 2·min(x,w) 怎么把硬件从“减法+绝对值”变成“比较+选择”；③ 权重截断怎么白捡 86× 位级稀疏度。</p>
+</div>
+
+<h3>4.1 朴素 L1 计算的硬件问题</h3>
+<p>论文 Fig.6(a) 展示了传统 L1 距离计算方案：每个元素对要做<strong>减法</strong>（两个多位加法器）→ <strong>取绝对值</strong>（多路选择）→ 再累加。虽然比点积便宜，但：</p>
+<ul>
+<li><strong>多位加法器面积依然大</strong>——面积效率还是受限于数字逻辑；</li>
+<li><strong>绝对值运算在累加之前必须完成</strong> → 无法按位串行流水 → 很难利用位分布稀疏性（挑战三无解）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_6_L1计算方案.png" alt="L1计算方案">
+<figcaption>图 5 · 论文 Fig.6：(a) 传统 L1 距离计算方案（减法+绝对值+累加）；(b) 本论文的预计算方案（求和 + 最小选择）。</figcaption>
+</figure>
+
+<h3>4.2 核心恒等式：|x−w| = x + w − 2·min(x,w)</h3>
+<p>对任意两个数 x 和 w，都有：</p>
+<p class="formula">|x − w| = max(x,w) − min(x,w) = (x + w) − 2·min(x,w)</p>
+<p>把它代入 L1 距离并对 i 求和：</p>
+<p class="formula">Σ|x<sub>i</sub> − w<sub>i</sub>| = Σx<sub>i</sub> + Σw<sub>i</sub> − 2·Σmin(x<sub>i</sub>, w<sub>i</sub>)</p>
+<p>现在看三项各自的硬件成本：</p>
+<table>
+<tr><th>项</th><th>含义</th><th>硬件处理方式</th></tr>
+<tr><td><strong>Σw<sub>i</sub></strong>（WSUM）</td><td>所有权重之和</td><td><strong>权重是静态的</strong> → 模型编译期预计算好，存进 SRAM 的额外列（每列仅 15 个额外单元）→ 实时成本为零</td></tr>
+<tr><td><strong>Σx<sub>i</sub></strong></td><td>所有激活之和</td><td>由 ActACCU（激活累加器）逐位累加，结果<strong>广播共享</strong>给全部 16 个阵列 → 摊薄成本</td></tr>
+<tr><td><strong>2·Σmin(x<sub>i</sub>, w<sub>i</sub>)</strong></td><td>最小值和 ×2</td><td>实时只需<strong>比较器选最小值</strong> + 累加器（MinSEL + MinACCU）→ 最便宜的运算</td></tr>
+</table>
+<p>对比传统方案：减法 + 绝对值 + 累加 → 新方案只剩<strong>比较（min）+ 累加</strong>，绝对值和减法全部消失。论文报告：<strong>面积缩减 1.5×</strong>。这就是“预计算”的名字由来——把能提前算的都提前算掉（Σw），实时路径只剩最轻的运算。</p>
+
+<figure>
+<img src="assets/diagrams/d04_precalc.svg" alt="预计算L1方案">
+<figcaption>教学图 4 · 传统 L1 方案 vs 预计算方案，以及权重截断带来的稀疏度收益。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 直觉：把“贵的运算”变成“便宜的运算+提前做”</div>
+<p>减法器贵（多位加法）而且破坏位串行；min 选择便宜（比较器）而且天然按位比较。预计算的精髓是：<strong>能离线算的绝不实时算（Σw），能共享的绝不重复算（Σx 广播），实时只保留最便宜的（Σmin）</strong>。这就是“架构级近似”：不改算法语义，只改运算分解。</p>
+</div>
+
+<h3>4.3 权重截断：把负权重归零并并入 WSUM</h3>
+<p>既然 ReLU 激活非负（x<sub>i</sub> ≥ 0），论文进一步做了一步数学变形（论文式 2）：</p>
+<p class="formula">Σ|x<sub>i</sub> − w<sub>i</sub>| = Σ|x<sub>i</sub> − clamp(w<sub>i</sub>, 0, w<sub>max</sub>)| + Σ|w<sub>i</sub>|</p>
+<p>直观理解：x ≥ 0 时，min(x, w) 与 w 的负值无关（负数不可能被选中），所以可以把<strong>负权重截断到 0</strong>（clamp 到 [0, w<sub>max</sub>]），截掉的部分（Σ|w<sub>i</sub>| 中负权重对应的项）作为常数并入 WSUM——计算结果<strong>完全不变</strong>（等效计算）。这一步带来两个巨大的硬件红利：</p>
+<ul>
+<li><strong>权重稀疏度暴增</strong>：截断后大量权重变成 0。论文 Fig.7 的数据：ResNet-20（CIFAR-10）模型，预计算后权重稀疏度提升 <strong>86×</strong>！→ L1 计算单元的活动因子（activity factor）大幅下降 → 比较运算功耗降低；</li>
+<li><strong>全部非负</strong>：权重和激活都是非负数 → 不需要符号位、不需要补码 → 位宽减小、电路简化。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_7_权重稀疏度提升.png" alt="权重稀疏度提升">
+<figcaption>图 6 · 论文 Fig.7：预计算（权重截断）带来的权重稀疏度增益——ResNet-20/CIFAR-10 上稀疏度提升 86×。</figcaption>
+</figure>
+
+<div class="box warn">
+<div class="bt">⚠️ 注意：稀疏度提升 ≠ 结构性稀疏</div>
+<p>这里的稀疏是<strong>位级、非结构化</strong>的（每个比特的 0/1 分布）。它不需要稀疏训练，也不需要稀疏索引/跳零逻辑，而是通过<strong>电路行为</strong>（预充保持 + 提前停止，§6）自动省电。这正是挑战三的解法：用电路设计去“白捡”天然稀疏。</p>
+</div>
+
+<h3>4.4 小结与硬件收益汇总</h3>
+<ul>
+<li>预计算分解：减法/绝对值 → 最小选择 → <strong>面积 −1.5×</strong>；</li>
+<li>WSUM 预存：每列仅 15 个额外 SRAM 单元；Σx 广播共享；</li>
+<li>权重截断：<strong>权重稀疏度 +86×</strong>、无符号位 → 位宽减、电路简；</li>
+<li>为 §6 的位串行比较和提前停止铺平道路。</li>
+</ul>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>系统架构与数据流：16 个数字近似 CIM 阵列</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解宏（macro）的整体结构：ACT Buffer、ActACCU、16 个 CIM 阵列、每个阵列内部的 8T SRAM bank 与 L1 计算单元（MinSEL/ABS-ASM/MinACCU），以及一次 L1 计算的完整数据流。</p>
+</div>
+
+<h3>5.1 宏的顶层架构</h3>
+<p>论文 Fig.5 画出宏的整体架构，核心组成：</p>
+<table>
+<tr><th>模块</th><th>作用</th></tr>
+<tr><td><strong>16 × 数字近似 CIM 阵列</strong></td><td>主体：每个阵列 8 行 × 128 列的 8T SRAM，存 NN 权重；输入向量维度 128；位宽 2–8 b 可配；每个阵列配一个 L1 计算单元做比较式计算</td></tr>
+<tr><td><strong>ACT Buffer</strong></td><td>接收并排序激活值，把它们按位串行送入 CIM 阵列</td></tr>
+<tr><td><strong>ActACCU</strong></td><td>每周期累加 128 个激活的一位（Σx），结果广播给全部 16 个阵列共享</td></tr>
+<tr><td><strong>SRAM 读写接口控制器</strong></td><td>标准 SRAM 读写功能（权重写入等）</td></tr>
+<tr><td><strong>其他 CIM 控制外设</strong></td><td>控制/时钟等</td></tr>
+</table>
+<p>每个阵列内部的 L1 计算单元包含三个子模块：</p>
+<ul>
+<li><strong>MinSEL（最小值选择）</strong>：包含改进的动态逻辑位串行比较器 + 最小值多路选择器（MinMUX）——完成 §4 的“最小选择”；</li>
+<li><strong>ABS-ASM（绝对值装配单元）</strong>：把 Σx、Σw、2Σmin 三项汇合成最终部分和；</li>
+<li><strong>MinACCU（最小值累加器）</strong>：累加 Σmin。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_5_总体架构.png" alt="总体架构">
+<figcaption>图 7 · 论文 Fig.5：Multiply-Less 近似 CIM 宏总体架构——16 个数字近似 CIM 阵列 + ACT Buffer + ActACCU + 外设。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_architecture.svg" alt="架构教学图">
+<figcaption>教学图 5 · 宏架构示意：ActACCU 广播 Σx，16 阵列并行比较，L1 计算单元完成 min 选择与装配。</figcaption>
+</figure>
+
+<h3>5.2 位串行数据流（论文 Fig.8）</h3>
+<p>数据流按<strong>MSB 优先</strong>的位串行方式运行：</p>
+<ol>
+<li>激活从 ACT Buffer 出来，<strong>MSB 优先</strong>逐位送入宏；</li>
+<li>ActACCU 每周期移位累加激活的一个比特，结果广播到 16 个阵列的 L1 计算单元；</li>
+<li>权重 SRAM bank 用 RWL 译码器按与激活相同的 MSB 优先顺序读出权重位；</li>
+<li>对应位置的<strong>权重位与激活位送入改进比较器</strong>做比较，得到 min(x,w) 的选择信号；</li>
+<li>比较结果控制：① SRAM 读端口的预充（提前停止，§6）；② MinMUX 的传输门（选择权重位还是激活位作为 min 位输出）；</li>
+<li>MinMUX 输出的 min 位送 MinACCU 累加（结构同 ActACCU，带时钟门控输出）；</li>
+<li>WSUM SRAM 单元的内部节点并行读出 Σw；</li>
+<li>ABS-ASM 汇合 ActACCU 的 Σx、MinACCU 的 2Σmin、WSUM 的 Σw，输出部分和。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig13_8_L1计算单元电路.png" alt="L1计算单元电路">
+<figcaption>图 8 · 论文 Fig.8：L1 计算单元的电路级设计与位串行计算——改进比较器、MinMUX、MinACCU 与 ABS-ASM。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么 MSB 优先 + 位串行是关键决策？</div>
+<ul>
+<li><strong>位宽可配（2–8 b）</strong>：位串行天然支持任意位宽——改变周期数即可，电路不变 → 2-to-8-b 可扩展；</li>
+<li><strong>线性成本</strong>：面积/能耗随位宽线性增长（创新②的目标）；</li>
+<li><strong>吃位级稀疏</strong>：每个比特独立处理 → 连续 0 可以被跳过（§6 的提前停止）；</li>
+<li><strong>比较器可锁存</strong>：一旦比较分出大小，后续位直接输出被选中的那一方，不再需要比较（MinMUX 直接透传）。</li>
+</ul>
+</div>
+
+<h3>5.3 一次 L1 计算的时间线（例）</h3>
+<p>以 8-bit 计算为例：128 个输入激活并行进入，与 16 列（16 个输出通道）的权重同时比较；每周期比较一个比特，8 个周期后得到 16 个部分和（Psum）。吞吐率口径注意：<strong>一次“比较+累加”计作 2 个 OP（OPs）</strong>（论文说明与点积类芯片不同），位串行 8 位共 8 个周期完成 2 个 OP。</p>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 顶层：ACT Buffer + ActACCU + 16 阵列 + 外设，ActACCU 广播共享 Σx；② 阵列内：8T SRAM（含 WSUM 列）+ L1 计算单元（MinSEL / MinACCU / ABS-ASM）；③ 数据流：MSB 优先位串行比较 → MinMUX 选 min → MinACCU 累加 → ABS-ASM 装配；④ 位串行带来位宽可配、线性成本、稀疏可吃三大好处。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：位串行比较 + 稀疏感知的提前停止（Early Stop）</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① MinMUX 怎么“锁定”最小值；② 8T SRAM 专用读端口如何在权重位为 0 时省电；③ 比较一旦分出大小就提前停止读权重位（1.8× 读端口省电）是怎么做到的。</p>
+</div>
+
+<h3>6.1 MinMUX：比较结果驱动的透传选择</h3>
+<p>论文 Fig.8 的 MinMUX 电路：OUT 和 OUTB 是位串行比较的结果节点，初态 <strong>OUT 预充到 VDD、OUTB 放电到 VSS</strong>。比较过程：</p>
+<ul>
+<li><strong>尚未分出大小</strong>（当前位相等）：OUT/OUTB 保持电荷，MinMUX 继续把权重位传给累加器（默认先走权重路径）；</li>
+<li><strong>权重更小</strong>（某位 ACT=1, W=0，即 x 该位大于 w 该位……注意 MSB 优先）：OUT 放电到 VSS、OUTB 被钳到 VDD → MinMUX 从此<strong>一直输出权重位</strong>；</li>
+<li><strong>激活更小</strong>：OUTB 放电到 VSS、OUT 被钳到 VDD → MinMUX 从此<strong>一直输出激活位</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键性质：一旦分出大小，min 的“身份”就锁定了</div>
+<p>MSB 优先比较的经典性质：最高位决定大小，之后位无论是什么都不影响结果。所以比较器只要“断言”一次（某位分出胜负），后续周期的 min 就固定是 x 或 w 其中之一——MinMUX 变成纯透传，不需要再比较。这是位串行方案能“提前停止”的根本原因。</p>
+</div>
+
+<h3>6.2 专用 8T SRAM 读端口：权重位为 0 时保持预充</h3>
+<p>论文 Fig.9 画了 8T SRAM 的专用局部读端口：当被选中的权重位是 <strong>0</strong> 时，局部读位线（local read bitline）<strong>保持在预充电压</strong>——不放电、不耗动态功耗。反之权重位是 1 才需要放电。</p>
+<p>结合 §4.3 的权重截断：预计算后权重里 0 的数量暴增（86× 稀疏度提升），所以<strong>大多数位读出来都是 0 → 大多数周期读位线都不放电 → 读功耗大幅下降</strong>。这是“算法近似 → 电路省电”的直接转化。</p>
+
+<figure>
+<img src="assets/figs/fig13_9_SRAM读端口.png" alt="SRAM读端口">
+<figcaption>图 9 · 论文 Fig.9：专用局部 SRAM 读端口——权重位为 0 时局部读位线保持预充，不产生放电功耗。</figcaption>
+</figure>
+
+<h3>6.3 提前停止：激活被选中后不再读权重</h3>
+<p>论文 Fig.10(a) 的机制：当比较断言“激活更小（min = x）”后，OUT 被充到 VDD，读端口<strong>停止对局部读位线的重复预充</strong>——因为权重位不再需要被读取（MinMUX 直接输出激活位）。图中蓝色标记的权重位：<strong>不需要再预充和读取</strong>。后续周期 MinMUX 直接把激活位输出给 MinACCU。</p>
+
+<figure>
+<img src="assets/figs/fig13_10_早期停止机制.png" alt="早期停止机制">
+<figcaption>图 10 · 论文 Fig.10：(a) 早期权重读出停止机制——蓝色权重位无需再预充/读取；(b) 读端口能量节省（1.8×）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_bitserial_mux.svg" alt="位串行与MinMUX">
+<figcaption>教学图 6 · MSB 优先位串行比较示例（x=1010 vs w=0110，第 1 位即分出胜负）与 MinMUX/读端口电路。</figcaption>
+</figure>
+
+<div class="box warn">
+<div class="bt">⚠️ 提前停止的收益来源要分清</div>
+<p>这里有两层省电：① <strong>权重位=0 保持预充</strong>（稀疏感知，随时生效）；② <strong>激活被选中后停止读权重</strong>（比较断言后生效，只发生在 min=x 的情况）。两者都依赖位级稀疏/比较特性，都不需要稀疏训练。论文 Fig.10(b) 报告专用读端口设计带来 <strong>1.8× 功耗降低</strong>（读端口层面）。</p>
+</div>
+
+<h3>6.4 小结</h3>
+<ul>
+<li>MinMUX：比较断言后锁存 min 身份 → 纯透传；</li>
+<li>读端口：权重位 0 → 位线保持预充（配合 86× 稀疏度）；</li>
+<li>提前停止：min=x → 停止读权重 → 读端口省电 1.8×；</li>
+<li>三层机制全部“白捡”自算法近似，不需要额外稀疏训练/硬件。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_8_L1计算单元电路.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 预计算 L1 数据流：位串行比较（MSB 优先）→ MinMUX 选择 → ActACCU/WSUM/MinACCU 汇合于 ABS-ASM。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · 位串行最小选择（MinMUX）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">第 1 位：x=1 vs w=0 → x&gt;w 断言！比较结束</span>
+</div>
+<div class="hint">橙色框=当前比较位。x=1010(10) vs w=0110(6)：第 1 位（MSB）1&gt;0 即断言 x&gt;w → min=w 锁定，后续位直接输出 w、不再预充/读权重位（提前停止）。下方数据流显示 Σx=10、Σw=6、2Σmin=12 汇合得 Σ|x−w|=4。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>改进的动态逻辑位串行比较器：从误差源头下手</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 动态逻辑比较器怎么工作（预充-求值）；② 原设计 [19] 的电荷共享误差从哪来（C1/C2 与 OUT 共享电荷）；③ 改进设计为什么只是“交换 ACT 和 WB 的位置”就能大幅降低误差率；④ 激活正则化（≤5 个「1」）怎么配合。</p>
+</div>
+
+<h3>7.1 为什么还要“改进”比较器？</h3>
+<p>§5/§6 里比较器是整个系统的“心脏”——每周期做一次位比较。如果用传统的<strong>静态逻辑</strong>（组合逻辑+寄存器）实现，面积和功耗都不小。动态逻辑（预充-求值）电路面积小、速度快，但有个著名的毛病：<strong>电荷共享（charge sharing）</strong>。本论文的改进比较器正是针对电荷共享误差的一次手术。</p>
+
+<figure>
+<img src="assets/figs/fig13_11_改进比较器.png" alt="改进比较器">
+<figcaption>图 11 · 论文 Fig.11：(a) 改进比较器原理图；(b) 状态转移真值表；(c) 比较操作波形示例。</figcaption>
+</figure>
+
+<h3>7.2 改进比较器的工作原理（论文 Fig.11(a)）</h3>
+<p>关键结构：C1、C2 是 N4、N6、N8 节点下的寄生电容。OUT 和 OUTB 是输出节点，RESETB 预充到 VDD：</p>
+<ul>
+<li><strong>预充阶段</strong>：RESETB=VSS → OUT、OUTB 都充到 VDD；</li>
+<li><strong>求值阶段</strong>：RESETB=VDD，激活位 ACT 与权重位 WB（注意是反相后的权重位）逐位送入；</li>
+<li><strong>相等位</strong>：OUT/OUTB 保持电荷，相等状态传递到下一周期；</li>
+<li><strong>比较断言</strong>：一旦某位分出大小，一个节点放电到 VSS，另一个被 P3 或 P4 钳位到 VDD——之后状态锁存不再变。</li>
+</ul>
+<p>具体：<strong>权重更小 → OUT 放电到 VSS</strong>；<strong>激活更小 → OUTB 放电到 VSS</strong>。这与 §6.1 的 MinMUX 控制一一对应。</p>
+<p>状态转移真值表（Fig.11(b)）：当前位 (ACT, W) 相等 → 保持；ACT=1,W=0 → OUT=VDD、OUTB=VSS（w 小，min=w）；ACT=0,W=1 → OUTB=VDD、OUT=VSS（x 小，min=x）。</p>
+
+<h3>7.3 误差根源：电荷共享（论文 Fig.13 + §V-B）</h3>
+<p>先看<strong>原设计 [19]</strong>的电荷共享问题：</p>
+<ol>
+<li>初始：OUT、OUTB 预充到 VDD；</li>
+<li>当 ACT 和 W 都是 1（高-高对）时：N7、N8 导通，N5、N6 关断；</li>
+<li>第一次比较（SAEN=VDD）：N4 和 N6 都导通 → 寄生电容 C1、C2 与 OUT <strong>电荷共享</strong> → OUT 电压大幅跌落；</li>
+<li>读第二个权重位时：RBL 预充到 VDD、SAEN=VSS → N8 导通、N4 关断 → C1、C2 被放掉；</li>
+<li>第二次比较：C1、C2 又与 OUT 电荷共享 → OUT 电压<strong>持续跌落</strong>；</li>
+<li>仿真显示：<strong>连续 3 次“高-高”比较后，比较结果出错</strong>（OUT 跌到无法正确判读）。</li>
+</ol>
+<p>根本原因：<strong>每次高-高位对比较，寄生电容都要“偷” OUT 上的电荷</strong>，连续多次就把 OUT 拉垮。</p>
+
+<h3>7.4 改进：交换 ACT 和 WB 的位置</h3>
+<p>改进设计的改动<strong>极小</strong>——把 ACT 和 WB 的接入位置互换（图 11(a) 里 ACT 接到 N4 支路、WB 接到 N6 支路）。效果分析：</p>
+<ul>
+<li>第一次比较（高-高位对）时：<strong>只有 N4 导通、N6 关断</strong> → 只有 C1 与 OUT 电荷共享（C2 不参与）→ OUT 电压跌落减半；</li>
+<li>结果：<strong>连续 6 次高-高比较后才出错</strong>（原来是 3 次）；</li>
+<li>实测（图 17）：0.54 V 下，原设计从 2 个高-高对开始出错，改进设计从 6 个开始；0.65 V 以上两者都无错。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_13_比较误差.png" alt="比较误差">
+<figcaption>图 12 · 论文 Fig.13：比较误差示例——连续高-高位对导致 OUT 电荷共享电压跌落；改进设计延迟了误差出现。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig13_12_比较器面积能效对比.png" alt="比较器面积能效对比">
+<figcaption>图 13 · 论文 Fig.12：动态逻辑比较器 vs 静态逻辑比较器——面积 −1.7×、功耗 −4.1×。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_comparator.svg" alt="改进比较器教学图">
+<figcaption>教学图 7 · 改进比较器电路示意、状态真值表与电荷共享误差分析。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么“交换位置”能减半跌落？</div>
+<p>原设计里 N4、N6 同时导通，C1 和 C2 两个电容一起参与电荷共享 → 分走的电荷多；交换后每次只有一侧（N4）导通，C1 单独共享 → 分走的电荷少。相当于把“两个电容同时偷电”变成“一个电容偷电”，OUT 的电压跌落减半 → 容错余量翻倍（3 次 → 6 次）。</p>
+</div>
+
+<h3>7.5 激活正则化：从电路限制反推算法约束</h3>
+<p>电荷共享误差的触发条件是“连续高-高位对太多”。既然无法完全消除电荷共享，就<strong>限制激活里 1 的个数</strong>（正则化）：</p>
+<ul>
+<li>推理时把每个激活的二进制表示中「1」的个数限制到 ≤5（低比特截断实现）。例：63 = 00111111（6 个 1）→ 正则化为 62 = 00111110（5 个 1）；</li>
+<li>原设计 [19] 限制到 ≤3 → 需要正则化的激活比例高（ResNet-20 上 15%）；</li>
+<li>改进设计容错提高到 6 次 → 只需 ≤5 个 1 → 只有 <strong>0.9%</strong> 的激活需要正则化（ResNet-20）→ 正则化损失小得多 → 精度提升。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_17_比较器误差率.png" alt="比较器误差率">
+<figcaption>图 14 · 论文 Fig.17：改进比较器与原设计 [19] 的误差率对比——改进设计显著降低误差率。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_比较器误差率.png" alt="误差率图表">
+<figcaption>数据图 3 · 比较器误差率 vs 连续高-高位对数（示意）：改进设计从 6 个高-高对才开始出错（依据论文 Fig.13/17 描述）。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_11_改进比较器.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 动态比较器工作过程：OUT/OUTB 预充、比较断言、电荷共享误差与激活正则化配合。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · 动态比较器波形（电荷共享误差）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">周期 1：OUT=1.00V（正常）</span>
+</div>
+<div class="hint">左：改进比较器 OUT 节点电压随连续“高-高位对”比较而跌落（电荷共享）。右：红=原设计 [19]（3 次后出错）、绿=改进设计（交换 ACT/WB 位置后 6 次才出错）。激活正则化把「1」个数限制到 ≤5 → 只需 0.9% 激活被正则化。</div>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 近似误差的完整闭环</div>
+<p>动态比较器的电荷共享是<strong>唯一真实的电路级近似误差源</strong>。论文的处理是“电路改进（减半跌落）+ 算法配合（激活正则化）”，两者协同把误差压到对精度无影响：0.65 V 以上无误差，0.54 V 下也只需极少量正则化 → 最终精度与浮点相差 &lt;0.1%。这就是“算法-电路协同近似”最精彩的部分。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>NN 部署流程与芯片实测</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 完整的软件工具链（训练 → 截断 → 共享尺度量化 → 正则化 → 上片）；② 逐层映射方法；③ 芯片实测数据（电压/频率/能效/位宽缩放、能量面积分解、两个基准模型精度）。</p>
+</div>
+
+<h3>8.1 NN 模型部署流程（论文 Fig.18(a)）</h3>
+<p>这是一条<strong>自定义的离线训练后量化（post-training quantization, PTQ）</strong>工具链，完全适配芯片架构：</p>
+<ol>
+<li><strong>PyTorch 训练</strong>：先按标准流程训练一个浮点 multiply-less 预训练模型（用 L1 距离替代卷积）；</li>
+<li><strong>权重截断</strong>：负权重 clamp 到 [0, w<sub>max</sub>]，截掉部分并入 WSUM（§4.3）；</li>
+<li><strong>共享尺度量化</strong>：与 CNN 各算各的缩放因子不同，multiply-less 模型做<strong>比较</strong>要求激活和权重<strong>使用同一个缩放因子</strong>。好在 &gt;95% 的权重和激活都落在 2⁻⁵ ~ 2³ 范围内 → 一个共享缩放因子即可完成 8-bit 量化；</li>
+<li><strong>激活正则化</strong>：把每个激活「1」的个数限制到 ≤5（低比特截断），适配改进比较器的容错（§7.5）；</li>
+<li><strong>部署上片</strong>：量化后的模型部署到测试芯片。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么强调“免重训练”？</div>
+<p>这条链路全部是<strong>训练后处理</strong>（PTQ），不需要重训练。对边缘 AI 应用，模型往往已经在云端训好、要快速部署到端侧——免重训练意味着部署成本极低。这是实用性卖点。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_18_部署流程与映射.png" alt="部署流程与映射">
+<figcaption>图 15 · 论文 Fig.18：(a) NN 模型部署流程（离线训练后量化工具链）；(b) 逐层 NN 映射方法。</figcaption>
+</figure>
+
+<h3>8.2 逐层映射（论文 Fig.18(b)）</h3>
+<p>芯片阵列较小，采用<strong>逐层（layer-by-layer）</strong>映射：</p>
+<ul>
+<li>16 列 = 16 个输出通道；每列存 128 个不同输入通道的权重；</li>
+<li>推理时 128 个输入并行送入，与 16 列权重同时计算；</li>
+<li>8 个时钟周期的比较+累加后，得到 16 个部分和（Psum）。</li>
+</ul>
+
+<h3>8.3 芯片实测：工艺与基础指标</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 0.028 mm²</td></tr>
+<tr><td>电压 / 频率范围</td><td>0.54 – 0.9 V / 20 – 240 MHz</td></tr>
+<tr><td>8-bit 峰值算力</td><td>0.122 TOPS @0.9V / 240MHz（一次比较+累加计 2 OPs，8 位需 8 周期）</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>102 TOPS/W</strong> @0.54V / 20MHz / 10% 输入稀疏 / 50% 权重稀疏</td></tr>
+<tr><td>面积效率</td><td>4.4 TOPS/mm²（8-bit）</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig13_14_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 16 · 论文 Fig.14：(a) 芯片显微照片与测试结果汇总；(b) 测试平台（SODIMM 适配板 + FPGA 桥 + 电流表测能效）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig13_15_电压频率缩放.png" alt="电压频率缩放">
+<figcaption>图 17 · 论文 Fig.15：(a) 电压-频率缩放；(b) 8-bit 能效的电压缩放（不同输入稀疏度）；(c) 能效的位宽缩放。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_能效_电压缩放.png" alt="能效电压缩放图">
+<figcaption>数据图 2 · 8-bit 能效 vs 电压（示意）：102 TOPS/W 峰值 @0.54V（依据论文 Fig.15(b)）。</figcaption>
+</figure>
+
+<h3>8.4 位宽缩放：线性扩展的证据</h3>
+<p>论文 Fig.15(c) 显示 0.9 V 下能效随位宽（不同输入稀疏度）的变化——<strong>高位宽段呈线性提升</strong>。这正是 §2.2 目标（线性扩展，突破二次成本）的实验证明：multiply-less 数字 CIM 把位宽从 2 升到 8，能效近似线性增长（数据图 c01 的绿线对应此结论）。</p>
+
+<h3>8.5 能量与面积分解（论文 Fig.16）</h3>
+<table>
+<tr><th>模块</th><th>能量占比（0.9V, 50% 稀疏）</th><th>面积占比</th></tr>
+<tr><td>L1 计算单元（MinSEL+MinACCU+ActACCU+ABS-ASM）</td><td><strong>40%</strong></td><td><strong>59%</strong></td></tr>
+<tr><td>SRAM bank / MinSEL / ActACCU</td><td colspan="2">三者面积几乎相同 → 数字电路开销被有效压缩</td></tr>
+</table>
+<p>面积分解的看点：SRAM、MinSEL、ActACCU 三块面积几乎相等，说明<strong>数字逻辑的开销没有“喧宾夺主”</strong>——预计算方案真的把数字部分压薄了。</p>
+
+<figure>
+<img src="assets/figs/fig13_16_能量面积分解.png" alt="能量面积分解">
+<figcaption>图 18 · 论文 Fig.16：测试芯片的能量与面积分解——L1 计算单元占能耗 40%、面积 59%。</figcaption>
+</figure>
+
+<h3>8.6 NN 基准验证（论文表 II）</h3>
+<table>
+<tr><th>模型 / 数据集</th><th>位宽</th><th>能效</th><th>吞吐</th><th>精度</th></tr>
+<tr><td><strong>ResNet-20 风格 multiply-less / CIFAR-10</strong></td><td>8-bit</td><td>2.14 µJ/图</td><td>3019.5 图/s</td><td><strong>91.71%</strong></td></tr>
+<tr><td><strong>ResNet-50 风格 multiply-less / ImageNet</strong></td><td>8-bit</td><td>220.04 µJ/图</td><td>28.21 图/s</td><td><strong>74.8%</strong></td></tr>
+</table>
+<ul>
+<li>与 32-bit 浮点模型相比，<strong>近似+量化带来的精度损失 &lt;0.1%</strong>；</li>
+<li>ImageNet 74.8% vs [19] 的 74.5%：本工作通过正则化更少的激活（0.9% vs 15%）取得更高精度；</li>
+<li>ResNet-20 上仅 0.9% 激活被正则化 → 正则化损失被压到极小。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d08_deployment.svg" alt="部署流程教学图">
+<figcaption>教学图 8 · 部署流程五步 + 逐层映射 + 关键实测数据。</figcaption>
+</figure>
+
+<h3>8.7 与 SOTA 对比（论文表 III）</h3>
+<table>
+<tr><th>工作</th><th>工艺</th><th>能效（TOPS/W）</th><th>面积效率</th><th>验证</th></tr>
+<tr><td><strong>本工作</strong></td><td>28nm</td><td><strong>102</strong></td><td><strong>4.4 TOPS/mm²</strong></td><td>CIFAR-10 + ImageNet</td></tr>
+<tr><td>近似数字 CIM [15]（DIMC）</td><td>28nm</td><td>15.5</td><td>2.6 TOPS/mm²</td><td>CIFAR-10</td></tr>
+<tr><td>[19] 前作（ISSCC'23）</td><td>28nm</td><td>38–102</td><td>—</td><td>CIFAR-10</td></tr>
+</table>
+<p>结论：本工作 vs 近似数字 CIM [15]：能效 <strong>6.58×</strong>、面积效率 <strong>1.7×</strong> 提升，且首次提供 ImageNet 验证；是<strong>首个支持 L1 距离计算的 CIM 宏</strong>，也是<strong>首个 8-bit 能效超 100 TOPS/W 并通过 ImageNet 验证</strong>的设计。</p>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 与 SOTA 对比、三大创新点回顾与未来方向。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：一条“算法-电路协同近似”的完整逻辑链</h3>
+<p>把整篇论文串成一句话：<strong>既然数字 CIM 的乘法太贵，那就换一个不需要乘法的算法（L1 距离），再为这个算法量身打造一套从分解式、位串行数据流到动态比较器的硬件</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：数字 CIM 乘法成本二次膨胀 + 电路近似伤精度 + 位级稀疏浪费（§2）；</li>
+<li><strong>算法地基</strong>：L1 距离替代点积（AdderNet），乘法消失、逼近能力相当（§3）；</li>
+<li><strong>架构优化</strong>：预计算分解 |x−w| = x+w−2·min(x,w)，减法/绝对值 → 最小选择，Σw 预存、Σx 共享（§4）；</li>
+<li><strong>电路实现</strong>：位串行比较 + MinMUX + 提前停止吃稀疏（§6）；动态逻辑改进比较器把电荷共享误差阈值从 2 提到 6（§7）；</li>
+<li><strong>软件配合</strong>：权重截断（+86× 稀疏度）、共享尺度量化、激活正则化（≤5 个「1」，0.9% 激活需处理）（§8）；</li>
+<li><strong>闭环验证</strong>：102 TOPS/W、4.4 TOPS/mm²、CIFAR-10 91.71% / ImageNet 74.8%，精度损失 &lt;0.1%（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 创新角度新——不是“把乘法做快”而是“让乘法不发生”；② 从算法到电路每一层都有对应收益，逻辑自洽；③ 首次 L1 距离 CIM + 首次 8-bit 超 100 TOPS/W 过 ImageNet；④ 部署流程免重训练，实用。</li>
+<li><strong>弱/局限</strong>：① 只在卷积网络（ResNet 风格）上验证，未覆盖 Transformer/注意力；② 能效峰值依赖较高稀疏度（10% 输入 + 50% 权重），实际负载可能打折；③ 逐层映射（无跨层流水）限制了整体吞吐；④ 面积效率 4.4 TOPS/mm² 相比 5nm 级全数字 CIM（如 4790 TOPS/mm²/b）仍有差距——工艺代差与算法取舍使然。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>扩展到 Transformer / 大语言模型</strong>：L1 距离能否用于注意力（Q·K 点积 → L1 相似度）？残差结构与更大动态范围的量化误差如何控制？这是 AdderNet 系列（Adder Attention [29]）已开始探索、但硬件 CIM 尚未充分覆盖的方向；</li>
+<li><strong>动态位宽 / 混合粒度</strong>：2–8 b 位宽可配已验证，可进一步做“层间/块间自适应位宽”甚至“逐通道位宽”，把线性成本优势用到极致；</li>
+<li><strong>multiply-less 与 MAC 混合架构</strong>：并非所有算子都适合 L1（如归一化、Softmax），设计“L1 核 + 传统 MAC 核”混合的异构 CIM，按层动态切换；</li>
+<li><strong>支持在线训练 / 微调</strong>：L1 距离的梯度是符号函数（不可导处需平滑近似），硬件上做“前向 L1 + 反向近似梯度”的片上微调（[23] 的一步浮点微调思路可结合）；</li>
+<li><strong>双层稀疏调度</strong>：输入稀疏 × 权重稀疏联合利用——本工作已吃权重位稀疏，若再结合激活稀疏（输入稀疏）与提前终止，能效可进一步翻倍；</li>
+<li><strong>更先进工艺与三维集成</strong>：28nm 原型 → 5nm/4nm（参考 [17][18] 的工艺演进），配合 3D 堆叠提升容量与带宽，逼近全数字 CIM 的密度；</li>
+<li><strong>误差建模与自动正则化</strong>：把动态比较器电荷共享误差建成统计模型，训练时自动注入等效噪声 → 省掉手工正则化，精度/能耗权衡更优。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>CIM（Compute-in-Memory）</td><td>存内计算：把计算电路放进存储阵列，减少数据搬移。</td></tr>
+<tr><td>MVM（Matrix-Vector Multiply）</td><td>矩阵-向量乘，神经网络的核心运算原语。</td></tr>
+<tr><td>Multiply-Less NN</td><td>免乘法神经网络：用 L1 距离等加法运算替代乘加。</td></tr>
+<tr><td>L1 距离（曼哈顿距离）</td><td>Σ|x−w|，绝对差之和；本论文用它替代点积。</td></tr>
+<tr><td>AdderNet</td><td>CVPR 2020 提出的加法网络，本论文算法基础。</td></tr>
+<tr><td>预计算（Precalculation）</td><td>把静态可算的项（如 Σw）提前算好存起来，实时只算最便宜的项。</td></tr>
+<tr><td>WSUM</td><td>权重和 Σw，编译期预计算、存在 SRAM 额外列（15 单元/列）。</td></tr>
+<tr><td>ActACCU / MinACCU</td><td>激活累加器（Σx，广播共享）/ 最小值累加器（Σmin，时钟门控）。</td></tr>
+<tr><td>ABS-ASM</td><td>绝对值装配单元：汇合 Σx、Σw、2Σmin 输出部分和。</td></tr>
+<tr><td>MinSEL / MinMUX</td><td>最小值选择单元 / 最小值多路选择器（传输门实现）。</td></tr>
+<tr><td>位串行（Bit-Serial）</td><td>按位（MSB 优先）逐周期处理的数据流，位宽可配。</td></tr>
+<tr><td>动态逻辑（Dynamic Logic）</td><td>预充-求值型电路，面积小、速度快，但有电荷共享问题。</td></tr>
+<tr><td>电荷共享（Charge Sharing）</td><td>寄生电容与输出节点共享电荷导致电压跌落的效应。</td></tr>
+<tr><td>提前停止（Early Stop）</td><td>比较分出大小后停止预充/读取权重位，省读功耗。</td></tr>
+<tr><td>8T SRAM</td><td>8 管 SRAM 单元，本论文用于权重存储与读端口优化。</td></tr>
+<tr><td>激活正则化</td><td>限制激活二进制中「1」的个数（≤5），抑制电荷共享误差。</td></tr>
+<tr><td>PTQ（Post-Training Quantization）</td><td>训练后量化：不需重训练，直接量化部署。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算，能效单位（本论文 1 次比较+累加计 2 OPs）。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：H. Diao et al., “A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference,” IEEE JSSC, vol. 60, no. 2, pp. 695–705, Feb. 2025. DOI: 10.1109/JSSC.2024.3433417（ISSCC'23 [19] 期刊扩展版）</li>
+<li>[19] Y. He et al., “A 28nm 38-to-102-TOPS/W 8b multiply-less approximate digital SRAM compute-in-memory macro for neural-network inference,” ISSCC 2023, pp. 130–132.（前作：本论文改进其动态比较器）</li>
+<li>[28] H. Chen et al., “AdderNet: Do we really need multiplications in deep learning?” CVPR 2020, pp. 1465–1474.（AdderNet 原始论文）</li>
+<li>[34] H. Chen et al., “Universal adder neural networks,” arXiv:2105.14202.（L1 算子逼近能力证明）</li>
+<li>[15] D. Wang et al., “DIMC: 2219TOPS/W 2569F²/b digital in-memory computing macro in 28nm based on approximate arithmetic hardware,” ISSCC 2022.（电路级近似对比对象）</li>
+<li>[35] Y. Wang et al., “AdderNet and its minimalist hardware design for energy-efficient artificial intelligence,” arXiv:2101.10015.（权重/激活 2⁻⁵–2³ 分布依据）</li>
+<li>[16] Y.-D. Chih et al., “An 89TOPS/W and 16.3TOPS/mm² all-digital SRAM-based full-precision compute-in-memory macro in 22nm,” ISSCC 2021.（数字 CIM 早期代表）</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 AdderNet 原文 [28] 与 Universal Adder NN [34]，理解 L1 的逼近能力；② 再读前作 [19]（ISSCC 短文），对比改进前后比较器；③ 想了解数字 CIM 全貌，可对照阅读 [16][17][18]（全数字 SRAM CIM 系列）。硬件仿真入门可尝试用 Verilog 实现本论文的位串行比较器 + MinMUX，用 0.54–0.9 V 的电压扫描复现误差行为。</p>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   Multiply-Less 近似 SRAM CIM 教学教程 · 交互脚本
+   演示 A 点积 vs L1 距离 · 演示 B 位串行最小选择 · 演示 C 动态比较器波形
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 点积 vs L1 距离（卷积核滑动）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+  // 4x4 二值输入图，3x3 对角边缘核
+  const img = [
+    [0, 1, 0, 1],
+    [1, 0, 1, 0],
+    [0, 1, 0, 1],
+    [1, 0, 1, 0]
+  ];
+  const ker = [1, -1, 1, -1, 1, -1, 1, -1, 1];
+
+  function win(r, c) {
+    const v = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) v.push(img[r + i][c + j]);
+    return v;
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 A · 卷积核滑动：点积（MAC）与 L1 距离输出对比", 30, 24, 15, PAL.white, "left");
+    const pos = cyc % 4; // 滑动位置 0..3（4 个输出位置）
+    const r = Math.floor(pos / 2), c = pos % 2;
+    const wv = win(r, c);
+    let dot = 0, l1 = 0;
+    for (let k = 0; k < 9; k++) { dot += wv[k] * ker[k]; l1 += Math.abs(wv[k] - ker[k]); }
+
+    // 输入图
+    txt(ctx, "输入特征图（4×4）", 110, 62, 13, PAL.blue, "center");
+    const cs = 44, ox = 40, oy = 80;
+    for (let rr = 0; rr < 4; rr++) {
+      for (let cc = 0; cc < 4; cc++) {
+        const x = ox + cc * cs, y = oy + rr * cs;
+        ctx.fillStyle = img[rr][cc] ? "#1e4a76" : "#101c2c";
+        ctx.strokeStyle = PAL.line; ctx.lineWidth = 1;
+        rrect(ctx, x, y, cs - 4, cs - 4, 5); ctx.fill(); ctx.stroke();
+        txt(ctx, String(img[rr][cc]), x + cs / 2, y + cs / 2, 13, PAL.white, "center");
+      }
+    }
+    // 高亮窗口
+    ctx.strokeStyle = PAL.orange; ctx.lineWidth = 3;
+    ctx.strokeRect(ox + c * cs - 2, oy + r * cs - 2, cs * 3 - 2, cs * 3 - 2);
+    txt(ctx, "滑动窗口 @" + pos, ox + c * cs + cs * 1.5, oy + cs * 4 + 16, 12, PAL.orange, "center");
+
+    // 核
+    txt(ctx, "卷积核（对角边缘）", 330, 62, 13, PAL.purple, "center");
+    const ks = 30, kx = 210, ky = 80;
+    for (let rr = 0; rr < 3; rr++) {
+      for (let cc = 0; cc < 3; cc++) {
+        const v = ker[rr * 3 + cc];
+        const x = kx + cc * ks, y = ky + rr * ks;
+        ctx.fillStyle = v > 0 ? "#1e4a76" : "#4a1e1e";
+        ctx.strokeStyle = v > 0 ? PAL.blue : PAL.red; ctx.lineWidth = 2;
+        rrect(ctx, x, y, ks - 3, ks - 3, 5); ctx.fill(); ctx.stroke();
+        txt(ctx, String(v), x + ks / 2, y + ks / 2, 12, PAL.white, "center");
+      }
+    }
+
+    // 输出对比
+    const bx = 420, by = 80;
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 2;
+    rrect(ctx, bx, by, 250, 105, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "点积（MAC）  Σ x·w", bx + 20, by + 24, 14, PAL.blue, "left");
+    txt(ctx, "= " + wv.join("·") + " 与核", bx + 20, by + 50, 11, PAL.gray, "left");
+    txt(ctx, "= " + dot + "（需 9 次乘法）", bx + 20, by + 76, 15, PAL.white, "left");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, bx, by + 122, 250, 105, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "L1 距离  −Σ|x−w|", bx + 20, by + 146, 14, PAL.green, "left");
+    txt(ctx, "= −(" + wv.join("−") + " 之差的绝对值)", bx + 20, by + 172, 11, PAL.gray, "left");
+    txt(ctx, "= −" + l1 + "（只有减法+绝对值）", bx + 20, by + 198, 15, PAL.white, "left");
+
+    // 结论
+    txt(ctx, "两者响应方向一致（越匹配输出越大）→ L1 可替代点积", bx, by + 260, 13.5, PAL.orange, "left");
+    txt(ctx, "硬件：乘法器消失 → 面积/能耗随位宽线性增长", bx, by + 284, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "滑动窗口 @" + pos + "：点积=" + dot + "，L1 距离=−" + l1;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1100); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1100);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 位串行最小选择（MinMUX）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  // x = 10 (1010), w = 6 (0110) → min = w
+  const xb = [1, 0, 1, 0];
+  const wb = [0, 1, 1, 0];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 B · 位串行比较（MSB 优先）：x=1010(10) vs w=0110(6) → min=w", 30, 24, 15, PAL.white, "left");
+    const step = cyc % 5; // 0..4
+    const decided = step >= 1; // 第1位 1 vs 0 即分出胜负
+
+    // 位格
+    const bx = 60, by = 70, bs = 90;
+    for (let k = 0; k < 4; k++) {
+      const x = bx + k * bs;
+      ctx.fillStyle = k <= step ? (decided && k > 0 ? "#16321f" : "#1e4a76") : "#101c2c";
+      ctx.strokeStyle = k === step ? PAL.orange : PAL.line; ctx.lineWidth = k === step ? 3 : 1;
+      rrect(ctx, x, by, bs - 8, 46, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, "x bit" + k, x + (bs - 8) / 2, by + 14, 11, PAL.blue, "center");
+      txt(ctx, String(xb[k]), x + (bs - 8) / 2, by + 32, 16, PAL.white, "center");
+      const y2 = by + 62;
+      ctx.fillStyle = k <= step ? (decided && k > 0 ? "#1f2413" : "#3c2a1e") : "#101c2c";
+      ctx.strokeStyle = k === step ? PAL.orange : PAL.line; ctx.lineWidth = k === step ? 3 : 1;
+      rrect(ctx, x, y2, bs - 8, 46, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, "w bit" + k, x + (bs - 8) / 2, y2 + 14, 11, PAL.orange, "center");
+      txt(ctx, String(wb[k]), x + (bs - 8) / 2, y2 + 32, 16, PAL.white, "center");
+    }
+    // 比较进度
+    const msg = step === 0 ? "第 1 位：x=1 vs w=0 → x>w 断言！比较结束"
+      : decided ? "比较已锁定：min(x,w)=w（后续位直接输出 w，无需再比较）"
+      : "比较中…";
+    txt(ctx, msg, 30, by + 140, 14, PAL.orange, "left");
+    txt(ctx, decided ? "→ 提前停止：第 2–4 位不再预充/读权重位（省电）" : "→ 正在比较…", 30, by + 166, 12.5, PAL.green, "left");
+
+    // 数据流
+    const fx = 30, fy = 218;
+    txt(ctx, "L1 计算单元数据流：", fx, fy, 13, PAL.white, "left");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 2;
+    rrect(ctx, fx + 150, fy - 14, 150, 28, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "ActACCU: Σx=10", fx + 225, fy, 12, PAL.blue, "center");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+    rrect(ctx, fx + 320, fy - 14, 140, 28, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "WSUM: Σw=6", fx + 390, fy, 12, PAL.orange, "center");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+    rrect(ctx, fx + 480, fy - 14, 160, 28, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "MinACCU: Σmin=6", fx + 560, fy, 12, PAL.purple, "center");
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, fx + 660, fy - 14, 240, 28, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "ABS-ASM: 10+6−12=4=Σ|x−w|", fx + 780, fy, 12, PAL.green, "center");
+    if (stat) stat.textContent = msg;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1200); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1200);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 动态比较器波形（电荷共享误差）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  // 周期数：6 个高-高位对比较，改进设计第 6 次出错（示意）
+  const cycN = 8;
+  const errAtOld = 3, errAtNew = 6;
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 C · 动态比较器：OUT 电压随高-高位对比较跌落（电荷共享）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % cycN; // 当前周期 0..7
+
+    // 左：电路状态
+    const ox = 40, oy = 60;
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.line; ctx.lineWidth = 2;
+    rrect(ctx, ox, oy, 300, 160, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "改进比较器（示意）", ox + 150, oy + 22, 13, PAL.white, "center");
+    // OUT/OUTB 节点
+    const outV = k < errAtNew ? 1.0 : 0.25; // 第6次后出错 → OUT 跌
+    const outbV = k < errAtNew ? 1.0 : 0.9;
+    // 电压条
+    for (let t = 0; t < 6; t++) {
+      const y = oy + 50 + t * 20;
+      ctx.fillStyle = "#101c2c"; ctx.fillRect(ox + 20, y, 150, 12);
+      ctx.fillStyle = PAL.blue; ctx.fillRect(ox + 20, y, 150 * Math.min(1, outV), 12);
+      txt(ctx, t === 0 ? "OUT 电压" : "", ox + 182, y + 6, 11, PAL.gray, "left");
+    }
+    txt(ctx, "OUT 当前电压 ≈ " + outV.toFixed(2) + " V", ox + 20, oy + 185 - 120, 11, PAL.blue, "left");
+    txt(ctx, k < errAtNew ? "✓ 未出错：电荷共享还在容错内" : "✗ 出错！连续高-高比较超过 6 次",
+      ox + 20, oy + 210 - 120, 12, k < errAtNew ? PAL.green : PAL.red, "left");
+
+    // 右：波形
+    const wx = 380, ww = 560, wy = 60, wh = 160;
+    ctx.fillStyle = "#0d1622"; ctx.strokeStyle = PAL.line; ctx.lineWidth = 2;
+    rrect(ctx, wx, wy, ww, wh, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "OUT 电压波形（每周期一个高-高位对）", wx + ww / 2, wy + 18, 12.5, PAL.white, "center");
+    // 网格与参考线
+    for (let i = 0; i <= 8; i++) {
+      const x = wx + 30 + i * (ww - 60) / 8;
+      ctx.strokeStyle = "#1c2c42"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, wy + 30); ctx.lineTo(x, wy + wh - 20); ctx.stroke();
+    }
+    // 理想：1.0 平线；实际：每周期跌落一点，第6次后大幅跌落
+    const x0 = wx + 30, x1 = wx + ww - 30;
+    for (let i = 0; i < cycN; i++) {
+      const vOld = i < errAtOld ? 1.0 : 0.35;
+      const vNew = i < errAtNew ? 1.0 - i * 0.02 : 0.3;
+      const xa = x0 + i * (x1 - x0) / 8, xb = x0 + (i + 1) * (x1 - x0) / 8;
+      const ya = wy + wh - 25 - vOld * 100, yb = wy + wh - 25 - vOld * 100;
+      ctx.strokeStyle = PAL.red; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke();
+      const y2a = wy + wh - 25 - vNew * 100, y2b = wy + wh - 25 - vNew * 100;
+      ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(xa, y2a); ctx.lineTo(xb, y2b); ctx.stroke();
+      // 标记出错点
+      if (i === errAtOld) { txt(ctx, "旧[19]出错", xa, ya - 12, 10, PAL.red, "center"); }
+      if (i === errAtNew) { txt(ctx, "改进出错", xa, y2a - 12, 10, PAL.green, "center"); }
+      // 当前周期高亮
+      if (i === k) {
+        ctx.fillStyle = "rgba(240,180,70,0.12)";
+        ctx.fillRect(xa, wy + 30, (x1 - x0) / 8, wh - 50);
+      }
+    }
+    // 当前高亮点
+    const cxp = x0 + k * (x1 - x0) / 8;
+    ctx.fillStyle = PAL.orange;
+    ctx.beginPath(); ctx.arc(cxp, wy + wh - 25 - (k < errAtNew ? (1.0 - k * 0.02) : 0.3) * 100, 5, 0, 7); ctx.fill();
+
+    // 图例
+    txt(ctx, "红=原设计[19]（3 次后出错） · 绿=改进设计（6 次后出错）· 0.65V 以上无错", 30, 262, 12, PAL.gray, "left");
+    txt(ctx, "激活正则化：≤5 个「1」（原≤3）→ 只需 0.9% 激活被正则化（原 15%）→ 精度更高", 30, 288, 12.5, PAL.orange, "left");
+    if (stat) stat.textContent = "周期 " + (k + 1) + "：OUT=" + (k < errAtNew ? (1.0 - k * 0.02) : 0.30).toFixed(2) + "V（" + (k < errAtNew ? "正常" : "出错") + "）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1000); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1000);
+  draw();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Multiply-Less 的核心：用 L1 距离替代点积（AdderNet 思想）</text>
+
+  <!-- 点积 -->
+  <rect x="40" y="84" width="430" height="216" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#0e5a8a" font-size="14" font-weight="700">传统卷积（MAC / 点积）</text>
+  <g font-size="12">
+    <text x="60" y="140" fill="#45536b">Y = Σ X(i)·W(i) —— 每个乘积累加</text>
+    <g>
+      <rect x="60" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="72" y="171" text-anchor="middle" fill="#0e5a8a">x1</text>
+      <rect x="88" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="100" y="171" text-anchor="middle" fill="#0e5a8a">x2</text>
+      <rect x="116" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="128" y="171" text-anchor="middle" fill="#0e5a8a">x3</text>
+      <text x="146" y="171" fill="#45536b">×</text>
+      <rect x="156" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="168" y="171" text-anchor="middle" fill="#7a5c10">w1</text>
+      <rect x="184" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="196" y="171" text-anchor="middle" fill="#7a5c10">w2</text>
+      <rect x="212" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="224" y="171" text-anchor="middle" fill="#7a5c10">w3</text>
+      <text x="252" y="171" fill="#45536b">→ Σ 乘积 → 输出</text>
+    </g>
+    <text x="60" y="210" fill="#45536b">需要 N 次乘法 + 加法树 → 面积/能耗大</text>
+    <text x="60" y="234" fill="#45536b">位宽增大 → 乘法成本二次膨胀</text>
+    <text x="60" y="276" fill="#0e5a8a" font-weight="600">卷积核能检测对角边缘（响应最大）</text>
+  </g>
+
+  <!-- L1 -->
+  <rect x="490" y="84" width="430" height="216" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="14" font-weight="700">AdderNet（L1 距离）</text>
+  <g font-size="12">
+    <text x="510" y="140" fill="#45536b">Y = − Σ |X(i) − W(i)| —— 只有减法/绝对值</text>
+    <g>
+      <rect x="510" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="522" y="171" text-anchor="middle" fill="#0e5a8a">x1</text>
+      <rect x="538" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="550" y="171" text-anchor="middle" fill="#0e5a8a">x2</text>
+      <rect x="566" y="154" width="24" height="24" fill="#cfe0ee" stroke="#0e5a8a"/><text x="578" y="171" text-anchor="middle" fill="#0e5a8a">x3</text>
+      <text x="596" y="171" fill="#45536b">−</text>
+      <rect x="606" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="618" y="171" text-anchor="middle" fill="#7a5c10">w1</text>
+      <rect x="634" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="646" y="171" text-anchor="middle" fill="#7a5c10">w2</text>
+      <rect x="662" y="154" width="24" height="24" fill="#e8d8b0" stroke="#a08020"/><text x="674" y="171" text-anchor="middle" fill="#7a5c10">w3</text>
+      <text x="702" y="171" fill="#45536b">→ |·| → 累加 → 输出</text>
+    </g>
+    <text x="510" y="210" fill="#45536b">乘法 → 比较/减法 → 硬件极大简化</text>
+    <text x="510" y="234" fill="#45536b">面积/能耗与位宽成线性关系</text>
+    <text x="510" y="276" fill="#1d8a5f" font-weight="600">同样能检测对角边缘 → 表达力相似</text>
+  </g>
+
+  <!-- 相似性示意 -->
+  <rect x="40" y="320" width="880" height="110" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="346" fill="#6b3fa0" font-size="14" font-weight="700">为什么能替代？—— 数学相似性（文献[34]）</text>
+  <g font-size="12">
+    <text x="60" y="376" fill="#45536b">固定权重单位向量，旋转输入向量：点积 = 投影（cos 响应），L1 距离 = 曼哈顿距离</text>
+    <text x="60" y="398" fill="#45536b">两者随输入方向变化的「响应形状」相似 → 学习出的滤波器可互相逼近</text>
+    <text x="60" y="420" fill="#6b3fa0" font-weight="600">表 I：AdderNet 在 CNN/Transformer、分类/检测上精度与 CNN 相当（如 ResNet-20 91.7% vs 91.9%）</text>
+  </g>
+
+  <!-- 硬件映射 -->
+  <rect x="40" y="450" width="880" height="92" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="478" fill="#0e5a8a" font-size="13.5" font-weight="700">硬件上把 L1 距离再分解（本论文核心技巧）</text>
+  <g font-size="12.5">
+    <text x="60" y="504" fill="#45536b">|x−w| = x + w − 2·min(x, w)</text>
+    <text x="260" y="504" fill="#1d8a5f" font-weight="600">Σ|xi−wi| = Σxi + Σwi − 2·Σmin(xi,wi)</text>
+    <text x="60" y="526" fill="#45536b">Σwi 编译期预计算（存 SRAM 额外列）· Σxi 由激活累加器共享 · 只剩 Σmin 需实时比较 → 1.5× 面积缩减</text>
+  </g>
+</svg>

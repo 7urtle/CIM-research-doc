@@ -1,0 +1,30 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>转置的概念：读“行”是 W，读“对角”是 Wᵀ</h2>
+<figure>
+  <img src="assets/diagrams/d03_transpose.svg" alt="转置概念" style="max-width:940px">
+  <figcaption>图 3.1　同一个存储阵列：FF 读行（权重向量）、BP 读对角（权重转置向量）。</figcaption>
+</figure>
+<p>要理解 CWM-SRAM，先理解一个几何事实：<strong>矩阵的转置就是“沿主对角线翻折”</strong>。W 的第 r 行第 c 列元素，在 Wᵀ 里位于第 c 行第 r 列。所以：</p>
+<ul>
+<li>读 W 的“第 r 行” = 正向权重向量（FF 用）；</li>
+<li>读 W 的“第 c 条对角线” = Wᵀ 的第 c 行 = 转置权重向量（BP 用）。</li>
+</ul>
+<p>问题是：SRAM 位线/字线按行组织，<strong>对角线访问</strong>在普通阵列里要绕很远（每个单元都要单独连到读口）。CWM-SRAM 用“循环映射”把这个难题化解成“行内移位 + 读使能选路”（§4）。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_3_CWM-SRAM.png">
+  <source src="assets/videos/v01_transpose.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 转置读取动画：FF 高亮整行（A×W），BP 高亮对角线（G×Wᵀ）——同一阵列两种读法。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 转置读取（切换 FF 行读 / BP 对角读）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-ff" class="on">FF：读行（A × W）</button>
+  <button id="demoA-bp">BP：读对角（G × Wᵀ）</button>
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <span class="stat" id="demoA-stat">FF 模式：高亮第 0 行</span>
+</div>
+<div class="hint">绿色=FF 按行读取（权重向量）；红色=BP 按对角线读取（转置权重向量）。同一套存储、同一套 MAC，只是读方向不同。</div>
+</div>
+</section>

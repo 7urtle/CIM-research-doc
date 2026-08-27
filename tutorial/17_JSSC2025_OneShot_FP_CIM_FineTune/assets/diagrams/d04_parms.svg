@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">8-bit 并行最小选择器 ParMS（论文 Fig.5）</text>
+
+  <!-- structure -->
+  <rect x="40" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">结构：1 个比较单元 + 8 个选择单元</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">硬连线设计（免 SRAM 预充功耗）</text>
+    <text x="60" y="156" fill="#45536b">Q/QB 节点直接连 ParMS</text>
+    <g>
+      <rect x="70" y="172" width="150" height="40" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="145" y="192" text-anchor="middle" fill="#1d8a5f" font-size="10.5">比较单元（进位前瞻）</text>
+      <rect x="240" y="172" width="150" height="40" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="315" y="192" text-anchor="middle" fill="#1d8a5f" font-size="10.5">8× 选择单元（传输门）</text>
+      <path d="M 224 192 L 236 192" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+    </g>
+    <text x="60" y="236" fill="#45536b">比较单元 = 8 个编码器 + 比较树</text>
+    <text x="60" y="256" fill="#45536b">编码器并行生成 G/P 信号：</text>
+    <text x="80" y="276" fill="#1d8a5f" font-family="monospace" font-size="11">G⟨i⟩=W⟨i⟩&amp;XB⟨i⟩，P⟨i⟩=WB⟨i⟩|XB⟨i⟩</text>
+    <text x="60" y="296" fill="#45536b">比较树输出 LESS（W 是否更小）</text>
+  </g>
+
+  <!-- circuit -->
+  <rect x="490" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="13.5" font-weight="700">电路优化细节</text>
+  <g font-size="11.5">
+    <text x="510" y="138" fill="#45536b">编码器：传输管逻辑（晶体管 14→7）</text>
+    <text x="510" y="160" fill="#45536b">单级传输门（对称 NMOS/PMOS）保信号质量</text>
+    <text x="510" y="186" fill="#45536b">比较树：式(2)展开为三级嵌套逻辑（式4/5）</text>
+    <text x="530" y="208" fill="#45536b" font-family="monospace" font-size="11">LESS = G⟨7:4⟩ + P⟨7:4⟩·G⟨3:0⟩</text>
+    <text x="510" y="230" fill="#45536b">相邻级逻辑相反 → 免反相器 → 面积功耗降</text>
+    <text x="510" y="258" fill="#45536b">选择单元：2 传输门 + 三态反相器（EN/ENB 门控）</text>
+    <text x="510" y="280" fill="#1d8a5f" font-weight="600">门控 → 加法树功耗 −44%</text>
+    <text x="510" y="300" fill="#45536b">可配延迟生成模型适配频率/电压</text>
+  </g>
+
+  <!-- comparison -->
+  <rect x="40" y="324" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="350" fill="#0e5a8a" font-size="14" font-weight="700">ParMS 的收益（论文 Fig.6）</text>
+  <g font-size="12.5">
+    <text x="60" y="380" fill="#45536b">vs INT8 乘法器：面积 −<tspan fill="#1d8a5f" font-weight="700">11.5×</tspan>、能耗 −<tspan fill="#1d8a5f" font-weight="700">8.2×</tspan></text>
+    <text x="60" y="408" fill="#45536b">vs 综合流程数字比较器：面积 −14%、能耗 −4.1×</text>
+    <text x="60" y="436" fill="#45536b">vs [14] 动态逻辑比较器：全静态逻辑利用 NN 稀疏（ReLU 截负为 0）→ 稀疏度越高省得越多（Fig.6b）</text>
+    <text x="60" y="472" fill="#1d8a5f" font-weight="600">定制设计使 INT8 尾数计算更高效 → one-shot 方案可行</text>
+    <text x="60" y="500" fill="#45536b">整体（vs 位串行乘法 FP-CIM）：面积 −2.8×、能耗 −3.4×（28nm, 0.9V, 180MHz）</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

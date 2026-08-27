@@ -1,0 +1,23 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>MXFP 格式基础：块共享尺度与隐藏位</h2>
+
+<h3 id="sec2-1">2.1 块共享尺度（E8M0 共享尺度 SS）</h3>
+<figure>
+  <img src="assets/diagrams/d02_mxfp_format.svg" alt="MXFP 格式" style="max-width:940px">
+  <figcaption>图 2.1　MXFP 格式：一组 32 个数共享一个 E8M0 尺度（SS），每个数只带小浮点（MXFP6 = E2M3，MXFP8 = E4M3）。</figcaption>
+</figure>
+<div class="formula">真实值 = SS × (−1)<sup>S</sup> × 1.M × 2<sup>(E−bias)</sup>　　（SS 为一组 32 个数共享的 8b 尺度）<span class="tag">式 2.1</span></div>
+<p>MXFP（Microscaling，微缩放）是 NVIDIA/AMD/Arm/Intel 等推动的开放格式。核心洞察：<strong>相邻数据的“数量级”通常差不多</strong>，所以没必要每个数都带完整指数——<strong>32 个数共享一个尺度 SS</strong>，每个数只保留自己的符号、小指数和尾数。这样：</p>
+<ul>
+<li>MXFP8（E4M3）= 1 符号 + 4 指数 + 3 尾数，共 8 位/数 → 存储和带宽比 BF16 省一半；</li>
+<li>MXFP6（E2M3）= 1+2+3 = 6 位/数 → 更省；</li>
+<li>动态范围由 SS 撑起来（E8M0 有 8 位指数），比 INT8 大得多。</li>
+</ul>
+
+<h3 id="sec2-2">2.2 隐藏位（Hidden Bit）与正常/次正规数</h3>
+<div class="box warn">
+<div class="bt">⚠️ 一个容易忽略的硬件细节：隐藏位</div>
+<p>浮点数的尾数在“正常数（normal）”下隐含前导 1（1.M），但“次正规数（subnormal）”尾数前导是 0（0.M）。硬件做乘法时必须把隐藏位<strong>真实地解出来</strong>（1 或 0）参与运算——不能假设它恒为 1。这个“隐藏位解码器”如果每个计算单元都放一个大的，面积很可观。本论文的 HDM 用“全局预解码 + 本地小解码”把它摊薄（§5）。</p>
+</div>
+<p>先把隐藏位、符号-数值（SM）与二进制补码（2C）的关系记牢：论文写权重时把权重从 SM 格式转成 2C（{SW, MW[3:0]}），MW[3] 就是隐藏位——它由“指数是否全 0”决定。</p>
+</section>

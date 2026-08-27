@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Winograd 算法基础：用“变换”换掉乘法（F(2,3) 与 F(4,3)）</text>
+
+  <!-- 核心思想 -->
+  <rect x="40" y="80" width="880" height="150" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">核心：把“卷积”变成“逐元素乘法”（EWMM）</text>
+  <g font-size="12">
+    <text x="60" y="140" fill="#45536b">• Winograd 是 Toom-Cook 算法的扩展：用<strong>便宜变换</strong>（加/减/移位）+ 常数矩阵，</text>
+    <text x="60" y="164" fill="#45536b">　把卷积的<strong>乘法次数</strong>降到最低（变换本身几乎不耗电）；</text>
+    <text x="60" y="196" fill="#1d8a5f" font-weight="600">空间域：d × g（3×3 卷积，9 次乘法/输出块）</text>
+    <text x="60" y="218" fill="#1d8a5f" font-weight="600">Winograd 域：BᵀdB ⊙ GgGᵀ → Aᵀ[...]A（F4 时乘法 ÷4）</text>
+  </g>
+
+  <!-- 三个级别 -->
+  <rect x="40" y="250" width="880" height="206" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="278" fill="#123a57" font-size="13.5" font-weight="700">F(m,3) 的三个级别（3×3 卷积、输出块 m×m）</text>
+  <g font-size="11.5">
+    <rect x="70" y="292" width="240" height="100" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="190" y="316" text-anchor="middle" fill="#1d8a5f" font-weight="600">F(2,3) = F2</text>
+    <text x="90" y="340" text-anchor="middle" fill="#45536b">加速 1.92×（ResNet34）</text>
+    <text x="90" y="362" text-anchor="middle" fill="#45536b">INT8 无精度损失</text>
+    <text x="90" y="384" text-anchor="middle" fill="#45536b">变换开销小</text>
+    <rect x="360" y="292" width="240" height="100" rx="10" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="480" y="316" text-anchor="middle" fill="#c25e2e" font-weight="600">F(4,3) = F4</text>
+    <text x="380" y="340" text-anchor="middle" fill="#45536b">加速 3.32×（乘法 ÷4）</text>
+    <text x="380" y="362" text-anchor="middle" fill="#45536b">INT8 精度掉 9.1% ⚠</text>
+    <text x="380" y="384" text-anchor="middle" fill="#45536b">变换开销大（面积 10.76%）</text>
+    <rect x="650" y="292" width="250" height="100" rx="10" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="775" y="316" text-anchor="middle" fill="#6b3fa0" font-weight="600">F(6,3) = F6</text>
+    <text x="670" y="340" text-anchor="middle" fill="#45536b">加速最高</text>
+    <text x="670" y="362" text-anchor="middle" fill="#45536b">但变换功耗太高 + 精度损失太大</text>
+    <text x="670" y="384" text-anchor="middle" fill="#45536b">本文不用 F6</text>
+    <text x="60" y="430" fill="#c25e2e" font-weight="600">→ INT8 精度下：单用 F4 掉点不可接受 → 本文“混合 F2+F4 按层选择”</text>
+  </g>
+</svg>

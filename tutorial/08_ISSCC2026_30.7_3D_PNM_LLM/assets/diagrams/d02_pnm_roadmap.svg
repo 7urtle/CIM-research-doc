@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">近存计算（PNM）路线对比：算力放哪，决定上限</text>
+
+  <!-- 路线 1：DRAM 内计算 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">路线 ① 计算放进 DRAM 里（Compute-in-DRAM）</text>
+  <rect x="40" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <rect x="70" y="140" width="360" height="50" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="250" y="164" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">DRAM 晶圆（逻辑直接做在 DRAM 工艺里）</text>
+    <text x="250" y="182" text-anchor="middle" fill="#6b7a93" font-size="11">存储单元 + 计算单元混在同一 die</text>
+    <text x="70" y="230" fill="#c25e2e" font-size="12.5" font-weight="600">问题：</text>
+    <text x="70" y="252" fill="#45536b" font-size="12">DRAM 工艺（高密度电容/漏电大）不适合做高性能逻辑：</text>
+    <text x="70" y="274" fill="#45536b" font-size="12">① 逻辑频率上不去（DRAM 晶体管慢）；</text>
+    <text x="70" y="296" fill="#45536b" font-size="12">② 标准单元库不齐全，能实现的计算能力有限</text>
+  </g>
+  <text x="250" y="330" text-anchor="middle" fill="#45536b" font-size="12.5">→ “计算能力受 DRAM 工艺限制”（论文对前作路线的批评）</text>
+
+  <!-- 路线 2：本论文 -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">路线 ② 逻辑与 DRAM 分开，用 3D 叠起来（本文）</text>
+  <rect x="500" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <rect x="540" y="132" width="340" height="34" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="710" y="154" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">DRAM_F 晶圆（512Mb）</text>
+    <rect x="540" y="172" width="340" height="34" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="710" y="194" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">DRAM_N 晶圆（512Mb）</text>
+    <rect x="540" y="212" width="340" height="34" rx="7" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="710" y="234" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">逻辑晶圆（28nm CMOS，1.2GHz）</text>
+    <text x="540" y="272" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 逻辑用标准 CMOS 工艺 → 算力/频率不受 DRAM 工艺拖累</text>
+    <text x="540" y="294" fill="#45536b" font-size="12">→ 未来换更先进工艺节点，逻辑部分直接升级</text>
+  </g>
+
+  <rect x="40" y="360" width="880" height="96" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="388" fill="#0e5a8a" font-size="13" font-weight="700">为什么“分开再叠”是对的？</text>
+  <text x="60" y="412" fill="#45536b" font-size="12.5">DRAM 负责“容量与密度”，标准 CMOS 负责“算力与频率”，各用各的工艺；</text>
+  <text x="60" y="434" fill="#45536b" font-size="12.5">3D 集成（混合键合 HB + mini-TSV）负责“高带宽、低能耗”地把两者连起来 —— 这正是“两全其美”的关键。</text>
+</svg>

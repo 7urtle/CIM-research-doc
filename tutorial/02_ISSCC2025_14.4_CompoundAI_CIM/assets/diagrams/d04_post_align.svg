@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">后乘积对齐（Post-Product Alignment）：把“对齐”从乘前挪到乘后</text>
+
+  <!-- 传统 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">传统：先对齐再乘（预对齐）</text>
+  <rect x="40" y="108" width="420" height="170" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="60" y="132" width="120" height="40" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="120" y="156" text-anchor="middle" fill="#c25e2e">指数对齐</text>
+    <rect x="200" y="132" width="120" height="40" rx="6" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="260" y="156" text-anchor="middle" fill="#0e5a8a">尾数相乘</text>
+    <rect x="340" y="132" width="100" height="40" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="390" y="156" text-anchor="middle" fill="#1d8a5f">累加</text>
+    <path d="M180,152 H200" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M320,152 H340" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="60" y="220" fill="#45536b">• 对齐在乘法<strong>前</strong>做 → 移位把尾数“弄坏”</text>
+    <text x="60" y="242" fill="#45536b">（对齐损失进入后续所有乘积）</text>
+    <text x="60" y="266" fill="#c25e2e" font-weight="600">→ 数据分布广（Compound AI）时误差大</text>
+  </g>
+
+  <!-- 本文 -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">本文：先乘再对齐（后乘积对齐）</text>
+  <rect x="500" y="108" width="420" height="170" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="520" y="132" width="100" height="40" rx="6" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="570" y="156" text-anchor="middle" fill="#0e5a8a">尾数并行乘</text>
+    <rect x="640" y="132" width="100" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="690" y="156" text-anchor="middle" fill="#6b3fa0">指数累加</text>
+    <rect x="760" y="132" width="130" height="40" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="825" y="156" text-anchor="middle" fill="#1d8a5f">后乘积对齐+累加</text>
+    <path d="M620,152 H640" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M740,152 H760" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="520" y="220" fill="#45536b">• 尾数与指数<strong>并行</strong>算完，CIM 出部分积后才对齐</text>
+    <text x="520" y="242" fill="#45536b">• 误差只发生在“乘积累加”阶段（一次性的）</text>
+    <text x="520" y="266" fill="#1d8a5f" font-weight="600">→ FP16-MAC 最大误差 &lt; 2⁻³⁰（前作是 2⁻¹！）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="302" width="880" height="144" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么误差能压到 2⁻³⁰？</text>
+  <text x="60" y="356" fill="#45536b" font-size="12.5">① 预对齐把“移位误差”注入每个乘积（放大 N 次）；后对齐只在累加时移一次（误差不放大）；</text>
+  <text x="60" y="378" fill="#45536b" font-size="12.5">② MantissaEE 把指数分布折叠 → 对齐移位量变小 → 截断损失小；</text>
+  <text x="60" y="400" fill="#45536b" font-size="12.5">③ 乘积位宽更宽 → 后对齐可利用更高精度。</text>
+  <text x="60" y="428" fill="#1d8a5f" font-size="12.5" font-weight="600">实测：SER = 60.1 dB（比传统 FP-CIM 高 3.14×）；Compound 模型精度损失平均降低 11.07×</text>
+</svg>

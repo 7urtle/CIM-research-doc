@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">HUNBN SoC 总体架构（16nm，1.9×1.9mm²）</text>
+
+  <!-- RISC-V -->
+  <rect x="40" y="84" width="200" height="130" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="140" y="112" fill="#0e5a8a" font-size="14" font-weight="700">RISC-V 核</text>
+  <text x="60" y="140" fill="#45536b" font-size="12">通用主控：配置</text>
+  <text x="60" y="160" fill="#45536b" font-size="12">层参数/权重/核类型</text>
+  <text x="60" y="180" fill="#45536b" font-size="12">（AXI 低速接口）</text>
+  <text x="60" y="204" fill="#0e5a8a" font-size="11.5" font-weight="600">只做控制，不参与计算</text>
+
+  <!-- DIMC cluster -->
+  <rect x="280" y="84" width="380" height="300" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="470" y="110" fill="#1d8a5f" font-size="14" font-weight="700">DIMC Cluster（卷积层加速器）</text>
+  <g font-size="11">
+    <!-- 32 groups -->
+    <text x="300" y="136" fill="#45536b">32 组 × 12 个 DIMC 宏 = 384 宏（共享同一输入激活向量）</text>
+    <g>
+      <rect x="300" y="146" width="46" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="323" y="163" text-anchor="middle" fill="#1d8a5f">宏</text><text x="323" y="178" text-anchor="middle" fill="#1d8a5f">×12</text>
+      <rect x="352" y="146" width="46" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <rect x="404" y="146" width="46" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="437" y="168" fill="#7f93ad">…</text>
+      <rect x="452" y="146" width="46" height="40" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="475" y="163" text-anchor="middle" fill="#1d8a5f">组</text><text x="475" y="178" text-anchor="middle" fill="#1d8a5f">×32</text>
+    </g>
+    <!-- post processing -->
+    <rect x="300" y="196" width="340" height="52" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="470" y="218" text-anchor="middle" fill="#a06510" font-weight="600">每组的后处理模块（两级求和）</text>
+    <text x="470" y="238" text-anchor="middle" fill="#45536b">第一级：宏内 4b×4b 乘积求和；第二级：组内 288 个乘积求和 → 18-bit 全精度</text>
+    <text x="300" y="276" fill="#45536b">每个 DIMC 宏：6T SRAM 位单元阵列（256×96，存 256×24 个 4b 权重）</text>
+    <text x="300" y="296" fill="#45536b">+ 本地 MAC 单元（位级乘累加）→ 每周期输出 24 个 4b 权重</text>
+    <text x="300" y="320" fill="#1d8a5f" font-size="11.5" font-weight="600">总存储：2.36M 个 4-bit 权重 → 整个边缘 CNN 模型可存片上</text>
+    <text x="300" y="342" fill="#45536b">18-bit 结果 → 量化 12-bit 部分和 或 直接量化 4-bit 输出</text>
+    <text x="300" y="362" fill="#45536b">logger/debugger：监视与控制 DIMC 行为</text>
+  </g>
+
+  <!-- IO SRAM -->
+  <rect x="700" y="84" width="220" height="300" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="810" y="110" fill="#6b3fa0" font-size="14" font-weight="700">输入/输出 SRAM</text>
+  <g font-size="12">
+    <text x="720" y="136" fill="#45536b">P1 / P2 / P3 三个分区</text>
+    <text x="720" y="156" fill="#45536b">每区 3 个 bank × 65 kB</text>
+    <rect x="720" y="170" width="180" height="34" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="810" y="192" text-anchor="middle" fill="#6b3fa0">P1：输入激活供给</text>
+    <rect x="720" y="212" width="180" height="34" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="810" y="234" text-anchor="middle" fill="#6b3fa0">P2：部分和缓冲</text>
+    <rect x="720" y="254" width="180" height="34" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="810" y="276" text-anchor="middle" fill="#6b3fa0">P3：部分和缓冲（交替）</text>
+    <text x="720" y="322" fill="#45536b">AXI 总线：RISC-V/片外低速读写</text>
+    <text x="720" y="344" fill="#45536b">3 条高带宽流总线：</text>
+    <text x="720" y="364" fill="#1d8a5f" font-size="11.5" font-weight="600">输入激活 / 部分和 / 输出激活</text>
+  </g>
+
+  <!-- buses -->
+  <line x1="240" y1="140" x2="278" y2="140" stroke="#6b3fa0" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="252" y="130" text-anchor="middle" fill="#6b3fa0" font-size="10">AXI</text>
+  <line x1="660" y1="200" x2="698" y2="200" stroke="#1d8a5f" stroke-width="3" marker-end="url(#ar)"/>
+  <text x="678" y="188" text-anchor="middle" fill="#1d8a5f" font-size="10">流总线×3</text>
+
+  <!-- bottom notes -->
+  <rect x="40" y="404" width="880" height="130" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="432" fill="#0e5a8a" font-size="14" font-weight="700">配置与执行流程</text>
+  <g font-size="12.5">
+    <text x="60" y="462" fill="#45536b">① RISC-V 配置层参数（输入/输出通道数、特征图尺寸、起始地址、核类型）→ ② 权重经 AXI 写入 DIMC（一次性成本）</text>
+    <text x="60" y="488" fill="#45536b">③ 输入激活从 P1 经流总线送入 DIMC 簇 → ④ 384 宏并行计算 → ⑤ 后处理量化 → 结果写回 P2/P3</text>
+    <text x="60" y="514" fill="#1d8a5f" font-weight="600">支持标准卷积与转置（上采样）卷积；支持多种层尺寸（IX, IY, C, K, FX, FY 可配）</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

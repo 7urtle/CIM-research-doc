@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">sCNN PE：全异步、事件驱动卷积（只算有事件的地方）</text>
+
+  <!-- 事件驱动卷积示意 -->
+  <rect x="40" y="80" width="420" height="280" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">事件驱动卷积（与传统卷积对比）</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">传统卷积：每个输出位置都滑一遍核（即使空白）</text>
+    <text x="60" y="176" fill="#1d8a5f" font-weight="600">本文：只有事件到达的位置才激活卷积核</text>
+    <text x="60" y="200" fill="#1d8a5f" font-weight="600">→ 跳过空白区域，稀疏自适应</text>
+    <g>
+      <rect x="60" y="220" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="92" y="220" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="124" y="220" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="60" y="252" width="30" height="30" fill="#fdf3e7" stroke="#e0a96a"/>
+      <rect x="92" y="252" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="124" y="252" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="60" y="284" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="92" y="284" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <rect x="124" y="284" width="30" height="30" fill="#eefaf3" stroke="#1d8a5f"/>
+      <text x="105" y="238" text-anchor="middle" fill="#c25e2e" font-size="10">▲</text>
+      <text x="160" y="250" fill="#45536b">只有这个事件位置算，其余跳过</text>
+      <text x="160" y="272" fill="#45536b">padding 保证维度一致；核锚点决定</text>
+      <text x="160" y="294" fill="#45536b">输出特征位置</text>
+    </g>
+  </g>
+
+  <!-- 异步握手 -->
+  <rect x="500" y="80" width="420" height="280" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">全异步设计（无时钟树）</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• 双轨握手（dual-rail handshake）逻辑</text>
+    <text x="520" y="164" fill="#45536b">：请求/应答信号传递事件，无全局时钟；</text>
+    <text x="520" y="188" fill="#45536b">→ 没有时钟树开销，事件稀疏时几乎零功耗；</text>
+    <text x="520" y="220" fill="#6b3fa0" font-weight="600">处理流程（Fig. 18.4.2 底部）：</text>
+    <text x="520" y="244" fill="#45536b">事件到达 → 激活核 → 地址扫描生成 LIF 地址</text>
+    <text x="520" y="266" fill="#45536b">→ 非零 8b 权重累加进 16b Vmem</text>
+    <text x="520" y="288" fill="#45536b">→ Vmem 超阈值 → 复位并输出事件</text>
+    <text x="520" y="310" fill="#45536b">→ 轮询合并 → 打包 → NoC 路由到下一层</text>
+    <text x="520" y="340" fill="#1d8a5f" font-weight="600">→ 异步 + 事件驱动 = 无事件时电路静止</text>
+  </g>
+
+  <rect x="40" y="384" width="880" height="72" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="412" fill="#0e5a8a" font-size="13" font-weight="700">为什么“近传感计算”（NMC）？</text>
+  <text x="60" y="436" fill="#45536b" font-size="12.5">sCNN PE 紧贴 EVS 传感器（片上集成）——事件一产生就被消费，不需要“传感器 → 存储 → 处理器”的搬移；</text>
+  <text x="60" y="452" fill="#45536b" font-size="12.5">这是挑战 1（数据搬移）在物理层面的解法：把计算搬到事件产生的地方。</text>
+</svg>

@@ -1,0 +1,31 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：边缘 LLM 的困境——为什么“在手机上跑大模型”这么难</h2>
+
+<h3 id="sec1-1">1.1 为什么边缘 LLM 是“内存密集”任务</h3>
+<p>云端跑 LLM 用<strong>大批量（large batch）</strong>：同时处理很多用户的请求，同一个权重可以被大量请求复用，计算密度高、数据复用率高。但终端设备（PC、手机）一次只服务一个用户，<strong>batch = 1</strong>。后果是：</p>
+<ul>
+<li><strong>预填充（prefill）阶段</strong>：处理用户输入，计算密集但只占一小部分时间；</li>
+<li><strong>生成（generation）阶段</strong>：逐个 token 生成输出，每个 token 都要读取<strong>全部模型权重</strong>做矩阵乘——但只算一小块。数据复用率极低 → 整个系统被“读权重”的访存带宽锁死（memory-intensive）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键数字直觉：LLM 生成阶段 ≈ 权重搬运工</div>
+<p>一个 7B 参数的模型，FP16 权重约 14 GB。每生成 1 个 token，都要把这 14 GB 从头到尾读一遍。哪怕算力再强，<strong>访存带宽决定生成速度（token/s）</strong>。所以“把带宽做上去、把访存能耗降下来”比堆算力更重要——这正是近存计算（PNM）的用武之地。</p>
+</div>
+<figure>
+  <img src="assets/diagrams/d01_edge_llm_challenge.svg" alt="边缘LLM挑战" style="max-width:900px">
+  <figcaption>图 1.1　边缘 LLM 的三大挑战：小批量 → 内存密集；CPU 算力不足、GPU 功耗过高；片上放不下权重 → 访存瓶颈。对应需求：算力 + 带宽 + 能效 + 易集成。</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 CPU / GPU 为什么都不合适</h3>
+<table>
+<tr><th>方案</th><th>算力</th><th>带宽</th><th>能效</th><th>结论</th></tr>
+<tr><td>CPU（如 i7）</td><td class="num">低</td><td class="num">低</td><td class="num">中</td><td>算力不足，128³ GEMM 要很久（论文实测对比对象）</td></tr>
+<tr><td>GPU（独立显卡）</td><td class="num">高</td><td class="num">受显存带宽限制</td><td class="num">差（几十~几百瓦）</td><td>功耗太高，电池设备无法接受</td></tr>
+<tr><td>NPU（端侧 AI 芯片）</td><td class="num">中</td><td class="num">片上 SRAM 太小</td><td class="num">好</td><td>权重放不下，仍需外接 DRAM → 访存瓶颈依旧</td></tr>
+</table>
+<p>结论：终端 LLM 需要一种“<strong>自带大容量内存 + 足够算力 + 高能效 + 好集成</strong>”的方案。论文把目光投向<strong>近存计算（Processing-Near-Memory, PNM）</strong>：让计算器住在 DRAM 隔壁，而不是隔着一整条内存总线。</p>
+<figure>
+  <img src="assets/figs/fig30_7_1_挑战与方案.png" alt="论文图 30.7.1">
+  <figcaption>图 1.2　论文原图 Fig. 30.7.1：客户端 LLM 应用的挑战与本文 3D 近存计算方案概览。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>

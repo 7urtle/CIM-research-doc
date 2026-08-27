@@ -1,0 +1,58 @@
+<section class="chapter" id="sec0">
+<h1 class="title">MXFP 自适应位宽存内计算零基础精讲：一个宏，从简单推理做到训练
+<span class="en">A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes（ISSCC 2026 · Paper 30.1）</span></h1>
+<div class="meta">论文作者：Xing Wang, Yucheng Du 等 · 东南大学 + 国家 EDA 创新中心 + 小米 + 北京大学（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.1
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>模型越来越大（DeepSeek-V3 都用 FP8 训练了），低比特浮点 <strong>MXFP6/MXFP8</strong> 成为新宠。但现有浮点 CIM 的<strong>保留位宽（PBW）是固定的</strong>——简单推理用高精度浪费、训练用低精度不够。这篇来自东南大学司鑫组（联合小米、北大）的论文，做出了<strong>首个宽范围自适应 PBW 的 MXFP-CIM</strong>（3b→27b 可调），靠三招：</p>
+<ol>
+<li><strong>SDBS（串行双位滑动）</strong>：让输入尾数每周期滑 2b、垂直截断地完成浮点乘法 → 无无效位浪费，乘积压缩器只用 6 个全加器（加法树输入位宽 −42.9%、面积 −35.9%、功耗 −40%）；</li>
+<li><strong>HDM（无害数据映射）+ 层次化隐藏位解码器</strong>：MXFP6/8 两种格式都塞满同一块存储（内存容量满用），解码器面积 −63.1%；</li>
+<li><strong>双级分配（CGA + FGA）</strong>：按层粗调（−14.8% 平均位宽）、按组精调（再 −29.3%），精度无损。</li>
+</ol>
+<p>28nm 实测：<strong>MXFP6 127.54 TFLOPS/W</strong>、<strong>MXFP8 117.42 TFLOPS/W</strong>、面积效率 4.44 TFLOPS/mm²。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>MXFP 是什么：</strong>Microscaling 格式——<strong>一组 32 个数共享一个 8b 尺度（E8M0）</strong>，每个数只带小浮点（MXFP6=E2M3，MXFP8=E4M3）。比“每数全指数”省一半以上位数，比整数动态范围大。</li>
+<li><strong>保留位宽（PBW）决定精度和开销：</strong>PBW 是浮点乘法里“保留参与计算的尾数位数”。PBW 大 → 准但费电费周期；PBW 小 → 省但可能掉精度。不同模型/层/组需要的 PBW 不一样——这就是“自适应”的意义。</li>
+<li><strong>“垂直截断”为什么重要：</strong>浮点乘法要先对齐指数。如果按“斜着”截断尾数，会产生无效位混进加法树（白算）；本论文用“每周期滑 2b”的方式保证截断永远是整列的（垂直）→ 不浪费任何算力。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“low-bit floating-point (FP) formats such as MXFP6 and MXFP8 have emerged as promising alternatives… Deepseek-V3 demonstrated successful FP8-based training”</td>
+<td>低比特浮点 MXFP6/8 是趋势；DeepSeek-V3 用 FP8 完成训练与商用——产业已验证。</td></tr>
+<tr><td class="num">“conventional FP computing architectures rely on fixed preserved bit-width (PBW), constraining both flexibility and efficiency”</td>
+<td>现有浮点架构的保留位宽固定 → 对不同模型/层的需求不灵活、不高效。</td></tr>
+<tr><td class="num">“A serial dual-bit-sliding (SDBS) scheme that enhances FP multiply-accumulate (MAC) computation efficiency by eliminating redundant operations”</td>
+<td>创新①：串行双位滑动，消除冗余运算（垂直截断）。</td></tr>
+<tr><td class="num">“A harmless data mapping (HDM) scheme with a hierarchical hidden-bit decoder… fully utilizes memory capacity”</td>
+<td>创新②：无害数据映射 + 层次化隐藏位解码器，内存容量满用。</td></tr>
+<tr><td class="num">“An adjustable-PBW MXFP-MAC circuit via twin-stage allocation”</td>
+<td>创新③：双级分配实现可调 PBW，精度-效率按层/组权衡。</td></tr>
+<tr><td class="num">“peak energy efficiency of 127.54TFLOPS/W in the MXFP6/6 mode”</td>
+<td>实测：MXFP6/6 峰值能效 127.54 TFLOPS/W。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>SDBS 串行双位滑动</strong>：垂直截断 + ESUM 优先级滑动 + PBW 随周期数伸缩（2~14 周期），6 全加器压缩器（−42.9% 位宽 / −35.9% 面积 / −40% 功耗）；</li>
+<li><strong>HDM 无害数据映射</strong>：MXFP8（9 数/子阵列）与 MXFP6（12 数/子阵列）都塞满同一 18×4 阵列；层次化解码器 −63.1% 面积；</li>
+<li><strong>双级分配</strong>：层级 CGA −14.8%、组级 FGA −29.3% 平均 PBW，精度无损；</li>
+<li><strong>宽范围 PBW（3b→27b）</strong>：BERT 3~9b、LLaMA 11~17b、训练 19~27b（ResNet-18 略胜 BF16）；</li>
+<li><strong>实测成绩</strong>：MXFP6 127.54 / MXFP8 117.42 TFLOPS/W、4.44 TFLOPS/mm²、FoM 提升 2.8–123×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂浮点 CIM 的：从 §4（SDBS）和 §6（双级分配）开始。</p>
+</div>
+</section>

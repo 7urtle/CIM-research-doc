@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="430" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">DDR4 兼容接口：既能当普通内存，又能当近存计算芯片</text>
+
+  <!-- 双模式 -->
+  <rect x="60" y="90" width="840" height="180" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="80" y="118" fill="#123a57" font-size="13.5" font-weight="700">一个芯片两种身份（通过配置切换）</text>
+  <g font-size="12">
+    <rect x="90" y="136" width="360" height="80" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="270" y="162" text-anchor="middle" fill="#1d8a5f" font-weight="600">PNM 开启（近存计算模式）</text>
+    <text x="270" y="186" text-anchor="middle" fill="#45536b">主机发 T-ACC / Act-Reg 命令</text>
+    <text x="270" y="206" text-anchor="middle" fill="#45536b">→ 触发目标 ACC / 配置寄存器</text>
+    <rect x="480" y="136" width="390" height="80" rx="10" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="675" y="162" text-anchor="middle" fill="#0e5a8a" font-weight="600">PNM 关闭（普通 DRAM 模式）</text>
+    <text x="675" y="186" text-anchor="middle" fill="#45536b">芯片退化成普通 DDR4 内存条</text>
+    <text x="675" y="206" text-anchor="middle" fill="#45536b">→ 与现有系统无缝兼容</text>
+  </g>
+
+  <!-- 命令扩展 -->
+  <rect x="60" y="290" width="840" height="118" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="80" y="318" fill="#0e5a8a" font-size="13" font-weight="700">两条新增的 DDR4 格式命令（轻量扩展，不改协议）</text>
+  <text x="80" y="344" fill="#45536b" font-size="12.5">• <strong>T-ACC</strong>：触发指定的加速器（目标 ACC 开始执行）</text>
+  <text x="80" y="366" fill="#45536b" font-size="12.5">• <strong>Act-Reg</strong>：设置配置寄存器（模式、地址映射、任务参数）</text>
+  <text x="80" y="392" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 主机软件视角：还是“读/写内存 + 几条新命令”，无需专用驱动硬件 —— 易集成性的关键</text>
+</svg>

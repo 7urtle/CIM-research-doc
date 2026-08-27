@@ -1,0 +1,171 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>自测 · 未来方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 思考题与自测（12 题）</h3>
+<p>下面的题按难度递增排列，覆盖全文核心概念。先自己做，再点“查看答案”。</p>
+
+<div class="quiz">
+<div class="qh">Q1 · 基础概念</div>
+<div class="qb"><div class="q">CiM（存内计算）解决的核心问题是什么？</div>
+<label><input type="radio" name="q1" value="a"> 计算速度不够快</label>
+<label><input type="radio" name="q1" value="b"> 数据搬运（访存）的能耗与带宽开销太大</label>
+<label><input type="radio" name="q1" value="c"> 存储容量不够大</label>
+<label><input type="radio" name="q1" value="d"> 编译器优化不足</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。CiM 把计算嵌入存储，避免“读权重→算→写回”的反复搬运，直击冯·诺依曼瓶颈（存储墙/带宽墙）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q2 · 数字 vs 模拟</div>
+<div class="qb"><div class="q">为什么数字 CiM 能做到“确定性精度（deterministic accuracy）”，而模拟 CiM 很难？</div>
+<label><input type="radio" name="q2" value="a"> 数字电路更快</label>
+<label><input type="radio" name="q2" value="b"> 数字电路用布尔逻辑逐位精确计算，结果与电压/工艺波动无关；模拟的电流/电荷求和是模拟量，受噪声、失调、ADC 量化误差影响</label>
+<label><input type="radio" name="q2" value="c"> 数字电路面积更小</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。这正是数字路线能低压运行（400 mV）的前提：只要时序满足，逻辑结果与 PVT 无关。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q3 · 可综合</div>
+<div class="qb"><div class="q">“全可综合”最关键的技术前提是什么？</div>
+<label><input type="radio" name="q3" value="a"> 使用最快的工艺节点</label>
+<label><input type="radio" name="q3" value="b"> 连存储都用标准单元（12T 锁存器）实现，整个加速器不含定制 IP</label>
+<label><input type="radio" name="q3" value="c"> 使用 SRAM 宏做权重存储</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。SRAM 宏是定制 IP 无法综合；本文用标准锁存单元拼出权重存储，才让“存储也可综合”。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q4 · 零点量化</div>
+<div class="qb"><div class="q">对称量化在什么情况下会浪费一半的整数码字？零点量化如何解决？</div>
+<label><input type="radio" name="q4" value="a"> 数据是正态分布时；用更大的尺度</label>
+<label><input type="radio" name="q4" value="b"> 数据偏态（如全为正）时，对称量化把负数区间也划进去；零点量化让零点 z 落在任意位置，256 个码字全部贴住实际区间</label>
+<label><input type="radio" name="q4" value="c"> 数据范围很大时；用 16bit</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。零点量化牺牲“零点必须对应 0”的便利，换取偏态数据上的分辨率（见 §3.2）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q5 · 9b 问题</div>
+<div class="qb"><div class="q">为什么支持零点量化会让硬件“被迫”做 9b×9b 乘法？</div>
+<label><input type="radio" name="q5" value="a"> 因为数据精度要求更高</label>
+<label><input type="radio" name="q5" value="b"> 因为零点量化值是 0~255 的无符号 8b，若在每个乘法内部减零点，结果范围（如 [−z, 255−z]）可能超出 8b 有符号范围，需要 9b 有符号表示</label>
+<label><input type="radio" name="q5" value="c"> 因为硬件需要做浮点运算</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。9b 有符号乘法生成 5 个部分积（每个 10b 宽），比 8b×8b 的 4 个部分积（9b 宽）贵得多。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q6 · 映射技巧</div>
+<div class="qb"><div class="q">把 8b 无符号数变成 8b 有符号数（减 128）的硬件实现是什么？为什么？</div>
+<label><input type="radio" name="q6" value="a"> 加一个减法器</label>
+<label><input type="radio" name="q6" value="b"> 最高位（MSB）取反即可，因为 8b 无符号数的第 7 位权重正好是 128，翻转等价于 ±128 平移</label>
+<label><input type="radio" name="q6" value="c"> 右移一位</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。每个激活只需一个按格式控制的 XOR 门——“免费的”映射（§4.2）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q7 · 修正项白嫖</div>
+<div class="qb"><div class="q">零点展开的三个修正项（②C<sub>W</sub>ΣA<sub>s</sub> ③C<sub>A</sub>ΣW<sub>s</sub> ④N·C<sub>A</sub>C<sub>W</sub>）分别靠什么数据流特性变便宜？</div>
+<label><input type="radio" name="q7" value="a"> 随机数生成</label>
+<label><input type="radio" name="q7" value="b"> ②靠激活广播共享（每周期算一次、32 列共用）；③靠权重静止（写权重时预存 ΣW<sub>s</sub>）；④是常数</label>
+<label><input type="radio" name="q7" value="c"> 靠提高时钟频率</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。这就是“算法-架构协同设计”的精髓：同样的数学，换数据流就便宜了（§4.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q8 · Booth 决策</div>
+<div class="qb"><div class="q">论文为什么选择编码“静止的权重”而不是“广播的激活”？</div>
+<label><input type="radio" name="q8" value="a"> 因为权重更重要</label>
+<label><input type="radio" name="q8" value="b"> 编码激活会让广播总线每周期翻转位数从 8 涨到 12，抬高计算功耗；编码权重则把编码器挪到写入路径（吞吐要求低 → 面积小 32×），计算期间零编码功耗</label>
+<label><input type="radio" name="q8" value="c"> 因为激活是负数</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。功耗 ∝ 翻转活动率；权重侧编码把“贵的事”放到低活动率的存储侧（§5.2，收益：面积 +7%、计算功耗 −28%）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q9 · S 位</div>
+<div class="qb"><div class="q">为什么 Booth 的 S 位（部分积符号修正位）可以预计算并存入权重存储器？</div>
+<label><input type="radio" name="q9" value="a"> 因为 S 位只由乘数（权重）的编码决定，与激活无关</label>
+<label><input type="radio" name="q9" value="b"> 因为 S 位永远为 0</label>
+<label><input type="radio" name="q9" value="c"> 因为 S 位是随机数</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>a</strong>。部分积取负与否由 Booth 选择码决定，选择码来自权重——所以写权重时就能把 S 位算好存好（§5.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q10 · 双缓冲</div>
+<div class="qb"><div class="q">双缓冲为什么同时提升“吞吐”和“能效”？</div>
+<label><input type="radio" name="q10" value="a"> 只提升吞吐</label>
+<label><input type="radio" name="q10" value="b"> 权重更新与计算重叠：计算不因换权重而停顿（吞吐）；写功耗摊薄到可忽略（能效），达到计算功耗主导状态</label>
+<label><input type="radio" name="q10" value="c"> 只提升能效</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。论文里“写功耗占比降到 1%”就是双缓冲能效收益的直接证据（§6.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q11 · 吞吐验算</div>
+<div class="qb"><div class="q">已知 32 输出通道、128 输入通道、2.62 GHz、INT8（1 MAC = 2 ops），验证 21.5 TOPS 并推导面积效率（0.0856 mm²）。</div>
+<label><input type="radio" name="q11" value="a"> 32×128×2.62G×2 = 21.5T；21.5T/0.0856 ≈ 250 TOPS/mm²</label>
+<label><input type="radio" name="q11" value="b"> 128×32×2.62G = 10.7T；面积效率无法计算</label>
+<label><input type="radio" name="q11" value="c"> 21.5 TOPS 是估算值，与架构无关</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>a</strong>。这是读芯片论文的基本功：用架构参数复算论文指标（§7.1）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q12 · 综合应用</div>
+<div class="qb"><div class="q">如果要做一个“INT4 版本”的同类 DCiM，哪些设计点需要重新考虑？（多选思考题）</div>
+<label><input type="radio" name="q12" value="a"> 无需改动</label>
+<label><input type="radio" name="q12" value="b"> Booth 组数减少（部分积更少）、12b 选择码位宽变窄、存储密度提升、累加器宽度、零点映射的位宽裁剪</label>
+<label><input type="radio" name="q12" value="c"> 只能改用模拟 CiM</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。位宽是全局参数：Booth 编码、选择码存储、部分积树、累加器都要重新权衡——这正是很多 DCiM 论文做“位宽可配置”的原因（见参考资料 [2][5]）。</div></div>
+</div>
+
+<h3 id="sec9-2">9.2 未来研究方向（从这篇论文还能往哪走？）</h3>
+<p>作为初学者，读完一篇论文后最该训练的能力就是“找下一步”。基于本文，至少可以展开这些方向：</p>
+<ol>
+<li><strong>位宽可配置化</strong>：本文固定 INT8。把 DCiM 做成 1/2/4/8b 可配置（如 Mori 等的工作），用低比特处理“无关紧要”层、高比特处理敏感层，能在精度-能效之间自适应——这是当下 DCiM 的主战场；</li>
+<li><strong>稀疏性利用</strong>：权重/激活有很多 0，Booth 编码后“×0”的部分积可以跳过。把稀疏检测（如激活零检测）嵌入第 1~2 级流水线，跳过零 MAC，能再拿 2~4× 能效（论文 [3] 的方向）；</li>
+<li><strong>浮点/混合精度支持</strong>：INT8 是下限，LLM 常用 FP16/BF16/块浮点（MXFP 等）。可综合数字框架天然适合扩展浮点（对齐、指数处理），本论文集里 06、19 号论文就是浮点方向；</li>
+<li><strong>训练（Training）支持</strong>：本文只做推理。数字 CiM 的确定性精度其实有利于训练/微调（可复现梯度），但要解决权重频繁更新（写带宽）与反向传播的数据流——本论文集里 03、17 号论文在做浮点训练/微调；</li>
+<li><strong>更大规模与 3D 集成</strong>：单宏 0.0856 mm² 只是“积木”。把它 tile 化、互联成多宏系统（本论文集 08 号论文是 3D DRAM+logic 路线），并研究数据在 tile 间的调度；</li>
+<li><strong>编译器与软件栈</strong>：论文提到“编译器”（[5] 是 DCiM 编译器）。把量化方案（零点选择）、权重编码（Booth 选择码生成）、双缓冲调度封装成编译工具链，让用户从 PyTorch 模型直接得到可运行的 DCiM 配置——这决定了 DCiM 能否被产业采用；</li>
+<li><strong>更激进的能效工程</strong>：近阈值/亚阈值运行（往 300 mV 以下走）、时钟门控与电源门控细化、活动率感知的动态电压调节（把“活动率 → 能效”曲线变成运行时策略）；</li>
+<li><strong>可靠性研究</strong>：低压下时序裕量收窄，DCiM 的“确定性”在 PVT 极端角落还成立吗？如何做在线监控与自适应频率/电压？这是从论文走向产品的必答题。</li>
+</ol>
+
+<h3 id="sec9-3">9.3 术语表</h3>
+<dl class="glossary">
+<dt>CiM / Compute-in-Memory（存内计算）</dt><dd>把计算嵌入存储阵列的架构，消除权重搬运开销。</dd>
+<dt>DCiM / Digital CiM</dt><dd>用数字逻辑做 MAC 的 CiM，精度确定、可综合、可低压运行。</dd>
+<dt>MAC（Multiply-Accumulate）</dt><dd>乘加运算 a×w+acc，神经网络的基本运算单元；1 MAC 计 2 次运算（OPS）。</dd>
+<dt>TOPS / TOPS/W / TOPS/mm²</dt><dd>每秒万亿次运算 / 能效（每瓦每秒万亿次运算）/ 面积效率（每平方毫米每秒万亿次运算）。</dd>
+<dt>Zero-Point Quantization（零点量化）</dt><dd>非对称线性量化 r = s(q−z)，用零点 z 贴合偏态数据分布。</dd>
+<dt>Unsigned-to-Signed Mapping</dt><dd>无符号 8b 减 128（MSB 取反）映射为有符号 8b 的技巧。</dd>
+<dt>Zero-Point Expansion（零点扩展）</dt><dd>把 Σ(A<sub>s</sub>+C<sub>A</sub>)(W<sub>s</sub>+C<sub>W</sub>) 展开为 8b×8b 主项 + 三个修正项，修正项利用数据流特性廉价实现。</dd>
+<dt>Radix-4 Booth Encoding</dt><dd>每 3 位一组把乘数编码为 ±1/±2/0 选择码，部分积数量减半（8b→4 个，9b→5 个）。</dd>
+<dt>Partial Product（部分积）</dt><dd>乘法分解出的中间乘积，错位相加得到最终积。</dd>
+<dt>CSA / Carry-Save Adder（进位保存加法器）</dt><dd>三输入两输出（和+进位）的加法器，可并行叠加多个部分积，延迟与输入个数近似无关。</dd>
+<dt>Booth Selector</dt><dd>根据选择码从激活生成部分积的组合逻辑；本文用修正 single/neg/pos 编码，选择器面积 −12%。</dd>
+<dt>S-bit（符号修正位）</dt><dd>负部分积的补码修正位，本文预计算并随权重存储。</dd>
+<dt>12T Latch（12 管锁存器）</dt><dd>标准单元库锁存器，两个交叉耦合反相器；本文用它实现“可综合的”权重存储。</dd>
+<dt>Multibit Latch（多比特锁存）</dt><dd>多位共享单元体的高密度锁存，本文 95.5% 插入率省 20% 存储面积。</dd>
+<dt>Double Buffering（双缓冲）</dt><dd>两组权重轮换：一组计算、一组后台写入，消除更新停顿。</dd>
+<dt>Static 2:1 MUX（静态二选一）</dt><dd>选择当前计算权重组的选择器，只在计算开始时读一次，省读功耗。</dd>
+<dt>Adder Tree（加法树）</dt><dd>把 N 个数并行相加的树状结构；本文 32 路 CSA 树 + 移位合并。</dd>
+<dt>Pipeline Stage（流水线级）</dt><dd>级间寄存器隔开的组合逻辑段；本文 4 级：转换 / 部分积+CSA / 移位合并 / bank 求和+修正。</dd>
+<dt>DVFS（动态电压频率缩放）</dt><dd>按负载调整电压/频率：1.1 V 冲吞吐、400 mV 冲能效。</dd>
+<dt>Input Activity（输入活动率）</dt><dd>输入数据翻转的比例，决定动态功耗；25%→147 TOPS/W、10%→254 TOPS/W。</dd>
+<dt>Intel 18A / RibbonFET / PowerVia</dt><dd>Intel 先进节点（GAA 全环绕栅极 + 背面供电），支撑低压鲁棒运行。</dd>
+<dt>Deterministic Accuracy（确定性精度）</dt><dd>同样的输入永远得到同样的输出，与 PVT 无关——数字 CiM 的核心卖点。</dd>
+</dl>
+
+<h3 id="sec9-4">9.4 参考资料</h3>
+<ol class="refs">
+<li>A. Agarwal, S. K. Hsu, M. A. Anders, A. Raha, D. A. Mathaikutty, R. Krishnamurthy, “A 147TOPS/W, 250TOPS/mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A Technology,” <em>ISSCC 2026</em>, Paper 30.9. DOI: 10.1109/ISSCC49663.2026.11409207</li>
+<li>H. Mori et al., “A 4nm 6163-TOPS/W/b 4790-TOPS/mm²/b SRAM Based Digital-Computing-in-Memory Macro Supporting Bit-Width Flexibility and Simultaneous MAC and Weight Update,” <em>ISSCC 2023</em>, pp. 132-133.</li>
+<li>G. Desoli et al., “A 40-310TOPS/W SRAM-Based All-Digital Up to 4b In-Memory Computing Multi-Tiled NN Accelerator in FD-SOI 18nm for Deep-Learning Edge Applications,” <em>ISSCC 2023</em>, pp. 260-261.</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm² and 3.78Mb/mm² Fully-Digital Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC Architecture and Foundry 6T-SRAM Bit Cell,” <em>ISSCC 2024</em>, pp. 572-574.</li>
+<li>H. Mori et al., “A 3nm 125TOPS/W-29TFLOPS/W, 90TOPS/mm²-17TFLOPS/mm² SRAM-Based INT8 and FP16 Digital-CIM Compiler with Multi-Weight Update/Cycle,” <em>IEEE Symp. VLSI Circuits</em>, 2025.</li>
+<li>K. Fischer et al., “Intel 18A Platform Technology Featuring RibbonFET (GAA) and PowerVia for Advanced High-Performance Computing,” <em>IEEE Symp. VLSI Circuits</em>, 2025.</li>
+<li>Intel Foundry, “Intel 18A Process Node — Platform Brief,” <a href="https://www.intel.com/content/www/us/en/foundry/library/intel-18a-platform-brief.html" target="_blank" rel="noopener">intel.com</a>（工艺背景）</li>
+<li>Google AI Edge, “LiteRT 8-bit Quantization Specification,” <a href="https://developers.google.com/edge/litert/conversion/tensorflow/quantization/quantization_spec" target="_blank" rel="noopener">developers.google.com</a>（零点量化公式背景）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.9.1–30.9.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有“实测数字”均来自论文原文，教程中的趋势示意（灰色标注）不构成论文结论。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 11 张（assets/diagrams/）· 数据图 4 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 5 个（本页内嵌）</div>
+</div>
+</section>

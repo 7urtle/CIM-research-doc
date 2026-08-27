@@ -1,0 +1,29 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新①：e-OTBP —— 单时间步在线学习</h2>
+<figure>
+  <img src="assets/diagrams/d06_eotbp.svg" alt="e-OTBP" style="max-width:940px">
+  <figcaption>图 6.1　BPTT（展开整个时间窗口）vs e-OTBP（单时间步 + 资格迹 ET）：历史贡献被压缩进一条“迹”，不必逐 TW 展开。</figcaption>
+</figure>
+<p>SNN 的在线学习有个经典难题：误差要沿<strong>时间</strong>和<strong>空间</strong>两个方向回传。传统 BPTT（Backpropagation Through Time）把整个时间窗口（TW）展开成一张大计算图——TW 越多，内存和功耗越大（挑战 2）。</p>
+<p>本文的 <strong>e-OTBP（Eligibility One-Time BackPropagation，资格迹一次性反向传播）</strong>：</p>
+<ul>
+<li><strong>单时间步</strong>：只在当前 TW 做一次反向传播，不展开历史；</li>
+<li><strong>资格迹（Eligibility Trace, ET）</strong>：把“过去的脉冲贡献”压缩进一条迹（ET 单元 = 循环累加器），梯度与 ET 结合就包含了时序信息；</li>
+<li><strong>复用推理状态</strong>：推理时保留的输出 Vmem、脉冲，学习时直接拿来用，不重算前向；</li>
+<li><strong>梯度计算</strong>：层 2 梯度 = 误差 × 输入脉冲；层 1 梯度 = 误差经“转置权重 + Surr 函数”回传 × ET。Surr（替代梯度）函数二值化后只要 2 个比较器；权重转置用水平加法树复用权重阵列。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 收益数字</div>
+<p>32 个 TW 时：<strong>内存需求 −73.1%</strong>；相对 BPTT 的内存/计算开销仅为 <strong>4.3% / 3.1%</strong>。配合三值梯度，还能进一步压写次数（§7）。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig18_4_4_eOTBP与格雷码.png">
+  <source src="assets/videos/v02_eotbp.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · e-OTBP 对比动画：BPTT 要展开 32 个 TW（内存 100%），e-OTBP 只用一个 TW + 资格迹（内存 26.9%）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig18_4_4_eOTBP与格雷码.png" alt="论文图 18.4.4">
+  <figcaption>图 6.2　论文原图 Fig. 18.4.4：e-OTBP 算法与三值梯度实现（上）、格雷码数据流与权重更新（下）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>

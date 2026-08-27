@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">DDS 双向搜索：START 和 END 同时出发，中间交汇</text>
+
+  <!-- SDS -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">SDS 单向搜索（传统）</text>
+  <rect x="40" y="108" width="420" height="230" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <rect x="70" y="130" width="360" height="190" rx="8" fill="#f7fafd" stroke="#e0a96a"/>
+    <circle cx="100" cy="160" r="10" fill="#1d8a5f"/>
+    <text x="100" y="164" text-anchor="middle" fill="#fff" font-size="9">S</text>
+    <circle cx="400" cy="310" r="10" fill="#c25e2e"/>
+    <text x="400" y="314" text-anchor="middle" fill="#fff" font-size="9">E</text>
+    <g stroke="#0e5a8a" stroke-width="1.4" fill="none">
+      <circle cx="100" cy="160" r="18" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="36" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="54" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="72" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="90" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="108" stroke-dasharray="3,3"/>
+      <circle cx="100" cy="160" r="126" stroke-dasharray="3,3"/>
+    </g>
+    <text x="250" y="360" fill="#45536b">信号从 START 一路“铺”到 END（虚线环）</text>
+    <text x="250" y="384" fill="#c25e2e" font-weight="600">→ 走完大半个图才到达，时间浪费一半</text>
+  </g>
+
+  <!-- DDS -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">DDS 双向搜索（本文）</text>
+  <rect x="500" y="108" width="420" height="230" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <rect x="530" y="130" width="360" height="190" rx="8" fill="#f7fafd" stroke="#bfe6d2"/>
+    <circle cx="100+430" cy="160" r="10" fill="#1d8a5f"/>
+    <text x="530" y="164" text-anchor="middle" fill="#fff" font-size="9">S</text>
+    <circle cx="830" cy="310" r="10" fill="#c25e2e"/>
+    <text x="830" y="314" text-anchor="middle" fill="#fff" font-size="9">E</text>
+    <g stroke="#1d8a5f" stroke-width="1.4" fill="none">
+      <circle cx="530" cy="160" r="16" stroke-dasharray="3,3"/>
+      <circle cx="530" cy="160" r="34" stroke-dasharray="3,3"/>
+      <circle cx="530" cy="160" r="52" stroke-dasharray="3,3"/>
+      <circle cx="530" cy="160" r="70" stroke-dasharray="3,3"/>
+    </g>
+    <g stroke="#c25e2e" stroke-width="1.4" fill="none">
+      <circle cx="830" cy="310" r="16" stroke-dasharray="3,3"/>
+      <circle cx="830" cy="310" r="34" stroke-dasharray="3,3"/>
+      <circle cx="830" cy="310" r="52" stroke-dasharray="3,3"/>
+      <circle cx="830" cy="310" r="70" stroke-dasharray="3,3"/>
+    </g>
+    <circle cx="700" cy="245" r="12" fill="#e8a33d"/>
+    <text x="700" y="249" text-anchor="middle" fill="#fff" font-size="9">交汇</text>
+    <text x="710" y="360" fill="#45536b">两股波前在<strong>中间某个 PE 交汇</strong>（junction）</text>
+    <text x="710" y="384" fill="#1d8a5f" font-weight="600">→ 搜索时间减半（2.1×）、功耗 −1.13×</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="364" width="880" height="82" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="392" fill="#0e5a8a" font-size="13" font-weight="700">交汇后的回溯</text>
+  <text x="60" y="418" fill="#45536b" font-size="12.5">交汇 PE 产生“junction 信号”标记行列位置；每个 PE 早已把“从哪来的方向”存进 SRAM_R，</text>
+  <text x="60" y="438" fill="#45536b" font-size="12.5">从交汇点向两端回溯方向数据 → 拼出完整路径（memory-read 阶段）。</text>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">CNN 数据流映射：384 宏的空间排布 × 时间循环（4 种情形）</text>
+
+  <!-- Case 1 -->
+  <rect x="40" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">Case 1：FX=FY=3, C=32, K=32（基石）</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">384 宏排成 3×4×32 星座：簇级映射 FY=3、C1=4、K=32</text>
+    <text x="60" y="156" fill="#45536b">宏内映射 FX=3、C2=8（宏做 24 个向量乘）</text>
+    <g>
+      <rect x="70" y="170" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="104" y="170" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="138" y="170" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <rect x="70" y="198" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="104" y="198" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="138" y="198" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <rect x="70" y="226" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="104" y="226" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="138" y="226" width="30" height="24" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="180" y="192" fill="#45536b">FY 方向 3 组 × C1=4 列 × K=32 深</text>
+      <text x="180" y="212" fill="#45536b">OX/OY 时间域循环（存 I/O SRAM）</text>
+      <text x="180" y="240" fill="#1d8a5f" font-weight="600">只用 1 个 DIMC 地址，全程权重复用 → 宏级能效最大</text>
+    </g>
+  </g>
+
+  <!-- Case 2 -->
+  <rect x="490" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">Case 2：C&gt;32, K&gt;32（扩展）</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">例：C=64, K=64 → 存多行 DIMC 地址</text>
+    <text x="510" y="156" fill="#45536b">weight-stationary 数据流：K0/C0 外层时间循环 → OX/OY</text>
+    <rect x="510" y="172" width="180" height="30" rx="6" fill="#cfe0ee" stroke="#0e5a8a"/>
+    <text x="600" y="192" text-anchor="middle" fill="#0e5a8a">地址1：C0–31, K0–31</text>
+    <rect x="510" y="208" width="180" height="30" rx="6" fill="#cfe0ee" stroke="#0e5a8a"/>
+    <text x="600" y="228" text-anchor="middle" fill="#0e5a8a">地址2：C0–31, K32–63</text>
+    <text x="510" y="258" fill="#1d8a5f" font-size="11" font-weight="600">收益① 减权重读频（同步 DIMC 惩罚小）</text>
+    <text x="510" y="280" fill="#1d8a5f" font-size="11" font-weight="600">收益② 滑动窗口利用 FX 方向局部性（输入复用↑）</text>
+  </g>
+
+  <!-- Case 3 -->
+  <rect x="40" y="310" width="430" height="210" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="336" fill="#d08a10" font-size="13.5" font-weight="700">Case 3：FX/FY&gt;3（如 5×5）</text>
+  <g font-size="11.5">
+    <text x="60" y="362" fill="#45536b">核按 3 分割取整：5×5 → 上 3×3+2×3、下 3×2+2×2</text>
+    <text x="60" y="382" fill="#45536b">子核存连续 DIMC 地址；小部分补零</text>
+    <g>
+      <rect x="70" y="396" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="104" y="396" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="138" y="396" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <rect x="70" y="430" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="104" y="430" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/><rect x="138" y="430" width="30" height="30" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="180" y="408" fill="#45536b">3×3 完整子核</text>
+      <rect x="180" y="398" width="20" height="20" fill="#e8d8b0" stroke="#a08020"/><rect x="204" y="398" width="20" height="20" fill="#e8d8b0" stroke="#a08020"/>
+      <text x="240" y="410" fill="#45536b">2×3</text>
+      <rect x="180" y="422" width="20" height="20" fill="#e8d8b0" stroke="#a08020"/><rect x="204" y="422" width="20" height="20" fill="#e8d8b0" stroke="#a08020"/>
+      <text x="240" y="434" fill="#45536b">3×2（下）</text>
+      <text x="70" y="486" fill="#45536b">灰=高利用率宏，红=低利用率宏</text>
+      <text x="70" y="508" fill="#d08a10" font-size="11" font-weight="600">子核映射欠优 → 性能低于 Case 1/2</text>
+    </g>
+  </g>
+
+  <!-- Case 4 -->
+  <rect x="490" y="310" width="430" height="210" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="336" fill="#6b3fa0" font-size="13.5" font-weight="700">Case 4：FX=FY=4 转置卷积（上采样）</text>
+  <g font-size="11.5">
+    <text x="510" y="362" fill="#45536b">宏排成 4×3×32 星座；FY=4、C1=3、K=32 簇级</text>
+    <text x="510" y="382" fill="#45536b">宏内 FX=4、C2=6（单地址权重向量）</text>
+    <g>
+      <rect x="510" y="396" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="540" y="396" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="570" y="396" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="600" y="396" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/>
+      <rect x="510" y="422" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="540" y="422" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="570" y="422" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="600" y="422" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/>
+      <rect x="510" y="448" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="540" y="448" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="570" y="448" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/><rect x="600" y="448" width="26" height="22" fill="#f5f0fc" stroke="#6b3fa0"/>
+      <text x="640" y="410" fill="#45536b">FX=4 方向展开</text>
+      <text x="640" y="432" fill="#45536b">FY=4 × C1=3 × K=32</text>
+      <text x="640" y="462" fill="#45536b">输入通道通常为 32 的倍数</text>
+      <text x="640" y="482" fill="#45536b">与最优 C=18 不对齐 → 特殊支持（§IV-C）</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="430" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">分阶段使能（Stage-Wise Enabling）：加法器不再“空转”</text>
+
+  <!-- 对比 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">传统：加法器全程使能</text>
+  <rect x="40" y="108" width="420" height="140" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <text x="60" y="136" fill="#45536b">乘法还在逐个 MMU 串行传播时，</text>
+    <text x="60" y="158" fill="#45536b">高扇入加法器就已经“开闸”</text>
+    <text x="60" y="180" fill="#45536b">→ 输入端的毛刺/中间值让它不断翻转</text>
+    <text x="60" y="210" fill="#c25e2e" font-weight="600">→ 空转功耗白烧（论文引 [12] 指出该问题）</text>
+  </g>
+
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">本文：相位使能，按需开闸</text>
+  <rect x="500" y="108" width="420" height="140" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <text x="520" y="136" fill="#45536b">Ph0~7：只开 MMU（TCL 逐位传播边沿）；</text>
+    <text x="520" y="158" fill="#45536b">Ph8：才开合并加法器；Ph9：才开加法树；</text>
+    <text x="520" y="180" fill="#45536b">Ph8 之前，加法器输入被“单刀双掷开关”</text>
+    <text x="520" y="202" fill="#45536b">强制接地 → 彻底阻断毛刺</text>
+    <text x="520" y="230" fill="#1d8a5f" font-weight="600">→ 能效 +42%（代价：面积效率 −6%）</text>
+  </g>
+
+  <!-- 阶段说明 -->
+  <rect x="40" y="270" width="880" height="136" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="298" fill="#0e5a8a" font-size="13.5" font-weight="700">设计权衡：加法树分几级使能？</text>
+  <text x="60" y="326" fill="#45536b" font-size="12.5">块内加法树有 4 级，每级都可以加“相位控制开关”——开关越多越省电，但面积越大；</text>
+  <text x="60" y="348" fill="#45536b" font-size="12.5">论文仿真扫描了“使能级数 vs 面积/能效”，选<strong>合并加法器 1 级 + 块内加法树 1 级</strong>：</text>
+  <text x="60" y="370" fill="#45536b" font-size="12.5">→ 能效提升 42%，面积效率只降 6%——这是典型的“帕累托最优点”取舍；</text>
+  <text x="60" y="392" fill="#45536b" font-size="12.5">最终 vs 无使能的有符号基线：能效 1.42×、面积仅 1.06×；vs 无符号基线：1.35× / 1.09×。</text>
+</svg>

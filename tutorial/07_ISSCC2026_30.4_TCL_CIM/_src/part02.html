@@ -1,0 +1,17 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>位并行 CIM 的三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 位列加法布线拥塞（现有招数各有代价）；② 2C 符号位处理费面积/周期；③ 加法树空转费电。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_1_挑战与方案.png" alt="论文图 30.4.1">
+  <figcaption>图 2.2　论文原图 Fig. 30.4.1：位并行 CIM 的挑战与本文解决方案。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>现有方案及其代价</th><th>本文对策</th></tr>
+<tr><td>① 布线拥塞 + 位列加法</td><td>多周期 INT4 拼接（吞吐降）· ADC 压缩器（面积大）· 近似压缩器（丢精度）</td><td><strong>TCL 无损压缩</strong>：数沿代替数 1，面积最小、无损、稀疏自适应</td></tr>
+<tr><td>② 符号位处理</td><td>额外符号阵列（面积大）· 额外周期（吞吐降）</td><td><strong>总线 TCL 嵌入</strong>：P<sub>m7</sub> 复用做符号扩展，+2.95% 面积、零延迟</td></tr>
+<tr><td>③ 加法器空转</td><td>加法树全程开闸，毛刺白烧电</td><td><strong>10 相分阶段使能</strong>：Ph8/Ph9 才开加法 → 能效 +42%</td></tr>
+</table>
+</section>

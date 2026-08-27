@@ -1,0 +1,54 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>MXFP 生态与编译器</strong>：MXFP 是开放标准（NVIDIA/Arm/Intel/AMD 推动），但“每层/每组装什么位宽”目前靠论文的离线查表。做一个自动化的 MXFP 精度-位宽编译器（输入 PyTorch 模型 → 输出 CGA/FGA 配置），是软硬协同的下一个金矿；</li>
+<li><strong>在线自适应</strong>：本文 CGA 是离线的。能否在运行时根据“激活分布/异常值”实时调整 PBW（在线 FGA）？配合轻量监控电路，精度-效率可以更贴近实际数据分布；</li>
+<li><strong>块浮点（Block FP）融合</strong>：MXFP 的 E8M0 已经是“块共享尺度”。把“尺度”从 32 个一组扩展到更大的块（如整行/整层共享），SDBS 的 ESUM 对齐会更简单——这是格式与架构的联合设计空间；</li>
+<li><strong>训练支持深化</strong>：本文证明训练可行（ResNet-18）。训练还需要反向传播（梯度 MAC）、权重更新（写带宽）、优化器状态——把 MXFP-CIM 扩展成“推理+训练一体化”流水线（与 03/17 号论文的 FP 训练方向呼应）；</li>
+<li><strong>与稀疏/异常值结合</strong>：LLM 权重有 outlier（异常值），MXFP 的 E8M0 尺度其实是为 outlier 设计的。把“异常值感知”（19 号论文方向）和自适应 PBW 结合：outlier 组给高位宽、普通组给低位宽；</li>
+<li><strong>更低位宽（MXFP4）与更大动态范围</strong>：MXFP4 已经在研究中（LLM-FP4）。SDBS 滑动 2b 的粒度能否降到 1b 支持 MXFP4？PBW 下限能否降到 1~2b？</li>
+<li><strong>工艺与集成</strong>：28nm → 更先进节点；把 MXFP-CIM 作为计算宏嵌入 SoC（配合 RISC-V 核与 DMA），形成完整的边缘 LLM 推理/微调芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>MXFP（Microscaling Floating-Point，微缩放浮点）</dt><dd>一组 32 个数共享一个 8b 尺度（E8M0）的低比特浮点格式族。</dd>
+<dt>MXFP6 / MXFP8</dt><dd>6 位（E2M3：1 符号+2 指数+3 尾数）/ 8 位（E4M3）格式。</dd>
+<dt>E8M0 共享尺度（SS）</dt><dd>8 位指数、0 位尾数的块尺度，32 个数共享。</dd>
+<dt>保留位宽（PBW, Preserved Bit-Width）</dt><dd>浮点乘法中保留参与计算的尾数位数；PBW 越大越准但越费。</dd>
+<dt>隐藏位（Hidden Bit）</dt><dd>正常数尾数隐含的前导 1；次正规数前导为 0，硬件必须解码。</dd>
+<dt>次正规数（Subnormal）</dt><dd>指数全 0、尾数无隐含 1 的数，隐藏位 = 0。</dd>
+<dt>SDBS（Serial Dual-Bit-Sliding）</dt><dd>串行双位滑动：MIN 每周期滑 2b 的垂直截断乘法。</dd>
+<dt>垂直截断（Vertical Truncation）</dt><dd>截断位置落在整列边界，不产生无效位。</dd>
+<dt>DBSU（Dual-Bit-Sliding Unit）</dt><dd>双位滑动单元：时钟门控 + 1b 移位器 + 寄存器模块。</dd>
+<dt>ESUM（Exponent Sum）</dt><dd>指数和 = 输入指数 + 权重指数；决定滑动优先级。</dd>
+<dt>MF / SDT</dt><dd>最大值查找器 / 滑动目标追踪器（生成滑动控制 SC）。</dd>
+<dt>PC（Product Compressor）</dt><dd>乘积压缩器，本文仅 6 个全加器把位积压成 4b 值。</dd>
+<dt>HDM（Harmless Data Mapping）</dt><dd>无害数据映射：MXFP6/8 都塞满同一子阵列。</dd>
+<dt>层次化解码器</dt><dd>全局预解码（写时）+ 24 本地解码（算时）的隐藏位处理，面积 −63.1%。</dd>
+<dt>CGA（Coarse-Grained Allocation）</dt><dd>层级粗粒度位宽分配（离线查表），平均 PBW −14.8%。</dd>
+<dt>FGA（Fine-Grained Allocation）</dt><dd>组级细粒度位宽分配（按 ΔSS），平均 PBW 再 −29.3%。</dd>
+<dt>分裂字线（Split-WL）</dt><dd>每行独立选通的 SRAM 字线结构，支持双格式布局。</dd>
+<dt>A&N（Accumulator & Normalizer）</dt><dd>累加器与归一化单元。</dd>
+<dt>MRE（Mean Relative Error）</dt><dd>平均相对误差，随 PBW 增大单调下降。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>X. Wang, Y. Du, et al., “A 28nm 127.54TFLOPS/W MXFP6 and 117.42TFLOPS/W MXFP8 Compute-in-Memory Macro with Adaptive-Preserved-Bit-Width and Serial-Dual-Bit-Sliding Schemes,” <em>ISSCC 2026</em>, Paper 30.1. DOI: 10.1109/ISSCC49663.2026.11409034</li>
+<li>B.D. Rouhani et al., “Microscaling Data Formats for Deep Learning,” <em>arXiv:2310.10537</em>, 2023.（MXFP 格式定义 [1]）</li>
+<li>S.-Y. Liu, “LLM-FP4: 4-Bit Floating-Point Quantized Transformers,” <em>arXiv:2310.16836</em>, 2023.（[2]）</li>
+<li>DeepSeek-AI, “DeepSeek-V3 Technical Report,” <em>arXiv:2412.19437</em>, 2025.（FP8 训练商用 [3]）</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-Computing-Unit and Double-Bit 6T-SRAM CIM Macro for Floating-Point CNNs,” <em>ISSCC 2023</em>, pp. 128-129.（前作 [5]）</li>
+<li>W.-S. Khwa et al., “A 16nm 216kb, 188.4TOPS/W and 133.5TFLOPS/W Microscaling Multi-Mode Gain-Cell CIM Macro Edge-AI Devices,” <em>ISSCC 2025</em>, pp. 252-253.（Microscaling CIM 前作 [9]）</li>
+<li>Z. Yue et al., “A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and 2⁻³⁰ Loss for Compound AI,” <em>ISSCC 2025</em>, pp. 256-257.（前作 [10]，本系列 02 号论文）</li>
+<li>X. Wang et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC…,” <em>ISSCC 2025</em>, pp. 254-255.（前作 [11]，本系列 01 号论文）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.1.1–30.1.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（127.54/117.42 TFLOPS/W、63.1%、42.9% 等）均来自论文原文；PBW-MRE 图为趋势示意，已在图中注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

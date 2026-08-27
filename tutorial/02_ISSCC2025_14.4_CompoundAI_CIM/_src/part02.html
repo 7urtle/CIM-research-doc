@@ -1,0 +1,17 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>传统 FP-CIM 加速 Compound AI 的三大挑战</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 高斯分布假设失效（精度）；② 部分和/残差搬移（功耗）；③ 稀疏模式不匹配（性能）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_4_1_挑战.png" alt="论文图 14.4.1">
+  <figcaption>图 2.2　论文原图 Fig. 14.4.1：在传统 FP-CIM 上部署复合模型的挑战（精度/功耗/性能三维）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 精度：分布假设</td><td>高斯假设 → 对齐损失在复合模型多种分布下放大（&gt;5% 掉点）</td><td>MantissaEE + 后乘积对齐 → 误差 &lt;2⁻³⁰</td></tr>
+<tr><td>② 功耗：数据搬移</td><td>部分和/残差累加搬移占 26~72% 功耗</td><td>全数据路径存内（AIM 就地累加）</td></tr>
+<tr><td>③ 性能：稀疏模式</td><td>各模型稀疏模式不同，实际加速 &lt; 理论</td><td>NIM（静态 2:4）+ 动态启动器（动态 Booth 池）</td></tr>
+</table>
+</section>

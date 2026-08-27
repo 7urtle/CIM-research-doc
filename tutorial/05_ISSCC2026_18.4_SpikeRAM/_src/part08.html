@@ -1,0 +1,45 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与应用：事件式签名验证与芯片成绩单</h2>
+
+<h3 id="sec8-1">8.1 演示应用：事件式签名验证（隐私边缘学习）</h3>
+<figure>
+  <img src="assets/diagrams/d08_demo.svg" alt="签名验证" style="max-width:940px">
+  <figcaption>图 8.1　事件式签名验证系统：红外笔（850nm）书写签名，EVS 以 200Hz 捕获时空特征；NeuroPass LIF 层滤噪；2-shot 在线学习识别真伪签名（94.3%）。</figcaption>
+</figure>
+<p>为什么选“签名”做演示？因为签名是<strong>私有数据</strong>——云端训练有隐私泄露风险；且签名有<strong>时序动态</strong>（书写速度、笔顺），静态图像法容易放过伪签名。SpikeRAM 用 EVS 捕获时空特征 + SNN 推理 + 2-shot OCL（每类仅 2 个样本、随机初始化），在真实性验证与分类上达到 <strong>94.3%</strong>——数据全程不出芯片。</p>
+<figure>
+  <img src="assets/figs/fig18_4_5_签名验证与实测.png" alt="论文图 18.4.5">
+  <figcaption>图 8.2　论文原图 Fig. 18.4.5：签名验证系统（上）与芯片实测结果（下）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-2">8.2 实测结果与对比</h3>
+<figure>
+  <img src="assets/charts/c01_accuracy.png" alt="精度" style="max-width:860px">
+  <figcaption>图 8.3　各任务精度：NMNIST 96.4%、DVS Gesture 92.9%、DailyDVS 90.5%（仅 1 个 OCL epoch、随机初始化）；EHSV 签名 94.3%（2-shot）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_mram.png" alt="MRAM 收益" style="max-width:940px">
+  <figcaption>图 8.4　eNVM 写压力收益：编程次数 −89.1%/−88.4%、最大被写器件 −92.8%、写时间 −86.3%、更新次数均值/方差 −10.9×/−35.6×、寿命 +13.9×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_compare.png" alt="对比" style="max-width:860px">
+  <figcaption>图 8.5　与神经形态处理器对比：功率密度 48.1 pW/Synapse/Bit（2.7×）、网络密度 441.9 Synapse/Byte（24.3×）优于前作（前作数值按倍数反推）。</figcaption>
+</figure>
+<ul>
+<li><strong>系统功耗</strong>：静态 1.26 mW + 动态 8.28 mW（实时处理）；</li>
+<li><strong>规模</strong>：464M 突触、328K 神经元；</li>
+<li><strong>eNVM</strong>：外接 40nm 4Mb MRAM，参数扩展 5.4×（101 类 N-Caltech101 时间复用），OCL 寿命 +13.9×。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig18_4_6_对比.png" alt="论文图 18.4.6">
+  <figcaption>图 8.6　论文原图 Fig. 18.4.6：与最先进神经形态处理器的对比。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig18_4_7_芯片照片.png" alt="论文图 18.4.7">
+  <figcaption>图 8.7　论文原图 Fig. 18.4.7：汇总表、电压特性、裸片显微照片与测试系统。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① “pW/Synapse/Bit”这类归一化指标高度依赖“突触/位”的计数口径（是否含 SRAM、权重位宽），跨论文对比要小心；② 精度（96.4% 等）是在特定数据集、特定网络配置下测的，“1 epoch 收敛”依赖 e-OTBP 的初始化与超参，不能外推；③ MRAM 寿命 +13.9× 是在“写压力大幅降低”条件下推算的，实际寿命还受温度、保持时间约束。</p>
+</div>
+</section>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">演示应用：事件式签名验证（隐私边缘学习的实例）</text>
+
+  <!-- 系统 -->
+  <rect x="40" y="90" width="440" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="118" fill="#1d8a5f" font-size="13.5" font-weight="700">系统设置（Fig. 18.4.5 左上）</text>
+  <g font-size="12">
+    <text x="60" y="150" fill="#45536b">• 红外笔（850nm 波段）书写签名，EVS 以 200Hz 捕获</text>
+    <text x="60" y="174" fill="#45536b">• 片上 EVS 带红外滤光片 → 抑制环境光干扰</text>
+    <text x="60" y="206" fill="#0e5a8a" font-weight="600">NeuroPass 层：LIF-sCNN 只对特定频率响应</text>
+    <text x="60" y="228" fill="#0e5a8a" font-weight="600">→ 提高信噪比（Fig. 18.4.5 上中）</text>
+    <text x="60" y="260" fill="#45536b">EVS 高时间分辨率 → 保留“书写速度”信息</text>
+    <text x="60" y="282" fill="#45536b">（静态图像几乎相同的伪签名，时域一看就露馅）</text>
+  </g>
+
+  <!-- 数据 -->
+  <rect x="520" y="90" width="400" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="540" y="118" fill="#6b3fa0" font-size="13.5" font-weight="700">EHSV 数据集与 2-shot OCL</text>
+  <g font-size="12">
+    <text x="540" y="150" fill="#45536b">• EHSV：1 类真签名 + 4 类伪签名</text>
+    <text x="540" y="174" fill="#45536b">• 随机初始化 + <strong>2-shot 在线学习</strong>（每类 2 个样本）</text>
+    <text x="540" y="206" fill="#1d8a5f" font-weight="600">→ 真实性验证与分类精度 94.3%</text>
+    <text x="540" y="236" fill="#45536b">• 隐私：签名数据全程不出芯片</text>
+    <text x="540" y="258" fill="#45536b">• 对比：云端训练有隐私泄露风险；</text>
+    <text x="540" y="280" fill="#45536b">图像法忽略时序动态 → 防伪能力弱</text>
+  </g>
+
+  <!-- 实测 -->
+  <rect x="40" y="344" width="880" height="102" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">芯片实测（Fig. 18.4.5 中部）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">实时处理：静态功耗 1.26 mW + 动态功耗 8.28 mW（系统级）；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">NMNIST 96.4% · DVS Gesture 92.9% · DailyDVS 90.5%（仅 1 个 OCL epoch，随机初始化快速收敛）；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">支持 464M 突触、328K 神经元；网络密度 441.9 Synapse/Byte（比前作 [10] 高 24.3×）。</text>
+</svg>

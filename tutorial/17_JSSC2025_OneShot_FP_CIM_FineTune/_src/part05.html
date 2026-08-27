@@ -1,0 +1,78 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：输入-权重协同对齐与 UBF16 格式</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 离线权重无损钳位为什么能“无损”；② 用权重最大指数对齐输入怎么免掉 XE_max 选择；③ UBF16 怎么简化 INT→FP 归一化。</p>
+</div>
+
+<h3>5.1 离线权重无损钳位（论文 Fig.8）</h3>
+<p>multiply-less NN 里权重范围 &gt; 输入范围（Fig.8a）。因为运算是<strong>最小选择</strong>，结果可以提前判定：</p>
+<ul>
+<li>输入经 ReLU → 非负，钳到 [0, Xmax]（Xmax 由训练集得到的经验值）；</li>
+<li><strong>权重 &lt; 0</strong>：输入非负 → 最小值必是权重 → 无需计算 → 权重直接钳到 0，作为偏置合并（无损）；</li>
+<li><strong>权重 &gt; Xmax</strong>：所有输入 ≤ Xmax → 最小值必是 Xmax → 权重钳到 Xmax（无损）；</li>
+<li>注意：实际推理时输入最大值 Xinfmax 随样本变化，但 95% 的 Xinfmax &lt; Xmax → 精度几乎不受影响；</li>
+<li>钳位还<strong>提高权重稀疏度</strong> → 省能耗。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_8_输入权重范围与无损钳位.png" alt="输入权重范围与无损钳位">
+<figcaption>图 8 · 论文 Fig.8：(a) 输入与权重的范围 (b) 离线权重无损钳位流程。</figcaption>
+</figure>
+
+<h3>5.2 离线权重预对齐（论文 Fig.9）</h3>
+<p>钳位后权重分布与输入对齐 [0,Xmax] → 可以直接用权重对齐输入：</p>
+<ol>
+<li>每个 CIM core 选<strong>权重最大指数 WE_max</strong> 并预存；</li>
+<li>权重尾数按 WE_max 预对齐后存入 CIM core；</li>
+<li>在线：ManAU 直接用 WE_max 对齐输入尾数 → <strong>消除步骤①（XE_max 选择）</strong>；</li>
+<li>边界情况：输入指数 &gt; WE_max → 最小值必是权重 → ManAU 直接置输入尾数为 8′11111111。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_9_离线权重预对齐.png" alt="离线权重预对齐">
+<figcaption>图 9 · 论文 Fig.9：离线权重预对齐示例。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_10_在线输入权重协同对齐.png" alt="在线输入权重协同对齐">
+<figcaption>图 10 · 论文 Fig.10：在线输入-权重协同对齐流水（ManAU → CIM core → ITFU）。</figcaption>
+</figure>
+
+<h3>5.3 UBF16：免符号位的 BF16（论文 Fig.11）</h3>
+<p>传统 BF16 归一化 16 位整数：尾数 MSB 是隐藏位（必须为 1）→ 要搜 16 位找最高位 1 再移位。本论文观察到：钳位后 X、W 都非负 → CIM 输出也非负 → 提出 <strong>UBF16（无符号 BF16）</strong>：</p>
+<ul>
+<li>最高位表示尾数 MSB（不是符号位）；</li>
+<li>尾数 MSB 可以是 0 → 搜索范围从 16 缩到 <strong>8 位</strong>；</li>
+<li>高 8 位找不到 1 → 低 8 位直接存作尾数（MSB 放 UBF16 最高位）；</li>
+<li>与 BF16 混算：UBF16 最高位直接拼 Mantissa⟨6:0⟩ 成 8 位尾数 → 正常 FP 运算（开销极小）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_11_BF16与UBF16格式.png" alt="BF16与UBF16格式">
+<figcaption>图 11 · 论文 Fig.11：(a) BF16 格式与归一化过程 (b) UBF16 格式与归一化过程。</figcaption>
+</figure>
+
+<h3>5.4 量化收益（论文 Fig.12）</h3>
+<table>
+<tr><th>技术</th><th>面积</th><th>能耗</th></tr>
+<tr><td>免步骤①（无损钳位 + WE_max 对齐）</td><td>−22.3%</td><td>−31.7%</td></tr>
+<tr><td>UBF16（简化步骤④）</td><td>−11.5%</td><td>−6.5%</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig17_12_协同对齐评估.png" alt="协同对齐评估">
+<figcaption>图 12 · 论文 Fig.12：输入-权重协同对齐工作流的性能评估（基线：128 个 BF16 输入的传统 FP-CIM，28nm/1V/180MHz/10% 稀疏）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_coalign.svg" alt="协同对齐教学图">
+<figcaption>教学图 5 · 无损钳位、WE_max 预对齐与 UBF16 格式。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 最小选择语义允许离线无损钳位（负权重→0、超上限→Xmax）→ 权重与输入同分布；② 权重静态 → WE_max 离线预存 → 输入直接对齐（免 127 个比较器）；③ UBF16 免符号位 → 归一化 16→8 位。合计面积 −33.8%、能耗 −38.2%。</p>
+</div>
+</section>

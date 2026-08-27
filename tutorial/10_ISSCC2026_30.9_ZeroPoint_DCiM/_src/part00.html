@@ -1,0 +1,72 @@
+<section class="chapter" id="sec0">
+<h1 class="title">数字存内计算（DCiM）零基础精讲：一台“全可综合、零点量化、INT8×INT8”的存内计算加速器
+<span class="en">A 147 TOPS/W, 250 TOPS/mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A Technology（ISSCC 2026 · Paper 30.9）</span></h1>
+<div class="meta">论文作者：Amit Agarwal, Steven K. Hsu, Mark A. Anders（Intel, Hillsboro）等 · Intel 实验室
+&nbsp;|&nbsp; 发表：2026 IEEE International Solid-State Circuits Conference（ISSCC 2026），Session 30（存内计算），论文 30.9
+&nbsp;|&nbsp; 本教程配套素材：教学图 11 张、数据图 4 张、演示视频 3 个、交互仿真 5 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>AI 推理要反复做“权重 × 激活”的矩阵乘法，而传统芯片把数据在存储器和计算单元之间搬来搬去，大部分能量都浪费在搬运上。<strong>存内计算（Compute-in-Memory, CiM）</strong>把计算直接嵌进存储器里：权重“躺”在存储单元中，激活值广播进来，每一列一次完成一大串乘法累加（MAC）。</p>
+<p>Intel 这篇工作，用<strong>100% 可综合的数字标准单元</strong>（连存储都是锁存器做的）在 <strong>Intel 18A 工艺</strong>上实现了一个 DCiM 加速器：<strong>128 输入通道 × 32 输出通道 × 2 组权重</strong>，支持带<strong>零点量化（Zero-Point Quantization）</strong>的 INT8×INT8 计算，实测最高 <strong>2.62 GHz</strong>、<strong>21.5 TOPS</strong>、面积效率 <strong>250 TOPS/mm²</strong>、能效 <strong>147 TOPS/W（400 mV 低压）</strong>，最低可工作在 <strong>400 mV</strong>。</p>
+<p>它的三个“独门绝技”是：① 用数学技巧把“零点量化导致的 9b×9b 乘法”无损变回“8b×8b 乘法”；② 把 Booth 编码器从“计算路径”搬到“权重写入路径”，编码一次、32 列共享；③ 用双缓冲 + 12T 可中断锁存器做权重存储，计算与更新权重零冲突。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉（非常重要）</div>
+<ul>
+<li><strong>TOPS 是什么：</strong>Tera Operations Per Second，每秒万亿次运算。一次 INT8 的“乘加（MAC）”按 2 次运算（1 乘 + 1 加）计，所以 1 MAC = 2 OPS。这篇论文 21.5 TOPS = 每周期 4096 个 MAC × 2.62 GHz × 2 ops ≈ 21.5×10¹²。</li>
+<li><strong>TOPS/W 是能效，TOPS/mm² 是面积效率：</strong>一个是“每瓦能算多少次”，一个是“每平方毫米能算多少次”。芯片行业既要比快，也要比省电、比面积小——AI 加速器论文基本都围绕这三个指标打架。</li>
+<li><strong>可综合 ≠ 性能低：</strong>你可能觉得“全标准单元 = 妥协 = 慢”。但请看数据：2.62 GHz、250 TOPS/mm²、与定制模拟 CiM 相比精度还确定——这说明<em>当设计意图正确时，可综合数字路径可以同时拿到能效与面积效率</em>。这正是本文最有说服力的地方。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>学习路径：这篇教程怎么带你读</h2>
+<p>这篇文章虽短（3 页），但信息密度极高。如果你直接读原文，很容易被“零点量化”“Booth 编码”“12T 锁存”“双缓冲”这些词砸晕。本教程按下面的路径，从“为什么”讲到“怎么做”，每一章都配图、配动画、配视频：</p>
+<table>
+<tr><th>章节</th><th>解决什么问题</th><th>配套素材</th></tr>
+<tr><td><a href="#sec1">01 为什么需要存内计算</a></td><td>冯·诺依曼瓶颈是什么？CiM 凭什么省电？</td><td>图 d01、d02</td></tr>
+<tr><td><a href="#sec2">02 数字 CiM 与“可综合”</a></td><td>模拟 vs 数字 CiM 怎么选？“可综合”到底指什么？</td><td>图 d02、d03</td></tr>
+<tr><td><a href="#sec3">03 零点量化基础</a></td><td>量化是什么？零点（非对称）量化为什么精度更好？</td><td>图 d04、仿真 A</td></tr>
+<tr><td><a href="#sec4">04 核心数学：零点量化分解</a></td><td>9b×9b 问题怎么变成 8b×8b？三个修正项怎么“白嫖”？</td><td>图 d05、数值验证、仿真 C</td></tr>
+<tr><td><a href="#sec5">05 Booth 编码的艺术</a></td><td>部分积为什么能减半？编码权重还是编码激活？</td><td>图 d08、视频 v01、仿真 B</td></tr>
+<tr><td><a href="#sec6">06 存储与双缓冲</a></td><td>12T 锁存器怎么存储？双缓冲怎么做到零停顿？</td><td>图 d09、d10、视频 v03</td></tr>
+<tr><td><a href="#sec7">07 系统架构与数据流</a></td><td>128×32×2 的加速器长什么样？数据怎么流动？</td><td>图 d06、d07、d11、视频 v02、仿真 D</td></tr>
+<tr><td><a href="#sec8">08 面积功耗与实测</a></td><td>面积/功耗花在哪？实测数字怎么读？</td><td>图 c01–c04、原文图</td></tr>
+<tr><td><a href="#sec9">09 自测 · 未来方向</a></td><td>检验学习效果，讨论还能怎么继续做研究</td><td>思考题 12 道、术语表</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>摘要逐句精读（含背景补全）</h2>
+<p>我们把论文摘要拆成 6 句，逐句翻译 + 解释，其中括号里是本教程补的背景知识：</p>
+<table>
+<tr><th style="width:44%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“Digital CiM provides deterministic accuracy, with process and voltage scalability along with immunity to parametric variation”</td>
+<td>数字 CiM 的每个加法都是逐位精确的，不受工艺波动（PVT）影响，结果可复现（deterministic）；并且能跟着工艺节点、电源电压一起缩放（低压也能跑）。（对比：模拟 CiM 的电流/电荷求和是模拟量，有噪声和 ADC 误差。）</td></tr>
+<tr><td class="num">“a fully synthesizable design enables portability across technology nodes… using standard design tools and cell libraries”</td>
+<td>全可综合意味着用 Verilog 描述 + 标准单元库 + 综合/布局布线工具就能做出来；换工艺节点只需换库重新综合（见 §2.2 图 d03）。</td></tr>
+<tr><td class="num">“128 input channels, 32 output channels, 2 weight sets”</td>
+<td>加速器规模：一次处理 128 个输入通道（如 128 个输入特征图），产生 32 个输出通道；权重准备了两份（双缓冲，见 §6.3）。</td></tr>
+<tr><td class="num">“high-density multibit interruptible 12T-latch-based memory storage”</td>
+<td>权重存储用的是“可中断的 12 管多比特锁存器”标准单元，而不是定制 SRAM 宏——这是“全可综合”的关键（见 §6.1、§6.2）。</td></tr>
+<tr><td class="num">“radix-4 stationary weight encoded Booth computation, a unique unsigned-to-signed mapping scheme, and support for zero-point-quantized INT8×INT8”</td>
+<td>乘法用 Radix-4 Booth 编码，而且编码对象是“静止不动的权重”（stationary weight）而不是广播的激活；配合一套无符号→有符号映射技巧，支持带零点的 INT8×INT8（见 §4、§5）。</td></tr>
+<tr><td class="num">“2.62 GHz … 0.0856 mm² … 250 TOPS/mm² … 21.5 TOPS … 147 TOPS/W at 400 mV … 254 TOPS/W at 10% input activity”</td>
+<td>实测成绩：1.1 V 下 2.62 GHz、21.5 TOPS；低压 400 mV 下能效 147 TOPS/W（输入活动率 25%），更低活动率 10% 时能效升到 254 TOPS/W（见 §8.2）。</td></tr>
+</table>
+
+<h2><span class="no">§0.3</span>论文的 6 条贡献（TL;DR 清单）</h2>
+<p>一篇 ISSCC 论文的贡献通常会在摘要里逐条列出。本文摘要明确给出了 6 条，我们在教程里逐条展开，你可以先记住这 6 条，读完全文再回来看：</p>
+<ol>
+<li><strong>峰值面积效率 250 TOPS/mm²、吞吐 21.5 TOPS</strong>（1.1 V、25°C、2.62 GHz）；</li>
+<li><strong>400 mV 低压鲁棒运行</strong>，峰值能效 <strong>147 TOPS/W</strong>（25% 输入活动率、6.1 mW）；</li>
+<li>能效随活动率可扩展到 <strong>254 TOPS/W</strong>（10% 活动率、3.5 mW、400 mV）；</li>
+<li><strong>无符号→有符号映射 + 零点扩展预计算</strong>：省 20% 功耗、17% 面积（摘要数字；正文为功耗 17%、面积 21%，见 §4.3 说明）（见 §4）；</li>
+<li><strong>静止权重 Booth 编码</strong>：计算功耗降低 28%（见 §5）；</li>
+<li><strong>高密度多比特锁存位单元</strong>：权重存储面积降低 20%（见 §6.2）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>如果你是完全零基础：按顺序读 01→09，中间每个交互仿真都玩一下、每个视频都看一遍，预计需要 60–90 分钟。如果你已经懂 CIM 基本概念：直接跳到 §4（核心数学）和 §7（架构数据流），这两章是本文最精彩的部分。所有公式都用“具体数字例子”验证过，你可以拿起计算器自己算一遍。</p>
+</div>
+</section>

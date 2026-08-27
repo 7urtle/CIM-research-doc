@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">TCL 宏架构：4 个 CIM bank，每个 bank 4 个 CIM 块</text>
+
+  <!-- 顶层 -->
+  <rect x="60" y="80" width="220" height="60" rx="10" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="170" y="104" text-anchor="middle" fill="#6b3fa0" font-size="12.5" font-weight="600">全局控制器 + SRAM 读写控制器</text>
+  <text x="170" y="124" text-anchor="middle" fill="#45536b" font-size="10.5">全局输入缓冲 + BF16 指数后处理</text>
+  <path d="M280,110 H340" stroke="#6b3fa0" stroke-width="2.4" marker-end="url(#ar)"/>
+
+  <!-- 4 banks -->
+  <rect x="345" y="80" width="575" height="330" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="365" y="104" fill="#0e5a8a" font-size="13" font-weight="700">4 个 CIM bank（INT8：每 bank 16 个 8b 权重预读）</text>
+  <g font-size="10.5">
+    <rect x="365" y="116" width="270" height="280" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="500" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">CIM bank（每 bank 内）</text>
+    <rect x="380" y="148" width="120" height="34" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="440" y="169" text-anchor="middle" fill="#c25e2e">本地 10 相发生器</text>
+    <rect x="380" y="192" width="240" height="60" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="500" y="212" text-anchor="middle" fill="#6b3fa0">4 × CIM 块</text>
+    <text x="500" y="230" text-anchor="middle" fill="#45536b">每块：16 个 CIM 单元</text>
+    <text x="500" y="246" text-anchor="middle" fill="#45536b">+ 块内加法树</text>
+    <rect x="380" y="264" width="240" height="40" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="500" y="284" text-anchor="middle" fill="#1d8a5f">块外加法树（4×20b → 22b MACV）</text>
+    <text x="380" y="340" fill="#45536b">CIM 单元 = 16×8b 6T-SRAM（整存 8b 权重）</text>
+    <text x="380" y="360" fill="#45536b">+ 计算单元（64 MMU + 15 CNT + 合并加法器）</text>
+    <text x="380" y="380" fill="#45536b">→ 8b×8b 位并行乘法，1 周期 1 个 16b 乘积</text>
+    <rect x="660" y="116" width="90" height="280" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="705" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">bank1</text>
+    <text x="705" y="260" text-anchor="middle" fill="#45536b">同左</text>
+    <text x="760" y="260" text-anchor="middle" fill="#9aa8bd" font-size="14">…</text>
+    <rect x="790" y="116" width="110" height="280" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="845" y="136" text-anchor="middle" fill="#0e5a8a" font-weight="600">bank3</text>
+    <text x="845" y="260" text-anchor="middle" fill="#45536b">同左</text>
+  </g>
+
+  <!-- 数据流 -->
+  <rect x="60" y="440" width="860" height="76" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="80" y="468" fill="#1d8a5f" font-size="13" font-weight="700">两种模式的流水：</text>
+  <text x="80" y="494" fill="#45536b" font-size="12.5">INT8：64 个特征（XIN 8b）送 4 个 bank（预读 64×4 个 8b 权重）→ 每周期 4 个 22b MACV；</text>
+  <text x="80" y="514" fill="#45536b" font-size="12.5">BF16：输入指数先预对齐，bank 存尾数 → 4 个尾数 MACV → 指数后处理 → FP32 输出（三级流水，每周期 1 个）。</text>
+</svg>

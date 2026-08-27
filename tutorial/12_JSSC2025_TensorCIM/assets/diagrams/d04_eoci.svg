@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="490" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">EOCI：按“有效 MAC 数”平衡宏间负载（子阵列级）</text>
+
+  <!-- 步骤1 -->
+  <rect x="40" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">① 有效操作识别（Fig. 12）</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">只有 GT 非零列 与 WT 非零行<strong>相交</strong>的位置</text>
+    <text x="60" y="162" fill="#45536b">才存在有效 MAC：</text>
+    <text x="60" y="192" fill="#45536b">GT 非零列：{0,1,2,3,4,7}</text>
+    <text x="60" y="214" fill="#45536b">WT 非零行：{0,4,5,6,7}</text>
+    <text x="60" y="236" fill="#6b3fa0" font-weight="600">相交：{0,4,7} → 只有这些 ID 有有效 MAC</text>
+    <text x="60" y="266" fill="#45536b">（不相交的 ID 算也是白算 → 跳过）</text>
+  </g>
+
+  <!-- 步骤2 -->
+  <rect x="500" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">② 平衡的 WT/GT 分配</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">每个新相交 ID 触发一次分配；操作数按</text>
+    <text x="520" y="162" fill="#45536b">“GT 列非零数 × WT 行非零数”计算；</text>
+    <text x="520" y="192" fill="#45536b">WT 行可以放到<strong>任意子阵列</strong>（不按索引序）→</text>
+    <text x="520" y="214" fill="#45536b">把“重的行”和“轻的行”搭配，使每个</text>
+    <text x="520" y="236" fill="#45536b">子阵列的 MAC 数相等：</text>
+    <text x="520" y="266" fill="#1d8a5f" font-weight="600">Core0: Row{0,10,4,13} · Core1: Row{7,15,9,16}</text>
+    <text x="520" y="290" fill="#45536b">→ 所有子阵列 MAC 数相同 → 同时算完</text>
+  </g>
+
+  <!-- 自适应映射 -->
+  <rect x="40" y="344" write="0" width="880" height="122" rx="10" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="372" fill="#123a57" font-size="13.5" font-weight="700">CIM 自适应 WT 映射（Fig. 13）：大 WT 分片映射</text>
+  <g font-size="11.5">
+    <text x="60" y="402" fill="#45536b">• 有效 WT 比 CIM 容量大 → 切成小 WT tile 逐块映射；每 tile 的每行非零数与 SRAM 行权重数一致；</text>
+    <text x="60" y="426" fill="#45536b">• 纵向遍历整个 WT，未映射的非零元素再开一轮 → 任意稀疏模式都能保持“同 WT 行同 SRAM 行”；</text>
+    <text x="60" y="450" fill="#1d8a5f" font-weight="600">→ 极高稀疏下利用率 78.9%~96.7%（10%~90% 稀疏率）；EOCI 面积开销仅 1.96%</text>
+  </g>
+  <rect x="40" y="474" width="880" height="0" rx="0"/>
+  <rect x="40" y="474" width="880" height="30" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="480" y="494" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 宏内利用率 17.6%→95.4%、总加速 5.28×（配合 ILA-CIM）</text>
+</svg>

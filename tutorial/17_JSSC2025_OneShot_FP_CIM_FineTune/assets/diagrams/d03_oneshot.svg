@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">One-Shot 计算方案：8 周期 → 1 周期（论文 Fig.4）</text>
+
+  <!-- conventional -->
+  <rect x="40" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">传统预对齐 FP-CIM（BF16）</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">步骤③ INT 尾数 MAC 用位串行（1 bit/周期）</text>
+    <g>
+      <rect x="70" y="148" width="70" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="105" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">步①1cyc</text>
+      <rect x="146" y="148" width="70" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="181" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">步②1cyc</text>
+      <rect x="222" y="148" width="150" height="30" rx="5" fill="#fde8e4" stroke="#e66e5a"/><text x="297" y="168" text-anchor="middle" fill="#a0402e" font-size="10">步③ 8 cyc（位串行）</text>
+      <rect x="378" y="148" width="70" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="413" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">步④1cyc</text>
+    </g>
+    <text x="60" y="210" fill="#45536b">步骤①②④的电路 7/8 时间闲置（利用率 12.5%）</text>
+    <text x="60" y="232" fill="#e66e5a" font-weight="600">→ 吞吐低 · 硬件利用率低</text>
+    <text x="60" y="262" fill="#45536b">位并行则乘法器+加法树占 96% 面积/能耗</text>
+    <text x="60" y="286" fill="#45536b">Booth 编码 4 周期但需额外编解码电路</text>
+  </g>
+
+  <!-- one-shot -->
+  <rect x="490" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">One-Shot 计算方案（本论文）</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">multiply-less NN → INT MAC 简化为最小选择</text>
+    <g>
+      <rect x="520" y="148" width="90" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="565" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">输入对齐 1cyc</text>
+      <rect x="618" y="148" width="130" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="683" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">最小选择 1cyc</text>
+      <rect x="756" y="148" width="90" height="30" rx="5" fill="#d9f0e4" stroke="#1d8a5f"/><text x="801" y="168" text-anchor="middle" fill="#1d8a5f" font-size="10">INT→FP 1cyc</text>
+    </g>
+    <text x="510" y="210" fill="#1d8a5f" font-weight="600">每级 1 周期 → 流水线 100% 利用率</text>
+    <text x="510" y="232" fill="#1d8a5f" font-weight="600">→ 吞吐提升 8×</text>
+    <text x="510" y="262" fill="#45536b">关键：最小选择比乘法简单得多 → 位并行可行</text>
+    <text x="510" y="286" fill="#45536b">Σxi（InADD 共享）+ Σwi（WSUM 预存）+ Σmin（实时）</text>
+  </g>
+
+  <!-- benefits -->
+  <rect x="40" y="324" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="350" fill="#0e5a8a" font-size="14" font-weight="700">One-shot 方案的额外红利</text>
+  <g font-size="12.5">
+    <text x="60" y="380" fill="#1d8a5f" font-weight="600">位并行利用输入相关性降翻转率</text>
+    <text x="80" y="404" fill="#45536b">NN 相邻输入相似：MSB 常相同（翻转率低）、LSB 变化多 → 位并行整体平均翻转率低于位串行（Fig.7a）</text>
+    <text x="60" y="434" fill="#1d8a5f" font-weight="600">ParMS 三态反相器门控输出</text>
+    <text x="80" y="458" fill="#45536b">EN/ENB 门控：计算稳定前不输出 → 加法树功耗 −44%（Fig.5d）</text>
+    <text x="60" y="488" fill="#1d8a5f" font-weight="600">vs 位串行乘法/位串行 multiply-less 基线（28nm, 0.9V, 180MHz）</text>
+    <text x="80" y="512" fill="#45536b">面积 −2.8× · 能耗 −3.4×（Fig.7b）· vs [14] 动态逻辑比较器：稀疏时能耗显著更低（Fig.6b）</text>
+  </g>
+</svg>

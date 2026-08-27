@@ -1,0 +1,1153 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：POSIT 存内计算宏 PD-CIM（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 POSIT 数字 CIM 宏的 BRPU（移位-OR regime 处理）、CPCS（双位 MAC）与 CASU（OR 累加）三大创新。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress" style="width: 0%;"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">POSIT 数字 CIM 宏零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.8 · 清华大学</div>
+  </div>
+  <a class="sec active" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：FP-CIM 与 POSIT 格式</a>
+  <a class="sec" href="#sec2">02 · POSIT 动态特性三大挑战</a>
+  <a class="sec" href="#sec3">03 · PD-CIM 总体架构</a>
+  <a class="sec" href="#sec4">04 · 创新①：BRPU</a>
+  <a class="sec" href="#sec5">05 · 创新②：CPCS 双位 MAC</a>
+  <a class="sec" href="#sec6">06 · 创新③：CASU OR 累加</a>
+  <a class="sec" href="#sec7">07 · 精度与适配性</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 总结 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">POSIT 存内计算宏零基础精讲：换一个更聪明的“数”来算
+<span class="en">An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications（IEEE JSSC, vol.60, no.8, 2025）</span></h1>
+<div class="meta">论文作者：Yang Wang, Xiaolong Yang, Yubin Qin, Zhiren Zhao, Ruiqi Guo, Zhiheng Yue, Huiming Han, Shaojun Wei, Yang Hu, Shouyi Yin（清华大学）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 8, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前几篇用 INT8 / FP16 / MXFP 做 CIM。这篇清华尹首一团队的工作换了一条思路：<strong>换一种数的表示——POSIT</strong>。POSIT 的位宽是<strong>动态分配</strong>的（指数范围大时多给 regime 位、需要精度时多给尾数位），所以 <strong>POSIT8 就能达到 ≈FP16/BF16 的精度</strong>，存储和 MAC 能耗却只有 FP16 的 1/6.25。</p>
+<p>但 POSIT 的动态特性给硬件带来三大坑：① regime（温度计码）处理要 extract+codec，能耗 +2.62×；② 动态尾数位宽让固定结构的 CIM 阵列 41.3% 单元闲置；③ 动态对齐后无重叠位的加法是冗余翻转，加法树浪费 62.5% 能耗。本论文用三招一一攻破：</p>
+<ol>
+<li><strong>BRPU（双向 regime 处理单元）</strong>：用“移位+OR”替代“译码+加法+编码”——regime 的十进制值就是连续 0/1 的个数，加法只是个数增减 → 用移位实现 → 省 40.3% regime 能耗；</li>
+<li><strong>CPCS（关键位预计算存储）CIM 阵列</strong>：把动态位宽尾数留下的<strong>空闲单元</strong>用来存预计算好的“关键位” → 每周期做<strong>双位 MAC</strong> → 单元利用率 +63%；</li>
+<li><strong>CASU（循环交替调度单元）</strong>：无重叠位的加法等价于 OR（X+0=X|0）→ 用 OR 替代加法省 82.9% 功耗；重叠时用<strong>循环交替调度</strong>错开位串行计算顺序，制造无重叠 → 加法树省 56.9%。</li>
+</ol>
+<p>28nm 实测：<strong>83.23 TFLOPS/W</strong>（POSIT(8,1)），ViT-B ImageNet 分类比 SOTA FP-CIM 省能 <strong>2.36×</strong>、加速 <strong>3.51×</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“数的表示”也是硬件设计的一部分：</strong>INT8 便宜但不准，FP16 准但贵。POSIT 想两头都占——用<strong>动态位分配</strong>在“范围”和“精度”之间按数据分布自动权衡。硬件设计的自由度不只是电路，还包括<strong>数据格式本身</strong>。</li>
+<li><strong>“动态”是把双刃剑：</strong>POSIT 灵活换来的是硬件复杂度——regime 要动态解析、尾数位宽不固定。本论文的全部创新都在回答同一个问题：<strong>怎么把“动态”的代价压掉，只留下好处</strong>。</li>
+<li><strong>“无重叠就不需要加法”：</strong>两个数对齐后如果占位不重叠，加起来就是逐位 OR（X+0=X|0）。POSIT 尾数短、重叠概率低 → 大量加法可以换成又小又省的 OR 门。这是“利用数据特性省硬件”的经典例子。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tbody><tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“FP-CIM with FP32/FP16/BF16 data format incurs a performance bottleneck due to the large storage requirements and MAC power”</td>
+<td>传统 FP-CIM 的病根：FP16 等格式位宽大 → 存储开销大、MAC 功耗高。</td></tr>
+<tr><td class="num">“The emerging POSIT data format exploits dynamic bit width that adapts to varied data distributions”</td>
+<td>POSIT 用动态位宽适配不同数据分布（范围-精度运行时权衡）。</td></tr>
+<tr><td class="num">“enabling using a low-bit-width to reach nearly the same accuracy performance as conventional high-bit-width FP (POSIT8 ≈FP16/BF16)”</td>
+<td>低位数 POSIT8 就能达到 ≈FP16/BF16 的精度。</td></tr>
+<tr><td class="num">“a bi-directional regime processing unit (BRPU) simplifies the complicated codec logic”</td>
+<td>创新①：BRPU 简化 regime 处理的编解码逻辑。</td></tr>
+<tr><td class="num">“a critical-bit pre-compute-and-store (CPCS) CIM utilizes the spare CIM cells … to improve cell utilization”</td>
+<td>创新②：CPCS 用空闲 CIM 单元存预计算关键位，提高单元利用率。</td></tr>
+<tr><td class="num">“a cyclically alternating computing-scheduling unit replaces the bit-wise addition of dynamically aligned mantissas with bit-wise OR”</td>
+<td>创新③：CASU 用逐位 OR 替代动态对齐尾数的逐位加法。</td></tr>
+<tr><td class="num">“reaches an 83.23 TFLOPS/W peak energy efficiency at POSIT(8,1) for ImageNet classification on ViT-B”</td>
+<td>28nm 实测：ViT-B ImageNet 分类，POSIT(8,1) 峰值能效 83.23 TFLOPS/W。</td></tr>
+<tr><td class="num">“PD-CIM reduces energy by 2.36× and offers 3.51× speedup”</td>
+<td>对比 SOTA FP-CIM：省能 2.36×、加速 3.51×。</td></tr>
+</tbody></table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>POSIT 数据格式 + CIM 的完整落地</strong>：首次系统解决 POSIT 动态特性在 CIM 中的三大挑战（regime 处理、单元欠利用、加法树浪费）；</li>
+<li><strong>BRPU</strong>：shift-OR 替代 codec+加法+编码（regime 处理能耗 −40.3%、面积 −67.8%、功耗 −79.6%）；双向移位控制器（解码小 |R|、移位大 |R|）省移位能耗、免移位错误；合并前导 0/1 检测器（面积 −28.4%、功耗 −25.8%）；</li>
+<li><strong>CPCS CIM 阵列</strong>：空闲单元存关键位 → 双位 MAC（利用率 +63.0%、吞吐 +38.2%）；2–4b 关联（+24.7%）、3b 优先分区（POSIT16 +1.34×）；</li>
+<li><strong>CASU</strong>：OR 替代加法（无重叠位，省 82.9%）；提前检测（省 36.1% 加法器）；循环交替调度（无重叠率 +36.4%、功率 −31.3%）；</li>
+<li><strong>完整实测</strong>：83.23 TFLOPS/W @ POSIT(8,1)；ViT-B 省能 2.36×、加速 3.51×；16 宏系统线性扩展 15.3×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“数据格式思维”很关键：先理解 POSIT 的位结构（§1/2），再看三个创新怎么分别治三种病（§4/5/6）。读时反复问：<strong>这个硬件技巧利用了 POSIT 的哪个特性？</strong></p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：FP-CIM 的瓶颈与 POSIT 数据格式</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 为什么 FP-CIM 需要高位宽？② FP8 为什么覆盖不了梯度？③ POSIT 的四个部分（S/R/E/M）与 regime 温度计码怎么工作？④ POSIT8 ≈ FP16 的底气从哪来？</p>
+</div>
+
+<h3>1.1 AI 模型的两大趋势：规模暴涨 + 精度要求高</h3>
+<p>现代 AI 应用（自动驾驶、3D 重建、视频生成）有两个共同趋势：</p>
+<ul>
+<li><strong>模型规模暴涨</strong>：ResNet152（2015）600 万参数 → Llama2（2023）700 亿参数，数据搬移能耗相差 <strong>11667×</strong>；</li>
+<li><strong>需要高精度浮点</strong>：图像生成（扩散模型）用 INT8 比 FP16 掉精度 &gt;10%；片上训练也需要 FP 保证精度。FP16 比 INT8 多耗 6.25× 能耗、临界路径长 1.5×。</li>
+</ul>
+<p>所以需要“精度高 + 能耗低”的推理/训练硬件——FP-CIM 是候选之一（省搬移 + 高精度），但传统 FP 格式（FP32/FP16/BF16）位宽大，存储和 MAC 功耗成了瓶颈。</p>
+
+<h3>1.2 问题的具体形态：数据分布不匹配</h3>
+<p>论文 Fig.1 展示 ViT-B 一次训练迭代中梯度/激活/权重的指数范围：</p>
+<ul>
+<li>梯度指数范围 [−66, −10]（动态范围极大）；</li>
+<li>激活 [−16, 4]、权重 [−16, 2]（相对集中）；</li>
+<li>FP8 (1,5,2) 的指数表示范围只有 [−14, 15] → <strong>覆盖不了梯度</strong> → 69.3% 的梯度（指数 &lt;−14）被迫表示成 0 → 训练掉精度。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 固定格式的死穴：要么范围够（高位宽贵），要么省（覆盖不了）</div>
+<p>FP16/BF16 能同时覆盖三者但要付出 2×（存储）和 3.06×（MAC）的能耗。固定位宽的格式无法同时满足“范围”和“成本”——这就是 POSIT 登场的原因：<strong>位宽动态分配，哪里需要就给哪里</strong>。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_1_相对误差对比.png" alt="相对误差对比">
+<figcaption>图 1 · 论文 Fig.1：不同数据格式的相对误差对比——POSIT8 用 8 位达到接近 FP16 的精度。</figcaption>
+</figure>
+
+<h3>1.3 POSIT 数据格式：S / R / E / M</h3>
+<p>POSIT(n, es) 由四部分组成：<strong>S（1 位符号）+ R（regime，动态位宽）+ E（指数，es 位）+ M（尾数，动态位宽）</strong>：</p>
+<p class="formula">值 = (−1)ˢ × (2^es)ᴿ × 2ᴱ × 1.M</p>
+<ul>
+<li>R 与 M 的位宽<strong>动态变化</strong>（m = n − r − es − 1）：R 长 → 指数范围大、尾数精度低；R 短 → 尾数精度高；</li>
+<li><strong>R 是一元温度计码</strong>：正数“1…10”，十进制 = 连续 1 的个数 − 1（11110 → +3）；负数“0…01”，十进制 = 连续 0 的个数（00001 → −4）；</li>
+<li>温度计码的连续 0/1 用<strong>前导 1/0 检测器</strong>自动分段 → 动态区分 regime 和尾数。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_2_POSIT原理与性能.png" alt="POSIT原理与性能">
+<figcaption>图 2 · 论文 Fig.2：POSIT 数据格式原理与性能——动态位分配实现范围-精度权衡，POSIT8 精度 ≈ FP16。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d01_posit_format.svg" alt="POSIT格式教学图">
+<figcaption>教学图 1 · POSIT 的四部分结构、regime 温度计码，以及 POSIT8 ≈ FP16 的动机。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig15_2_POSIT原理与性能.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · POSIT 数据格式：S/R/E/M 位结构动画演示（R 与 M 位宽动态变化）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · POSIT(8,1) 位结构（动态位分配）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">R=4b(0001,-3) · E=1 · M=01(1b) → 负大范围（R=-3）</span>
+</div>
+<div class="hint">每个示例的 8 个比特被动态分成 S / R（橙色，温度计码）/ E（绿色）/ M（紫色）。注意 R 变长时 M 变短（范围优先），R 变短时 M 变长（精度优先）。对比 FP8 固定 (1,5,2) 覆盖不了梯度。</div>
+</div>
+
+<h3>1.4 POSIT 的“账面”优势</h3>
+<ul>
+<li>POSIT8 的精度损失 &lt;0.4%（vs FP16/BF16，ResNet18 分类）；</li>
+<li>能耗省 <strong>6.25×</strong>（8 位 vs 16 位存储/MAC）；</li>
+<li>动态范围覆盖梯度（R 位自动变长）→ 训练不掉精度。</li>
+</ul>
+<div class="box warn">
+<div class="bt">⚠️ 但“账面优势”不等于“硬件优势”</div>
+<p>动态位宽在软件（算法）上很美好，落到硬件就有三个麻烦：regime 要动态解析（能耗↑）、尾数位宽不固定（单元浪费）、对齐后无重叠（加法浪费）。下一节详述这三大挑战——它们正是本论文创新的靶子。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>POSIT 动态特性带来的三大挑战</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解三大挑战的量化来源：① regime 处理为什么贵 2.62×；② 为什么固定结构 CIM 会浪费 41.3% 单元；③ 为什么加法树会浪费 62.5% 能耗。这是理解三大创新的前提。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_3_三大挑战.png" alt="三大挑战">
+<figcaption>图 3 · 论文 Fig.3：设计高效 POSIT-CIM 的三大挑战——(a) regime 处理能耗；(b) 单元欠利用；(c) 加法树冗余。</figcaption>
+</figure>
+
+<h3>2.1 挑战一：regime 动态处理能耗 +2.62×</h3>
+<p>传统 FP 数据的指数是<strong>固定位宽</strong>，处理简单（直接取指数位）。POSIT 的 regime 是<strong>动态位宽温度计码</strong>，MAC 时需要：</p>
+<ol>
+<li><strong>提取</strong>：用前导 1/0 检测器找到温度计码边界；</li>
+<li><strong>译码</strong>：把温度计码转成十进制 RDA/RDB；</li>
+<li><strong>计算</strong>：RDA + RDB（两个 regime 相乘时指数相加）；</li>
+<li><strong>编码</strong>：把结果编码回温度计码格式。</li>
+</ol>
+<p>这套 extract + codec 逻辑比 FP 的固定指数处理多耗 <strong>2.62× 能耗</strong>——是 POSIT-CIM 能效的第一个杀手。</p>
+
+<h3>2.2 挑战二：CIM 单元欠利用 41.3%</h3>
+<p>CIM 阵列通常按<strong>固定位宽尾数</strong>设计（如每单元 4b）才能 100% 利用。但 POSIT 尾数位宽动态变化：</p>
+<ul>
+<li>POSIT(8,1) 中 2/3/4 位尾数占多数（图 8 的统计）→ 按 4b 设计时，<strong>61.9% 的单元存不满</strong>（2b 尾数只占一半）；</li>
+<li>POSIT16 尾数范围 [0:12] → 按 12b 设计浪费达 <strong>85.7%</strong>；</li>
+<li>直观解法“动态位宽 CIM 单元”不可行：N-bit 单元动态分区路由复杂度 O(N²)。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键洞察：闲置单元 = 免费的存储空间</div>
+<p>与其让空闲单元“闲着”，不如<strong>用它们存点有用的东西</strong>（预计算的关键位）→ 既保持固定结构，又把空闲变成算力。这就是 CPCS 的思路（§5）。</p>
+</div>
+
+<h3>2.3 挑战三：加法树能耗浪费 62.5%</h3>
+<p>尾数乘积按 regime 动态对齐后相加。当两个对齐的乘积<strong>没有重叠位</strong>时：</p>
+<ul>
+<li>所有全加器做 X+0=X 的运算 → 内部逻辑翻转完全冗余；</li>
+<li>X+0 的结果等于 X|0（逐位 OR）→ <strong>加法可以被 OR 替代</strong>；</li>
+<li>数据：TSMC 28nm 400MHz 下 16-bit 加法器 174.38 nW vs 16-bit OR 29.75 nW → OR 省 <strong>82.9%</strong>；</li>
+<li>POSIT8 尾数短（61.9% 的数据尾数 &lt;3 位）→ 28.4% 的对齐结果完全无重叠位 → 加法树浪费 62.5%。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d02_challenges.svg" alt="三大挑战教学图">
+<figcaption>教学图 2 · 三大挑战的量化与对策概览。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结：三个挑战 = 三个创新的靶子</div>
+<table>
+<tbody><tr><th>挑战</th><th>量化</th><th>对策（下一节起）</th></tr>
+<tr><td>regime 处理</td><td>能耗 +2.62×</td><td>BRPU：shift-OR 简化（§4）</td></tr>
+<tr><td>单元欠利用</td><td>41.3%（POSIT8）/85.7%（POSIT16）</td><td>CPCS：空闲单元存关键位 → 双位 MAC（§5）</td></tr>
+<tr><td>加法树浪费</td><td>62.5%</td><td>CASU：OR 替代加法（§6）</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>PD-CIM 宏总体架构</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解 PD-CIM 的组成（BRPU、16 CIM 核、16 加法树+CASU、全局 SRAM、编解码器、控制器），以及“regime 存 SRAM、尾数存 CIM”的职责划分和数据流。</p>
+</div>
+
+<h3>3.1 架构组成（论文 Fig.4）</h3>
+<table>
+<tbody><tr><th style="width:26%">模块</th><th>职责</th></tr>
+<tr><td><strong>BRPU</strong></td><td>regime 提取与处理（移位-OR，§4）；regime 存全局 SRAM 做数字处理</td></tr>
+<tr><td><strong>16 个 CIM 核</strong></td><td>每核 16 个 CPCS CIM 阵列；每阵列 8×48 子阵列（4b CIM 单元）；存动态位宽尾数做 MAC</td></tr>
+<tr><td><strong>16 个加法树 + CASU</strong></td><td>动态对齐 + OR/加法混合累加（§6）</td></tr>
+<tr><td><strong>28 kB 全局 SRAM</strong></td><td>存 regime / 激活 / 中间结果</td></tr>
+<tr><td><strong>FP→POSIT 编码器 / POSIT→FP 解码器</strong></td><td>与现有 AI 处理器兼容（FP 进出、POSIT 内部算）</td></tr>
+<tr><td><strong>顶层控制器</strong></td><td>调度、模式选择</td></tr>
+</tbody></table>
+<p>职责划分沿袭 FP-CIM 的思路：<strong>regime（指数部分）走数字通路（SRAM + 数字逻辑），尾数（有效位）走 CIM 阵列</strong>——因为尾数乘法才是计算密集的部分，适合存内计算。</p>
+
+<figure>
+<img src="assets/figs/fig15_4_总体架构.png" alt="总体架构">
+<figcaption>图 4 · 论文 Fig.4：PD-CIM 总体架构——BRPU + 16 CIM 核（CPCS 阵列）+ 加法树（CASU）+ 全局 SRAM + 编解码器。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_architecture.svg" alt="架构教学图">
+<figcaption>教学图 3 · PD-CIM 架构示意与计算流程。</figcaption>
+</figure>
+
+<h3>3.2 CIM 阵列的三个工作模式</h3>
+<p>CPCS CIM 阵列按存储的尾数位宽有三种模式（§5 详述）：</p>
+<ul>
+<li><strong>3b 模式</strong>：存 3 位尾数 → 有空闲单元存关键位 → 双位 MAC；</li>
+<li><strong>2–4b 关联模式</strong>：4 位尾数 LSB=0 时视为 3 位 → 借 2 位尾数单元的空闲位 → 双位 MAC；</li>
+<li><strong>正常模式</strong>：4 位满尾数 → 标准单位串行计算。</li>
+</ul>
+
+<h3>3.3 数据流</h3>
+<ol>
+<li>主机分析操作数分布 → 选 POSIT 格式（POSIT(16,2)/(16,3)/(8,1)/(8,2)）；</li>
+<li>FP-to-POSIT 编码器把 FP 数据转成所选 POSIT 格式；</li>
+<li>权重加载：regime 存全局 SRAM，尾数存 CIM 阵列；CPCS 同步预计算关键位存空闲单元（只在此阶段工作，开销 1.6%）；</li>
+<li>计算：BRPU 做 shift-OR regime 处理 → CPCS 阵列双位 MAC → CASU 对齐 + OR/加法混合累加；</li>
+<li>POSIT-to-FP 解码器恢复标准 FP 输出。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 POSIT16 怎么来？—— 两个 POSIT8 融合</div>
+<p>PD-CIM 的硬件基础是 POSIT8。POSIT16 通过融合多个 regime 处理单元、CIM 单元和加法单元实现，每个 POSIT16 计算的硬件逻辑约等于 2 个 POSIT8。四种格式（POSIT(16,2)/(16,3)/(8,1)/(8,2)）覆盖典型 AI 应用（ResNet152 推理、GPT-2 训练等）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：BRPU——用移位+OR 干掉 regime 的译码器</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么 regime 加法等价于“连续 0/1 个数”的加减；② shift-OR 怎么用一个译码器替代两个译码器+加法器+编码器；③ 双向移位控制器为什么必须“解码小 |R|、移位大 |R|”；④ 合并前导 0/1 检测器怎么再省一块。</p>
+</div>
+
+<h3>4.1 核心观察：regime 的十进制值就是连续 0/1 的个数</h3>
+<p>POSIT 相乘 A×B 时，两个 regime 的十进制值要相加（RDA + RDB）。但 regime 本身是温度计码——<strong>十进制值 = 连续 0 或 1 的个数</strong>。所以“RDA + RDB”本质上就是“连续个数增加/减少”：</p>
+<ul>
+<li>同号（都正或都负）：个数增加 → 相当于<strong>右移</strong>（温度计码变长）；</li>
+<li>异号：个数减少 → 相当于<strong>左移</strong>（温度计码变短）。</li>
+</ul>
+<p>基于这个性质，BRPU 的做法（论文 Fig.5）：只译码 RA 得到 RDA，把 RB <strong>右移 RDA 位</strong>得到 RB′，再与 RA <strong>逐位 OR</strong>——结果与传统的“译码×2 + 加法 + 编码”完全相同，但省掉一个译码器，加法/编码简化为移位+OR：</p>
+<div class="box key">
+<div class="bt">💡 例子</div>
+<p>RA = “11110”（R=+3），RB = “1 10”（R=+1，4 位表示）。RDA=3 → RB 右移 3 位得 “00011” → OR：11110 | 00011 = “11111”（R=+4）✓。传统做法：3+1=4 再编码成 11111，殊途同归。</p>
+</div>
+<p>结果：regime 处理面积 −67.8%、功耗 −79.6%；整个宏面积 −23.6%、功耗 −22.2%。</p>
+
+<figure>
+<img src="assets/figs/fig15_5_移位OR regime处理.png" alt="移位OR regime处理">
+<figcaption>图 5 · 论文 Fig.5：shift-OR regime 处理——传统（译码×2+加法+编码）vs 本论文（译码1+移位+OR）。</figcaption>
+</figure>
+
+<h3>4.2 双向移位控制器：为什么要“解码小 |R|、移位大 |R|”？</h3>
+<p>shift-OR 里要选一个译码、另一个移位。如果<strong>随机选</strong>会出两个问题（论文 Fig.6）：</p>
+<ul>
+<li><strong>同号情形（右移）</strong>：若解码了大 |R|、去移小 |R| → 移位码大 → 移位能耗随移位码线性增加（浪费）；</li>
+<li><strong>异号情形（左移）</strong>：若解码大 |R|、去移小 |R| → 左移移出界（例：RDA=4，RB=“001XX”左移 4 位 → “XXXXX”错误）。加额外移位位能修，但移位器成本翻倍。</li>
+</ul>
+<p>解法：<strong>动态解码小的 |R|、移位大的 |R|</strong>——同号时小移位码省能量；异号时大 |R| 左移小 |R| 位不会出界（不加位宽、不犯错）。</p>
+<p>怎么快速找到小 |R|？用 4-bit XOR + 前导 0/1 检测器：小 |R| 的连续 0/1 少 → 1→0 翻转出现得早 → 前导检测位置即小 |R| 值。温度计码本身不用转十进制，直接比较即可。</p>
+
+<figure>
+<img src="assets/figs/fig15_6_双向小R移位机制.png" alt="双向小R移位机制">
+<figcaption>图 6 · 论文 Fig.6：双向小 |R| 静态移位机制——解码小 |R|、移位大 |R|，省能量、免错误。</figcaption>
+</figure>
+
+<h3>4.3 BRPU 架构与合并检测器（论文 Fig.7）</h3>
+<p>BRPU 由<strong>regime 提取单元、双向移位控制器、数字控制移位线、16-bit 输出 regime 寄存器堆</strong>组成。每个周期处理 2×4 位 RA/RB（POSIT(8,3) 的 regime 最大 4 位）。</p>
+<p>另一个细节：区分正/负 regime 需要前导 1 检测器 + 前导 0 检测器 + 2:1 MUX。分离实现（TSMC 28nm 400MHz 4 位检测）占 4.93 µm²、耗 0.31 µW。本论文把两者的真值表合并成<strong>统一逻辑表达式</strong>，复用电路 → 面积 −28.4%、功耗 −25.8%。</p>
+
+<figure>
+<img src="assets/figs/fig15_7_BRPU架构.png" alt="BRPU架构">
+<figcaption>图 7 · 论文 Fig.7：BRPU 架构与设计细节——提取单元、双向移位控制器、合并前导 0/1 检测器。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d04_brpu.svg" alt="BRPU教学图">
+<figcaption>教学图 4 · 传统 vs shift-OR regime 处理，以及双向移位控制器的原理。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① regime 加法 = 连续个数增减 → shift-OR 替代 codec+加法+编码（省 1 译码器、面积 −67.8%、功耗 −79.6%）；② 双向移位控制：解码小 |R|、移位大 |R|（同号省能、异号免错）；③ 合并前导 0/1 检测器再省 28.4% 面积。BRPU 让三模型平均能效 +29.7%（再加双向调度 +39%）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：CPCS——把空闲单元变成“预计算的算力”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 双位 MAC（O = W×A[n] + W×A[n+2]）的数学原理；② “关键位 S[1]”是什么、为什么预计算存储它；③ 2–4b 关联和 3b 优先分区怎么处理 4b 与 POSIT16 长尾数。</p>
+</div>
+
+<h3>5.1 双位 MAC 的数学基础（论文 Fig.8）</h3>
+<p>把 3 位尾数 W 存进 4 位 CIM 单元（有 1 个空闲位）。传统单位串行每周期算 W×A[n]。本论文让单元每周期接收 <strong>A[n]|A[n+2]</strong>，做<strong>双位 MAC</strong>：</p>
+<p class="formula">O = W×A[n] + W×A[n+2]</p>
+<p>具体：单元先算部分积 P[2:0] = W×(A[n]|A[n+2])，再按 A[n+2]/A[n] 组合移位相加：</p>
+<ul>
+<li>00 或 01：O = P[2:0]；</li>
+<li>10：O = P[2:0] ≪ 2；</li>
+<li>11：O = P[2:0] + P[2:0]≪2 = S[3:0]‖P[1:0]。</li>
+</ul>
+<p>其中 <strong>S[1] = W[P] = W[1]∧(W[0]&amp;W[2])</strong> 是晶体管消耗最大的位（“关键位”）。</p>
+<div class="box key">
+<div class="bt">💡 CPCS 的核心：关键位预计算并存储</div>
+<p>与其运行时算 S[1]（最贵的位），不如在<strong>权重加载时</strong>预计算好，存进那 1 个空闲单元 → 运行时直接读出 → 每周期完成两个 MAC。这就是“critical-bit pre-compute-and-store”：<strong>把空闲位变成预计算的寄存器</strong>。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_8_CPCS机制原理.png" alt="CPCS机制原理">
+<figcaption>图 8 · 论文 Fig.8：CPCS 机制原理——3 位尾数存 4 位单元，预计算关键位实现双位 MAC。</figcaption>
+</figure>
+
+<h3>5.2 2–4b 关联：4 位尾数也能双位 MAC（论文 Fig.9）</h3>
+<p>4 位满尾数 Wn 没有空闲单元，无法存关键位。但若 <strong>Wn[0] = 0（LSB 为 0）</strong>：</p>
+<ul>
+<li>Wn[3:1] 可视为 3 位权重 → 双位 MAC：Wn[3:1]×A[n] + Wn[3:1]×A[n+2]；</li>
+<li>而存 2 位尾数 Wm 的单元有 2 个空闲位 → <strong>4 位单元借 2 位单元的一个空闲位</strong>存 Wn[P] → 双位 MAC 可行；</li>
+<li>吞吐提升 <strong>31%</strong>。</li>
+</ul>
+
+<h3>5.3 3b 优先分区：POSIT16 长尾数的处理（论文 Fig.9）</h3>
+<p>POSIT16 尾数可超 4 位 → 需多个 4 位单元存一个尾数。朴素做法“顺序分区”（9 位 “100111011” → “1001”“1101”“1XXX”）会让“1001”段无法双位 MAC（X 空闲全堆最后）。本论文的 <strong>3b 优先分区</strong>：</p>
+<ul>
+<li>“100111011” → “100X”“111X”“011X” → 三段都是 3 位有效 + 1 位空闲 → <strong>全部可双位 MAC</strong>；</li>
+<li>无法切成 3 位段时（如 10 位），动态调整让切出的 4 位段 LSB=0 → 走 2–4b 关联；</li>
+<li>POSIT16 吞吐提升 <strong>1.34×</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_9_2-4b关联与3b优先分区.png" alt="2-4b关联与3b优先分区">
+<figcaption>图 9 · 论文 Fig.9：CPCS 的 2–4b 权重关联与 3b 优先分区。</figcaption>
+</figure>
+
+<h3>5.4 CPCS CIM 阵列架构（论文 Fig.10）</h3>
+<p>CPCS 阵列 = 8×48 CIM 阵列 + 负载控制器 + 关键位计算单元 + 3:8 译码器。每行 48b = 12 个 4b CIM 单元。三种工作模式：</p>
+<ol>
+<li>存 3b 尾数 → 双位 MAC（关键位存本单元空闲位）；</li>
+<li>存 4b 且 W[0]=0 → 2–4b 关联（借同行的 2b 单元空闲位，结果左移 1 位补偿）；</li>
+<li>存 4b 且 W[0]=1 → 标准单位串行。</li>
+</ol>
+<p>负载控制器/关键位计算/3:8 译码器<strong>只在权重加载或更新时工作</strong> → 开销仅 <strong>1.6%</strong>（阵列 98.7% 周期在计算）。</p>
+
+<figure>
+<img src="assets/figs/fig15_10_CPCS阵列架构与时序.png" alt="CPCS阵列架构与时序">
+<figcaption>图 10 · 论文 Fig.10：CPCS CIM 阵列架构与时序图。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_cpcs.svg" alt="CPCS教学图">
+<figcaption>教学图 5 · CPCS 原理：空闲单元存关键位 → 双位 MAC，以及 2–4b 关联与 3b 优先分区。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig15_8_CPCS机制原理.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · CPCS 双位 MAC：3 位尾数存 4 位单元，空闲单元存预计算关键位，每周期完成两个 MAC。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · CPCS 双位 MAC（W=101 存 4b 单元）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">A 组合 1：O = P[2:0] = 1</span>
+</div>
+<div class="hint">橙色框=存预计算关键位 S[1] 的空闲单元（加载时算好，运行时直接取）。橙色高亮=当前 A[n+2]/A[n] 组合，决定部分积 P 是否移位/相加。每周期完成 W×A[n]+W×A[n+2] 两个 MAC → 吞吐 +38.2%。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 双位 MAC 数学：O = W×A[n] + W×A[n+2]，关键位 S[1] 最贵 → 预计算存储；② 2–4b 关联：借位实现 4b 双位（+31%）；③ 3b 优先分区：POSIT16 全段双位（+1.34×）；④ 预计算开销仅 1.6%。整体：单元利用率 +63%、吞吐 +38.2%、系统能效 +1.46×（最高 1.96×）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：CASU——用 OR 替代加法，还不够就“调度出”无重叠</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么无重叠位的加法等于 OR；② 提前检测怎么扩大 OR 的适用范围（重叠位 ≤4 且不全为 1）；③ 循环交替调度怎么“制造”无重叠（(n−1) 个 OR + 1 个加法）。</p>
+</div>
+
+<h3>6.1 OR 替代：无重叠位时 X+0 = X|0（论文 Fig.11）</h3>
+<p>尾数乘积按 regime 对齐后相加。当两个对齐结果<strong>没有重叠位</strong>时，每个全加器都在做 X+0=X——结果是冗余的，逐位 OR 就能得到相同输出：</p>
+<ul>
+<li>16-bit 加法器 174.38 nW vs 16-bit OR 29.75 nW（TSMC 28nm, 400MHz）→ <strong>OR 省 82.9%</strong>；</li>
+<li>POSIT8 尾数短 → <strong>28.4%</strong> 的对齐结果无重叠位（FP8 因尾数长几乎总是重叠）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_11_OR累加.png" alt="OR累加">
+<figcaption>图 11 · 论文 Fig.11：无重叠位尾数的 OR 累加，以及提前检测的替代条件。</figcaption>
+</figure>
+
+<h3>6.2 提前检测：有重叠位也能用 OR</h3>
+<p>两个操作数 A、B 有重叠位时，如果<strong>重叠位不同时为 1</strong>，A[1]+B[3] 仍然等于 A[1]|B[3]：</p>
+<ul>
+<li>单个重叠位满足“替代条件”的概率 = 3/4（只有 11 不行）；</li>
+<li>n 个重叠位全部满足 = (3/4)ⁿ → n=4 时只有 23.7%，且检测开销随位数线性增长 → <strong>检测 4 位最优</strong>；</li>
+<li>结果：对<strong>有重叠位</strong>的操作数也减少了 36.1% 的加法器。</li>
+</ul>
+
+<h3>6.3 循环交替调度：把重叠“错开”（论文 Fig.12）</h3>
+<p>如果重叠位全为 1（无法用 OR），CASU 用<strong>循环交替调度</strong>：</p>
+<ul>
+<li>M0=W0×A0 与 M1=W1×A1 有 1 个重叠位 → 同步位串行时每一位都重叠 → 都要加法器；</li>
+<li>把 A0 的位串行计算<strong>循环移位 1 位</strong>（A0[0:n] → A0[1:n], A0[0]）→ CIM 算 A0[i+1] 与 A1[i] → 当 i&lt;n 时 W0×A0[i+1] 与 W1×A1[i] <strong>无重叠</strong>；</li>
+<li>重叠只在 W0×A0[0] + W1×A1[n]（1 个加法器）；</li>
+<li>n 次加法 → <strong>(n−1) 个 OR + 1 个加法器</strong>。</li>
+</ul>
+<p>效果：无重叠率 +36.4%、计算功率 −31.3%。</p>
+
+<figure>
+<img src="assets/figs/fig15_12_循环交替调度OR累加.png" alt="循环交替调度OR累加">
+<figcaption>图 12 · 论文 Fig.12：循环交替调度的 OR 累加——循环移位 A0 制造无重叠。</figcaption>
+</figure>
+
+<h3>6.4 CASU 架构与控制流（论文 Fig.13）</h3>
+<p>CASU = 两个对齐单元 + 工作模式控制器 + 循环计算调度器：</p>
+<ol>
+<li>对齐单元接收 BRPU 输出的 R0D、R1D，计算 |R0D−R1D|；</li>
+<li>假设 R0D &gt; R1D → 把 W1×A1 右移 |R0D−R1D| 位对齐到 W0×A0；</li>
+<li>重叠位数 = n − |R0D−R1D|（n 为乘积位宽）；</li>
+<li>控制器决策：</li>
+</ol>
+<ul>
+<li>重叠 ≤ 0 → <strong>纯 OR 模式</strong>；</li>
+<li>0 &lt; 重叠 &lt; 4 → 检查替代条件（重叠位是否全非 1）：满足 → OR 模式；不满足 → 循环调度加法模式；</li>
+<li>重叠 &gt; 4 → 循环调度加法模式（(n−1) OR + 1 加法）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_13_CASU架构与控制流.png" alt="CASU架构与控制流">
+<figcaption>图 13 · 论文 Fig.13：CASU 架构与计算控制流程。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_casu.svg" alt="CASU教学图">
+<figcaption>教学图 6 · OR 替代、提前检测与循环交替调度的完整原理。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig15_11_OR累加.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · CASU OR 累加：无重叠位加法 = OR；重叠位不全为 1 也可 OR；否则循环交替调度制造无重叠。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · CASU：OR 替代加法</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">循环交替调度 → 制造无重叠</span>
+</div>
+<div class="hint">模式 1（无重叠）：A 与 B 占位错开 → A+B=A|B，加法器做 X+0 纯属浪费 → 用 OR（省 82.9%）；模式 2（重叠含 11）：必须加法器 → 提前检测（非全 1 仍可 OR）或循环交替调度；模式 3（循环调度）：错开位串行顺序 → (n−1) 个 OR + 1 个加法。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 无重叠 → OR（省 82.9%）；② 提前检测 4 位（重叠位非全 1 也可 OR，省 36.1% 加法器）；③ 循环交替调度（错开位串行顺序，制造无重叠，(n−1) OR + 1 加法）。加法树功耗占比 23.4%→12.3%，面积开销仅 2.3%。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>精度表现与三招的适配性</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① POSIT16/POSIT8 在不同模型上的精度表现；② 为什么 ViT-B 精度损失略高（softmax 敏感）；③ CPCS/CASU 能否用于标准 FP 和传统 POSIT 处理器。</p>
+</div>
+
+<h3>7.1 精度结果（论文表 I）</h3>
+<table>
+<tbody><tr><th>场景</th><th>精度 vs FP32</th><th>说明</th></tr>
+<tr><td>ResNet18 训练（POSIT16）</td><td>仅掉 <strong>0.04%</strong></td><td>训练也能用 POSIT16 保持精度</td></tr>
+<tr><td>ViT-B 推理（POSIT8）</td><td>掉 <strong>0.14%</strong></td><td>注意力的 softmax 对精度敏感</td></tr>
+<tr><td>ViT-B 推理（POSIT8 vs FP16）</td><td>几乎一致</td><td>比 FP8 高 4.76%</td></tr>
+</tbody></table>
+<p>要点：POSIT8 的精度几乎与 FP16 相同、显著超过 FP8——因为 POSIT 动态分配位宽，能适配注意力计算的特定数据分布。三模型整体：PD-CIM 省能 <strong>7.94×</strong>。</p>
+
+<h3>7.2 为什么 GPT-2 / ViT-B 推理能效 &gt; ResNet18 训练？</h3>
+<ul>
+<li>训练用 POSIT16 → 存储访问能耗 2×（8 位 vs 16 位）；</li>
+<li>POSIT16 吞吐只有 POSIT8 的一半 → 能效打折。</li>
+</ul>
+
+<h3>7.3 适配性：三招不止用于 POSIT-CIM（论文 §VIII）</h3>
+<div class="box key">
+<div class="bt">💡 适配标准 FP 数据</div>
+<p>CPCS 和 CASU 可直接用于 FP16：把 FP16 视为<strong>固定 10 位尾数的 POSIT16</strong> → 3b 优先分区切 10 位尾数为三段 → 预计算存储实现双位 MAC；对齐后重叠位 &lt;4 时用 OR 替代加法。</p>
+</div>
+<div class="box key">
+<div class="bt">💡 适配经典 POSIT DNN 处理器</div>
+<p>BRPU 与 CASU 可用于所有 POSIT 处理器（regime 处理是所有 POSIT 处理器的大开销）。在 CIM 中收益更明显：因为 CIM 把 MAC 面积功耗压下去后，regime/加法树的比例更突出。CASU 的循环调度依赖 CIM 的位串行计算（经典处理器偏爱并行乘法，收益较小）。</p>
+</div>
+
+<h3>7.4 单宏 vs 多宏系统</h3>
+<p>16 个 PD-CIM 经总线连 LPDDR3-800（6.4 GB/s），按<strong>张量并行</strong>分派任务 → 近线性扩展到 <strong>15.3×</strong>（单宏）。这验证了 PD-CIM 作为“可扩展计算引擎”的系统集成能力。</p>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>芯片实测与 SOTA 对比</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 芯片规格（工艺/电压/频率/性能）；② 功耗面积分解的三处改善；③ 与 SOTA FP-CIM 的能效/速度对比。</p>
+</div>
+
+<h3>8.1 芯片规格（论文 Fig.14）</h3>
+<table>
+<tbody><tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 1.41 mm²</td></tr>
+<tr><td>电压 / 功耗</td><td>0.55–1.0 V / 5.5–237 mW</td></tr>
+<tr><td>最高频率 / 峰值性能</td><td>419 MHz / 3.86 TOPS（POSIT8）· 1.91 TOPS（POSIT16）</td></tr>
+<tr><td>CIM 阵列</td><td>16 KB；每周期激活 8 KB → 16384 个 4b 单元</td></tr>
+<tr><td>平均尾数位宽</td><td>POSIT8 3.55 位 → 平均 3.55 周期/计算</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>83.23 TFLOPS/W</strong> @ POSIT(8,1)（0.65V / 260 MHz）</td></tr>
+</tbody></table>
+<p>算力来源：16384 单元 × 419 MHz × 2 ÷ 3.55 = 3.86 TOPS（每周期 1 乘 1 加计 2 OPs）。</p>
+
+<figure>
+<img src="assets/figs/fig15_14_芯片照片与总结.png" alt="芯片照片与总结">
+<figcaption>图 14 · 论文 Fig.14：芯片显微照片与性能总结。</figcaption>
+</figure>
+
+<h3>8.2 功耗与面积分解（论文 Fig.15）</h3>
+<table>
+<tbody><tr><th>模块</th><th>优化前/后功耗占比</th><th>面积占比</th></tr>
+<tr><td>CIM 阵列</td><td><strong>56.3% → 41.2%</strong></td><td>—</td></tr>
+<tr><td>加法树</td><td><strong>23.4% → 12.3%</strong></td><td>+2.3%</td></tr>
+<tr><td>BRPU（shift-OR）</td><td>9.51%</td><td>9.45%（比传统 codec 小 67.8%）</td></tr>
+</tbody></table>
+<p>三个模块的功耗占比都被压下去了，而面积开销（CASU 2.3%）几乎可忽略——三招都是“小面积换大能效”。</p>
+
+<figure>
+<img src="assets/figs/fig15_15_功耗面积分解.png" alt="功耗面积分解">
+<figcaption>图 15 · 论文 Fig.15：PD-CIM 功耗与面积分解。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_measurements.svg" alt="实测教学图">
+<figcaption>教学图 8 · 芯片规格、功耗面积分解与 SOTA 对比。</figcaption>
+</figure>
+
+<h3>8.3 三招的独立贡献（论文 Fig.17/18）</h3>
+<table>
+<tbody><tr><th>技术</th><th>贡献（ResNet18 训练，POSIT16）</th></tr>
+<tr><td>BRPU</td><td>能效 3.48→6.75 TFLOPS/W（1.94×）；三模型平均 +29.7%，双向调度再 +39%</td></tr>
+<tr><td>CPCS</td><td>系统能效平均 +1.46×（最高 1.96×）；吞吐 +38.2%（+24.7% 关联、+1.34× 分区）</td></tr>
+<tr><td>CASU</td><td>系统能效 → 27.61 TFLOPS/W（2.08×）；OR 替代省 82.9%、循环调度再省 31.3%</td></tr>
+</tbody></table>
+<p>叠加后：CIM 核峰值 83.23 TFLOPS/W（POSIT8）。</p>
+
+<figure>
+<img src="assets/figs/fig15_17_三特性性能评估.png" alt="三特性性能评估">
+<figcaption>图 16 · 论文 Fig.17：三大特性的性能评估。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig15_18_组合评估能效提升.png" alt="组合评估能效提升">
+<figcaption>图 17 · 论文 Fig.18：组合评估的能效提升。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_gains.svg" alt="能效提升教学图">
+<figcaption>教学图 7 · BRPU / CPCS / CASU 各自的实测贡献。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_三招贡献.png" alt="三招贡献图">
+<figcaption>数据图 2 · 三招逐步叠加的能效提升（示意，依据论文 Fig.18）。</figcaption>
+</figure>
+
+<h3>8.4 与 SOTA 对比（论文表 II/III）</h3>
+<p><strong>表 II（ViT-B / ImageNet，12 层同口径）</strong>：</p>
+<table>
+<tbody><tr><th>方案</th><th>相对时间</th><th>相对能耗</th></tr>
+<tr><td>FP16-CIM（基线）</td><td>100%</td><td>100%</td></tr>
+<tr><td>数字 POSIT8（无 CIM）</td><td>−48.4%</td><td>−38.9%</td></tr>
+<tr><td>POSIT8-CIM（无优化）</td><td>再 −37.9%</td><td>再 −19.0%</td></tr>
+<tr><td><strong>PD-CIM（本论文）</strong></td><td colspan="2">vs 无优化 POSIT8-CIM：<strong>1.98× 加速、3.35× 省能</strong></td></tr>
+</tbody></table>
+<p>精确口径：PD-CIM vs 无优化 POSIT8-CIM：<strong>1.98× 加速、3.35× 省能</strong>；vs FP16-CIM 总节省更可观。</p>
+<p><strong>表 III（SOTA FP-CIM 处理器）</strong>：</p>
+<ul>
+<li>同等精度下 PD-CIM 能效最高 <strong>83.23 TFLOPS/W</strong>；</li>
+<li>vs [15]：平均能效 41.5 TFLOPS/W（超 <strong>2.36×</strong>）、加速 <strong>3.51×</strong>（419 MHz 是其 2.68× + 双位 MAC 1.31×）；</li>
+<li>vs [16]（同 50% 稀疏）：超 2.6×；vs [17]：超 2.46×；</li>
+<li>16-PD-CIM 系统线性扩展 15.3×。</li>
+</ul>
+
+<figure>
+<img src="assets/charts/c01_数据格式对比.png" alt="数据格式对比图">
+<figcaption>数据图 1 · 数据格式的精度-能耗权衡（示意，依据论文图 1/2）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_SOTA对比.png" alt="SOTA对比图">
+<figcaption>数据图 3 · 与 SOTA FP-CIM 的能效对比（依据论文表 III）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 全文总结、适配性讨论与未来方向。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：数据格式与硬件的协同设计</h3>
+<p>把整篇论文串成一句话：<strong>FP-CIM 精度高但格式贵 → 换成动态位宽的 POSIT（POSIT8≈FP16）→ 再用三招（BRPU/CPCS/CASU）治住动态特性的三大副作用</strong>。逻辑链：</p>
+<ol>
+<li><strong>动机</strong>：FP32/16/BF16 存储与 MAC 功耗大；FP8 覆盖不了梯度（69.3% 变 0）（§1）；</li>
+<li><strong>数据格式</strong>：POSIT 动态位分配（S/R/E/M），R 是温度计码，POSIT8 ≈ FP16 精度、省 6.25× 能耗（§1）；</li>
+<li><strong>三大挑战</strong>：regime 处理 +2.62× · 单元欠利用 41.3% · 加法树浪费 62.5%（§2）；</li>
+<li><strong>三招对策</strong>：BRPU（shift-OR，省 40.3% regime 能耗）（§4）· CPCS（空闲单元存关键位，利用率 +63%）（§5）· CASU（OR 替代加法 + 循环调度，省 56.9% 加法树）（§6）；</li>
+<li><strong>闭环验证</strong>：83.23 TFLOPS/W @ POSIT(8,1) · ViT-B 省能 2.36×、加速 3.51× · 精度损失 &lt;0.2%（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 数据格式视角独特——“换一种数”比“把电路做快”更根本；② 三个创新的“问题-对策”对应极其工整（动态特性 → 针对性电路）；③ 每个技巧都抓住 POSIT 的数学特性（温度计码个数、动态位宽空闲、短尾数低重叠）；④ 83.23 TFLOPS/W + ViT-B 验证，数据扎实；⑤ 适配性讨论（FP16/经典 POSIT 处理器）扩大了工作价值。</li>
+<li><strong>弱/局限</strong>：① POSIT 生态不成熟（无标准工具链、模型都是 FP 训练后转换）；② 83.23 TFLOPS/W 是宏级峰值，系统级（含 SRAM/总线）会打折；③ 仅验证 8/16 位，POSIT32 未涉及；④ 与 MXFP（第 6 篇）这类共享指数格式相比，regime 的额外逻辑仍是开销；⑤ 多宏系统只做了仿真（15.3×），未流片验证。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>POSIT 生态建设</strong>：训练时直接用 POSIT（而非 FP 训练后转换）能进一步释放精度潜力；配套编译器/量化工具链是落地关键；</li>
+<li><strong>更高位宽与混合格式</strong>：POSIT32 / 混合精度（不同层用不同 POSIT 配置，甚至 POSIT+MXFP 混用，按层自适应）；</li>
+<li><strong>在线训练增强</strong>：梯度范围大是 POSIT 的强项，可探索“训练全程 POSIT16/8”免 FP 回退；</li>
+<li><strong>与 MXFP / 其他动态格式对比融合</strong>：MXFP（第 6 篇）用共享指数 + 固定尾数，POSIT 用动态 regime——两者在不同分布下的优劣值得系统对比，甚至设计混合格式；</li>
+<li><strong>多宏系统流片</strong>：16-PD-CIM 张量并行已仿真 15.3×，可做完整 SoC（主机 + 互联 + 存储层次）流片验证；</li>
+<li><strong>算法-硬件联合搜索</strong>：用 NAS/自动化搜索找“每层最优 POSIT 配置 + 硬件模式组合”，最大化精度-能效帕累托前沿。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tbody><tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>POSIT(n, es)</td><td>n 位、es 位指数的 POSIT 数据格式；值 = (−1)ˢ(2^es)ᴿ2ᴱ(1.M)。</td></tr>
+<tr><td>Regime（R）</td><td>POSIT 的动态位宽指数部分，温度计码（连续 0/1）。</td></tr>
+<tr><td>温度计码（Thermometer Code）</td><td>用连续 1（或 0）的个数表示数值，如 11110、00001。</td></tr>
+<tr><td>es（exponent size）</td><td>POSIT 指数域的固定位宽；es 大 → 指数范围宽、尾数少。</td></tr>
+<tr><td>BRPU</td><td>双向 regime 处理单元：shift-OR 替代 codec+加法+编码。</td></tr>
+<tr><td>CPCS</td><td>关键位预计算并存储：空闲 CIM 单元存预计算关键位 → 双位 MAC。</td></tr>
+<tr><td>关键位 S[1]</td><td>双位 MAC 中晶体管消耗最大的位，预计算存储省运行时开销。</td></tr>
+<tr><td>双位 MAC</td><td>每周期完成 W×A[n] + W×A[n+2] 两个 MAC。</td></tr>
+<tr><td>2–4b 关联</td><td>4 位尾数（LSB=0）借 2 位尾数单元的空闲位实现双位 MAC。</td></tr>
+<tr><td>3b 优先分区</td><td>POSIT16 长尾数切 3 位段（留 1 空闲位）→ 全段可双位 MAC。</td></tr>
+<tr><td>CASU</td><td>循环交替调度单元：无重叠位用 OR 替代加法。</td></tr>
+<tr><td>无重叠位（No Overlap）</td><td>对齐后两个数的占位不重叠 → X+0=X，加法等价于 OR。</td></tr>
+<tr><td>提前检测</td><td>检查重叠位是否全为 1；非全 1 时仍可用 OR（单重叠位概率 3/4）。</td></tr>
+<tr><td>循环交替调度</td><td>循环移位位串行计算顺序，制造无重叠（(n−1) OR + 1 加法）。</td></tr>
+<tr><td>TFLOPS/W</td><td>每瓦每秒万亿次浮点运算；本论文每周期 1 乘 1 加计 2 OPs。</td></tr>
+<tr><td>ViT-B</td><td>Vision Transformer Base：视觉 Transformer 基准模型。</td></tr>
+</tbody></table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：Y. Wang et al., “An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications,” IEEE JSSC, vol. 60, no. 8, pp. 2981–2993, Aug. 2025. DOI: 10.1109/JSSC.2025.3532654</li>
+<li>[15] SOTA FP-CIM 宏（ViT-B ImageNet 对比基线，本文能效超 2.36×、加速 3.51×）。</li>
+<li>[16] / [17] 其他 FP-CIM 对比对象（能效超 2.6× / 2.46×）。</li>
+<li>[27]–[33] POSIT 数据格式原始文献（J. Gustafson 的 POSIT 提案及后续工作）。</li>
+<li>[22] 本团队前期 POSIT-CIM 会议论文（ISSCC/CICC 短文）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 POSIT 原始论文（Gustafson, "Beating Floating Point at its Own Game"）理解格式数学；② 与本系列第 6 篇（MXFP-CIM）对比两种“省位宽”路线：MXFP 共享指数（静态）vs POSIT 动态 regime；③ 动手：写个小 Python 脚本把 FP16 转 POSIT8（实现温度计码编码/解码），统计真实模型数据的 regime/尾数位宽分布，验证 61.9%/28.4% 这些数字；④ 用 Verilog 实现一个 4 位 CIM 单元的双位 MAC 和关键位预计算，对比单位串行的晶体管数。</p>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   POSIT CIM (PD-CIM) 教学教程 · 交互脚本
+   演示 A POSIT 位结构 · 演示 B 双位 MAC · 演示 C OR 累加
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · POSIT 位结构（S/R/E/M 动态分配）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+  const examples = [
+    { bits: "0110101", desc: "R=2b(11,+1) · E=0 · M=101(3b) → 大尾数", reg: 2, man: 3 },
+    { bits: "01111001", desc: "R=5b(11110,+4) · E=1 · M=01(1b) → 大范围", reg: 5, man: 1 },
+    { bits: "0101011", desc: "R=1b(1,0) · E=0 · M=1011(4b) → 最大尾数", reg: 1, man: 4 },
+    { bits: "0000101", desc: "R=4b(0001,-3) · E=1 · M=01(1b) → 负大范围", reg: 4, man: 1 },
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 A · POSIT(8,1) 位结构：R 与 M 的位宽动态变化", 30, 24, 15, PAL.white, "left");
+    const k = cyc % examples.length;
+    const ex = examples[k];
+    const bits = ex.bits;
+    // S bit
+    const bs = 70, bx = 90, by = 70;
+    ctx.fillStyle = "#3c2222"; ctx.strokeStyle = PAL.red; ctx.lineWidth = 2;
+    rrect(ctx, bx, by, bs, 56, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "S", bx + bs / 2, by + 20, 12, PAL.red, "center");
+    txt(ctx, bits[0], bx + bs / 2, by + 40, 18, PAL.white, "center");
+    // R bits
+    let x = bx + bs;
+    for (let i = 1; i <= ex.reg; i++) {
+      ctx.fillStyle = "#3c2c1a"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+      rrect(ctx, x, by, bs, 56, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "R", x + bs / 2, by + 20, 12, PAL.orange, "center");
+      txt(ctx, bits[i], x + bs / 2, by + 40, 18, PAL.white, "center");
+      x += bs;
+    }
+    // E bit
+    const exIdx = 1 + ex.reg;
+    ctx.fillStyle = "#1c3a2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, x, by, bs, 56, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "E", x + bs / 2, by + 20, 12, PAL.green, "center");
+    txt(ctx, bits[exIdx], x + bs / 2, by + 40, 18, PAL.white, "center");
+    x += bs;
+    // M bits
+    for (let i = exIdx + 1; i < bits.length; i++) {
+      ctx.fillStyle = "#2c2240"; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+      rrect(ctx, x, by, bs, 56, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "M", x + bs / 2, by + 20, 12, PAL.purple, "center");
+      txt(ctx, bits[i], x + bs / 2, by + 40, 18, PAL.white, "center");
+      x += bs;
+    }
+    txt(ctx, "位宽：S=1 + R=" + ex.reg + " + E=1 + M=" + ex.man + " = " + bits.length, 90, 150, 13, PAL.white, "left");
+    txt(ctx, ex.desc, 90, 180, 14, PAL.orange, "left");
+    // R value
+    const rstr = bits.slice(1, 1 + ex.reg);
+    let rval;
+    if (rstr[0] === "1") rval = (rstr.match(/1/g) || []).length - 1;
+    else rval = -((rstr.match(/0/g) || []).length);
+    txt(ctx, "R 温度计码 '" + rstr + "' → 十进制 R=" + rval + " → 指数 (2^1)^" + rval, 90, 214, 13.5, PAL.green, "left");
+    // FP16 comparison
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 2;
+    rrect(ctx, 90, 240, 800, 52, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "同样的 8 位：FP8 固定 (1,5,2) 指数范围 [−14,15] → 覆盖不了梯度 [−66,−10]（69.3% 变 0）", 100, 262, 12.5, PAL.blue, "left");
+    txt(ctx, "POSIT8 动态分配 → 范围/精度按需 → ≈FP16 精度 · 省 6.25× 能耗", 100, 284, 13.5, PAL.green, "left");
+    if (stat) stat.textContent = ex.desc + "（R=" + rval + "）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1600);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 双位 MAC（CPCS）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  const Wb = [1, 0, 1]; // 3-bit weight W=101
+  const crit = Wb[1] & (Wb[0] & Wb[2]); // S[1] = 0
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 B · CPCS 双位 MAC：W×A[n] + W×A[n+2]（W=101）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 4;
+    const a2 = (k >> 1) & 1, a0 = k & 1;
+    const an = a2 * 2 + a0;
+    // 4-bit CIM unit
+    const bs = 80, bx = 90, by = 70;
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = "#1c3a2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+      rrect(ctx, bx + i * bs, by, bs - 8, 52, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, "W[" + i + "]=" + Wb[i], bx + i * bs + (bs - 8) / 2, by + 26, 14, PAL.white, "center");
+    }
+    ctx.fillStyle = "#3c2a1a"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+    rrect(ctx, bx + 3 * bs, by, bs - 8, 52, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "关键位 S[1]=" + crit, bx + 3 * bs + (bs - 8) / 2, by + 26, 12, PAL.orange, "center");
+    txt(ctx, "空闲单元存预计算关键位（加载时算好）", 90, 146, 12.5, PAL.orange, "left");
+
+    // A bits
+    txt(ctx, "输入激活：A[n+2]=" + a2 + "，A[n]=" + a0 + "（组合 " + an + "）", 90, 178, 14, PAL.white, "left");
+    // partial product & result
+    const P = Wb[0] & a0;
+    let outStr, outVal;
+    if (an === 0 || an === 1) { outStr = "O = P[2:0] = " + P; outVal = P; }
+    else if (an === 2) { outStr = "O = P[2:0]≪2 = " + (P << 2); outVal = P << 2; }
+    else { outStr = "O = P[2:0]+P[2:0]≪2（关键位 S[1] 参与）"; outVal = P + (P << 2); }
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 2;
+    rrect(ctx, 90, 200, 800, 52, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "部分积 P = W×A[n] = " + Wb[0] + "×" + a0 + " = " + P, 100, 222, 13, PAL.white, "left");
+    txt(ctx, outStr, 100, 246, 13.5, PAL.green, "left");
+    // throughput comparison
+    txt(ctx, "vs 单位串行：每周期 1 个 MAC → 双位 MAC 每周期 2 个 → 吞吐 +38.2%（3b 尾数）", 90, 276, 13, PAL.orange, "left");
+    txt(ctx, "2–4b 关联（借位）再 +24.7% · 3b 优先分区（POSIT16）+1.34× · 预计算开销仅 1.6%", 90, 300, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "A 组合 " + an + "：" + outStr;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1400); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1400);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · OR 累加（CASU）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 C · CASU：无重叠位用 OR 替代加法（X+0 = X|0）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 3;
+    // case 0: no overlap -> OR
+    // case 1: overlap both 1 -> need adder
+    // case 2: cyclical shift -> make no overlap
+    const cases = [
+      { A: "1011000", B: "0000101", mode: "纯 OR（无重叠）", ok: true },
+      { A: "1011000", B: "0011100", mode: "重叠位有 11 → 需加法器", ok: false },
+      { A: "1011000", B: "0000101", mode: "循环交替调度 → 制造无重叠", ok: true },
+    ];
+    const c = cases[k];
+    const bs = 46, bx = 150, by = 70;
+    txt(ctx, "模式：" + c.mode, 60, 54, 13.5, c.ok ? PAL.green : PAL.red, "left");
+    txt(ctx, "A", 120, by + 14, 12, PAL.blue, "right");
+    for (let i = 0; i < 7; i++) {
+      const x = bx + i * bs;
+      ctx.fillStyle = "#1e3a5c"; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1;
+      rrect(ctx, x, by, bs - 4, 28, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, c.A[i], x + (bs - 4) / 2, by + 14, 13, PAL.white, "center");
+    }
+    txt(ctx, "B", 120, by + 42, 12, PAL.orange, "right");
+    for (let i = 0; i < 7; i++) {
+      const x = bx + i * bs;
+      ctx.fillStyle = "#3c2a1a"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 1;
+      rrect(ctx, x, by + 28, bs - 4, 28, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, c.B[i], x + (bs - 4) / 2, by + 42, 13, PAL.white, "center");
+    }
+    // overlap highlight
+    if (k === 1) {
+      ctx.strokeStyle = PAL.red; ctx.lineWidth = 3;
+      ctx.strokeRect(bx + 2 * bs - 3, by - 3, bs * 2 + 2, 62);
+      txt(ctx, "重叠位含 11 → 加法不可省", bx + 2 * bs + bs, by + 80, 11.5, PAL.red, "center");
+    }
+    // result row
+    let res = "";
+    for (let i = 0; i < 7; i++) res += (parseInt(c.A[i]) | parseInt(c.B[i])).toString();
+    txt(ctx, "A|B = " + res, 150, by + 78, 13.5, PAL.green, "left");
+    if (k === 0) {
+      txt(ctx, "A+B = " + res + "（无重叠 → 加法=OR）", 150, by + 102, 13.5, PAL.green, "left");
+      txt(ctx, "16b 加法器 174.38 nW vs 16b OR 29.75 nW → 省 82.9%", 150, by + 128, 12.5, PAL.gray, "left");
+    } else if (k === 1) {
+      txt(ctx, "A+B ≠ A|B（有进位）→ 必须加法器 → 进入循环调度", 150, by + 102, 13.5, PAL.red, "left");
+      txt(ctx, "但 0&lt;重叠&lt;4 且非全 1 时提前检测仍可用 OR（省 36.1% 加法器）", 150, by + 128, 12.5, PAL.gray, "left");
+    } else {
+      txt(ctx, "循环移位 A0 的位串行顺序：A0[1..n],A0[0] → 与 A1 无重叠", 150, by + 102, 13.5, PAL.green, "left");
+      txt(ctx, "n 次加法 → (n−1) OR + 1 加法 · 无重叠率 +36.4% · 功率 −31.3%", 150, by + 128, 12.5, PAL.orange, "left");
+    }
+    // summary
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+    rrect(ctx, 60, 232, 860, 60, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "CASU 控制：重叠≤0 → 纯 OR ｜ 0~4 → 查替代条件 ｜ &gt;4 → 循环调度加法", 80, 254, 13.5, PAL.white, "left");
+    txt(ctx, "加法树功耗占比 23.4%→12.3% · 面积开销仅 2.3% → POSIT16 系统能效 27.61 TFLOPS/W（2.08×）", 80, 278, 12.5, PAL.green, "left");
+    if (stat) stat.textContent = c.mode;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1500); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1500);
+  draw();
+})();
+
+</script>
+
+
+</body></html>

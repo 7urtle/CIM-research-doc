@@ -1,0 +1,108 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>核心数学：把“零点量化”的代价从 9b×9b 压回 8b×8b</h2>
+
+<div class="box warn">
+<div class="bt">⚠️ 本章是全篇最硬核、也最精彩的一章——请放慢速度</div>
+<p>这一章回答论文里最反直觉的一个问题：<strong>明明输入是 8bit 整数，为什么“零点量化”会逼你去做 9bit 乘法？而 Intel 又是怎么用一条数学恒等式把它无损变回 8bit 乘法的？</strong>读完这一章，你就真正理解了这篇论文的灵魂。</p>
+</div>
+
+<h3 id="sec4-1">4.1 冲突：零点量化后的“无符号 8b”必须当成“有符号 9b”来乘</h3>
+<p>先看硬件想做什么。DCiM 每周期要算的是一条点积：</p>
+<div class="formula">Y = Σ<sub>i=1..N</sub> A<sub>z,i</sub> · W<sub>z,i</sub>　　（A<sub>z</sub>、W<sub>z</sub> 都是 0~255 的无符号 8b）<span class="tag">式 4.1</span></div>
+<p>如果 A<sub>z</sub>、W<sub>z</sub> 直接按无符号数相乘，部分积要做 5 组（Radix-4 Booth 对无符号数需要额外的符号处理组），每个部分积还更宽。而更麻烦的是，<strong>神经网络要的并不是式 4.1 本身，而是“减掉零点后”的结果</strong>。真实的输出是：</p>
+<div class="formula">y = s<sub>A</sub>·s<sub>W</sub> · [ Σ A<sub>z</sub>W<sub>z</sub> − z<sub>W</sub>ΣA<sub>z</sub> − z<sub>A</sub>ΣW<sub>z</sub> + N·z<sub>A</sub>z<sub>W</sub> ]<span class="tag">式 4.2</span></div>
+<p>（把 r = s(q − z) 代进 y = Σr<sub>A</sub>·r<sub>W</sub> 展开即可得到。）其中 z<sub>A</sub>、z<sub>W</sub> 是激活和权重的零点。式 4.2 的意思是：<strong>芯片只需要算式 4.1 的整数点积，再在外围做一次性的减零点和缩放修正</strong>——这是量化推理的标准做法，没问题。</p>
+<p>真正的问题出现在“想直接在乘法器里做修正”的时候：如果每个乘法都想“先减零点再相乘”，A<sub>z</sub> − z<sub>A</sub> 的取值范围是 [−z<sub>A</sub>, 255−z<sub>A</sub>]。当 z<sub>A</sub> 比较小（例如 10）时，范围是 [−10, 245]——<strong>超出 8b 有符号（−128~127）的表示能力，必须用 9b 有符号数</strong>（9b 有符号范围 −256~255）。于是朴素实现会退化成：</p>
+<div class="formula">Y = Σ (A<sub>z</sub> − z<sub>A</sub>)(W<sub>z</sub> − z<sub>W</sub>)　→　9b 有符号 × 9b 有符号<span class="tag">式 4.3</span></div>
+<div class="box key">
+<div class="bt">💰 9b×9b 贵在哪？（这是全文第一个“为什么”）</div>
+<ul>
+<li>Radix-4 Booth 下，8b 有符号乘法生成 <strong>4 个部分积</strong>；9b 有符号乘法生成 <strong>5 个部分积</strong>——多一整棵部分积加法树；</li>
+<li>每个部分积宽度从 9b 增到 <strong>10b</strong>——加法树整体加宽；</li>
+<li>面积、功耗、延迟全部上升。论文给出量化数字：这直接导致面积 +21%、功耗 +17%（即反过来，避免它省下 21% 面积、17% 功耗）。</li>
+</ul>
+</div>
+
+<div class="demo">
+<div class="dhead">🔬 演示 C · 8b×8b（4 个部分积）vs 9b×9b（5 个部分积）加法树对比</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-switch" class="on">8b×8b（4 个部分积）</button>
+  <button id="demoC-switch9">9b×9b（5 个部分积）</button>
+  <span class="stat" id="demoC-stat">加法树级数 2 · 部分积 4 个 · 总位宽 36b</span>
+</div>
+<div class="hint">点按切换 8b/9b 模式：多出来的那个部分积意味着整棵 CSA 加法树要加宽一层/一级。这正是论文靠“无符号→有符号映射”避免的代价（部分积宽度 −10%、数量 −20%）。</div>
+</div>
+
+<h3 id="sec4-2">4.2 绝招第一步：无符号 → 有符号的“免费”映射（MSB 取反）</h3>
+<p>Intel 的办法是<strong>不按式 4.3 做</strong>，而是先用一条恒等式把无符号 8b 变成有符号 8b：</p>
+<div class="formula">A<sub>s</sub> = A<sub>z</sub> − 128　（同样 W<sub>s</sub> = W<sub>z</sub> − 128）<span class="tag">式 4.4</span></div>
+<p>A<sub>s</sub> ∈ [−128, 127]，正好是 8b 有符号数的完整范围。<strong>而减 128 在二进制里有一个惊人的便宜实现：把最高位（MSB）取反（翻转）即可。</strong>验证一下：</p>
+<table>
+<tr><th>A<sub>z</sub>（无符号）</th><th>二进制</th><th>MSB 取反后</th><th>解释为有符号 A<sub>s</sub></th></tr>
+<tr><td class="num">200</td><td>1100 1000</td><td>0100 1000</td><td class="num">+72 = 200−128 ✓</td></tr>
+<tr><td class="num">50</td><td>0011 0010</td><td>1011 0010</td><td class="num">−78 = 50−128 ✓</td></tr>
+<tr><td class="num">0</td><td>0000 0000</td><td>1000 0000</td><td class="num">−128 = 0−128 ✓</td></tr>
+<tr><td class="num">255</td><td>1111 1111</td><td>0111 1111</td><td class="num">+127 = 255−128 ✓</td></tr>
+</table>
+<p>原理：8bit 无符号数加/减 128，等价于翻转最高位——因为第 7 位代表 128 的权重。这个映射<strong>不花一个加法器</strong>，每个激活只需一个异或门（XOR）按格式控制翻转。论文原话 “conditionally inverting the MSB based on input format” 说的就是它。</p>
+
+<h3 id="sec4-3">4.3 绝招第二步：零点扩展（Zero-Point Expansion）——三个修正项全“白嫖”</h3>
+<p>映射完之后，A<sub>z</sub> = A<sub>s</sub> + 128。但论文要处理的不只是 128 这个偏置，还有零点 z<sub>A</sub>、z<sub>W</sub>。于是把偏置和零点打包成两个常数：</p>
+<div class="formula">A<sub>z</sub> = A<sub>s</sub> + C<sub>A</sub>，　W<sub>z</sub> = W<sub>s</sub> + C<sub>W</sub>，　其中 C<sub>A</sub> = C + Z<sub>W</sub>，C<sub>W</sub> = C + Z<sub>A</sub>，C = 128<span class="tag">式 4.5</span></div>
+<p>（注意常数的配对：激活侧常数 C<sub>A</sub> 里含<strong>权重</strong>的零点 Z<sub>W</sub>，权重侧常数 C<sub>W</sub> 里含<strong>激活</strong>的零点 Z<sub>A</sub>。这个配对方式在下一步展开时会让修正项的成本分配最合理。）</p>
+<p>现在把式 4.1 的乘积展开：</p>
+<div class="formula">Σ A<sub>z</sub>W<sub>z</sub> = Σ (A<sub>s</sub>+C<sub>A</sub>)(W<sub>s</sub>+C<sub>W</sub>) = Σ A<sub>s</sub>W<sub>s</sub> + C<sub>W</sub>·ΣA<sub>s</sub> + C<sub>A</sub>·ΣW<sub>s</sub> + N·C<sub>A</sub>C<sub>W</sub><span class="tag">式 4.6</span></div>
+<p>展开后得到四个项，其中后三项就是“零点扩展”的代价。关键洞察在于——<strong>在 DCiM 的数据流里，这三项都便宜得几乎免费</strong>：</p>
+<table>
+<tr><th>项</th><th>含义</th><th>为什么便宜</th></tr>
+<tr><td>① Σ A<sub>s</sub>W<sub>s</sub></td><td>主项：8b×8b 有符号点积</td><td>就是乘法阵列本来的活，4 个部分积、9b 宽——<strong>这就是我们想要的全部计算</strong></td></tr>
+<tr><td>② C<sub>W</sub>·ΣA<sub>s</sub></td><td>常数 × 激活和</td><td>激活是<strong>广播共享</strong>的：32 个计算列用的是同一份激活！ΣA<sub>s</sub> 每周期算一次，32 列共享，摊薄到几乎为零</td></tr>
+<tr><td>③ C<sub>A</sub>·ΣW<sub>s</sub></td><td>常数 × 权重和</td><td>权重是<strong>静止</strong>的：ΣW<sub>s</sub> 在写权重时就预计算好、直接存进存储器，<strong>计算期间一分电都不花</strong></td></tr>
+<tr><td>④ N·C<sub>A</sub>C<sub>W</sub></td><td>固定常数</td><td>N 固定时就是常数，加一次即可</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d05_zero_point_decomp.svg" alt="零点量化数学分解" style="max-width:900px">
+  <figcaption>图 4.1　零点量化分解的完整流程：问题（9b×9b）→ 映射（MSB 取反）→ 展开（8b×8b + 三个廉价项）。</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 这段设计的精髓：把“按乘法的修正”变成“按整条点积的修正”</div>
+<p>朴素做法是在<strong>每个乘法内部</strong>做零点修正（→ 9b×9b，贵）；Intel 把修正挪到<strong>整条点积求和之后</strong>，利用“激活共享 + 权重静止”这两个数据流特性，把修正的代价从“每个乘法一次”摊薄成“每条点积一次，而且大部分预先算好”。这是典型的<strong>算法-架构协同设计（algorithm-architecture co-design）</strong>——同样的数学，放在不同的数据流里，成本完全不同。</p>
+</div>
+<p>论文给的收益：部分积宽度 −10%、部分积数量 5→4（少一棵加法树），总体 DCiM 功耗 −17%、面积 −21%。</p>
+<div class="box warn">
+<div class="bt">📌 研究素养提醒：论文内部的数字口径不一致</div>
+<p>细心对比会发现：论文<strong>摘要</strong>里这项技术写的是 “saving 20% power / 17% area”，而<strong>正文</strong>（Fig. 30.9.3 附近）写的是 “lowers overall DCiM power by 17% and area by 21%”。两个口径（20%/17% vs 17%/21%）对不上——这是论文自身的一个笔误或口径差异。读论文时<b>不要盲信任何单一数字</b>，要交叉核对摘要与正文；写自己的论文时，这类不一致正是审稿人最容易抓的问题。本教程正文沿用“功耗 −17%、面积 −21%”，并在 §0.3 标注了摘要口径。</p>
+</div>
+
+<h3 id="sec4-4">4.4 数值验证：亲手算一遍（强烈建议跟着算）</h3>
+<p>空谈不如验算。取 N=4，两组零点量化数据（无符号 8b）：</p>
+<div class="formula">A<sub>z</sub> = [200, 50, 255, 10]，　W<sub>z</sub> = [150, 200, 60, 180]<span class="tag">例 4.1</span></div>
+<p><strong>第一步：直接算（基准答案）。</strong></p>
+<div class="box math">
+<div class="bt">直接点积 Y = Σ A<sub>z</sub>·W<sub>z</sub></div>
+<p>Y = 200×150 + 50×200 + 255×60 + 10×180<br>
+&nbsp;&nbsp;= 30000 + 10000 + 15300 + 1800 = <strong>57100</strong></p>
+</div>
+<p><strong>第二步：映射成有符号（每个数 MSB 取反，即减 128）。</strong></p>
+<div class="box math">
+<div class="bt">A<sub>s</sub> = A<sub>z</sub> − 128，W<sub>s</sub> = W<sub>z</sub> − 128</div>
+<p>A<sub>s</sub> = [72, −78, 127, −118]，　W<sub>s</sub> = [22, 72, −68, 52]</p>
+</div>
+<p><strong>第三步：按式 4.6 分四项计算（这里是零零点、C=128 的特例）。</strong></p>
+<div class="box math">
+<div class="bt">四项分解</div>
+<p>① Σ A<sub>s</sub>W<sub>s</sub> = 72×22 + (−78)×72 + 127×(−68) + (−118)×52<br>
+&nbsp;&nbsp;= 1584 − 5616 − 8636 − 6136 = <strong>−18804</strong></p>
+<p>② C<sub>W</sub>·ΣA<sub>s</sub> = 128 × (72 − 78 + 127 − 118) = 128 × 3 = <strong>384</strong></p>
+<p>③ C<sub>A</sub>·ΣW<sub>s</sub> = 128 × (22 + 72 − 68 + 52) = 128 × 78 = <strong>9984</strong></p>
+<p>④ N·C<sub>A</sub>C<sub>W</sub> = 4 × 128 × 128 = <strong>65536</strong></p>
+<p><strong>合计：−18804 + 384 + 9984 + 65536 = 57100 ✓ 与直接算完全一致！</strong></p>
+</div>
+<p>注意第 ② 项里我们只需要 ΣA<sub>s</sub>（激活和，每周期一次、32 列共享），第 ③ 项只需要 ΣW<sub>s</sub>（权重和，写权重时预存），第 ④ 项是常数——<strong>没有任何一项需要 9bit 乘法</strong>。这就是论文说的 “intrinsic zero-point compute with unsigned-signed mapping within the DCiM dataflow”。</p>
+
+<div class="box idea">
+<div class="bt">🤔 想一想（进阶）</div>
+<p>① 如果 A<sub>z</sub> 本来就有符号（比如已经是 −128~127 的 INT8 对称量化数据），还需要 MSB 取反这一步吗？（提示：看格式控制位怎么设置。）② 式 4.6 的后三项会不会带来额外位宽？ΣA<sub>s</sub> 是 128 个 8b 数求和，需要多少位才不会溢出？（提示：128 × 127 ≈ 2¹⁴，所以累加器至少 15~16 bit——这是所有 MAC 阵列都要处理的“累加器宽度”问题。）③ 为什么论文把 Z<sub>W</sub> 配到激活侧常数 C<sub>A</sub> 里而不是 C<sub>W</sub>？交换配对会影响功耗吗？</p>
+</div>
+</section>

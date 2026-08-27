@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">三值梯度 + 格雷码权重：把 eNVM 写次数压到最低</text>
+
+  <!-- 格雷码 -->
+  <rect x="40" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">格雷码（Gray Code）权重</text>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="11.5">
+    <text x="60" y="140" fill="#45536b">相邻数值只差 1 位：</text>
+    <text x="60" y="164" fill="#45536b">0=0000　1=0001　2=0011　3=0010</text>
+    <text x="60" y="188" fill="#45536b">4=0110　5=0111　6=0101　7=0100</text>
+    <text x="60" y="220" fill="#1d8a5f" font-weight="600">数值 ±1（三值梯度）→ 只翻转 1 位！</text>
+    <text x="60" y="244" fill="#45536b">→ 每个权重每批最多写 1 位</text>
+    <text x="60" y="276" fill="#45536b">推理：格雷码解码器（并行 XOR）二值读出；</text>
+    <text x="60" y="298" fill="#45536b">学习：读出权重 ± 三值梯度后以格雷码写回</text>
+  </g>
+
+  <!-- 三值梯度 -->
+  <rect x="500" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#c25e2e" font-size="13.5" font-weight="700">三值梯度（Ternary Gradient）</text>
+  <g font-size="12">
+    <text x="520" y="140" fill="#45536b">梯度连续值 → 量化为 {−1, 0, +1}</text>
+    <text x="520" y="168" fill="#45536b">• 0 梯度：不写（省电省寿命）</text>
+    <text x="520" y="190" fill="#45536b">• ±1 梯度：权重只 ±1 步长</text>
+    <text x="520" y="220" fill="#c25e2e" font-weight="600">→ 配合格雷码：每次更新只翻 1 位</text>
+    <text x="520" y="250" fill="#45536b">（二进制权重 ±1 可能翻多位，如 0111→1000 翻 4 位）</text>
+    <text x="520" y="286" fill="#1d8a5f" font-weight="600">e-OTBP 收敛快（1 个 epoch 达 96.4%）</text>
+    <text x="520" y="308" fill="#1d8a5f" font-weight="600">→ 写次数进一步压缩</text>
+  </g>
+
+  <!-- 底部数据 -->
+  <rect x="40" y="344" width="880" height="112" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">实测收益（论文 Fig. 18.4.5 底部）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">• 平均编程次数：NMNIST −89.1%、DVS Gesture −88.4%；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">• DVS Gesture 更新次数均值/标准差：−10.9× / −35.6×；</text>
+  <text x="60" y="442" fill="#45536b" font-size="12.5">• 最大被写器件数 −92.8%、每样本总写时间 −86.3%（4 个数据集平均）</text>
+  <text x="60" y="464" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 外接 MRAM 在线学习寿命延长 13.9×，能耗基本持平</text>
+</svg>

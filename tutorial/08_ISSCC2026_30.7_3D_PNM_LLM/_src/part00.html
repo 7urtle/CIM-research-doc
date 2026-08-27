@@ -1,0 +1,59 @@
+<section class="chapter" id="sec0">
+<h1 class="title">3D 双 DRAM 单逻辑近存计算芯片零基础精讲：把 1GB 内存和 1.2GHz 算力叠在一起
+<span class="en">A 1.2GHz 12.77GB/s/mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications（ISSCC 2026 · Paper 30.7）</span></h1>
+<div class="meta">论文作者：Yue Cao, Jinghao Jiang 等 · 复旦大学 + 中科院微电子所 + 张江实验室 + 西安紫光国芯
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.7
+&nbsp;|&nbsp; 本教程配套素材：教学图 8 张、数据图 4 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>大语言模型（LLM）要在 PC、手机上跑，最大的瓶颈不是算力，而是<strong>内存</strong>：权重有 GB 级，必须反复从 DRAM 里搬。本论文把 <strong>两片 512Mb DRAM 晶圆 + 一片 28nm 逻辑晶圆</strong>用 3D 堆叠（混合键合 HB + mini-TSV）叠成一个 <strong>1GB 片上内存 + 1.2GHz 计算</strong>的芯片：</p>
+<ul>
+<li>带宽密度 <strong>12.77 GB/s/mm²</strong>（HBM3E 的 1.22×、GDDR6 的 8.63×）；</li>
+<li>每比特访问能量 <strong>0.67 pJ/b</strong>（GDDR6 的 9%、HBM3E 的 28%）；</li>
+<li>连续访问延迟降到 <strong>3.2 ns</strong>（比 LPDDR4 低 90%~93%）；</li>
+<li>对外 <strong>DDR4 兼容</strong>：既能当普通内存条用，也能通过扩展命令（T-ACC/Act-Reg）触发近存计算（PNM）。</li>
+</ul>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>LLM 推理 = 搬权重：</strong>生成式推理每输出一个 token，都要把所有权重读一遍；一次权重读的能耗/延迟远超一次计算。所以“把计算放到 DRAM 旁边”比“把计算做得更快”更关键——这就是近存计算（PNM）的出发点。</li>
+<li><strong>3D 堆叠 ≠ 3D 打印：</strong>它是指把几片已经做好的晶圆（die）像三明治一样叠起来，用微米级的互连（HB、TSV）上下打通。关键是互连密度——互连越密，带宽越高，这就是 12.77 GB/s/mm² 的来源。</li>
+<li><strong>DDR4 兼容是“产品化”的关键：</strong>论文没有发明新接口，而是让芯片在现有 DDR4 内存插槽上即插即用，还新增两条命令让主机触发计算——低集成门槛 = 真实部署的可能。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“edge tasks typically use much smaller batch sizes, which significantly reduces data reuse during the generation stage of LLM inference and makes the task more memory-intensive”</td>
+<td>终端一次只服务一个用户（batch=1），LLM 生成阶段每个 token 几乎不重复利用数据 → 任务从“算力密集”变成“内存密集”。</td></tr>
+<tr><td class="num">“most prior works integrate compute directly within the DRAM die, constraining compute capability due to DRAM process limitations”</td>
+<td>前作把计算做进 DRAM 晶圆，但 DRAM 工艺做不了高性能逻辑 → 算力被工艺卡死。本文把逻辑单独放一片晶圆。</td></tr>
+<tr><td class="num">“stacks two DRAM dies with one logic die, providing 1GB on-chip DRAM capacity and a memory density of 99.4Mb/mm²”</td>
+<td>两片 DRAM + 一片逻辑 = 1GB 片上内存，存储密度 99.4 Mb/mm²。</td></tr>
+<tr><td class="num">“high-density HB + mini-TSV interconnect… achieving a bandwidth density of 12.77GB/s/mm²”</td>
+<td>高密度混合键合 + mini-TSV 互连 → 带宽密度 12.77 GB/s/mm²。</td></tr>
+<tr><td class="num">“supports a DDR4-protocol-compatible external interface… when PNM is disabled, the chip operates as conventional host DRAM”</td>
+<td>兼容 DDR4 接口；PNM 关闭时就是普通 DRAM——两种身份无缝切换。</td></tr>
+<tr><td class="num">“reducing memory-access latency by up to 93% and GEMM execution time by up to 98%”</td>
+<td>访存延迟最多降 93%，GEMM 执行时间最多降 98%（8 芯片 DIMM 场景）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>Two-DRAM-One-Logic 3D 架构</strong>：逻辑与 DRAM 分开制造再 3D 堆叠 → 逻辑享受标准 CMOS（1.2GHz 频率），DRAM 保持密度（99.4 Mb/mm²），两不耽误；</li>
+<li><strong>高带宽密度互连</strong>：HB（pitch 3 μm）+ mini-TSV（pitch 5 μm），每 TSV 配两个 HB 冗余 → 12.77 GB/s/mm² 且良率可控（3D 集成仅增加 0.58% 失效率）；</li>
+<li><strong>极简 3D DRAM PHY</strong>：总线 2048b 很宽，引脚速率很低 → PHY 只做同步+电平转换，比 DDR/HBM PHY 简单省电（0.67 pJ/b）；</li>
+<li><strong>DDR4 兼容 + 双命令扩展</strong>：T-ACC（触发 ACC）、Act-Reg（配置寄存器）两条新命令，PNM 可关闭退化为普通 DRAM；</li>
+<li><strong>RISC-V ACC + 自定义 FPU + DMA</strong>：可编程计算引擎，fadd/fsub/fmul/fdiv 硬件加速，DMA 负责批量搬运（LLM 连续访存多）；</li>
+<li><strong>GEMM 数据流与访存优化</strong>：M/K 各切 4 份给 16 个 ACC（零跨块通信），开放页策略 + 2048b 缓冲（buf_hit 免 DRAM 访问）→ 吞吐 +53.8%，128³ GEMM 比 i7-13700F 快 86%，8 芯片 DIMM 快 98%。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂 DRAM/总线概念的：从 §4（3D 架构）和 §6（GEMM 数据流）开始，这两章是本文最精彩的设计取舍。</p>
+</div>
+</section>

@@ -1,0 +1,12 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：EVS 事件相机与 SNN 脉冲网络</h2>
+<figure>
+  <img src="assets/diagrams/d01_evs_snn.svg" alt="EVS 与 SNN" style="max-width:920px">
+  <figcaption>图 1.1　EVS（事件视觉传感器）与 SNN 的“天生一对”：事件就是脉冲输入，无需帧转换。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么边缘感知要“事件化”？</div>
+<p>① <strong>能效</strong>：EVS 只在变化时输出（稀疏），SNN 只在有事件时计算（事件驱动）→ 静态场景几乎零功耗；② <strong>隐私</strong>：EVS 不记录完整图像，只记录变化事件——身份、环境细节天然被“模糊化”；③ <strong>自适应</strong>：事件流天然带时间信息（μs 级时间戳），支持时序任务（签名、手势、语音唤醒）。三者正好对应边缘感知 SoC 的三重需求。</p>
+</div>
+<p>本芯片的片上 EVS：事件率 3.8 MEps（百万事件/秒）、动态范围 130.9 dB——动态范围比普通相机高得多（能同时看清亮暗场景）。</p>
+</section>

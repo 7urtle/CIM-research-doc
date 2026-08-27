@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">BRPU：shift-OR 替代 codec+加法+编码（论文 Fig.5）</text>
+
+  <!-- conventional -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">传统 regime 处理（贵）</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">A×B：提取 RA/RB → 译码成十进制 RDA/RDB → 相加 → 编码回温度计码</text>
+    <g>
+      <rect x="70" y="152" width="90" height="34" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="115" y="172" text-anchor="middle" fill="#a0402e" font-size="10.5">译码器 RA</text>
+      <rect x="180" y="152" width="90" height="34" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="225" y="172" text-anchor="middle" fill="#a0402e" font-size="10.5">译码器 RB</text>
+      <rect x="290" y="152" width="70" height="34" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="325" y="172" text-anchor="middle" fill="#a0402e" font-size="10.5">加法器</text>
+      <rect x="380" y="152" width="70" height="34" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+      <text x="415" y="172" text-anchor="middle" fill="#a0402e" font-size="10.5">编码器</text>
+    </g>
+    <text x="60" y="220" fill="#e66e5a" font-weight="600">2 个译码器 + 1 个加法器 + 1 个编码器 → 面积/功耗大</text>
+    <text x="60" y="262" fill="#45536b">核心观察：R 的十进制值 = 连续 0/1 的个数 → RDA+RDB 只是“连续个数”的增减</text>
+  </g>
+
+  <!-- proposed -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">本论文：shift-OR 处理</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">把 RA 译码成 RDA（1 个译码），RB 右移 RDA 位得 RB′，RA 与 RB′ 逐位 OR</text>
+    <g>
+      <rect x="520" y="152" width="90" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="565" y="172" text-anchor="middle" fill="#1d8a5f" font-size="10.5">译码 RA</text>
+      <rect x="630" y="152" width="90" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="675" y="172" text-anchor="middle" fill="#1d8a5f" font-size="10.5">移位 RB</text>
+      <rect x="740" y="152" width="80" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="780" y="172" text-anchor="middle" fill="#1d8a5f" font-size="10.5">逐位 OR</text>
+    </g>
+    <text x="510" y="220" fill="#1d8a5f" font-weight="600">例：RA=“11110”(+3)，RB=“1 10”(+1)</text>
+    <text x="510" y="242" fill="#45536b">RDA=3 → RB 右移 3 位 → OR → “11110|00011”→“11111”(+4) ✓</text>
+    <text x="510" y="262" fill="#1d8a5f" font-weight="600">省 1 个译码器，加法/编码简化为移位+OR</text>
+    <text x="510" y="282" fill="#1d8a5f" font-weight="600">→ regime 处理面积 −67.8%、功耗 −79.6%</text>
+  </g>
+
+  <!-- bidirectional -->
+  <rect x="40" y="304" width="880" height="230" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="330" fill="#d08a10" font-size="13.5" font-weight="700">双向移位控制器：解码小 |R|、移位大 |R|（论文 Fig.6）</text>
+  <g font-size="12">
+    <text x="60" y="360" fill="#45536b">问题①（同号）：RDA+RDB 是“连续个数增加”=右移。若随机解码大 |R|、移小 |R| → 移位码大 → 移位能耗线性增加</text>
+    <text x="60" y="388" fill="#45536b">问题②（异号）：RDA+RDB 是“连续个数减少”=左移。若解码大 |R| 再移小 |R| → 移出界 → 移位错误（需加倍位宽修复）</text>
+    <text x="60" y="424" fill="#1d8a5f" font-weight="600">解决：动态解码小的 |R|、移位大的 |R|：</text>
+    <text x="80" y="450" fill="#45536b">同号：小移位码 → 省移位能耗；异号：大 |R| 左移小 |R| 位 → 不移出界 → 免错、不加位宽</text>
+    <text x="60" y="484" fill="#45536b">用 4-bit XOR + 前导 0/1 检测器定位小 |R|（连续 0/1 少 → 1→0 翻转早）；合并前导 0/1 检测器共用逻辑</text>
+    <text x="60" y="510" fill="#1d8a5f" font-weight="600">合并检测器 vs 分离：面积 −28.4%、功耗 −25.8%</text>
+  </g>
+</svg>

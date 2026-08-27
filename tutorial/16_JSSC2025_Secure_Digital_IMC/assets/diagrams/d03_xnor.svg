@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">用「原生安全」的 XNOR 门做乘法（论文 Fig.2）</text>
+
+  <!-- AND vs XNOR -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">传统：AND 乘法（非线性）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">位串行 CIM 用 AND/NOR 实现 1-bit 乘法</text>
+    <text x="60" y="160" fill="#45536b">AND 是非线性门 → 共享后不满足均匀性</text>
+    <text x="60" y="182" fill="#45536b">需要：remask（随机比特）+ 输出寄存器（抗毛刺）</text>
+    <rect x="70" y="196" width="240" height="40" rx="8" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="190" y="212" text-anchor="middle" fill="#a0402e">标准 TI AND：48 个门等效</text>
+    <text x="190" y="228" text-anchor="middle" fill="#a0402e">+ 每周期 2 个随机比特</text>
+    <text x="60" y="262" fill="#e66e5a" font-weight="600">IMC 百万并行 MAC → 不可扩展！</text>
+  </g>
+
+  <!-- XNOR -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">本论文：XNOR 乘法（线性）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">XNOR（=XOR 反相）是<strong>线性</strong>逻辑 → 每份可独立计算</text>
+    <text x="510" y="160" fill="#45536b">天然保持均匀性 + 抗毛刺</text>
+    <text x="510" y="182" fill="#45536b">无需随机比特、无需输出寄存器</text>
+    <rect x="520" y="196" width="240" height="40" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="640" y="212" text-anchor="middle" fill="#1d8a5f">6 个门等效（4 晶体管传输门 XOR）</text>
+    <text x="640" y="228" text-anchor="middle" fill="#1d8a5f">0 个随机比特</text>
+    <text x="510" y="262" fill="#1d8a5f" font-weight="600">XNOR 乘法 = 二值神经网络 (BNN) 的 ±1 乘法 → 但要支持多位</text>
+  </g>
+
+  <!-- SV/BV -->
+  <rect x="40" y="304" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">有符号值（SV）与二进制值（BV）：XNOR 也能算多位 MAC</text>
+  <g font-size="12.5">
+    <text x="60" y="360" fill="#45536b">有符号值 SV = Σ 2ⁱ × (−1)^(1−bᵢ)（只取奇数值：±1, ±3, ±5…），换算 SV = 2·BV − (2ⁿ−1)</text>
+    <text x="60" y="388" fill="#45536b">4 位可存 −15~15（范围翻倍）→ 网络可重训，精度无损失（表 I：奇数量化 vs 标准量化精度一致）</text>
+    <text x="60" y="424" fill="#1d8a5f" font-weight="600">校正因子（论文式 8）：SVout = 2 × BVout − (2ⁿᵂ−1)(2ⁿᴬ−1)·r</text>
+    <text x="60" y="450" fill="#45536b">BVout 是 XNOR-MAC 的原始输出；校正项只依赖位宽和输入数 r（常量，可片外预计算）</text>
+    <text x="60" y="478" fill="#45536b">无符号激活（ReLU 输出）+ 有符号权重：SVout = BVout − 常数项 + 权重和项（也可预计算）</text>
+    <text x="60" y="504" fill="#1d8a5f" font-weight="600">→ 既拿到 XNOR 的原生安全性，又不牺牲精度/位宽 → 对 NN 精度零影响</text>
+  </g>
+</svg>

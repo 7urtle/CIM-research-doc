@@ -1,0 +1,32 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_metrics.png" alt="核心指标" style="max-width:960px">
+  <figcaption>图 8.1　核心指标：搜索率 3670M nodes/s、单节点能量 69.4 fJ、PE 面积 213.6 μm²（14.5×14.7）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_dds.png" alt="DDS 收益" style="max-width:920px">
+  <figcaption>图 8.2　DDS 收益：处理时间 −2.1×、功耗 −1.13×（例图）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_tscfp.png" alt="TsCFP 实例" style="max-width:900px">
+  <figcaption>图 8.3　TsCFP 旧金山地图实例：373.82ns / 512.5pJ / 1279.8L。</figcaption>
+</figure>
+<ul>
+<li><strong>工艺</strong>：28nm，32×32 NeuroPilot CIM 宏；</li>
+<li><strong>动态逻辑衰减分析</strong>：适用于最长 <strong>360L（84ns）</strong> 的任务，覆盖真实场景（50-100L）与复杂迷宫（&gt;100L）；</li>
+<li><strong>FoM</strong>（搜索率/单节点能量/PE 尺寸）：相对前作路径搜索工作 [1-5] 提升 <strong>31.49 – 2.148×10⁷×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_7_6_测量结果.png" alt="论文图 14.7.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.7.6：实测结果与前作对比表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_7_7_芯片照片.png" alt="论文图 14.7.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.7.7：裸片显微照片、设计汇总与短/长距离搜索示例。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① FoM 提升跨度高达 31.49 – 2.148e7×：因为对比对象 [1-5] 覆盖“时域波前加速器、数字路径规划处理器、PVT 补偿 AI 处理器”等不同路线，架构差异巨大，倍数只能说明量级；② 69.4 fJ/node 和 3670M nodes/s 是“路径传播”的能耗与速率，与 MAC-CIM 的 TOPS/W 不是一个量纲，不能直接比较；③ “360L 任务上限”由动态逻辑衰减决定，更大地图要依赖 TsCFP 分块——这是设计边界，读时要认清。</p>
+</div>
+</section>

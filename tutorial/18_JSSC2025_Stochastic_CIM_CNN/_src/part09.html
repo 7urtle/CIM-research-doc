@@ -1,0 +1,68 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：让“概率”替我们算乘法</h3>
+<p>把整篇论文串成一句话：<strong>模拟 CIM 的 ADC 贵、数字 CIM 的加法树贵 → 改用随机计算（AND 乘法、OR 累加、1-bit 逻辑）→ 免 ADC、单元只 +4 晶体管 → 再用位并行、SNG 复用、池化跳算补 SC 的软肋</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：模拟 CIM 需 ADC（面积/功耗/精度受限），数字 CIM 加法树吃密度（§1）；</li>
+<li><strong>SC 数学</strong>：数=流中 1 的比例；AND=乘法、OR/MUX=加法；SNG 用 LFSR 精确转换（§2）；</li>
+<li><strong>硬件</strong>：10T 单元（+4 晶体管 AND）+ wired-OR 累加（伪 nMOS 预充、1-bit 输出免 ADC）（§4）；</li>
+<li><strong>系统</strong>：位并行（N 宏并行 1 周期）（§3）· SNG 复用 &gt;32×（§5）· 平均池化跳算流长 4×（§6）· IRS 数据流 + 乒乓 FIFO + 并行计数器（§7）；</li>
+<li><strong>训练</strong>：OR 建模为 1−e^(−s) + 精确 LFSR 流模拟 → 精度 ≈ INT8（§7）；</li>
+<li><strong>闭环</strong>：65nm 7.96 TOPS/W、14nm 宏 140 TOPS/W（8-bit 带池化）（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 计算范式新颖——SC+CIM 的组合此前罕见，免 ADC 直击模拟 CIM 痛点；② 单元 +4 晶体管（vs 数字 CIM ~20）密度优势显著（860 kB/mm² @14nm）；③ 训练时建模硬件误差（OR 非线性 + LFSR 流）扎实；④ 完整片上 CNN（无片外搬移的能耗测量可信）；⑤ 平均池化跳算是“利用算法语义省硬件”的巧妙例子。</li>
+<li><strong>弱/局限</strong>：① 8-bit 流长指数增长 → 高精度优势收窄到 1.6×（靠跳算补救）；② 65nm 频率仅 5 MHz（供电结构未优化，非设计极限）；③ 宏利用率低（LeNet-5 5.1%）→ 系统能效被拖累；④ OR 近似累加的误差需特殊训练（不能直接用现成模型）；⑤ 5-bit 时 14nm 宏 258 TOPS/W 的折算依赖池化。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>混合精度</strong>：低精度层用 SC（便宜）、高精度层用定点/模拟——把 SC 的优势用在刀刃上；</li>
+<li><strong>改进供电/时钟结构</strong>：5 MHz 只是供电限制 → 优化后频率/吞吐可大幅提升；</li>
+<li><strong>提高宏利用率</strong>：大滤波器/多通道的数据流优化，或动态重配置核尺寸匹配；</li>
+<li><strong>扩展到 Transformer</strong>：SC 注意力（Q·K 用 AND 概率乘）、Softmax 的 SC 实现；</li>
+<li><strong>先进工艺系统级集成</strong>：14nm 宏已验证，可做完整 14nm 加速器；</li>
+<li><strong>SC 训练加速</strong>：SC 的反向传播（误差流）硬件化，支持片上训练/微调（联动第 17 篇 ODFC 思路）。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>SC（Stochastic Computing）</td><td>随机计算：用比特流中 1 的比例表示数、概率域计算。</td></tr>
+<tr><td>SCIM</td><td>随机计算存内计算：SC 的 1-bit 逻辑嵌入 CIM 阵列。</td></tr>
+<tr><td>Unipolar / Split-Unipolar</td><td>单极性（正数）表示 / 正负双流表示有符号数。</td></tr>
+<tr><td>SNG（Stochastic Number Generator）</td><td>随机数生成器：二进制→随机流（LFSR + 级联 MUX）。</td></tr>
+<tr><td>LFSR（Linear Feedback Shift Register）</td><td>线性反馈移位寄存器：PRNG 的随机源。</td></tr>
+<tr><td>AND 乘法</td><td>SC 乘法：Prob(A∩B)=Prob(A)×Prob(B)。</td></tr>
+<tr><td>OR 累加</td><td>SC 近似加法：a+b−ab（多输入 ≈1−e^(−s)）。</td></tr>
+<tr><td>Wired-OR</td><td>共享计算端口的线或累加（伪 nMOS 预充）。</td></tr>
+<tr><td>10T 位单元</td><td>6T SRAM + 4T AND 乘法电路（每存储位 +4 晶体管）。</td></tr>
+<tr><td>CPWL（Compute Port WordLine）</td><td>计算端口字线：施加权重随机位的控制线。</td></tr>
+<tr><td>位并行数据流</td><td>宏 i 存激活流第 i 位、权重第 i 位施加 → N 宏并行 1 周期。</td></tr>
+<tr><td>计算跳算</td><td>平均池化（MUX）时未选中的位不计算 → 流长缩短 4×。</td></tr>
+<tr><td>IRS 数据流</td><td>输入-行驻留数据流：激活行存宏、Y 滑动并行。</td></tr>
+<tr><td>乒乓 FIFO</td><td>双 FIFO 交替：一个计算、一个加载 → 隐藏 SRAM 延迟。</td></tr>
+<tr><td>并行计数器</td><td>随机流→二进制的计数器阵列（二叉树 + 流水）。</td></tr>
+<tr><td>APC（Accumulative Parallel Counter）</td><td>累加并行计数器：平均池化后的定点累加。</td></tr>
+<tr><td>部分二进制累加</td><td>大 SC 点积拆小段、定点加法器相加 → 精度↑。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算（8-bit MAC 口径）。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：J. Yang et al., “A 65-nm Digital Stochastic Compute-in-Memory CNN Processor With 8-bit Precision,” IEEE JSSC, vol. 60, no. 10, pp. 3749–3760, Oct. 2025. DOI: 10.1109/JSSC.2025.3554554</li>
+<li>[13] 先前 SC 深度学习加速器（标准单元，MAC 密度 38.4 K/mm²）——SC 硬件化基础。</li>
+<li>[15] / [16] SC 训练方法（OR 累加建模、流生成误差补偿）。</li>
+<li>[17] 最大长度 LFSR 精确转换的条件（多项式阶数匹配位宽）。</li>
+<li>[5]–[12] 模拟/电荷域/数字 CIM 对比对象（电流域、电荷域、数字加法树）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 SC 经典论文（Gaines 的随机计算）理解概率-逻辑对应；② 读 [15] 的 SC 训练方法；③ 动手：用 Python 生成 LFSR 随机流，实现 AND 乘法/OR 累加，对比精确值与 1−e^(−s) 近似，验证 Fig.13 的曲线；④ 与本系列对比：模拟 CIM（10 号）的 ADC 问题、数字 CIM（9 号）的加法树问题、本篇的 SC 路线——三种“免乘加”哲学；⑤ 用 Verilog 实现 10T 单元级的 AND 乘法 + wired-OR 感放，验证 1-bit 输出免 ADC。</p>
+</div>
+</section>

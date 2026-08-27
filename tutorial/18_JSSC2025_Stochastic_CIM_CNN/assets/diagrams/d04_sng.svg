@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">SNG（随机数生成器）与大复用（论文 Fig.5/6）</text>
+
+  <!-- SNG -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">SNG：LFSR + 级联 MUX</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">每个 LFSR 寄存器控制一个 MUX；MUX 级联</text>
+    <text x="60" y="158" fill="#45536b">N 位二进制数 → N 个 MUX → 随机比特流</text>
+    <text x="60" y="186" fill="#1d8a5f" font-weight="600">精确转换需两个条件：</text>
+    <text x="80" y="208" fill="#45536b">① 最大长度 LFSR（遍历 2ᴺ−1 种组合）；② LFSR 特征多项式阶数 = 输入位宽</text>
+    <text x="60" y="232" fill="#45536b">MSB 被复用 2ᴺ⁻¹ 次，其他位按二进制加权频率 → 流中 1 的频率精确表示输入</text>
+    <text x="60" y="260" fill="#45536b">8-bit 计算（1 符号 + 7 幅值）→ 7 位 LFSR；输出端解复用器按符号选 xp/xn</text>
+  </g>
+
+  <!-- reuse -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="13.5" font-weight="700">SNG 复用：把成本摊薄 &gt;32×</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#e66e5a" font-weight="600">问题：SNG 能耗是 SC MAC 的 25×</text>
+    <text x="510" y="158" fill="#45536b">→ 必须大复用因子摊薄平均成本</text>
+    <text x="510" y="186" fill="#1d8a5f" font-weight="600">激活复用：</text>
+    <text x="530" y="208" fill="#45536b">预转换随机流<strong>存进内存</strong> → 卷积滑动窗与输出通道复用</text>
+    <text x="530" y="230" fill="#45536b">2-D 滤波器 R×R、M 输出通道 → 最大复用 R²×M；实测 &gt;32</text>
+    <text x="510" y="258" fill="#1d8a5f" font-weight="600">权重复用：</text>
+    <text x="530" y="280" fill="#45536b">滤波器 SNG 在计算周期转换，32 行并行 → 能耗共享 32 行</text>
+    <text x="510" y="300" fill="#45536b">→ 激活+滤波器 SNG 成本降低 &gt;32×（Fig.6 对比）</text>
+  </g>
+
+  <!-- parallel SNG -->
+  <rect x="40" y="304" width="880" height="230" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">并行 SNG：一个 LFSR 状态表喂给所有宏</text>
+  <g font-size="12.5">
+    <text x="60" y="360" fill="#45536b">每个 SCIM 宏存激活的一个随机位 → 需要 N 个宏并行生成 N 位流</text>
+    <text x="60" y="388" fill="#45536b">做法：把 LFSR 的每个状态用作不同宏的种子（宏 1 用 seed1、宏 K 用 seedK）</text>
+    <text x="60" y="416" fill="#45536b">K 个 SNG 在一个转换周期内并行的结果 = 单个 SNG 跑 K 个周期的结果</text>
+    <text x="60" y="452" fill="#1d8a5f" font-weight="600">→ 每列一个 SNG + 驱动：加载输入时 xp 存位单元；计算时 CPWLP/N 施加权重位</text>
+    <text x="60" y="480" fill="#45536b">激活只存正流（unipolar）；权重正负流（split-unipolar）在计算周期实时转换</text>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>量化基础：为什么有“零点量化”这种东西？</h2>
+
+<h3 id="sec3-1">3.1 为什么 AI 硬件离不开量化</h3>
+<p>神经网络训练时用 32 位浮点（FP32），但推理部署时几乎都会<strong>量化（Quantization）</strong>到 8 位甚至更低。原因非常实际：</p>
+<ul>
+<li><strong>面积与功耗</strong>：INT8 乘法器面积/功耗约为 FP32 的 1/10 量级；INT4/INT2 更低；</li>
+<li><strong>带宽与访存</strong>：权重从 FP32 压到 INT8，访存量直接除以 4，而访存是 AI 推理最大的能耗与延迟来源；</li>
+<li><strong>速度</strong>：位宽越低，同面积下能塞下的计算单元越多。</li>
+</ul>
+<p>量化的基本公式（以 8bit 为例）：把真实值 r 映射到整数 q。有两种主流方案——对称与非对称（零点）量化。</p>
+
+<h3 id="sec3-2">3.2 对称量化 vs 零点（非对称）量化</h3>
+<div class="formula">对称：r = s · q，q ∈ [−128, +127]　　（一个尺度参数 s）<span class="tag">式 3.1</span></div>
+<div class="formula">非对称（零点量化）：r = s · (q − z)，q ∈ [0, 255]　　（尺度 s + 零点 z）<span class="tag">式 3.2</span></div>
+<p>两者都是“线性映射”，区别在于<strong>零点 z 是否必须为 0</strong>：</p>
+<ul>
+<li><strong>对称量化</strong>把真实值域强制对称地映射到 [−128, 127]，零点对应 0。但如果数据本身是偏态的——比如 ReLU 后的激活值全是正的（0 到某个正值），对称量化会浪费一半的整数区间（负数区），导致<em>有效分辨率减半</em>；</li>
+<li><strong>零点量化</strong>让 z 可以落在任意整数位置，把整个 [0,255] 区间都用来表示实际数据范围。数据越偏态，零点量化的精度优势越大。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d04_quantization.svg" alt="对称 vs 非对称量化" style="max-width:880px">
+  <figcaption>图 3.1　对称量化（上）与非对称/零点量化（下）的映射关系。数据偏态越严重，零点量化的优势越明显。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 直觉：量化精度 = 区间长度 / 256</div>
+<p>无论对称还是非对称，8bit 都只有 256 个码字。谁用得更“紧”，谁的量化步长（分辨率）就小、误差就小。对称量化在偏态数据上实际只用了 ~128 个码字，等于“7bit 精度”；零点量化把 256 个码字全部用到实际区间上，是真正的“8bit 精度”。<strong>这就是论文说 “Zero-point quantization improves computation accuracy”（零点量化提升精度）的原因。</strong></p>
+</div>
+
+<h3 id="sec3-3">3.3 交互演示 A：亲手把一组偏态数据量化成 INT8</h3>
+<div class="demo">
+<div class="dhead">🎛 演示 A · 对称 vs 零点量化误差对比（可交互）</div>
+<canvas id="demoA" width="980" height="330"></canvas>
+<div class="dbar">
+  <span class="hint" style="margin:0">拖动滑块改变数据分布（min/max），观察两种量化方式的码字利用与均方误差：</span>
+  <button id="demoA-play" class="on">自动演示</button>
+  <button id="demoA-shuffle">随机分布</button>
+  <span class="stat" id="demoA-stat"></span>
+</div>
+<div class="hint">数据范围越偏（min≈0），对称量化的“浪费区间”越大、误差越大；零点量化总能贴住真实区间。这正是论文选择支持零点量化的动机。绿点=真实值，红点=量化-反量化后的值。</div>
+</div>
+
+<p>注意式 3.2 里那个 <strong>“− z”</strong>：反量化时要把整数先减掉零点再乘尺度。这个“减零点”看起来只是数学上的一小步，却会在硬件里引发一个大麻烦——这正是下一章的核心冲突。先记住两个记号，后面反复用：</p>
+<ul>
+<li>A<sub>z</sub>、W<sub>z</sub>：<strong>零点量化后的</strong>激活/权重（8b 无符号，0~255）；</li>
+<li>A<sub>s</sub>、W<sub>s</sub>：<strong>映射为有符号后</strong>的激活/权重（8b 有符号，−128~127）。</li>
+</ul>
+</section>

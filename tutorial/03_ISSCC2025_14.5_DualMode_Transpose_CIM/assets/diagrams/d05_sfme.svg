@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">SFME：把浮点权重编码成“有符号定点尾数”——FP 的 MAC 走 INT 的数据通路</text>
+
+  <!-- FP 权重 -->
+  <rect x="40" y="80" width="420" height="190" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">浮点权重（FP）</text>
+  <g font-family="'Cambria Math','Times New Roman',serif" font-size="13">
+    <text x="60" y="142" fill="#1a2332">W = −1<sup>s</sup> · 2<sup>E−Bias</sup> · (1.M)</text>
+    <text x="60" y="176" fill="#45536b">（符号 + 指数 + 尾数，如 FP8/BF16）</text>
+    <text x="60" y="216" fill="#c25e2e" font-size="12.5" font-weight="600">问题：指数不同 → 乘法前要对齐，</text>
+    <text x="60" y="240" fill="#c25e2e" font-size="12.5" font-weight="600">CIM 的整数通路用不上</text>
+  </g>
+
+  <!-- 预对齐 + SFME -->
+  <rect x="500" y="80" width="420" height="190" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">预对齐 + SFME（有符号定点尾数）</text>
+  <g font-family="'Cambria Math','Times New Roman',serif" font-size="12.5">
+    <text x="520" y="142" fill="#1a2332">预对齐后：−1<sup>s</sup>·2<sup>E<sub>s</sub></sup>·(0.M<sub>n</sub>)</text>
+    <text x="520" y="170" fill="#45536b">共享指数 E<sub>s</sub> = E<sub>max</sub> − Bias（一组数统一）</text>
+    <text x="520" y="198" fill="#45536b">隐藏位 + 尾数归一化 → M<sub>n</sub></text>
+    <text x="520" y="232" fill="#6b3fa0" font-weight="600">对齐尾数 = 有符号定点补码数：</text>
+    <text x="520" y="256" fill="#1a2332" font-family="'Cambria Math',serif">M<sub>a</sub> = −1<sup>s</sup> · 0.M<sub>n</sub>（小数点跟在符号位后）</text>
+  </g>
+
+  <!-- 统一数据通路 -->
+  <rect x="40" y="296" width="880" height="180" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="324" fill="#1d8a5f" font-size="13.5" font-weight="700">一格式统一四种精度（首个同时支持 INT4/INT8/FP8/BF16 的 FP-CIM）</text>
+  <g font-size="11.5">
+    <rect x="80" y="340" width="180" height="50" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="170" y="362" text-anchor="middle" fill="#0e5a8a" font-weight="600">FP8（E5M2/E4M3）</text>
+    <text x="170" y="380" text-anchor="middle" fill="#45536b">尾数→4b SFME</text>
+    <rect x="290" y="340" width="180" height="50" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="380" y="362" text-anchor="middle" fill="#1d8a5f" font-weight="600">BF16</text>
+    <text x="380" y="380" text-anchor="middle" fill="#45536b">尾数→8b SFME</text>
+    <rect x="500" y="340" width="180" height="50" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="590" y="362" text-anchor="middle" fill="#c25e2e" font-weight="600">INT4 / INT8</text>
+    <text x="590" y="380" text-anchor="middle" fill="#45536b">直接用整数通路</text>
+    <rect x="710" y="340" width="180" height="50" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="800" y="362" text-anchor="middle" fill="#6b3fa0" font-weight="600">四模式 4b 乘法器</text>
+    <text x="800" y="380" text-anchor="middle" fill="#45536b">覆盖 8b 2C 的全部部分积组合</text>
+    <text x="80" y="432" fill="#45536b">→ 4b 对齐尾数复用 INT4 通路、8b 复用 INT8 通路 → FP 的 MAC 走整数数据通路，硬件几乎免费</text>
+    <text x="80" y="456" fill="#1d8a5f" font-weight="600">FP8 两种形式：E5M2（5b 指数 2b 尾数：范围大精度低）· E4M3（4b 指数 3b 尾数：范围小精度高）</text>
+  </g>
+</svg>

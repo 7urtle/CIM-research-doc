@@ -1,0 +1,65 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：用原生安全的 XNOR 门做乘法</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① AND 乘法共享后为什么贵（48 门 + 2 随机比特）；② XNOR 是线性逻辑 → 共享后天然安全（6 门 + 0 随机比特）；③ 怎么用 XNOR（±1 乘法）算多位 MAC 而不失精度（SV/BV 换算 + 校正因子）。</p>
+</div>
+
+<h3>3.1 问题：AND 乘法的共享成本（论文 Fig.2）</h3>
+<p>传统位串行数字 IMC 用 AND/NOR 门做 1-bit 乘法。AND 是<strong>非线性</strong>逻辑 → 共享后：</p>
+<ul>
+<li>激活和权重的每份乘法不能独立进行；</li>
+<li>需要随机比特 remask 或更多输入共享来维持均匀性；</li>
+<li>需要输出寄存器维持非完备性和抗毛刺。</li>
+</ul>
+<p>标准 TI 形式的每个 AND 1-bit 乘法器需要 <strong>48 个门等效 + 每周期 2 个随机比特</strong>——对 IMC 的百万并行 MAC 完全不可扩展。</p>
+
+<figure>
+<img src="assets/figs/fig16_2_AND与XNOR乘法对比.png" alt="AND与XNOR乘法对比">
+<figcaption>图 1 · 论文 Fig.2：传统 AND 乘法与提出的 XNOR 乘法在共享格式下的对比。</figcaption>
+</figure>
+
+<h3>3.2 方案：原生安全的线性 XNOR 门</h3>
+<p>XNOR（=反相的 XOR）是<strong>线性</strong>逻辑：</p>
+<ul>
+<li><strong>每份可独立计算</strong>（线性运算在共享上的分配律）；</li>
+<li><strong>天然保持均匀性与抗毛刺</strong> → 无需随机比特、无需输出寄存器；</li>
+<li>标准 4 晶体管传输门实现 XOR，加权重输入反相器平衡 SRAM 位单元负载（为 PUF 操作准备）→ 每个乘法 <strong>6 个门等效、0 随机比特</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 48 门 + 2 随机比特 → 6 门 + 0 随机比特</div>
+<p>这就是“原生安全”的含义：<strong>XNOR 门本身在共享格式下就是安全的</strong>，不需要任何附加保护。对 IMC 这种并行度极高的结构，这是唯一的可行路线。</p>
+</div>
+
+<h3>3.3 但 XNOR 是 ±1 乘法，怎么算多位 MAC？</h3>
+<p>XNOR 乘法对应二值神经网络（BNN）的 +1/−1 乘法。直接替换 AND 会导致算术错误。本论文的解法（类似 [7]）：</p>
+<ul>
+<li><strong>有符号值（SV）</strong>：每个有符号值写成二进制加权 +1/−1 的和，SV = Σ 2ⁱ × (−1)^(1−bᵢ)（只取奇数值：±1、±3、±5…）；</li>
+<li><strong>二进制值（BV）</strong>：计算用的表示，从全 0（最小负）到全 1（最大正）；换算 SV = 2·BV − (2ⁿ−1)；</li>
+<li><strong>范围翻倍</strong>：SV 虽只取奇数，但 4 位可存 −15~15（原本 −8~7）→ 网络可重训，预期无精度损失（表 I 验证：奇数量化 vs 标准量化精度一致）；</li>
+<li><strong>校正因子</strong>（论文式 8）：SVout = 2 × BVout − (2ⁿᵂ−1)(2ⁿᴬ−1)·r —— 校正项只依赖位宽和输入数 r，<strong>可片外预计算</strong>。</li>
+</ul>
+<p>无符号激活（ReLU 输出）+ 有符号权重时，校正因子 = BVout − 常数 + Σ权重项（权重和也随激活不变，可预计算存储）。</p>
+
+<figure>
+<img src="assets/diagrams/d03_xnor.svg" alt="XNOR教学图">
+<figcaption>教学图 3 · AND vs XNOR 乘法，以及 SV/BV 换算与校正因子。</figcaption>
+</figure>
+
+<div class="demo">
+<div class="dhead">🔬 演示 B · XNOR 乘法（线性）vs AND 乘法（非线性）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">XNOR 恢复=… ✓ vs AND 恢复=… ✗</span>
+</div>
+<div class="hint">同一组 3 份输入下：XNOR 对每份独立计算后 XOR 恢复 = 正确结果（线性 → 天然安全）；AND 共享后恢复 ≠ 正确结果（非线性破坏正确性）→ 需要随机比特 remask。这就是“原生安全”的含义。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① AND 乘法共享后 48 门+2 随机比特/周期 → IMC 不可扩展；② XNOR 线性 → 6 门+0 随机比特，原生安全；③ SV/BV 换算 + 常数校正因子让 XNOR（±1 乘法）也能做多位 MAC，精度零影响（表 I）。</p>
+</div>
+</section>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="600" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">1Mb CFD-SC-RC SRAM-DCIM 宏：16 个 64kb bank，每个 bank 32 个可重构推理块</text>
+
+  <!-- 16 banks -->
+  <rect x="40" y="80" width="620" height="330" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="106" fill="#0e5a8a" font-size="13.5" font-weight="700">1Mb 宏 = 16 × 64kb bank</text>
+  <g>
+    <rect x="60" y="120" width="90" height="56" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="105" y="144" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">Bank 0</text>
+    <text x="105" y="162" text-anchor="middle" fill="#6b7a93" font-size="9.5">64kb</text>
+    <rect x="160" y="120" width="90" height="56" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="205" y="144" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">Bank 1</text>
+    <rect x="260" y="120" width="90" height="56" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="305" y="144" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">Bank 2</text>
+    <rect x="360" y="120" width="90" height="56" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="405" y="144" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">…</text>
+    <rect x="460" y="120" width="90" height="56" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="505" y="144" text-anchor="middle" fill="#0e5a8a" font-size="11.5" font-weight="600">Bank 15</text>
+    <text x="60" y="210" fill="#45536b" font-size="11.5">每个 bank：控制块 · I/O 块 · IN/W 调度器 · 字线驱动器 ·</text>
+    <text x="60" y="230" fill="#45536b" font-size="11.5">32 个可重构推理块（RIB）· 加法树 · DM-MPDBU</text>
+  </g>
+
+  <!-- 单个 bank 放大 -->
+  <rect x="700" y="80" width="240" height="330" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="820" y="106" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">单个 Bank 内部</text>
+  <g font-size="10.5">
+    <rect x="715" y="120" width="210" height="26" rx="5" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="820" y="137" text-anchor="middle" fill="#1d8a5f">控制块 / I/O / IN-W 调度 / WL 驱动</text>
+    <rect x="715" y="156" width="210" height="26" rx="5" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="820" y="173" text-anchor="middle" fill="#0e5a8a">32 × RIB（可重构推理块）</text>
+    <rect x="715" y="192" width="210" height="26" rx="5" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="820" y="209" text-anchor="middle" fill="#6b3fa0">加法树（32 路）</text>
+    <rect x="715" y="228" width="210" height="26" rx="5" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="820" y="245" text-anchor="middle" fill="#c25e2e">DM-MPDBU（IF/LIF/IQIF）</text>
+    <text x="715" y="282" fill="#45536b">每个 RIB：</text>
+    <rect x="715" y="292" width="90" height="24" rx="5" fill="#eefaf3" stroke="#bfe6d2"/><text x="760" y="308" text-anchor="middle" fill="#1d8a5f">2kb SRAM 阵列</text>
+    <rect x="812" y="292" width="100" height="24" rx="5" fill="#eefaf3" stroke="#bfe6d2"/><text x="862" y="308" text-anchor="middle" fill="#1d8a5f">WSC 权重驻留</text>
+    <rect x="715" y="324" width="90" height="24" rx="5" fill="#f5f0fc" stroke="#dcccf0"/><text x="760" y="340" text-anchor="middle" fill="#6b3fa0">8 × CMDM-LCC</text>
+    <rect x="812" y="324" width="100" height="24" rx="5" fill="#f5f0fc" stroke="#dcccf0"/><text x="862" y="340" text-anchor="middle" fill="#6b3fa0">SaA 移位相加</text>
+    <text x="715" y="380" fill="#45536b">8 个 CMDM-LCC × 4 槽 = 32 个权重槽</text>
+    <text x="715" y="398" fill="#45536b">→ 32 路 MAC 每周期完成</text>
+  </g>
+
+  <path d="M660,200 H700" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="680" y="192" text-anchor="middle" fill="#6b7a93" font-size="10.5" transform="rotate(-90 680 192)">放大</text>
+
+  <!-- 底部 -->
+  <rect x="40" y="430" width="900" height="146" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="458" fill="#0e5a8a" font-size="13" font-weight="700">两级并行：bank 级 × RIB 级</text>
+  <text x="60" y="484" fill="#45536b" font-size="12.5">• 16 个 bank 可以处理不同层/不同通道（模型级并行）；</text>
+  <text x="60" y="506" fill="#45536b" font-size="12.5">• 每个 bank 内 32 个 RIB 并行，每个 RIB 每周期完成 4 个 4b MAC（或 2 个 8b MAC）；</text>
+  <text x="60" y="528" fill="#45536b" font-size="12.5">• 权重驻留单元（WSC）让权重“躺”在 SRAM 里不动 → 减少数据搬移；</text>
+  <text x="60" y="550" fill="#45536b" font-size="12.5">• DM-MPDBU 在 bank 末尾做神经元膜电位动力学（IF/LIF/IQIF），一条流水线服务全部 32 个 RIB。</text>
+  <text x="60" y="572" fill="#1d8a5f" font-size="12.5" font-weight="600">“可重构推理块（RIB）”：同一块硬件，SNN/CNN 模式一键切换 → 混合模型支持</text>
+</svg>

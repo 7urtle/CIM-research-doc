@@ -1,0 +1,229 @@
+===== PAGE 1 =====
+518  •  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.4
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+SRAM CIM macros improve energy efﬁciency for edge-AI devices. In contrast to “bit-serial” 
+CIM macros [1], “bit-parallel” CIM directly matches the data format of computing systems, 
+eliminating the parallel-to-serial conversion and specialized weight mapping strategies [2,3]. 
+It can also reduce the MSB toggle rate [4], thereby lowering power consumption. Current 
+bit-parallel CIM macros have achieved notable progress [5-7], however, as illustrated in 
+Fig. 30.4.1, several challenges remain: (1) For 8b MAC, “bit-parallel” CIM suffers from 
+routing congestion [7]. Some approaches concatenate multi-cycle computation results from 
+low-precision MAC units (e.g., INT4) [6][8], while others employ ADCs as local compressors 
+[5][9] to perform bit-column addition. A tradeoff between throughput and area overhead is 
+required. Approximate compressors [6,10] can reduce resource consumption, but with 
+accuracy loss. (2) Handling sign bits for 2’s-complementary MAC in these macros often 
+demands large extra area [6][8] or additional cycles [11]. (3) During multiplication and local 
+compression before generating the ﬁnal outer-product results, intermediates induce 
+unnecessary toggling in high-fan-in adders, resulting in power inefﬁciency [12]. 
+ 
+To address these challenges, this paper presents a fully-digital bit-parallel CIM macro with 
+three key features: (1) Lossless digital local compressors based on transition-counting-
+lines (TCLs), realizing sparsity-adaptive and area-efﬁcient (minimized transistor count) 
+bit-column addition for outer-product matrix; (2) A bus TCL embedding sign-bit extension 
+for signed 2’s-complementary MAC, incurring only 2.95% extra area without additional 
+delay; (3) A shared local 10-phase generator, enabling TCLs and adder trees to operate in 
+a stage-wise manner within a computation cycle, thereby avoiding unnecessary toggling of 
+adders and improving energy efﬁciency by 42%. A 28nm 32kb CIM macro based on TCLs 
+is fabricated to support INT8 and BF16 MAC operations, achieving energy efﬁciencies of 
+106.85TOPS/W for INT8 and 77.68TFLOPS/W for BF16. 
+ 
+Figure 30.4.2 illustrates the architecture of the presented TCL-based CIM macro, which 
+includes a global controller (Ctrl.), an SRAM read/write controller, four CIM banks, a global 
+input buffering unit, and an exponent post-processing unit for BF16. Each CIM bank consists 
+of a local 10-phase generator, an Out-Block Adder Tree, and four CIM blocks (each 
+containing 16 CIM cells and an in-block adder tree). The in-block adder tree adds the 16 
+16b products from the 16 CIM cells, and the out-block adder tree adds the four 20b sums 
+from the four In-Block Adder Trees, generating the 22b MAC Value (MACV). A CIM cell 
+integrates a 16×8b 6T-SRAM for storing unsliced weights and a computing cell that 
+performs 8b×8b bit-parallel multiplication. The computing cell comprises 64 multiply-
+multiplex units (MMUs), 15 counters (CNTs), and a combine adder, reading an 8b weight 
+per cycle from the SRAM. The MMUs at the same bit-position are connected hierarchically, 
+with a CNT at the end to form a TCL, performing bit-column additions. Following the outer-
+product rule, 15 TCLs are used for 8b×8b multiplication, and the 15 bit-column sums are 
+accumulated by the Combine Adder to obtain a 16b product. The MMUs for sign-bits in the 
+bus TCL (TCL-14) are reused across TCL-7~14 as embedded sign-bit extension for 2’s-
+complementary multiplication. A clock cycle includes 10 phases: phases 0~7 (Ph0~7) 
+sequentially enable MMUs in each TCL, Ph8 enables the Combine Adder, and Ph9 enables 
+the In-Block Adder Tree. The CIM macro supports both INT8 and BF16 MAC operations. In 
+INT8 mode, 64 features (XIN, 8b) are applied to four CIM banks, which hold 64×4 pre-read 
+8b weights, yielding four 22b MACVs per clock cycle. In BF16 mode, the exponents of the 
+input features are pre-aligned [1], and the CIM banks store mantissas of the pre-aligned 
+weights. The four mantissa MACVs obtained in the four CIM banks are post-processed to 
+generate the FP32 output. These three stages are pipelined to generate the FP32 output per 
+clock cycle. 
+ 
+Figure 30.4.3 illustrates the circuit structures and operations of the 10-phase generator and 
+the TCL. The 10-phase generator comprises ten identical Rising-edge Delay Cells (RDCs) 
+connected in cascade. Vrst controls each RDC’s output state, while Vdelay regulates its input-
+output delay. Vrst is synchronously asserted high (logic 1) with the rising edge of the main 
+clock (Clk) and then quickly deasserted low (logic 0). When Vrst=1, all RDC outputs (Ph0~9) 
+are set to 0. Ph0 is driven high when Vrst=0. After the delay of RDC #0 (Δtr0), Ph1 is driven 
+high as well. This process propagates through the 10 RDCs, driving Ph0~9 to high 
+sequentially, generating the 10 phases as shown in Fig. 30.4.3. The TCL is composed of 
+MMUs and a CNT. Each MMU comprises a Multiply section and a Multiplex section. The 
+Multiplex sections of the MMUs in a TCL are cascaded: the output (MOut) of each MMU 
+serves as the input (MIn) of the next MMU. The MIn of the ﬁrst MMU is tied to VDD and the 
+MOut of the last MMU is connected to the input of the CNT. The Multiply section determines 
+whether Path1 or Path2 is activated in the Multiplex section, depending on the values of 
+Phk, XIN[m], and W[n] (k, m, n=0~7). Only when phase Phk=1 and Pmn=XIN[m]×W[n]=1 
+is Path1 activated. In that case, MOut is the inversion of MIn, producing a transition (edge) 
+that CNT counts. Taking TCL-9 with eight MMUs as an example, where the bit-products are 
+{1, 1, 0, 0, 1, 0, 0, 1}, respectively: During Δtr0 (Ph0=1 and Ph1~9=0), only the ﬁrst MMU 
+(corresponding to P07) activates Path1; since the MIn of the ﬁrst MMU is tied to VDD, Path1 
+yields a falling-edge-transition at MOut. The remaining MMUs activate Path2 and pass the 
+signal unmodiﬁed, allowing the falling edge to propagate to the CNT and increment the 
+count by 1. Similarly, transitions occur during Δtr1,4,7. In total, the CNT detects four transition 
+edges as the bit-column sum. The eight bit-products are encoded as the 4b count, forming 
+an 8-to-4 lossless compression. Ph8 and Ph9 remain low during Ph0~7, so the Combine 
+Adder and Adder Tree remain inactive, reducing dynamic power consumption. 
+ 
+Figure 30.4.4 illustrates how the bus TCL implements embedded sign-bit extension, and 
+the enabling-circuit structures for Combine Adder and In-Block Adder Tree. For 2’s-
+complementary signed multiplication, TCL-14 forms the bus TCL by connecting Pm7, m=0~7. 
+P07 is used by each of TCL-7~14 (thus reused 8×), P17 is used by each of TCL-8~14 (reused 
+7×), and so forth, thereby realizing sign-bit extension. To implement the complete 2’s-
+complementary multiplication rule, the inverted Wn’s (n=0~7) are applied to the invert-bit 
+MMUs, respectively, and the CNT in TCL-7 is initialized to XIN[7]. For unsigned computation, 
+we only need to disconnect Pm7 (m=0~7) in TCL-14, multiplex Wn’s to the invert-bit MMUs, 
+and initialize the CNT in TCL-7 to 0. Switching between the two modes requires only seven 
+transmission gates (TGs) and eight 2-to-1 multiplexers, with an additional area overhead 
+of 2.95%. Before Ph8, the inputs of the combine adder and the in-block adder tree are forced 
+to ground using single-pole double-throw switches, preventing the propagation of spurious 
+toggling. As shown in Fig. 30.4.2, the In-Block Adder Tree is of four stages. Each stage can 
+include phase-controlled switches to improve energy efﬁciency, while they increase area 
+overhead. We simulated the area and efﬁciency, versus the number of enabling stages. As 
+a tradeoff, one enabling stage is selected for Combine Adder and one for In-Block Adder 
+Tree, achieving a 42% energy efﬁciency improvement with only 6% area efﬁciency 
+degradation. 
+ 
+Figure 30.4.5 illustrates the performance of the presented design. The 8b bit-parallel MAC 
+computing cells are compared in terms of MAC cell FoM (Energy Efﬁciency/Transistor 
+Count). In comparison with standard digital bit-multiplication with standard digital 
+compressors, analog bit-multiplication with two 3b ADCs as compressors [5], and the 
+design [6] employing two 4b bit-parallel MAC cells with ripple carry adders, the presented 
+MAC cell with TCLs achieves the FoM improvement by 1.66 to 1.87×. To better demonstrate 
+the impacts of sign-bit extension and stage-enabling, two additional implementations are 
+evaluated: (1) a baseline unsigned MAC cell without bus TCLs or the adder-enabling circuit, 
+and (2) a signed MAC cell without the enabling circuit. Relative to the baseline design, 
+connecting Pm7’s (m=0~7) for bus TCL and increasing CNT bit-widths in signed MAC cell 
+consume 1.03× area and more power. With the introduction of the two-stage adder-enabling 
+circuit, the ﬁnal fabricated design achieves a 1.35× energy efﬁciency with only a 1.09× area 
+overhead compared to the baseline unsigned design, and a 1.42× improvement with a 1.06× 
+area overhead compared to the signed design without adder enabling. The 10k Monte Carlo 
+simulation results of the transition delay of MMUs (ΔtMMU) and the transition delay of RDCs 
+(Δtr0~7, annotated as ΔtRDC) indicate that, ΔtMMU is consistently smaller than ΔtRDC, ensuring 
+correct TCL operation under process and supply voltage variations. The energy efﬁciency 
+of the presented signed MAC macro is measured across various input toggle rates and input 
+sparsity levels, with the 50% weight sparsity. A peak performance of 106.85TOPS/W is 
+achieved. 
+ 
+Figure 30.4.6 shows the measurement results of the TCL-based CIM chip, which is 
+fabricated in a 28nm CMOS technology. The measured access time is 4.1ns at 0.9V for 
+BF16 inputs and weights, and FP32 outputs. The measured maximum energy and area 
+efﬁciency are 77.68TFLOPS/W and 1.24TFLOPS/mm2 for BF16 MAC operation under 0.55V 
+30.4    A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded  
+           Transition-Counting-Lines for Edge-AI Devices 
+ 
+Lichen Feng, Yunlong Liu, Lin Wu, Dong Li, Zhangming Zhu 
+ 
+Xidian University, Xi’an, China 
+This paper proposes a bit-parallel digital CIM macro featuring a lossless compressor based 
+on transition-counting-lines (TCLs) for bit-column addition. The bus TCL incorporates sign-
+bit extension to support signed 2’s-complement MAC operations with minimal area 
+overhead. A stage-wise enabling circuit prevents unnecessary toggling of adders, improving 
+energy efﬁciency by 42%. Leveraging these techniques, the proposed CIM macro, which is 
+fabricated in 28nm CMOS, achieves 106.85TOPS/W for INT8 operations and 
+77.68TFLOPS/W for BF16 operations. 
+ 
+Abstract
+2026 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-8936-3/26/$31.00 ©2026 IEEE | DOI: 10.1109/ISSCC49663.2026.11409281
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 30.4.1: Challenges of bit-parallel CIM macro and the proposed solution.
+Figure 30.4.2: Overall architecture of the proposed TCL-based digital-SRAM CIM macro.
+ISSCC 2026 / February 18, 2026 / 9:15 AM
+519  
+DIGEST OF TECHNICAL PAPERS  •
+30
+and 0.9V supply voltages, respectively, with 90% input sparsity and 10% toggle rate, 
+while the weight sparsity is 50%. By adopting the sign-bit-embedded TCL and stage-wise-
+enabling, 
+the 
+presented 
+bit-parallel 
+CIM 
+macro 
+improves 
+the 
+output 
+precision×TOPS/W×TOPS/mm2 (FoM1) by 1.25 to 2.88× and the TFLOPS/W×TFLOPS/mm2 
+(FoM2) by 2.20 to19.9×, in comparison to prior signed CIM macros [2,3,6,7]. In BF16 
+mode, this work achieves an 81.05% inference accuracy when used on ViT-B 
+@lmageNetV2 and an 81.19% inference accuracy when used on ResNet50 @lmageNetV2. 
+Figure 30.4.7 presents a die micrograph and a summary of chip performance. 
+ 
+Acknowledgement:  
+This work is supported in part by the National Key R&D Program of China 
+(2022ZD0118903), in part by the National Natural Science Foundation of China 
+(62474128, U22A2013, U24A20291). (Corresponding authors are Zhangming Zhu, 
+zmyh@263.net; Yunlong Liu, liuyunlongahu@163.com) 
+ 
+References: 
+[1] A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-
+Computing-Unit and Double-Bit 6T-SRAM Computing-in-Memory Macro for Floating-Point 
+CNNs,” ISSCC, pp. 128-129, Feb, 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067260 
+[2] X. Wang et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-
+Point CIM Macro with Non-Two’s-Complement MAC for CNNs and Transformers,” ISSCC, 
+pp. 254-255, Feb. 2025. https://doi.org/10.1109/ISSCC49661.2025.10904738 
+[3] X. Chen et al., “A 28nm 64kb Bit-Rotated Hybrid-CIM Macro with an Embedded Sign-
+Bit-Processing Array and a Multi-Bit-Fusion Dual-Granularity Cooperative Quantizer,” 
+ISSCC, pp. 260-261, Feb. 2025. https://doi.org/10.1109/ISSCC49661.2025.10904646 
+[4] H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm2 and 3.78Mb/mm2 Fully-
+Digital Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC 
+Architecture and Foundry 6T-SRAM Bit Cell,” ISSCC, pp. 572-573, Feb. 2024. 
+https://doi.org/10.1109/ISSCC49657.2024.10454556 
+[5] Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based 
+Floating-Point SRAM Computing-in-Memory Macro with Logarithm Bit-Width Residual 
+ADC,” ISSCC, pp. 576-577, Feb. 2024.  
+https://doi.org/10.1109/ISSCC49657.2024.10454313 
+[6] Y. Yuan et al., “A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose 
+Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” ISSCC, pp. 
+258-259, Feb. 2025. https://doi.org/10.1109/ISSCC49661.2025.10904659 
+[7] P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-
+Compute Macro with 16.2-70.2TFLOPS/W for High-Accuracy AI-Edge Devices,” ISSCC, 
+pp. 126-127, Feb. 2023. https://doi.org/10.1109/ISSCC42615.2023.10067527 
+[8] H. Mori et al., “A 4nm 6163-TOPS/W/b 4790−TOPS/mm2/b SRAM Based Digital-
+Computing-in-Memory Macro Supporting Bit-Width Flexibility and Simultaneous MAC 
+and Weight Update,” ISSCC, pp. 132-133, Feb. 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067555 
+[9] S. Hong et al., “Dyamond: Compact and Efﬁcient 1T1C DRAM IMC Accelerator With 
+Bit Column Addition for Memory-Intensive AI,” IEEE Journal of Solid-State Circuits, vol. 
+60, no. 4, pp. 1299-1310, April 2025. https://doi.org/10.1109/JSSC.2025.3538899 
+[10] D. Wang et al., “DIMC: 2219TOPS/W 2569F2/b Digital In-Memory Computing Macro 
+in 28nm Based on Approximate Arithmetic Hardware,” ISSCC, pp. 266-267, Feb. 2022. 
+https://doi.org/10.1109/ISSCC42614.2022.9731659 
+[11] F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconﬁgurable 
+Digital CIM Processor with Uniﬁed FP/INT Pipeline and Bitwise In-Memory Booth 
+Multiplication for Cloud Deep Learning Acceleration,” ISSCC, pp. 254-255, Feb. 2022. 
+https://doi.org/10.1109/ISSCC42614.2022.9731762 
+[12] C.-F. Lee et al., “A 12nm 121-TOPS/W 41.6-TOPS/mm2 All Digital Full Precision 
+SRAM-based Compute-in-Memory with Conﬁgurable Bit-width For AI Edge Applications,” 
+IEEE Symp. VLSI Circuits, pp. 24-25, June 2022.  
+https://doi.org/10.1109/VLSITechnologyandCir46769.2022.9830438
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+Figure 30.4.3: The structures and workﬂows of the TCL and the 10-phase generator.
+Figure 30.4.4: Embedded sign-bit extension in bus TCL-14 and the enabling-circuit 
+structure for Combine Adder and In-Block Adder Tree.
+Figure 30.4.5: Simulated MAC computing cell performance and measured energy 
+efﬁciencies of the proposed CIM macro.
+Figure 30.4.6: Measurement results and comparison table.
+Figure 30.4.7: Die micrograph and summary of key performance metrics.
+•  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.4
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:01 UTC from IEEE Xplore.  Restrictions apply. 

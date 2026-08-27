@@ -1,0 +1,49 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：CFD-SC-RC 架构与 CMDM-LCC 双模式计算单元</h2>
+
+<h3 id="sec4-1">4.1 问题：两套电路 vs 一套电路</h3>
+<p>SNN 的 MAC 是“1b 输入 × 8b 权重”的<strong>位宽乘法（bit-wise, BW）</strong>，CNN 的 MAC 是“8b 输入 × 8b 权重”的<strong>字宽乘法（word-wise, WW）</strong>。二者数据通路不同。最直接的做法是各做一套乘法器 + 各自的累加逻辑——但面积翻倍，边缘芯片承担不起。</p>
+<p>本论文的 <strong>CFD-SC-RC</strong>（Compact Fully-Digital SNN-CNN Reconfigurable Computing，紧凑型全数字 SNN-CNN 可重构计算）架构，核心思想是：<strong>让同一套 MAC 硬件在两种模式下工作</strong>。实现这个“双重人格”的关键零件，是每个可重构推理块（RIB）里的 <strong>CMDM-LCC</strong>（Cross-Model Dual-Mode Local Computing Cell，跨模型双模式本地计算单元）。</p>
+<figure>
+  <img src="assets/diagrams/d03_cmdm_lcc.svg" alt="CMDM-LCC 结构" style="max-width:900px">
+  <figcaption>图 4.1　CMDM-LCC 结构：两个 MUX 乘法器 + INT8 翻转缩减器（TR）+ 移位相加（SaA），输出 8 个部分 MAC（pMAC0–7）。SNN 模式 pMAC 直通加法树；CNN 模式先经 SaA 做字宽累积。</figcaption>
+</figure>
+
+<h3 id="sec4-2">4.2 CMDM-LCC 的双模式结构</h3>
+<p>每个 CMDM-LCC 包含：</p>
+<ul>
+<li><strong>两个基于 MUX 的乘法器（MUL0/MUL1）</strong>：MUX 乘法器 = 用选择器阵列实现的乘法，比全加器阵列更紧凑，适合位宽可变的场景。同一对 MUL 在 SNN 模式下做“1b×8b 位宽乘法”，在 CNN 模式下做“8b×8b 字宽乘法”；</li>
+<li><strong>INT8 翻转缩减器（Toggle Reducer, TR）</strong>：INT8 模式下消除冗余的信号翻转（见 4.3），降低动态功耗；</li>
+<li><strong>移位相加（Shift-and-Add, SaA）</strong>：CNN 模式下把 8b 输入按位/按字拆分的部分积做字宽累积（WW-accumulation）；SNN 模式不需要，pMAC 直接进加法树。</li>
+</ul>
+<p>每个 CMDM-LCC 每周期输出 <strong>pMAC0–7</strong> 共 8 个部分 MAC。数据流走向（图 4.1 底部）：</p>
+<div class="formula">SNN 模式：pMAC0–7 → 加法树（直接累加，无字宽）<br>CNN 模式：pMAC0–7 → SaA（字宽累积）→ 加法树<span class="tag">式 4.1</span></div>
+
+<h3 id="sec4-3">4.3 INT4/INT8 双模权重映射：4 个槽的两种玩法</h3>
+<p>每个 CMDM-LCC 有 4 个权重输入槽 W0–W3（来自 SRAM 阵列）。这 4 个槽怎么用，取决于精度模式：</p>
+<figure>
+  <img src="assets/diagrams/d04_int4_int8.svg" alt="INT4/INT8 双模映射" style="max-width:900px">
+  <figcaption>图 4.2　同一组 4 槽权重：INT4 模式 = 4 个独立 4b MAC；INT8 模式 = W0+W2 拼成 8b 权重 A、W1+W3 拼成 8b 权重 B（2 个 8b MAC）。</figcaption>
+</figure>
+<ul>
+<li><strong>INT4 模式</strong>（TR 关闭）：W0–W1 映射为两个 4b 权重 A[3:0]、B[3:0]，W2–W3 映射为 C[3:0]、D[3:0] → 每周期 <strong>4 个独立的 4b×4b MAC</strong>。适合精度不敏感的层（更省）；</li>
+<li><strong>INT8 模式</strong>（TR 开启）：W0–W1 是 A[7:0]、B[7:0] 的<strong>低 4 位</strong>，W2–W3 是它们的<strong>高 4 位</strong> → 每周期 <strong>2 个 8b×8b MAC</strong>（两个 MUL 各做一个）。适合精度敏感层（更准）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 INT8 翻转缩减器（TR）为什么能省电？</div>
+<p>INT8 模式下，8b 权重被拆成“低 4 位 + 高 4 位”存在两个槽里。计算时要把两半拼起来，拼接过程会产生大量<strong>冗余的信号翻转</strong>（比如低半部分的位在两次使用之间反复跳变）。TR 的作用就是在数据进入 MUX 乘法器之前，把这种“注定要被丢弃/合并”的翻转消掉——CMOS 动态功耗 ∝ 翻转次数，消掉冗余翻转就直接省功耗。</p>
+</div>
+<p>这种“<strong>逐层自适应精度选择</strong>”是论文卖点之一：模型的不同层可以分别标注 INT4 或 INT8，硬件按层配置，不需要重编译、不需要改电路。</p>
+
+<h3 id="sec4-4">4.4 交互演示 B：同一个 4 槽，INT4 和 INT8 两种玩法</h3>
+<div class="demo">
+<div class="dhead">🔀 演示 B · INT4/INT8 双模权重映射（可切换）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-i4" class="on">INT4 模式（4 个 4b MAC）</button>
+  <button id="demoB-i8">INT8 模式（2 个 8b MAC）</button>
+  <span class="stat" id="demoB-stat">INT4：W0–W3 = A/B/C/D 四个独立 4b 权重</span>
+</div>
+<div class="hint">观察同一组 W0–W3 槽在两种模式下的含义变化。INT8 下 W0 与 W2 拼成 A 的高低位——乘法器要组合两个部分积（TR 就是处理这个拼接翻转的）。</div>
+</div>
+</section>

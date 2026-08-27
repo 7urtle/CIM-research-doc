@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：广播对齐浮点 CIM 宏（ISSCC 2025 14.3）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2025 14.3 广播对齐非二进制补码 MAC 浮点 CIM 宏的浮点格式、串行对齐、符号-数值权重与实测分析。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">浮点存内计算（FP-CIM）零基础精讲</div>
+    <div class="t2">ISSCC 2025 · Session 14 · Paper 14.3</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：为什么需要浮点 CIM</a>
+  <a class="sec" href="#sec2">02 · 浮点格式与对齐难题</a>
+  <a class="sub" href="#sec2-1">2.1 BF16 格式</a>
+  <a class="sub" href="#sec2-2">2.2 为什么对齐不友好</a>
+  <a class="sec" href="#sec3">03 · FP-CIM 的三大挑战</a>
+  <a class="sec" href="#sec4">04 · 宏架构总览</a>
+  <a class="sec" href="#sec5">05 · 创新①：ESICU 与 2b 串行对齐</a>
+  <a class="sub" href="#sec5-1">5.1 ESICU 结构</a>
+  <a class="sub" href="#sec5-2">5.2 串行对齐时间线</a>
+  <a class="sub" href="#sec5-3">5.3 视频与仿真</a>
+  <a class="sec" href="#sec6">06 · 创新②：格式混合 N2CMAC</a>
+  <a class="sub" href="#sec6-1">6.1 符号-数值权重</a>
+  <a class="sub" href="#sec6-2">6.2 无符号 MAC + 符号补偿</a>
+  <a class="sec" href="#sec7">07 · 三种计算模式</a>
+  <a class="sub" href="#sec7-1">7.1 BF16A / BF16B / INT8</a>
+  <a class="sub" href="#sec7-2">7.2 存储器配置</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sub" href="#sec8-1">8.1 能效与面积效率</a>
+  <a class="sub" href="#sec8-2">8.2 各项收益</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">广播对齐浮点存内计算零基础精讲：让浮点精度也拥有整数级能效
+<span class="en">A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers（ISSCC 2025 · Paper 14.3）</span></h1>
+<div class="meta">论文作者：Xing Wang*, Tianhui Jiao* 等（*共同一作）· 东南大学 + 国家 EDA 创新中心 + 清华大学（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.3
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>之前的存内计算（CIM）大多只做<strong>整数</strong>（INT8），因为浮点（FP）的“指数对齐”和 CIM 的广播结构天生不合。本论文（东南大学司鑫组）在 <strong>28nm</strong> 上做了一个 <strong>64kb 浮点 CIM 宏</strong>，用三招化解浮点的三大难题：</p>
+<ol>
+<li><strong>广播输入 + 嵌入式轻量转换器（ESICU）</strong>：把浮点输入拆成“8b 并行指数 + 2b 串行尾数”，16 个阵列共享一份输入 → 输入复用性大幅提升；</li>
+<li><strong>嵌入式自适应 2b 串行对齐</strong>：用“倒计时器 + 比较器 + 寄存器链”替代“减法器 + 桶形移位器”，对齐电路面积 −36.23%；</li>
+<li><strong>格式混合非二进制补码 MAC（N2CMAC）</strong>：权重用符号-数值格式存储，把有符号 MAC 拆成“无符号 MAC + 符号补偿”→ 负权重位级稀疏性提升 1.83×，功耗大幅下降。</li>
+</ol>
+<p>实测：<strong>BF16 模式 62.84 TFLOPS/W</strong>、<strong>INT8 模式 90.15 TOPS/W</strong>（FP32 输出，28nm）——把浮点精度做到了整数级能效。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>浮点 = 指数 + 尾数：</strong>浮点数像科学计数法（1.25 × 2³）。乘法=指数相加+尾数相乘（简单）；加法=先“对齐”再相加（麻烦）。CIM 里的麻烦全来自“对齐”。</li>
+<li><strong>对齐为什么贵：</strong>传统做法给每个输入配一个“减法器+桶形移位器”做并行对齐——面积大、功耗高。本文换思路：用一个倒计时器统一节奏，所有输入“每周期移 2 位”，把对齐摊到多个周期（串行），面积就下来了。</li>
+<li><strong>负数的存储格式决定功耗：</strong>2 的补码里负数全是 1（翻转多、费电）；符号-数值格式只翻符号位（数值位保持稀疏）。换存储格式 = 直接省加法树功耗，这是 N2CMAC 的物理直觉。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“FP incurs higher energy and area overhead due to complex FP multiplication and accumulation (MAC) operations”</td>
+<td>浮点乘加比整数复杂（对齐、归一化、舍入），能耗和面积开销大——这是 FP-CIM 要解决的核心矛盾。</td></tr>
+<tr><td class="num">“(1) the difficulty of balancing FP-computation precision and input reusability, as alignment operations are unfriendly to CIM structure”</td>
+<td>挑战 1：对齐依赖每个输入自己的指数 → 输入没法整齐广播复用，精度与复用率二选一。</td></tr>
+<tr><td class="num">“(2) a large performance loss or area overhead due to peripheral parallel-alignment schemes”</td>
+<td>挑战 2：外围并行对齐（减法器+桶形移位器）要么吃掉面积，要么拖慢性能。</td></tr>
+<tr><td class="num">“(3) huge digital-MAC dynamic-energy consumption due to low 2's-complement (2C) negative-weight sparsity, coupled with an additional sign-bit computation overhead”</td>
+<td>挑战 3：2 的补码格式负权重位级稀疏性差 + 符号位计算开销 → 数字 MAC 动态功耗高。</td></tr>
+<tr><td class="num">“achieved an energy efficiency of 62.84TFLOPS/W for BF16 and 90.15TOPS/W for INT8”</td>
+<td>实测：BF16 62.84 TFLOPS/W，INT8 90.15 TOPS/W（28nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>广播输入 + 嵌入式转换（ESICU）</strong>：GIN（8b 指数 + 2b 串行尾数）被 16 个 TS-A 共享，消除前作浮点输入无法跨阵列复用的利用率损失；</li>
+<li><strong>自适应 2b 串行对齐</strong>：SDT 倒计时 + EC 比较 + LC 存/移两态，对齐电路面积比传统方案 −36.23%；</li>
+<li><strong>格式混合 N2CMAC</strong>：符号-数值权重 + 无符号 MAC + 符号补偿，负权重位级稀疏性 1.83×，计算周期 −19.80%（8b 输入）/−16.50%（10b 输入）；</li>
+<li><strong>一芯四用</strong>：普通读写 + BF16A/BF16B/INT8 三种计算模式，BF16A/B 保留 10b/8b 对齐尾数分别服务 CNN 与 Transformer；</li>
+<li><strong>实测成绩</strong>：62.84 TFLOPS/W、697.17 GFLOPS/mm²、ViT @ImageNet 精度 79.818%、FoM 相对前作提升 1.93–116.90×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂浮点/整数量化的：从 §5（串行对齐）和 §6（N2CMAC）开始，这两章是本文最核心的两个创新。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要浮点存内计算（FP-CIM）</h2>
+
+<p>先回顾一个老问题：CIM 最擅长的是整数 MAC（§10 教程已经讲过）。但 AI 世界里不是所有任务都能量化成 INT8——<strong>训练、微调、Transformer/ViT 类网络</strong>对精度敏感，需要浮点（FP）。浮点虽然精度高，但它的乘法/累加比整数复杂得多（指数对齐、归一化、舍入），能耗和面积天然更高。</p>
+<figure>
+  <img src="assets/diagrams/d01_fp_vs_int.svg" alt="FP vs INT" style="max-width:900px">
+  <figcaption>图 1.1　整数路线（便宜、省电，但精度受限）vs 浮点路线（高精度、高开销）。FP-CIM 的目标：两头的好处都拿。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么“高精度”越来越重要？</div>
+<p>① 模型变大：LLM/Transformer 对量化误差更敏感，8bit 往往不够；② 训练/微调：梯度更新需要 FP 精度；③ 终端混合精度：同一芯片既要跑已量化的 INT8 推理，又要跑需要 FP 的层。所以“一个宏既支持 INT8 又支持 BF16”成为刚需——本文的“一芯四用”正是为此设计。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>浮点格式与“指数对齐”难题</h2>
+
+<h3 id="sec2-1">2.1 BF16 格式：1 符号 + 8 指数 + 7 尾数</h3>
+<p>本文支持 <strong>BF16（bfloat16）</strong>，一种 16 位浮点格式，布局与 FP32 相同（8 位指数），只是尾数从 23 位砍到 7 位。好处：与 FP32 数值范围完全一致（指数一样），训练/推理时可以“直接截断转换”。</p>
+<figure>
+  <img src="assets/diagrams/d02_fp_basics.svg" alt="浮点格式与对齐" style="max-width:920px">
+  <figcaption>图 2.1　BF16 格式与“指数对齐”问题：乘法=指数相加+尾数相乘；加法=先对齐再相加（CIM 最头疼的一步）。</figcaption>
+</figure>
+<div class="formula">数值 = (−1)<sup>S</sup> × 1.M × 2<sup>(E−127)</sup><span class="tag">式 2.1</span></div>
+<div class="box key">
+<div class="bt">🧠 浮点乘加为什么贵？</div>
+<ul>
+<li><strong>乘法</strong>：指数相加（简单）+ 尾数相乘（和整数乘法一样）；</li>
+<li><strong>加法/累加</strong>：两个数指数不同 → 小指数的尾数要<strong>右移对齐</strong>到指数大的那个 → 移位量 = 指数差（最大 8 位）→ 需要桶形移位器；</li>
+<li>更麻烦的是 <strong>CIM 的 MAC 是把很多数一起累加</strong>：每个输入的指数不同，对齐量各不相同，还要在加法树里统一对齐——这就是“对齐与 CIM 广播结构冲突”的技术根源。</li>
+</ul>
+</div>
+
+<h3 id="sec2-2">2.2 交互演示 A：亲手体验“指数对齐”</h3>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 浮点对齐演示（拖动两个数的指数看对齐过程）</div>
+<canvas id="demoA" width="980" height="330"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">数 A 指数：</label><input id="demoA-ea" type="range" min="0" max="15" value="10" style="flex:1;accent-color:#0f7cb6">
+  <label class="hint" style="margin:0">数 B 指数：</label><input id="demoA-eb" type="range" min="0" max="15" value="4" style="flex:1;accent-color:#e8a33d">
+  <button id="demoA-play" class="on">▶ 播放对齐动画</button>
+  <span class="stat" id="demoA-stat">指数差 6 → B 的尾数要右移 6 位</span>
+</div>
+<div class="hint">红色=指数大的数（对齐基准），蓝色=指数小的数（右移）。指数差越大，需要的桶形移位量越大——这就是并行对齐电路贵的原因。本文用“每周期移 2b”的串行方式摊薄它。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>FP-CIM 的三大挑战（论文的问题定义）</h2>
+<p>论文 Fig. 14.3.1 把数字域 FP-CIM 的难题总结成三条，整篇论文就是围绕这三条展开的：</p>
+<figure>
+  <img src="assets/diagrams/d03_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 3.1　三大挑战：① 对齐与广播复用冲突；② 并行对齐面积/性能开销；③ 2C 负权重稀疏性差 + 符号计算开销。</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本论文对策</th></tr>
+<tr><td>① 精度 vs 输入复用性</td><td>对齐依赖各自指数 → 无法整齐广播</td><td>GIN 拆分（8b 指数并行 + 2b 尾数串行）+ ESICU 嵌入式转换 → 16 阵列共享</td></tr>
+<tr><td>② 并行对齐开销</td><td>减法器 + 桶形移位器面积大</td><td>SDT 倒计时 + 2b 串行对齐 → 面积 −36.23%</td></tr>
+<tr><td>③ MAC 动态功耗</td><td>2C 负权重位级稀疏性差 + 符号开销</td><td>符号-数值权重 + 无符号 MAC + 符号补偿（N2CMAC）</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig14_3_1_挑战与方案.png" alt="论文图 14.3.1">
+  <figcaption>图 3.2　论文原图 Fig. 14.3.1：FP-CIM 设计挑战与本文解决方案。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 读论文的姿势：先找“问题定义”再读方案</div>
+<p>注意论文的写法：Fig. 14.3.1 先画问题（三座山），然后每个创新点（B-A-N2CMAC 的三个组成）正好对应一座山。这种“挑战 → 对策”一一对应的结构是优秀芯片论文的标配，也是你读其他论文时应该主动寻找的骨架。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>宏架构总览：16 个三重堆叠阵列 + 层次输入缓冲</h2>
+<figure>
+  <img src="assets/diagrams/d04_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 4.1　B-A-N2CMAC FP-CIM 宏：层次化输入缓冲（GIN 广播）→ 16 个 TS-A（每个 = ESICU + 16×256 6T SRAM + N2CMACU）→ CA&Q（校准累加器+量化器）+ 外围电路。</figcaption>
+</figure>
+<ul>
+<li><strong>16 个 TS-A（三重堆叠阵列）</strong>：每个 TS-A 计算 1 个输出通道，内部 = 嵌入式串行输入转换单元（ESICU）+ 16×256 6T SRAM 阵列 + 格式混合非 2 补码 MAC 单元（N2CMACU）；</li>
+<li><strong>层次化输入缓冲</strong>：对外提供 <strong>GIN</strong>（Global Input）= <strong>8b 并行指数输入 EIN + 2b 串行尾数输入 MIN</strong>；</li>
+<li><strong>CA&Q（校准累加器与量化器）</strong>：负责多周期累加、符号补偿与量化输出（BF16A:23b / BF16B:21b / INT8:20b）；</li>
+<li><strong>外围电路</strong>：读写控制、列选择、三种计算模式配置。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 为什么“广播复用”是本文卖点？</div>
+<p>前作 [2,3] 的浮点输入因为“每个输入要按自己的指数对齐”，没法直接广播给多个阵列 → 阵列利用率低（很多周期空转）。本文把输入拆成“<strong>并行指数 + 串行尾数</strong>”，指数走并行总线、尾数走串行流水，<strong>一份 GIN 同时喂 16 个 TS-A</strong>——复用率拉满，这是标题里 “Broadcast”（广播）的由来。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_2_宏架构.png">
+  <source src="assets/videos/v03_bcast.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 广播数据流动画：一份 GIN（8b 指数 + 2b 串行尾数）从层次输入缓冲广播给 16 个 TS-A，每个 TS-A 各算一个输出通道。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_2_宏架构.png" alt="论文图 14.3.2">
+  <figcaption>图 4.2　论文原图 Fig. 14.3.2：宏整体结构、关键特性与 BF16/INT8 可重构。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新①：ESICU 与嵌入式 2b 串行对齐</h2>
+
+<h3 id="sec5-1">5.1 ESICU 结构：ASG 定“何时移”，LC 干“怎么移”</h3>
+<figure>
+  <img src="assets/diagrams/d05_esicu.svg" alt="ESICU 结构" style="max-width:940px">
+  <figcaption>图 5.1　ESICU = 对齐信号生成器（ASG）+ 16 个轻量转换器（LC）。ASG 算指数和、找最大值、倒计时；LC 按 SHIFT 信号在“存储态/移位态”间切换，每周期输出 2b。</figcaption>
+</figure>
+<p><strong>ASG（对齐信号生成器）</strong>：</p>
+<ul>
+<li><strong>16 个指数加法器（EA）</strong>：算“输入指数 + 权重指数”的和（浮点乘法的指数部分）；</li>
+<li><strong>最大值查找器（MVF）</strong>：找出 16 个指数和的最大值；</li>
+<li><strong>移位目标跟踪器（SDT）</strong>：从最大值开始，<strong>每个时钟周期减 1</strong>（倒计时器）；</li>
+<li><strong>16 个相等比较器（EC）</strong>：把 SDT 与各自的指数和高 8 位（SUM[8:1]）比较，生成 SHIFT0–15 控制信号。</li>
+</ul>
+<p><strong>LC（轻量转换器）</strong>：收到 SHIFT 后：SHIFT=0 → <strong>存储态</strong>（把尾数最小位依次存进自适应复位寄存器链 ARRC）；SHIFT=1 → <strong>移位态</strong>（每周期从链里移出 2b）；最后 OSIU 做符号处理输出 LIN[1:0]。</p>
+
+<h3 id="sec5-2">5.2 串行对齐的时间线：SDT 倒计时，全局同节奏</h3>
+<figure>
+  <img src="assets/diagrams/d06_serial_align.svg" alt="串行对齐时间线" style="max-width:940px">
+  <figcaption>图 5.2　2b 串行对齐：SDT 从最大值每周期 −1；每个 LC 的“存/移”切换点由自己的指数和决定。对齐差距大的先存后移，差距小的立刻移。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么这样能省面积？——把“空间”换成“时间”</div>
+<p>并行对齐 = 每个输入配一个<strong>桶形移位器</strong>（一次能移任意位数的电路，面积大）+ 减法器。串行对齐 = 用<strong>一个倒计时器（SDT）+ 16 个比较器 + 寄存器链</strong>，所有输入在同一个节奏下“每周期移 2b”——桶形移位器被换成了小移位链。代价是“对齐要多花几个周期”，但乘法本身就是 2b 串行输入的，<strong>对齐和乘法流水重叠</strong>，总吞吐不掉。净效果：对齐电路面积 −36.23%。</p>
+</div>
+
+<h3 id="sec5-3">5.3 视频与仿真：看串行对齐跑起来</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_3_ESICU串行对齐.png">
+  <source src="assets/videos/v01_serial_align.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 2b 串行对齐动画：SDT 每周期 −1，三个 LC（对齐差距 0/2/4）在“存/移”两态间切换，观察对齐节奏的统一。</div>
+</div>
+<div class="demo">
+<div class="dhead">⏱ 演示 B · 串行对齐仿真（三个输入不同对齐差距）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">SDT 倒计时驱动三个 LC 同步对齐</span>
+</div>
+<div class="hint">红/紫/绿三条流水线分别代表对齐差距 4/2/0 的输入。差距大的先“存”后“移”，差距小的直接“移”。所有输入最终在同一周期对齐完成。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_3_ESICU串行对齐.png" alt="论文图 14.3.3">
+  <figcaption>图 5.3　论文原图 Fig. 14.3.3：ESICU 结构（上）与 BF16 模式下的工作流示例（下）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新②：格式混合 N2CMAC —— 非二进制补码 MAC</h2>
+
+<h3 id="sec6-1">6.1 符号-数值权重：负数的存储格式决定功耗</h3>
+<figure>
+  <img src="assets/diagrams/d09_sign_magnitude.svg" alt="2C vs 符号-数值" style="max-width:920px">
+  <figcaption>图 6.1　同一个 −7：2 的补码 = 1111 1001（数值位几乎全 1，翻转多）；符号-数值 = 1 000 0111（只翻符号位，数值位保持稀疏）。</figcaption>
+</figure>
+<p>传统数字 MAC 用 <strong>2 的补码（2C）</strong>表示有符号数，负数 = 正数取反加 1 → 数值位被“填满 1”。在加法树里，全 1 的输入意味着每个周期大量位翻转 → 动态功耗高。本论文把权重改成<strong>符号-数值（sign-magnitude）格式</strong>：符号位与数值位分开存储，负权重只是“符号位 = 1”，数值位保持原样。</p>
+<div class="box key">
+<div class="bt">💡 收益 1：位级稀疏性 1.83×</div>
+<p>ResNet50 的负 INT8 权重在符号-数值格式下，位级稀疏性（为 0 的比例）相比 2C 提升 <strong>1.83×</strong>。稀疏 = 少翻转 = 少动态功耗——这是纯存储格式带来的“免费”省电。</p>
+</div>
+
+<h3 id="sec6-2">6.2 有符号 MAC = 无符号 MAC + 符号补偿</h3>
+<figure>
+  <img src="assets/diagrams/d07_n2cmac.svg" alt="N2CMAC 流程" style="max-width:940px">
+  <figcaption>图 6.2　格式混合 N2CMAC 四步流程：① GIN 提供；② LC 串行转换+符号处理；③ DMU 乘 |MW| 并累加；④ CA&Q 移位累加 + 符号补偿 → MACV。</figcaption>
+</figure>
+<p>数学上：A × W = A × |W| × sign(W)。于是：</p>
+<div class="formula">有符号 MAC = Σ A·|W|·sign(W) =（无符号 MAC）+（符号补偿项）<span class="tag">式 6.1</span></div>
+<ul>
+<li><strong>无符号 MAC</strong>：DMU 只处理正尾数（权重数值位 × 输入），加法树不需要符号位扩展、求负等逻辑——省符号计算开销；</li>
+<li><strong>符号补偿</strong>：在 CA&Q 里统一加回。补偿值可以“多花 2 个周期算出”或“离线预置”，并且在<strong>多个计算周期之间共享</strong>——摊薄到几乎为零。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 收益 2：计算周期与电路开销双降</div>
+<p>N2CMAC 让不同网络的所需计算周期减少：ViT（DeiT-S）@ImageNet 上 8b/10b 输入各减少 <strong>19.80% / 16.50%</strong>。电路层面：相比典型 2C MAC，功耗 −1.96×、延迟 −1.25×、面积 −1.18×。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_4_N2CMAC计算.png">
+  <source src="assets/videos/v02_n2cmac.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 格式混合 N2CMAC 四步流程动画：广播输入 → 串行转换 → 无符号乘加 → 补偿累加。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_4_N2CMAC计算.png" alt="论文图 14.3.4">
+  <figcaption>图 6.3　论文原图 Fig. 14.3.4：格式混合 N2CMAC 详细实现（上）与三种计算模式的存储器配置与波形（下）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>三种计算模式：BF16A / BF16B / INT8</h2>
+
+<h3 id="sec7-1">7.1 一种硬件，三种精度</h3>
+<figure>
+  <img src="assets/diagrams/d08_modes.svg" alt="三种模式" style="max-width:940px">
+  <figcaption>图 7.1　三种计算模式：BF16A（保留 10b 对齐尾数，23b 输出，服务 CNN/Transformer）、BF16B（8b 尾数，21b 输出，更省）、INT8（纯整数，20b 输出）。</figcaption>
+</figure>
+<table>
+<tr><th>模式</th><th>输入/权重</th><th>对齐尾数宽度</th><th>累加输出</th><th>适用</th></tr>
+<tr><td><strong>BF16A</strong></td><td class="num">BF16 × BF16</td><td class="num">10 bit</td><td class="num">23 bit</td><td>精度敏感的 CNN / Transformer（ViT）</td></tr>
+<tr><td><strong>BF16B</strong></td><td class="num">BF16 × BF16</td><td class="num">8 bit</td><td class="num">21 bit</td><td>精度要求略低的网络（省功耗）</td></tr>
+<tr><td><strong>INT8</strong></td><td class="num">INT8 × INT8</td><td class="num">—（无指数）</td><td class="num">20 bit</td><td>已量化好的推理</td></tr>
+</table>
+<p>BF16A 和 BF16B 的区别只在“对齐后尾数保留多少位”：10b 保精度（Transformer 需要），8b 省功耗（CNN 够用）。论文实测 ViT @ImageNet 推理精度 <strong>79.818%</strong>——说明这个精度配置是够用的。</p>
+
+<h3 id="sec7-2">7.2 存储器配置与“一芯四用”</h3>
+<ul>
+<li>相邻列共享 <strong>MUX</strong>：BF16A/B 模式用<strong>交错映射</strong>存放指数与尾数（指数并行取、尾数串行取）；</li>
+<li><strong>INT8 模式</strong>：列选择（CS）信号充当列译码器 → 提高存储-计算比（SCR），纯整数模式下的阵列利用率更高；</li>
+<li>一个宏四种用途：普通读写 + 3 种计算模式，按网络层需求逐层配置。</li>
+</ul>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 2C vs 符号-数值稀疏性对比（位级翻转计数）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">符号-数值格式下负权重的位翻转更少 → 加法树更省电</span>
+</div>
+<div class="hint">对比同一批含负数的权重在 2C 与符号-数值格式下的“非零位数总量”（位级稀疏性）。稀疏性高 = 加法树翻转少 = 动态功耗低。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+
+<h3 id="sec8-1">8.1 能效与面积效率</h3>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　实测能效：BF16 模式 62.84 TFLOPS/W（0.55–0.9V，ResNet50），INT8 模式 90.15 TOPS/W。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：5.4 ns @ 0.9V（BF16A/B 输入权重、FP32 输出）；</li>
+<li><strong>面积效率</strong>：697.17 GFLOPS/mm²（BF16A/B，峰值）；</li>
+<li><strong>能效范围</strong>：17.83–62.84 TFLOPS/W（标题里的范围，随电压/配置变化）；</li>
+<li><strong>精度</strong>：ViT @ImageNet 推理精度 79.818%；</li>
+<li><strong>工艺</strong>：28nm CMOS，64kb 宏。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_3_6_测量结果.png" alt="论文图 14.3.6">
+  <figcaption>图 8.2　论文原图 Fig. 14.3.6：测量结果与前作 FoM 对比。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-2">8.2 各项技术收益汇总</h3>
+<figure>
+  <img src="assets/charts/c02_improvements.png" alt="面积功耗收益" style="max-width:920px">
+  <figcaption>图 8.3　串行对齐与串行 MAC 的面积/功耗收益（对比并行方案 [6] 与 [1,2]）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_cycles_sparsity.png" alt="周期与稀疏性" style="max-width:920px">
+  <figcaption>图 8.4　N2CMAC 的计算周期减少（ViT）与符号-数值格式的稀疏性提升（ResNet50）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_3_5_仿真性能.png" alt="论文图 14.3.5">
+  <figcaption>图 8.5　论文原图 Fig. 14.3.5：各项方案的仿真性能对比。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>指标</th><th>数值</th><th>对比对象</th></tr>
+<tr><td>对齐电路面积</td><td class="num">−36.23%</td><td>传统减法器+桶形移位器方案 [1-6]</td></tr>
+<tr><td>串行对齐面积/功耗</td><td class="num">3.83× / 1.71×</td><td>并行对齐+并行 MAC [6]</td></tr>
+<tr><td>串行 MAC 面积/功耗</td><td class="num">1.56× / 1.20×</td><td>并行对齐+串行 MAC [1,2]</td></tr>
+<tr><td>计算周期</td><td class="num">−19.80% / −16.50%</td><td>8b / 10b 输入（ViT DeiT-S）</td></tr>
+<tr><td>负权重位级稀疏性</td><td class="num">1.83×</td><td>2C 格式（ResNet50）</td></tr>
+<tr><td>N2CMAC 电路功耗/延迟/面积</td><td class="num">1.96× / 1.25× / 1.18×</td><td>典型 2C MAC [1,2]</td></tr>
+<tr><td>FoM（IN×W×密度×能效×输出比）</td><td class="num">1.93–116.90×</td><td>前作 SRAM CIM [1-5]</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig14_3_7_芯片照片.png" alt="论文图 14.3.7">
+  <figcaption>图 8.6　论文原图 Fig. 14.3.7：裸片显微照片与芯片性能汇总表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① “TFLOPS/W”和“TOPS/W”不是一回事：浮点运算计 FLOPs（1 MAC = 2 FLOPs），整数计 OPS——跨格式对比要小心；② FoM 把“输入精度×权重精度×存储密度×归一化能效×输出比”乘在一起，权重选择是作者定义的，数值跨度（1.93–116.90×）很大，说明对比对象跨度也很大；③ 79.818% 的 ViT 精度是“这个宏能跑出这个精度”，不代表网络最佳精度——读时注意区分。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更低位宽的浮点（FP8/MXFP）</strong>：BF16 之后，业界在推 8 位浮点（FP8、MXFP6/MXFP8）——尾数更少、对齐更简单。把本文的串行对齐 + N2CMAC 迁移到 FP8，能效还有翻倍空间（本论文集 06 号论文就是这个方向）；</li>
+<li><strong>训练支持</strong>：本文是推理宏。训练需要 FP32 累加、梯度计算与权重更新——CIM 里做训练要解决“权重频繁更新”与“反向传播数据流”，本文的广播结构是很好的起点（本论文集 03、17 号论文在尝试）；</li>
+<li><strong>混合精度调度</strong>：BF16A/BF16B/INT8 三种模式已有，但没有自动调度器。做一个“按层精度自动选择”的编译器（精度敏感层用 BF16A、不敏感层用 INT8），是软硬协同的下一步；</li>
+<li><strong>串行对齐的通用化</strong>：本文的 SDT+LC 方案针对 BF16。能否推广到 FP16/FP32/块浮点（block FP，一组数共享指数）？块浮点能让“对齐”变成“块级对齐”，可能是串行对齐的天然延伸；</li>
+<li><strong>与 Transformer 专用优化结合</strong>：ViT/Transformer 有 softmax、layernorm、Attention 等非 GEMM 算子，CIM 宏之外需要配套的数字外围；把本文的 FP-CIM 和这些算子协同设计成完整 Transformer 加速器；</li>
+<li><strong>稀疏性深度利用</strong>：本文的符号-数值格式提升了“位级稀疏性”，但如果加法树能显式跳过零输入（激活/权重稀疏跳过），能效还能再上台阶——需要稀疏检测电路与 N2CMAC 的协同；</li>
+<li><strong>工艺升级与面积微缩</strong>：28nm → 更先进节点，桶形移位器的面积优势会更明显；同时保持“广播+串行”架构的完整性。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>FP-CIM（Floating-Point Compute-in-Memory）</dt><dd>支持浮点乘累加的存内计算。</dd>
+<dt>BF16（bfloat16）</dt><dd>16 位浮点：1 符号 + 8 指数 + 7 尾数，与 FP32 同指数范围。</dd>
+<dt>指数对齐（Exponent Alignment）</dt><dd>浮点加法前，把较小指数数的尾数右移，使两数指数一致。</dd>
+<dt>桶形移位器（Barrel Shifter）</dt><dd>一次可移任意位数的移位电路，面积大；并行对齐方案依赖它。</dd>
+<dt>GIN（Global Input）</dt><dd>本文的全局输入 = 8b 并行指数（EIN）+ 2b 串行尾数（MIN）。</dd>
+<dt>TS-A（Triple-Stacked Array，三重堆叠阵列）</dt><dd>本文的基本计算块：ESICU + 16×256 6T SRAM + N2CMACU，每块算 1 个输出通道。</dd>
+<dt>ESICU（Embedded Serial-Input Converting Unit）</dt><dd>嵌入式串行输入转换单元：ASG + 16 个 LC。</dd>
+<dt>ASG（Align-Signal Generator）</dt><dd>对齐信号生成器：EA（指数加法器）+ MVF（最大值查找）+ SDT（移位目标跟踪）+ EC（比较器）。</dd>
+<dt>SDT（Shift-Destination Tracker）</dt><dd>从最大指数和开始每周期 −1 的倒计时器，统一对齐节奏。</dd>
+<dt>LC（Lightweight Converter）</dt><dd>轻量转换器：ARRC（寄存器链）+ SAC（自对齐控制器）+ OSIU（输出选择/取反）。</dd>
+<dt>2b 串行对齐</dt><dd>每周期只移 2 位的对齐方式，用时间换面积。</dd>
+<dt>2C（Two's Complement，二进制补码）</dt><dd>有符号数表示法，负数 = 取反 + 1。</dd>
+<dt>符号-数值（Sign-Magnitude）</dt><dd>符号位 + 数值位分开存储的格式，负权重只翻符号位。</dd>
+<dt>N2CMAC（Non-Two's-Complement MAC）</dt><dd>非二进制补码 MAC：有符号 MAC = 无符号 MAC + 符号补偿。</dd>
+<dt>DMU（Digital Multiply Unit）</dt><dd>数字乘法单元，乘 |MW| 并累加。</dd>
+<dt>CA&Q（Calibrated Accumulator and Quantizer）</dt><dd>校准累加器与量化器：多周期累加 + 符号补偿 + 量化输出。</dd>
+<dt>BF16A / BF16B</dt><dd>两种浮点模式：对齐尾数保留 10b / 8b，输出 23b / 21b。</dd>
+<dt>SCR（Storage-Compute Ratio）</dt><dd>存储-计算比；INT8 模式下列选择当译码器提高它。</dd>
+<dt>TFLOPS/W 与 TOPS/W</dt><dd>浮点能效（1 MAC = 2 FLOPs）与整数能效（1 MAC = 2 OPS）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>X. Wang, T. Jiao, et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers,” <em>ISSCC 2025</em>, Paper 14.3. DOI: 10.1109/ISSCC49661.2025.10904738</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-Computing-Unit and Double-Bit 6T-SRAM Computing-in-Memory Macro for Floating-Point CNNs,” <em>ISSCC 2023</em>, pp. 128-130.（前作 [1]）</li>
+<li>W.-S. Khwa et al., “A 16nm 96Kb Integer/Floating-Point Dual-Mode-Gain-Cell-Computing-in-Memory Macro Achieving 73.3-163.3TOPS/W and 33.2-91.2TFLOPS/W for AI-Edge Devices,” <em>ISSCC 2024</em>, pp. 568-570.（前作 [2]）</li>
+<li>P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-Compute Macro with 16.2-70.2TFLOPS/W…,” <em>ISSCC 2023</em>, pp. 126-128.（前作 [3]）</li>
+<li>Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based Floating-Point SRAM CIM Macro with Logarithm Bit-Width Residual ADC,” <em>ISSCC 2024</em>, pp. 576-578.（前作 [4]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 254-256.（前作 [5]）</li>
+<li>J. Saikia et al., “FP-IMC: A 28nm All-Digital Configurable Floating-Point In-Memory Computing Macro,” <em>ESSCIRC</em>, 2023.（并行对齐对比 [6]）</li>
+<li>Y. Wang et al., “A 28nm 83.23TFLOPS/W POSIT-Based Compute-in-Memory Macro for High-Accuracy AI Applications,” <em>ISSCC 2024</em>, pp. 566-568.（POSIT CIM [7]，本论文集 15 号有详细版）</li>
+<li>H. Fujiwara et al., “A 3nm 32.5TOPS/W, 55.0TOPS/mm²… INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-574.（数字 CIM [8]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.3.1–14.3.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（62.84 TFLOPS/W、90.15 TOPS/W、36.23%、1.83× 等）均来自论文原文。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   FP-CIM 教学教程 · 交互脚本
+   演示 A 浮点对齐 · 演示 B 串行对齐 · 演示 C 稀疏性对比
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 浮点对齐
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 330);
+  if (!D) return;
+  const { ctx } = D;
+  let ea = 10, eb = 4, play = true, t = 0, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "浮点对齐演示：A = 1.1001011₂ × 2^" + ea + "，B = 1.0110000₂ × 2^" + eb, 30, 24, 15, PAL.white, "left");
+    const diff = ea - eb;
+    // 数 A（基准，红色）
+    const ay = 70;
+    txt(ctx, "A（指数大，基准）", 30, ay + 8, 13, PAL.red);
+    for (let b = 0; b < 16; b++) {
+      const on = (b < 8); // 简单示意尾数
+      ctx.fillStyle = on ? "rgba(230,110,90,0.55)" : "rgba(230,110,90,0.18)";
+      ctx.fillRect(60 + b * 22, ay + 22, 18, 26);
+    }
+    // 数 B（指数小，右移）
+    const by = 140;
+    txt(ctx, "B（指数小，右移 " + Math.max(0, diff) + " 位）", 30, by + 8, 13, PAL.blue);
+    const shift = Math.max(0, Math.min(diff, 8));
+    if (play) t = (t + 0.01) % 1;
+    const animShift = Math.round(shift * t);
+    for (let b = 0; b < 16; b++) {
+      const srcIdx = b - animShift;
+      const on = srcIdx >= 0 && srcIdx < 8;
+      ctx.fillStyle = on ? "rgba(30,144,220,0.55)" : "rgba(30,144,220,0.18)";
+      ctx.fillRect(60 + b * 22, by + 22, 18, 26);
+    }
+    // 对齐结果
+    const ry = 210;
+    txt(ctx, "对齐后（指数对齐到 " + ea + "）", 30, ry + 8, 13, PAL.green);
+    for (let b = 0; b < 16; b++) {
+      const srcIdx = b - shift;
+      const on = srcIdx >= 0 && srcIdx < 8;
+      ctx.fillStyle = on ? "rgba(60,190,140,0.55)" : "rgba(60,190,140,0.15)";
+      ctx.fillRect(60 + b * 22, ry + 22, 18, 26);
+    }
+    txt(ctx, "□=1 ▨=0（暗格）", 60, ry + 62, 11, PAL.gray);
+    if (stat) stat.textContent = "指数差 " + diff + " → B 右移 " + Math.max(0, diff) + " 位（桶形移位器一次完成 vs 本文每周期 2b）";
+  }
+
+  const sEa = document.getElementById("demoA-ea");
+  const sEb = document.getElementById("demoA-eb");
+  const bPlay = document.getElementById("demoA-play");
+  if (sEa) sEa.oninput = function () { ea = parseInt(this.value, 10); draw(); };
+  if (sEb) sEb.oninput = function () { eb = parseInt(this.value, 10); draw(); };
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放对齐动画";
+    if (play) { clearInterval(timer); timer = setInterval(draw, 50); } else clearInterval(timer);
+  };
+  if (play) timer = setInterval(draw, 50);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 串行对齐（SDT 倒计时，三个 LC）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  const gaps = [4, 2, 0];   // LC 的对齐差距
+  const names = ["LC2 差距4", "LC1 差距2", "LC0 差距0"];
+  const colors = [PAL.red, PAL.purple, PAL.green];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const maxv = 6;
+    const c = cyc % 8;
+    txt(ctx, "周期 " + c + " · SDT = " + (maxv - c), 30, 24, 15, PAL.orange, "left");
+    // SDT 条
+    for (let i = 0; i < 8; i++) {
+      const x = 40 + i * 50;
+      ctx.fillStyle = i === c ? "#4a3a1e" : PAL.panel;
+      ctx.strokeStyle = i === c ? PAL.orange : PAL.line;
+      rrect(ctx, x, 44, 44, 30, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, (maxv - i), x + 22, 59, 12, i === c ? PAL.orange : PAL.gray, "center");
+    }
+    // 三个 LC
+    gaps.forEach((gap, li) => {
+      const y = 100 + li * 72;
+      txt(ctx, names[li], 30, y + 16, 13, colors[li]);
+      for (let i = 0; i < 8; i++) {
+        const x = 130 + i * 100;
+        const state = i < gap ? "存" : "移";
+        const active = i === c;
+        ctx.fillStyle = state === "存" ? "#1e3c2c" : "#3c2c1e";
+        ctx.strokeStyle = active ? colors[li] : PAL.line;
+        ctx.lineWidth = active ? 2.5 : 1.5;
+        rrect(ctx, x, y, 92, 34, 6); ctx.fill(); ctx.stroke();
+        txt(ctx, "周期" + i + "·" + state, x + 46, y + 17, 10.5, active ? colors[li] : PAL.gray, "center");
+      }
+    });
+    txt(ctx, "存 = 尾数进入寄存器链；移 = 每周期输出 2b 对齐后的尾数", 40, 312, 12, PAL.gray);
+    if (stat) stat.textContent = "SDT 统一节奏：" + (c < 3 ? "LC2 还在存、LC0 已在移" : "全部进入移位态，同步输出");
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 550); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 550);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 2C vs 符号-数值稀疏性
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let t = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  // 权重样本（含负值），8b
+  const weights = [85, -37, 120, -64, 12, -90, 55, -7, 100, -48, 30, -15, 70, -23, 95, -81];
+
+  function twos(v) {
+    let x = v < 0 ? (1 << 8) + v : v;
+    const s = x.toString(2);
+    return ("00000000" + s).slice(-8);
+  }
+  function mag(v) {
+    const a = Math.abs(v);
+    const s = a.toString(2);
+    return (v < 0 ? "1" : "0") + ("0000000" + s).slice(-7);
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "位级稀疏性对比：同一组权重，两种格式（样本 " + weights.length + " 个）", 30, 24, 15, PAL.white, "left");
+    const shown = Math.max(4, Math.floor(t * weights.length));
+    // 2C
+    txt(ctx, "2 的补码", 60, 60, 14, PAL.red);
+    let ones2c = 0, onesMag = 0, total = 0;
+    for (let i = 0; i < shown; i++) {
+      const y = 78 + (i % 10) * 22;
+      const col = Math.floor(i / 10);
+      const x = 60 + col * 240;
+      const s2 = twos(weights[i]);
+      const sm = mag(weights[i]);
+      for (let b = 0; b < 8; b++) {
+        const xb = x + b * 20;
+        ctx.fillStyle = s2[b] === "1" ? "rgba(230,110,90,0.7)" : "rgba(230,110,90,0.15)";
+        ctx.fillRect(xb, y, 16, 16);
+        if (s2[b] === "1") ones2c++;
+      }
+      // 符号-数值
+      const x2 = x + 460;
+      for (let b = 0; b < 8; b++) {
+        const xb = x2 + b * 20;
+        ctx.fillStyle = sm[b] === "1" ? "rgba(60,190,140,0.7)" : "rgba(60,190,140,0.15)";
+        ctx.fillRect(xb, y, 16, 16);
+        if (sm[b] === "1") onesMag++;
+      }
+      total += 8;
+    }
+    txt(ctx, "非零位数: " + ones2c + " / " + total, 60, 78 + Math.min(shown, 10) * 22 + 14, 12.5, PAL.red);
+    txt(ctx, "非零位数: " + onesMag + " / " + total, 520, 78 + Math.min(shown, 10) * 22 + 14, 12.5, PAL.green);
+    const sp2 = 1 - ones2c / Math.max(1, total);
+    const spM = 1 - onesMag / Math.max(1, total);
+    if (total > 0) {
+      txt(ctx, "稀疏性 2C: " + (sp2 * 100).toFixed(0) + "% · 符号-数值: " + (spM * 100).toFixed(0) + "%",
+        60, 276, 13, spM > sp2 ? PAL.green : PAL.white);
+    }
+    if (stat) stat.textContent = "负权重在 2C 下数值位被取反填 1；符号-数值只翻符号位 → 稀疏性更高（论文实测 1.83×）";
+  }
+
+  function tick() { t = Math.min(1, t + 0.03); draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 120); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { t = 0; draw(); };
+  if (play) timer = setInterval(tick, 120);
+  draw();
+})();
+
+</script>
+</body>
+</html>

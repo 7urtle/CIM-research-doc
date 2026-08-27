@@ -1,0 +1,40 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要存内计算？</h2>
+
+<p>要理解这篇论文，第一件事是理解它要解决的“大问题”。让我们从一个非常朴素的问题开始：<strong>为什么现在的 AI 芯片这么缺带宽、这么费电？</strong></p>
+
+<h3 id="sec1-1">1.1 冯·诺依曼瓶颈（Von Neumann Bottleneck）与存储墙（Memory Wall）</h3>
+<p>绝大多数计算机都遵循冯·诺依曼架构：<strong>存储器（Memory）</strong>和<strong>运算器（Arithmetic Unit）</strong>分开，数据通过总线来回搬运。CPU 从内存取指令、取数据，算完再把结果写回内存。这个结构在通用计算里简单高效，但对 AI 推理来说有个致命问题——</p>
+<div class="box key">
+<div class="bt">💡 直觉：一次乘法只要 1 个单位的能量，把数据搬过来要 100 个单位</div>
+<p>粗略数量级（业界常引用的数字）：一次 8bit 乘法+累加（MAC）约消耗 <strong>1 pJ</strong>，而一次 DRAM 访问约消耗 <strong>200 pJ</strong>（还要加上几十纳秒的延迟）。也就是说，<strong>只要权重不是“常驻计算单元旁边”，那么每做一次乘法，搬运数据消耗的能量就是计算本身的几百倍</strong>。AI 推理是“权重海量、反复重用”的负载，这个搬运成本被放得极大——很多研究表明推理任务中 <strong>60%~90% 的能量和延迟都花在数据搬运</strong>上，这就是所谓的“存储墙”（Memory Wall）。</p>
+</div>
+<p>更糟的是，这个差距还在扩大：AI 模型的算力需求（FLOPs）增长远快于 DRAM 带宽的增长，两者之间的“剪刀差”越来越大，业界称之为“带宽墙”。于是硬件研究者想：<strong>能不能不让数据搬来搬去，而是把计算搬到数据所在的地方？</strong>这就引出了两条路线：</p>
+<ul>
+<li><strong>近存计算（Near-Memory Computing, NMC）</strong>：把计算单元放到存储器旁边（比如 3D 堆叠），缩短搬运距离，但数据还是要经过接口进出；（本论文集里 08 号论文就是 Process-Near-Memory 的例子）</li>
+<li><strong>存内计算（Compute-in-Memory, CiM）</strong>：把计算直接嵌进存储阵列里——权重存在哪，就在哪算。这是本论文的路线。</li>
+</ul>
+
+<figure>
+  <img src="assets/diagrams/d01_von_neumann_vs_cim.svg" alt="冯诺依曼架构 vs 存内计算" style="max-width:860px">
+  <figcaption>图 1.1　冯·诺依曼架构与存内计算的本质区别：前者“搬数据”，后者“就地算”。（本教程自制示意图）</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 CiM 的基本思想：一次“列运算”代替无数次“读—算—写回”</h3>
+<p>神经网络的核心运算是<strong>矩阵乘法 / 卷积</strong>，而矩阵乘法归根结底是一堆<strong>点积（dot product）</strong>：输出 y<sub>j</sub> = Σ<sub>i</sub> a<sub>i</sub>·w<sub>j,i</sub>。在 CiM 里，这个求和被“并行地”完成：</p>
+<ol>
+<li><strong>权重静止存放</strong>：把权重 w<sub>j,0</sub>, w<sub>j,1</sub>, …, w<sub>j,N-1</sub> 提前写入一列存储单元，它们“躺”在那里不动；</li>
+<li><strong>激活广播</strong>：把激活值 a<sub>0</sub>, a<sub>1</sub>, …, a<sub>N-1</sub> 通过字线/总线广播到这一列的所有单元；</li>
+<li><strong>列内并行乘加</strong>：每个单元完成自己的乘法，然后在列的底部用一条“宽加法树”（wide adder tree）把 N 个乘积累加成一个结果——<strong>一个周期完成 N 路 MAC</strong>。</li>
+</ol>
+<div class="box info">
+<div class="bt">🧠 关键理解：CiM 的“并行度”来自存储器的结构本身</div>
+<p>传统芯片的并行度来自“复制计算单元”；而 CiM 的并行度来自“存储阵列的每一列天然就是一条并行计算流水线”。只要把列做宽（本论文一列 128 路 MAC）、把列做多（32 列），就能用很小的面积拿到巨大的并行度——这正是它面积效率高的根本原因。代价是：<strong>权重必须“写死”在存储里</strong>，所以 CiM 最适合权重固定（或低频更新）的推理场景，而不是频繁训练的场景。</p>
+</div>
+<p>本论文就是沿着这条路线：把“列”做成 128 路 MAC 的“计算列”，一共 32 列（对应 32 个输出通道），每周期完成 32×128 = 4096 个 MAC。剩下的问题全是工程细节：怎么存（12T 锁存）、怎么乘（Booth）、怎么处理量化（零点映射）、怎么不卡顿（双缓冲）——这就是后面每一章的由来。</p>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>如果 CiM 这么好，为什么以前没这么做？提示：① 模拟 CiM 的精度问题；② 权重更新不方便；③ 可综合性与工艺移植性；④ 与现有 SoC/CPU 的集成。带着这些问题读下一章。</p>
+</div>
+</section>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">SpikeRAM 要解决的三大挑战（论文 Fig. 18.4.1 中部）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：推理低效</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">感知、存储、计算分离 → 数据来回搬；</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">帧转换（EVS→图像→网络）产生冗余；</text>
+    <text x="60" y="190" fill="#45536b" font-size="12">传统卷积对空白区域也算 → 冗余 MAC</text>
+    <text x="60" y="230" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“感-存-算一体化 + 事件驱动</text>
+    <text x="60" y="250" fill="#c25e2e" font-size="12.5" font-weight="600">　近传感器计算”</text>
+
+    <rect x="340" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：时空 OCL 开销</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">时空域在线学习（BPTT）需要</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">展开整个时间窗口（TW）的历史，</text>
+    <text x="360" y="190" fill="#45536b" font-size="12">内存与功耗随 TW 深度线性增长</text>
+    <text x="360" y="230" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“单时间步 + 资格迹”的</text>
+    <text x="360" y="250" fill="#6b3fa0" font-size="12.5" font-weight="600">在线学习算法（e-OTBP）</text>
+
+    <rect x="640" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：eNVM 寿命</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">在线学习要反复写非易失存储（eNVM）；</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">eNVM 写次数有限（endurance）；</text>
+    <text x="660" y="190" fill="#45536b" font-size="12">频繁更新 → 寿命耗尽、能耗高</text>
+    <text x="660" y="230" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“三值梯度 + 格雷码权重”</text>
+    <text x="660" y="250" fill="#0e5a8a" font-size="12.5" font-weight="600">减少写次数（寿命 &gt;10×）</text>
+  </g>
+
+  <rect x="40" y="344" width="880" height="104" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="372" fill="#1d8a5f" font-size="13.5" font-weight="700">SpikeRAM 的三招对应（Fig. 18.4.1 底部）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">① 记忆中心的异步近传感器计算：EVS-sCNN 核直接吃异步事件（省帧转换、省搬移、省冗余 MAC）；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">② e-OTBP：单时间步在线学习 + 资格迹，32 TW 时内存需求 −73.1%；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">③ 三值梯度 + 格雷码权重：编程次数平均 −89.1%（NMNIST）/−88.4%（DVS），eNVM 寿命 +13.9×。</text>
+</svg>

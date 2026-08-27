@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="430" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Winograd 精度-加速权衡：混合策略站上“甜点”</text>
+
+  <!-- 散点 -->
+  <rect x="60" y="90" width="600" height="300" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11">
+    <text x="360" y="118" text-anchor="middle" fill="#123a57" font-size="13" font-weight="700">加速 vs 精度（ResNet34 @ImageNet）</text>
+    <line x1="110" y1="340" x2="620" y2="340" stroke="#45536b" stroke-width="1.5"/>
+    <line x1="110" y1="140" x2="110" y2="340" stroke="#45536b" stroke-width="1.5"/>
+    <text x="90" y="150" fill="#45536b">精度↑</text>
+    <text x="620" y="360" text-anchor="middle" fill="#45536b">加速 →</text>
+    <!-- 基线 -->
+    <circle cx="130" cy="140" r="9" fill="#9aa8bd"/>
+    <text x="130" y="125" text-anchor="middle" fill="#1a2332" font-weight="600">基线 1×</text>
+    <!-- F2 -->
+    <circle cx="240" cy="145" r="9" fill="#0e5a8a"/>
+    <text x="250" y="125" text-anchor="middle" fill="#0e5a8a" font-weight="600">F2 1.92×</text>
+    <text x="250" y="170" text-anchor="middle" fill="#6b7a93">无损</text>
+    <!-- F4 -->
+    <circle cx="440" cy="330" r="9" fill="#c25e2e"/>
+    <text x="450" y="352" text-anchor="middle" fill="#c25e2e" font-weight="600">F4 3.32×（掉 9.1%）</text>
+    <!-- 混合 -->
+    <circle cx="330" cy="152" r="12" fill="#1d8a5f"/>
+    <text x="380" y="140" text-anchor="middle" fill="#1d8a5f" font-weight="700">混合 2.59×（仅掉 0.6%）✓</text>
+    <path d="M330,152 L360,152" stroke="#1d8a5f" stroke-width="2"/>
+  </g>
+
+  <!-- 说明 -->
+  <rect x="680" y="90" width="240" height="300" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="700" y="118" fill="#0e5a8a" font-size="13" font-weight="700">关键观察</text>
+  <g font-size="11.5">
+    <text x="700" y="148" fill="#45536b">• 单用 F4：加速 3.32× 但精度掉 9.1% —— 不可接受；</text>
+    <text x="700" y="182" fill="#45536b">• 单用 F2：无损但只 1.92×；</text>
+    <text x="700" y="216" fill="#45536b">• 混合（按层选）：2.59× 且几乎无损 —— 站上帕累托前沿；</text>
+    <text x="700" y="258" fill="#45536b">• 再加 50% 双端稀疏：总加速 8.05×（ResNet34）；</text>
+    <text x="700" y="300" fill="#45536b">• 3×3 卷积占比：ResNet34 96.2% vs ResNet50 47.9%</text>
+    <text x="700" y="322" fill="#45536b">→ 解释为什么 Winograd 对 ResNet34 更有效。</text>
+  </g>
+
+  <rect x="60" y="410" width="860" height="0" rx="0"/>
+  <rect x="60" y="410" width="860" height="0" rx="0"/>
+  <rect x="60" y="410" width="860" height="30" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="490" y="430" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">训练时决定每层 Winograd 级别（Table III）→ “混合”是软件-硬件协同的产物</text>
+</svg>

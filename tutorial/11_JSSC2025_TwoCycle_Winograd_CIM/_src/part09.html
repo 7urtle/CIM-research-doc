@@ -1,0 +1,48 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更低位宽的两周期扩展</strong>：Radix16 是 5 bit/周期 → INT8 两周期。扩展到 FP8/MXFP（06 号论文）的“位宽可配两周期”宏？Radix32（一次 6~7 bit、INT8 一周期）？LUT 的面积与翻转代价要重新权衡；</li>
+<li><strong>Winograd 的深度集成</strong>：本文 F2/F4 变换是硬连线模块。做成“可编程变换单元”（支持 F6、1D-Winograd、不同 tile 大小），并研究“Winograd 域稀疏”（先变换后剪枝 [29] 的硬件化）——与 MDPS 在 Winograd 域内协同；</li>
+<li><strong>稀疏的在线化与自适应</strong>：MDPS 用静态 bit-mask。能否在线检测激活稀疏并动态调度（运行时自适应）？把 02 号论文的动态启动器思路和 MDPS 结合，稀疏加速更贴近真实数据分布；</li>
+<li><strong>训练支持</strong>：本文是推理。训练需要反向传播（转置乘，03 号论文）——把“两周期宏 + 转置读口”结合，得到“推理-训练两周期”处理器；</li>
+<li><strong>与 Transformer/LLM 的结合</strong>：三层级技术（Radix16/混合 Winograd/MDPS）都面向 CNN。Transformer 的 GEMM 部分能直接用两周期宏（空间域模式），注意力稀疏可正交叠加——做一个“CNN+Transformer 通吃”的通用 CIM 处理器；</li>
+<li><strong>更先进的工艺与集成</strong>：28nm → 先进节点（3nm 等），Radix16+LUT 的数字逻辑能效随工艺提升；配合 3D 堆叠（08 号论文）或 eNVM（05 号论文）做大容量集成。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>计算周期（Calculation Cycle）</dt><dd>CIM 宏出一个完整 MAC 结果所需的周期数；决定吞吐。</dd>
+<dt>Radix16</dt><dd>每次处理 5 位激活的乘法分解（INT8 两周期）。</dd>
+<dt>LUT（Look-Up Table）</dt><dd>查表电路；本文用它实现 ±3W~±7W 部分积，省加法链（−21.7% 功耗）。</dd>
+<dt>Winograd</dt><dd>Toom-Cook 扩展：变换到另一域做逐元素乘加，减少乘法次数。</dd>
+<dt>F(m,3)</dt><dd>3×3 卷积、输出块 m×m 的 Winograd 级别（F2/F4/F6）。</dd>
+<dt>EWMM（Elementwise Matrix Multiply）</dt><dd>逐元素矩阵乘（Winograd 域的核心运算）。</dd>
+<dt>Bᵀ()B / G()Gᵀ / Aᵀ()A</dt><dd>激活/权重输入变换与输出逆变换单元。</dd>
+<dt>核分解（Kernel Decomposition）</dt><dd>&gt;3×3 核拆成多个 3×3 核以使用 Winograd。</dd>
+<dt>激活分段（Activation Segmentation）</dt><dd>stride=2 时把激活分区，各区做 stride=1 卷积。</dd>
+<dt>PCO（Pixel/Channel Order）映射</dt><dd>COM（通道序，宏内）+ POM（像素序，宏间）。</dd>
+<dt>MDPS（Macrolevel Parallel Dual-Side Sparsity）</dt><dd>宏级并行双端稀疏：激活压缩 + 权重水平压缩。</dd>
+<dt>ISPU（Input Sparsity-Processing Unit）</dt><dd>输入稀疏处理单元：bit-mask + tile 压缩/分配。</dd>
+<dt>PPRS（Partial Product Right Shifter）</dt><dd>部分积右移器：把水平压缩后的权重 P[10:0] 移回正确位置。</dd>
+<dt>OMB（Output Merge Buffer）</dt><dd>输出合并缓冲：把有效 MAC 结果写回正确位置。</dd>
+<dt>归一化峰值吞吐</dt><dd>= 1 /（计算周期数 × 技术增益），剥离频率/MAC 数的公平指标。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>H. Wu, Y. Chen, Y. Yuan, J. Yue, X. Wang, X. Li, F. Zhang, “A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro Featuring Winograd-Domain Convolution and Macro-Level Parallel Dual-Side Sparsity,” <em>IEEE JSSC</em>, vol. 60, no. 1, pp. 347-361, Jan. 2025. DOI: 10.1109/JSSC.2024.3409356</li>
+<li>A. Lavin and S. Gray, “Fast algorithms for convolutional neural networks,” <em>CVPR 2016</em>, pp. 4013-4021.（Winograd [21]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 255-257.（Radix4 前作 [15]）</li>
+<li>J. Yue et al., “A 28nm 16.9-300TOPS/W Computing-in-Memory Processor Supporting FP NN Inference/Training…,” <em>ISSCC 2023</em>, pp. 1-3.（[13]）</li>
+<li>F. Tu et al., “MuITCIM: A 28nm 2.24μJ/token Attention-Token-Bit Hybrid Sparse Digital CIM-Based Accelerator for Multimodal Transformers,” <em>ISSCC 2023</em>, pp. 248-250.（[17]）</li>
+<li>S. Han et al., “Learning both weights and connections for efficient neural network,” <em>NeurIPS 2015</em>, pp. 1135-1143.（稀疏压缩 [24]）</li>
+<li>X. Liu, J. Pool, S. Han, W. J. Dally, “Efficient sparse-Winograd convolutional neural networks,” <em>arXiv:1802.06367</em>.（Winograd 域稀疏 [29]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图版权归 IEEE/原作者所有，此处仅作教学引用（© 2024 IEEE）。所有实测数字（258.5 TOPS/W、2.59×、3.11×、2.55~7.08× 等）均来自论文原文；能效图中的“中值”为范围示意，已注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

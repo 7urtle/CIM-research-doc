@@ -1,0 +1,72 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：位串行比较 + 稀疏感知的提前停止（Early Stop）</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① MinMUX 怎么“锁定”最小值；② 8T SRAM 专用读端口如何在权重位为 0 时省电；③ 比较一旦分出大小就提前停止读权重位（1.8× 读端口省电）是怎么做到的。</p>
+</div>
+
+<h3>6.1 MinMUX：比较结果驱动的透传选择</h3>
+<p>论文 Fig.8 的 MinMUX 电路：OUT 和 OUTB 是位串行比较的结果节点，初态 <strong>OUT 预充到 VDD、OUTB 放电到 VSS</strong>。比较过程：</p>
+<ul>
+<li><strong>尚未分出大小</strong>（当前位相等）：OUT/OUTB 保持电荷，MinMUX 继续把权重位传给累加器（默认先走权重路径）；</li>
+<li><strong>权重更小</strong>（某位 ACT=1, W=0，即 x 该位大于 w 该位……注意 MSB 优先）：OUT 放电到 VSS、OUTB 被钳到 VDD → MinMUX 从此<strong>一直输出权重位</strong>；</li>
+<li><strong>激活更小</strong>：OUTB 放电到 VSS、OUT 被钳到 VDD → MinMUX 从此<strong>一直输出激活位</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键性质：一旦分出大小，min 的“身份”就锁定了</div>
+<p>MSB 优先比较的经典性质：最高位决定大小，之后位无论是什么都不影响结果。所以比较器只要“断言”一次（某位分出胜负），后续周期的 min 就固定是 x 或 w 其中之一——MinMUX 变成纯透传，不需要再比较。这是位串行方案能“提前停止”的根本原因。</p>
+</div>
+
+<h3>6.2 专用 8T SRAM 读端口：权重位为 0 时保持预充</h3>
+<p>论文 Fig.9 画了 8T SRAM 的专用局部读端口：当被选中的权重位是 <strong>0</strong> 时，局部读位线（local read bitline）<strong>保持在预充电压</strong>——不放电、不耗动态功耗。反之权重位是 1 才需要放电。</p>
+<p>结合 §4.3 的权重截断：预计算后权重里 0 的数量暴增（86× 稀疏度提升），所以<strong>大多数位读出来都是 0 → 大多数周期读位线都不放电 → 读功耗大幅下降</strong>。这是“算法近似 → 电路省电”的直接转化。</p>
+
+<figure>
+<img src="assets/figs/fig13_9_SRAM读端口.png" alt="SRAM读端口">
+<figcaption>图 9 · 论文 Fig.9：专用局部 SRAM 读端口——权重位为 0 时局部读位线保持预充，不产生放电功耗。</figcaption>
+</figure>
+
+<h3>6.3 提前停止：激活被选中后不再读权重</h3>
+<p>论文 Fig.10(a) 的机制：当比较断言“激活更小（min = x）”后，OUT 被充到 VDD，读端口<strong>停止对局部读位线的重复预充</strong>——因为权重位不再需要被读取（MinMUX 直接输出激活位）。图中蓝色标记的权重位：<strong>不需要再预充和读取</strong>。后续周期 MinMUX 直接把激活位输出给 MinACCU。</p>
+
+<figure>
+<img src="assets/figs/fig13_10_早期停止机制.png" alt="早期停止机制">
+<figcaption>图 10 · 论文 Fig.10：(a) 早期权重读出停止机制——蓝色权重位无需再预充/读取；(b) 读端口能量节省（1.8×）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_bitserial_mux.svg" alt="位串行与MinMUX">
+<figcaption>教学图 6 · MSB 优先位串行比较示例（x=1010 vs w=0110，第 1 位即分出胜负）与 MinMUX/读端口电路。</figcaption>
+</figure>
+
+<div class="box warn">
+<div class="bt">⚠️ 提前停止的收益来源要分清</div>
+<p>这里有两层省电：① <strong>权重位=0 保持预充</strong>（稀疏感知，随时生效）；② <strong>激活被选中后停止读权重</strong>（比较断言后生效，只发生在 min=x 的情况）。两者都依赖位级稀疏/比较特性，都不需要稀疏训练。论文 Fig.10(b) 报告专用读端口设计带来 <strong>1.8× 功耗降低</strong>（读端口层面）。</p>
+</div>
+
+<h3>6.4 小结</h3>
+<ul>
+<li>MinMUX：比较断言后锁存 min 身份 → 纯透传；</li>
+<li>读端口：权重位 0 → 位线保持预充（配合 86× 稀疏度）；</li>
+<li>提前停止：min=x → 停止读权重 → 读端口省电 1.8×；</li>
+<li>三层机制全部“白捡”自算法近似，不需要额外稀疏训练/硬件。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_8_L1计算单元电路.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 预计算 L1 数据流：位串行比较（MSB 优先）→ MinMUX 选择 → ActACCU/WSUM/MinACCU 汇合于 ABS-ASM。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · 位串行最小选择（MinMUX）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">第 1 位：x=1 vs w=0 → x&gt;w 断言！比较结束</span>
+</div>
+<div class="hint">橙色框=当前比较位。x=1010(10) vs w=0110(6)：第 1 位（MSB）1&gt;0 即断言 x&gt;w → min=w 锁定，后续位直接输出 w、不再预充/读权重位（提前停止）。下方数据流显示 Σx=10、Σw=6、2Σmin=12 汇合得 Σ|x−w|=4。</div>
+</div>
+</section>

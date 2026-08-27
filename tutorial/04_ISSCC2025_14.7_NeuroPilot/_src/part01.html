@@ -1,0 +1,15 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：路径搜索与“模拟路径 CIM”</h2>
+<figure>
+  <img src="assets/diagrams/d01_path_search.svg" alt="路径搜索应用" style="max-width:920px">
+  <figcaption>图 1.1　路径搜索的应用（微机器人导航/VLSI 布线/城市规划/波前传播）与模拟路径 CIM 的概念。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么路径搜索值得专门做硬件？</div>
+<p>路径搜索（Dijkstra、A*、BFS）在 CPU 上是<strong>顺序</strong>的：每次只扩展一个节点，地图越大越慢。模拟路径 CIM 把地图网格直接映射到 PE 阵列，<strong>信号并行传播</strong>——32×32 阵列 = 1024 个节点同时“在看邻居”。这就是它比数字加速器 [3-5] PPA 更优的原因。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_1_动机与挑战.png" alt="论文图 14.7.1">
+  <figcaption>图 1.2　论文原图 Fig. 14.7.1：模拟路径 CIM 的动机与挑战。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

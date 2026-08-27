@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="430" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">混合格式乘法：输入用 2 的补码（2C），权重用符号-数值（SM）</text>
+
+  <!-- 三种组合 -->
+  <g font-size="11.5">
+    <rect x="40" y="80" width="260" height="200" rx="10" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+    <text x="170" y="106" text-anchor="middle" fill="#c25e2e" font-weight="600">2C(IN) × 2C(W)</text>
+    <text x="60" y="134" fill="#45536b">• 输入/权重都 2C</text>
+    <text x="60" y="158" fill="#45536b">• 负数全位取反+1 → 翻转多</text>
+    <text x="60" y="182" fill="#45536b">• 需要加 1 补偿</text>
+    <text x="60" y="230" fill="#c25e2e" font-weight="600">翻转最多（基线）</text>
+    <text x="40" y="0" fill="none"/>
+
+    <rect x="350" y="80" width="260" height="200" rx="10" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="106" text-anchor="middle" fill="#1d8a5f" font-weight="600">SM(IN) × SM(W)</text>
+    <text x="370" y="134" fill="#45536b">• 输入/权重都符号-数值</text>
+    <text x="370" y="158" fill="#45536b">• 省符号位计算，但</text>
+    <text x="370" y="182" fill="#45536b">• 不适配 CIM 结构 [25]</text>
+    <text x="370" y="230" fill="#45536b">（CIM 广播结构需要统一格式）</text>
+
+    <rect x="660" y="80" width="260" height="200" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="790" y="106" text-anchor="middle" fill="#0e5a8a" font-weight="600">2C(IN) × SM(W) ← 本文</text>
+    <text x="680" y="134" fill="#45536b">• 输入广播用 2C（适配 CIM）</text>
+    <text x="680" y="158" fill="#45536b">• 权重驻留用 SM（位稀疏）</text>
+    <text x="680" y="182" fill="#45536b">• 无“加 1 补偿”逻辑</text>
+    <text x="680" y="230" fill="#1d8a5f" font-weight="600">翻转最少</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="304" width="880" height="102" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="332" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么“2C 输入 + SM 权重”翻转最少？</text>
+  <text x="60" y="358" fill="#45536b" font-size="12.5">输入是每周期广播的“热”数据 → 2C 与 CIM 的广播结构最配；权重是驻留的“冷”数据 → SM 让负权重</text>
+  <text x="60" y="380" fill="#45536b" font-size="12.5">保持位稀疏（不取反填 1）；两者组合既适配 CIM 又避免“加 1 补偿”。</text>
+  <text x="60" y="400" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 翻转活动 −5.2%~47.5%，功耗 −6.3%~42.7%（相对其他格式组合）</text>
+</svg>

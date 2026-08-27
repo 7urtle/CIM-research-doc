@@ -1,0 +1,52 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+
+<h3 id="sec8-1">8.1 能效与面积效率</h3>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　实测能效：BF16 模式 62.84 TFLOPS/W（0.55–0.9V，ResNet50），INT8 模式 90.15 TOPS/W。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：5.4 ns @ 0.9V（BF16A/B 输入权重、FP32 输出）；</li>
+<li><strong>面积效率</strong>：697.17 GFLOPS/mm²（BF16A/B，峰值）；</li>
+<li><strong>能效范围</strong>：17.83–62.84 TFLOPS/W（标题里的范围，随电压/配置变化）；</li>
+<li><strong>精度</strong>：ViT @ImageNet 推理精度 79.818%；</li>
+<li><strong>工艺</strong>：28nm CMOS，64kb 宏。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_3_6_测量结果.png" alt="论文图 14.3.6">
+  <figcaption>图 8.2　论文原图 Fig. 14.3.6：测量结果与前作 FoM 对比。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-2">8.2 各项技术收益汇总</h3>
+<figure>
+  <img src="assets/charts/c02_improvements.png" alt="面积功耗收益" style="max-width:920px">
+  <figcaption>图 8.3　串行对齐与串行 MAC 的面积/功耗收益（对比并行方案 [6] 与 [1,2]）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_cycles_sparsity.png" alt="周期与稀疏性" style="max-width:920px">
+  <figcaption>图 8.4　N2CMAC 的计算周期减少（ViT）与符号-数值格式的稀疏性提升（ResNet50）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_3_5_仿真性能.png" alt="论文图 14.3.5">
+  <figcaption>图 8.5　论文原图 Fig. 14.3.5：各项方案的仿真性能对比。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>指标</th><th>数值</th><th>对比对象</th></tr>
+<tr><td>对齐电路面积</td><td class="num">−36.23%</td><td>传统减法器+桶形移位器方案 [1-6]</td></tr>
+<tr><td>串行对齐面积/功耗</td><td class="num">3.83× / 1.71×</td><td>并行对齐+并行 MAC [6]</td></tr>
+<tr><td>串行 MAC 面积/功耗</td><td class="num">1.56× / 1.20×</td><td>并行对齐+串行 MAC [1,2]</td></tr>
+<tr><td>计算周期</td><td class="num">−19.80% / −16.50%</td><td>8b / 10b 输入（ViT DeiT-S）</td></tr>
+<tr><td>负权重位级稀疏性</td><td class="num">1.83×</td><td>2C 格式（ResNet50）</td></tr>
+<tr><td>N2CMAC 电路功耗/延迟/面积</td><td class="num">1.96× / 1.25× / 1.18×</td><td>典型 2C MAC [1,2]</td></tr>
+<tr><td>FoM（IN×W×密度×能效×输出比）</td><td class="num">1.93–116.90×</td><td>前作 SRAM CIM [1-5]</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig14_3_7_芯片照片.png" alt="论文图 14.3.7">
+  <figcaption>图 8.6　论文原图 Fig. 14.3.7：裸片显微照片与芯片性能汇总表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① “TFLOPS/W”和“TOPS/W”不是一回事：浮点运算计 FLOPs（1 MAC = 2 FLOPs），整数计 OPS——跨格式对比要小心；② FoM 把“输入精度×权重精度×存储密度×归一化能效×输出比”乘在一起，权重选择是作者定义的，数值跨度（1.93–116.90×）很大，说明对比对象跨度也很大；③ 79.818% 的 ViT 精度是“这个宏能跑出这个精度”，不代表网络最佳精度——读时注意区分。</p>
+</div>
+</section>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Beyond-NN 应用：GCN 与 DLRM —— 稀疏采集 + 稀疏代数</text>
+
+  <!-- GCN -->
+  <rect x="40" y="90" width="420" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="118" fill="#0e5a8a" font-size="14" font-weight="700">GCN（图卷积网络）</text>
+  <g font-size="12">
+    <circle cx="120" cy="170" r="16" fill="#cfe0ee"/><text x="120" y="175" text-anchor="middle" fill="#0e5a8a" font-size="10">v1</text>
+    <circle cx="190" cy="140" r="16" fill="#cfe0ee"/><text x="190" y="145" text-anchor="middle" fill="#0e5a8a" font-size="10">v2</text>
+    <circle cx="260" cy="170" r="16" fill="#cfe0ee"/><text x="260" y="175" text-anchor="middle" fill="#0e5a8a" font-size="10">v3</text>
+    <line x1="120" y1="170" x2="190" y2="140" stroke="#0e5a8a" stroke-width="1.5"/>
+    <line x1="190" y1="140" x2="260" y2="170" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="60" y="220" fill="#45536b">聚合阶段（SpG）：收集邻居特征并求和</text>
+    <text x="60" y="244" fill="#45536b">组合阶段（SpA）：NN 变换聚合结果</text>
+    <text x="60" y="284" fill="#0e5a8a" font-weight="600">→ 图结构不规则 → 访存密集 + 高精度(FP32)</text>
+  </g>
+
+  <!-- DLRM -->
+  <rect x="500" y="90" width="420" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="118" fill="#6b3fa0" font-size="14" font-weight="700">DLRM（推荐模型）</text>
+  <g font-size="12">
+    <rect x="530" y="136" width="90" height="50" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="575" y="158" text-anchor="middle" fill="#6b3fa0">嵌入表</text>
+    <text x="575" y="176" text-anchor="middle" fill="#45536b">（大表）</text>
+    <rect x="660" y="136" width="110" height="50" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="715" y="158" text-anchor="middle" fill="#6b3fa0">嵌入查表</text>
+    <text x="715" y="176" text-anchor="middle" fill="#45536b">（SpG）</text>
+    <rect x="800" y="136" width="100" height="50" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="850" y="158" text-anchor="middle" fill="#6b3fa0">FC 层</text>
+    <text x="850" y="176" text-anchor="middle" fill="#45536b">（SpA）</text>
+    <text x="530" y="220" fill="#45536b">用户历史交互 → 嵌入查表（稀疏采集）</text>
+    <text x="530" y="244" fill="#45536b">→ 逐元素求和 → FC 层预测（稀疏代数）</text>
+    <text x="530" y="284" fill="#6b3fa0" font-weight="600">→ 嵌入表巨大 → 数据搬移是主要瓶颈</text>
+  </g>
+
+  <rect x="40" y="344" width="880" height="102" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">两个共同点（本论文的出发点）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">① 都由 <strong>SpG（稀疏采集）</strong> + <strong>SpA（稀疏代数）</strong> 组成；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">② 应用规模大 → 单芯片放不下 → 数据搬移成瓶颈；通常需要 <strong>FP32 高精度</strong>。</text>
+  <text x="60" y="440" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 方案：数字 CIM（省搬移）+ MCM 多芯粒（扩容量）——但组合起来有新挑战（§2）</text>
+</svg>

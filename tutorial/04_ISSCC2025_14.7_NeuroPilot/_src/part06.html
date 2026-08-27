@@ -1,0 +1,37 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：TsCFP 三步粗/细路径流程 —— 大图导航</h2>
+<figure>
+  <img src="assets/diagrams/d07_tscfp.svg" alt="TsCFP" style="max-width:940px">
+  <figcaption>图 6.1　TsCFP 三步：① 生成最小清晰粗图 → ② 粗图求“走廊”路径 → ③ 沿走廊求细路径。</figcaption>
+</figure>
+<p>32×32 阵列只能处理小图；1024×1024 的大图怎么办？直接整图映射会“语义模糊”（大格子把细节抹平），拆图独立求解又容易“局部最优”（每段各自最优、拼起来不是全局最优）。TsCFP 分三步化解：</p>
+<ol>
+<li><strong>生成最小清晰粗图</strong>：迭代调整分辨率，按“路径比”（原图与转换图的路径相似度）打分，找到<strong>最小但仍清晰</strong>的粗图；</li>
+<li><strong>粗图最短路径（走廊）</strong>：把粗图切成 32×32 段，用 SDS/DDS 逐段导引；后续段的起点由上一段的 END 点 + 原图大体方向决定 → 得到一条“走廊”；</li>
+<li><strong>细图最短路径</strong>：沿走廊切出原图的细条带，逐段顺序精算 → 在粗路径约束下求最优细路径。</li>
+</ol>
+<div class="box key">
+<div class="bt">📊 旧金山 1024×1024 地图实例</div>
+<p>求解时间 <strong>373.82 ns</strong>、能耗 <strong>512.5 pJ</strong>、路径长度 <strong>1279.8L</strong>（单位长度）。粗图约束走廊、走廊约束细路径——三层尺度协作，既不被大图淹没、也不会陷进局部最优。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_5_TsCFP流程.png">
+  <source src="assets/videos/v03_tscfp.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · TsCFP 三步流程动画：粗图 → 走廊 → 细路径。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_5_TsCFP流程.png" alt="论文图 14.7.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.7.5：TsCFP 映射流程与旧金山地图实例。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🗺 演示 C · TsCFP 大图分块（看 32×32 窗口如何覆盖大图）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">粗图→走廊→细路径三级尺度</span>
+</div>
+<div class="hint">先看粗图生成“走廊”（橙色粗线），再看窗口沿走廊移动精算细路径——三级尺度协作解决大图导航。</div>
+</div>
+</section>

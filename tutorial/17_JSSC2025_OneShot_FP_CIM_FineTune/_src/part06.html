@@ -1,0 +1,91 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：ODFC——轻量片上微调核心</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么边缘芯片需要片上微调；② 多轮数据流怎么用面积换时间；③ 保损失 FP 加法解决对齐损失；④ 微调恢复精度的实测。</p>
+</div>
+
+<h3>6.1 动机：环境变化让精度暴跌</h3>
+<p>边缘设备经常面对变化的环境（光照、天气）→ 测试样本与训练集差异 → 精度大跌。用 MNIST 训练、MNIST-M 测试模拟背景变化：精度从 <strong>99.1% 暴跌到 13.8%</strong>。先前 FP-CIM 不支持片上微调 → 需要能训练的小面积硬件。</p>
+<div class="box warn">
+<div class="bt">⚠️ 训练硬件为什么难做？</div>
+<p>训练的算法复杂度远高于推理（梯度反向传播、权重更新）→ 电路复杂；但边缘芯片面积受限。关键缓解：<strong>微调只需少量 epochs</strong>（远少于从头训练）→ 可以用“面积换时间”的折中。</p>
+</div>
+
+<h3>6.2 多轮数据流（论文 Fig.13a）</h3>
+<p>ODFC 用 128 轮顺序更新整个 CIM core 的 128×16 权重（每轮只更新 16 个）：</p>
+<ol>
+<li><strong>权重读</strong>：从 CIM core 读出 16 个权重尾数，归一化为 BF16；</li>
+<li><strong>权重更新</strong>：ODFC 计算在 k 个周期内完成（k = 梯度向量长度）；每周期取 1 个 X 和 16 个梯度，更新前层权重；</li>
+<li><strong>梯度计算</strong>：k 周期后算出更新后的权重和偏置；</li>
+<li><strong>权重写</strong>：对齐后写回 CIM core。</li>
+</ol>
+<p>→ 每轮只更新 16 个权重 → <strong>电路面积大幅降低</strong>。</p>
+
+<figure>
+<img src="assets/figs/fig17_13_片上微调轮次数据流.png" alt="片上微调轮次数据流">
+<figcaption>图 13 · 论文 Fig.13：(a) 片上微调的轮次与周期数据流 (b) ODFC 总体架构。</figcaption>
+</figure>
+
+<h3>6.3 硬件优化（论文 Fig.14/15）</h3>
+<ul>
+<li><strong>时分复用</strong>：BF16 乘法器和加法树在不同计算阶段共享 → 面积再省 10%；</li>
+<li><strong>保损失 FP 加法</strong>：多 FP 数累加时，大数加小数 → 小数移位后尾数可能变 0 → 三个数之和为 0（Fig.15a）。解法：把对齐误差<strong>保留</strong>并在下一级加法再处理 → 应用于 16×BF16 加法树（Fig.15b）→ 降低多级求和损失。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_14_微调训练算法.png" alt="微调训练算法">
+<figcaption>图 14 · 论文 Fig.14：multiply-less NN 的训练算法。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_15_保损失FP加法.png" alt="保损失FP加法">
+<figcaption>图 15 · 论文 Fig.15：(a) 保损失 FP 加法 (b) 16×BF16 加法树。</figcaption>
+</figure>
+
+<h3>6.4 ODFC 实测（表 III + Fig.23/24）</h3>
+<ul>
+<li><strong>规格</strong>：0.037 mm² · 180 MHz（与 CIM core 同频）· 16 ops/周期 · <strong>2.88 GOPS</strong> @BF16（0.9V）；</li>
+<li><strong>能效</strong>：面积效率 0.078 TFLOPS/mm²、能效 1.71 TFLOPS/W（post-layout）；</li>
+<li><strong>微调恢复</strong>：MNIST→MNIST-M，ODFC 训练 10 epochs → 精度 <strong>13.8% → 84.3%</strong>；</li>
+<li><strong>层级分析（表 IV）</strong>：6 层 multiply-less NN 微调总延迟 14.3 ms、总能耗 18.1 µJ；训练能效 1.32 TFLOPS/W（低于推理，但微调远少于推理 → 系统级影响可忽略）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_23_ODFC精度恢复.png" alt="ODFC精度恢复">
+<figcaption>图 16 · 论文 Fig.23：ODFC 实现的推理精度恢复（99.1%→13.8%→84.3%）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_24_MNIST-M训练损失与精度.png" alt="MNIST-M训练损失与精度">
+<figcaption>图 17 · 论文 Fig.24：MNIST-M 数据集的训练损失与推理精度逐 epoch 变化。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_odfc.svg" alt="ODFC教学图">
+<figcaption>教学图 6 · ODFC 的多轮数据流、硬件优化与精度恢复。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig17_23_ODFC精度恢复.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · ODFC 片上微调：精度暴跌（99.1%→13.8%）→ 微调恢复（→84.3%）曲线动画。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · ODFC 精度恢复</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">训练集：99.1%</span>
+</div>
+<div class="hint">曲线：训练集 99.1% → 环境变化（MNIST-M 测试）暴跌 13.8%（红段）→ ODFC 片上微调 1–10 epochs 恢复到 84.3%（绿段）。下方是 ODFC 的关键硬件特性。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 环境变化 → 精度暴跌 → 需要片上微调；② 128 轮顺序更新（每轮 16 权重）→ 面积换时间；③ 时分复用（−10%）+ 保损失 FP 加法；④ 实测：13.8%→84.3%（10 epochs）、总能耗 18.1 µJ。</p>
+</div>
+</section>

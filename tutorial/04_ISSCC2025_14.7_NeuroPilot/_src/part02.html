@@ -1,0 +1,13 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 单向搜索浪费一半时间；② DFF 暂存 PPA 差 / 动态逻辑怕漏电；③ 处理窗口有限，大图任务失败。</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 单向搜索浪费</td><td>信号从 START 一路铺到 END，覆盖面积浪费一半</td><td><strong>DDS 双向搜索</strong>：两端同时出发、中间交汇</td></tr>
+<tr><td>② 存储 PPA 差</td><td>DFF 面积大功耗高；动态逻辑怕漏电</td><td><strong>动态逻辑 Pilot PE + OPC</strong>：SRAM 存方向 + 预充电优化</td></tr>
+<tr><td>③ 处理窗口有限</td><td>32×32 阵列装不下大图；整图映射模糊、拆图局部最优</td><td><strong>TsCFP 三步流程</strong>：粗图 → 走廊 → 细路径</td></tr>
+</table>
+</section>

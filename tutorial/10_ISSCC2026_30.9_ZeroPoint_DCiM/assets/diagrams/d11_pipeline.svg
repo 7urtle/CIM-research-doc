@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="420" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">4 级流水线：每个周期都有“一组数据”走完全程</text>
+
+  <!-- 流水线级 -->
+  <g>
+    <rect x="60" y="80" width="200" height="120" rx="10" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="160" y="106" text-anchor="middle" fill="#0e5a8a" font-size="13.5" font-weight="700">第 1 级</text>
+    <text x="160" y="128" text-anchor="middle" fill="#1a2332" font-size="12">无符号→有符号转换</text>
+    <text x="160" y="148" text-anchor="middle" fill="#45536b" font-size="11">128 个激活并行转换</text>
+    <text x="160" y="166" text-anchor="middle" fill="#45536b" font-size="11">+ 零点偏置合并</text>
+    <text x="160" y="186" text-anchor="middle" fill="#6b7a93" font-size="10.5">（外围电路，32 列共享）</text>
+
+    <rect x="300" y="80" width="200" height="120" rx="10" fill="#f5f0fc" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="400" y="106" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">第 2 级</text>
+    <text x="400" y="128" text-anchor="middle" fill="#1a2332" font-size="12">Booth 部分积生成</text>
+    <text x="400" y="148" text-anchor="middle" fill="#45536b" font-size="11">128 个乘法 → 512 个部分积</text>
+    <text x="400" y="166" text-anchor="middle" fill="#45536b" font-size="11">32 路 CSA 跨乘数相加</text>
+    <text x="400" y="186" text-anchor="middle" fill="#6b7a93" font-size="10.5">（每个 bank 内 4 对齐）</text>
+
+    <rect x="540" y="80" width="200" height="120" rx="10" fill="#f5f0fc" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="640" y="106" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">第 3 级</text>
+    <text x="640" y="128" text-anchor="middle" fill="#1a2332" font-size="12">移位合并</text>
+    <text x="640" y="148" text-anchor="middle" fill="#45536b" font-size="11">4 个错位部分积和相加</text>
+    <text x="640" y="166" text-anchor="middle" fill="#45536b" font-size="11">（每个 bank 完成</text>
+    <text x="640" y="186" text-anchor="middle" fill="#45536b" font-size="11">32 路点积）</text>
+
+    <rect x="780" y="80" width="160" height="120" rx="10" fill="#fdf3e7" stroke="#e8a33d" stroke-width="2" filter="url(#sh)"/>
+    <text x="860" y="106" text-anchor="middle" fill="#c25e2e" font-size="13.5" font-weight="700">第 4 级</text>
+    <text x="860" y="128" text-anchor="middle" fill="#1a2332" font-size="12">Σ 4 个 bank</text>
+    <text x="860" y="148" text-anchor="middle" fill="#45536b" font-size="11">128 路 MAC 完成</text>
+    <text x="860" y="166" text-anchor="middle" fill="#45536b" font-size="11">+ 零点修正项</text>
+    <text x="860" y="186" text-anchor="middle" fill="#c25e2e" font-size="10.5" font-weight="600">→ 输出</text>
+  </g>
+
+  <!-- 级间寄存器 -->
+  <g font-size="10.5" fill="#6b7a93">
+    <rect x="262" y="118" width="34" height="44" rx="5" fill="#fff" stroke="#dfe6f0"/>
+    <text x="279" y="137" text-anchor="middle">R1</text>
+    <text x="279" y="151" text-anchor="middle">(128×8b)</text>
+    <rect x="502" y="118" width="34" height="44" rx="5" fill="#fff" stroke="#dfe6f0"/>
+    <text x="519" y="137" text-anchor="middle">R2</text>
+    <text x="519" y="151" text-anchor="middle">(部分积)</text>
+    <rect x="742" y="118" width="34" height="44" rx="5" fill="#fff" stroke="#dfe6f0"/>
+    <text x="759" y="137" text-anchor="middle">R3</text>
+    <text x="759" y="151" text-anchor="middle">(bank 和)</text>
+  </g>
+  <path d="M260,140 H262" stroke="#0e5a8a" stroke-width="2"/>
+  <path d="M296,140 H300" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M500,140 H502" stroke="#0e5a8a" stroke-width="2"/>
+  <path d="M536,140 H540" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M740,140 H742" stroke="#0e5a8a" stroke-width="2"/>
+  <path d="M776,140 H780" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 流水线时间表 -->
+  <rect x="60" y="226" width="880" height="150" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <text x="80" y="252" fill="#123a57" font-size="13" font-weight="700">流水线时空图（4 个连续周期，数据组 D1→D4 依次进入）</text>
+  <g font-size="11.5">
+    <text x="80" y="278" fill="#6b7a93">周期 1：</text>
+    <rect x="170" y="266" width="120" height="22" rx="4" fill="#eef7fd" stroke="#0e5a8a"/><text x="230" y="281" text-anchor="middle" fill="#0e5a8a">D1 在第1级</text>
+    <text x="80" y="306" fill="#6b7a93">周期 2：</text>
+    <rect x="170" y="294" width="120" height="22" rx="4" fill="#f5f0fc" stroke="#6b3fa0"/><text x="230" y="309" text-anchor="middle" fill="#6b3fa0">D1 在第2级</text>
+    <rect x="300" y="294" width="120" height="22" rx="4" fill="#eef7fd" stroke="#0e5a8a"/><text x="360" y="309" text-anchor="middle" fill="#0e5a8a">D2 在第1级</text>
+    <text x="80" y="334" fill="#6b7a93">周期 3：</text>
+    <rect x="170" y="322" width="120" height="22" rx="4" fill="#f5f0fc" stroke="#6b3fa0"/><text x="230" y="337" text-anchor="middle" fill="#6b3fa0">D1 在第3级</text>
+    <rect x="300" y="322" width="120" height="22" rx="4" fill="#f5f0fc" stroke="#6b3fa0"/><text x="360" y="337" text-anchor="middle" fill="#6b3fa0">D2 在第2级</text>
+    <rect x="430" y="322" width="120" height="22" rx="4" fill="#eef7fd" stroke="#0e5a8a"/><text x="490" y="337" text-anchor="middle" fill="#0e5a8a">D3 在第1级</text>
+    <text x="80" y="362" fill="#6b7a93">周期 4：</text>
+    <rect x="170" y="350" width="120" height="22" rx="4" fill="#fdf3e7" stroke="#e8a33d"/><text x="230" y="365" text-anchor="middle" fill="#c25e2e">D1 输出 ✓</text>
+    <rect x="300" y="350" width="120" height="22" rx="4" fill="#f5f0fc" stroke="#6b3fa0"/><text x="360" y="365" text-anchor="middle" fill="#6b3fa0">D2 在第3级</text>
+    <rect x="430" y="350" width="120" height="22" rx="4" fill="#f5f0fc" stroke="#6b3fa0"/><text x="490" y="365" text-anchor="middle" fill="#6b3fa0">D3 在第2级</text>
+    <rect x="560" y="350" width="120" height="22" rx="4" fill="#eef7fd" stroke="#0e5a8a"/><text x="620" y="365" text-anchor="middle" fill="#0e5a8a">D4 在第1级</text>
+  </g>
+</svg>

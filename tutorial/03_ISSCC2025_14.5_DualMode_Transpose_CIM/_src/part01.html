@@ -1,0 +1,12 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：片上训练（On-Device Training）与“转置”难题</h2>
+<figure>
+  <img src="assets/diagrams/d01_ondevice_training.svg" alt="片上训练" style="max-width:920px">
+  <figcaption>图 1.1　训练的两个阶段：前向（FF = 普通矩阵乘）与反向（BP = 误差梯度 × 转置权重）。BP 的“转置”是 CIM 的难题。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么片上训练重要？</div>
+<p>① <strong>实时响应</strong>：设备端即时微调，不用等云端往返；② <strong>省电</strong>：不需要把数据传到云端（上传下载都是能量）；③ <strong>隐私</strong>：用户数据（照片、语音、签名）不出设备。这就是“边缘 AI 的下一站”。</p>
+</div>
+<p>训练比推理多出来的核心运算是 <strong>BP：误差梯度 G × 转置权重矩阵 Wᵀ</strong>。矩阵转置在普通 SRAM CIM 里意味着“按列访问”——而 SRAM 天生按行组织，列向访问要么做双端口阵列（面积大）、要么做两套电路（不复用）。这就是“转置 CIM（T-CIM）”要解决的核心矛盾。</p>
+</section>

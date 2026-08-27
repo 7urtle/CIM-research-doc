@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">传统 FP-CIM 加速 Compound AI 的三大挑战（论文 Fig. 14.4.1）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：精度（分布假设）</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">前作 FP-CIM 假设数据服从<strong>高斯分布</strong></text>
+    <text x="60" y="168" fill="#45536b" font-size="12">（数据集中在均值附近）来减少对齐损失；</text>
+    <text x="60" y="198" fill="#45536b" font-size="12">Compound AI 是多个模型多种分布 →</text>
+    <text x="60" y="220" fill="#45536b" font-size="12">高斯假设失效 → 精度下降 &gt;5%</text>
+    <text x="60" y="266" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“对分布不敏感”的浮点计算</text>
+
+    <rect x="340" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：功耗（数据搬移）</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">CIM 只做 MAC；</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">部分和/残差累加要把数据搬来搬去，</text>
+    <text x="360" y="190" fill="#45536b" font-size="12">占总功耗 <strong>26~72%</strong>（位串行 CIM 更严重）</text>
+    <text x="360" y="228" fill="#45536b" font-size="12">Compound AI 的融合运算（残差连接、</text>
+    <text x="360" y="250" fill="#45536b" font-size="12">注意力掩码）加重了这个开销</text>
+    <text x="360" y="292" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“全数据路径在存内”</text>
+
+    <rect x="640" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：性能（稀疏模式）</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">传统 CIM 按“特定模型特征”做稀疏，</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">（如固定权重剪枝模式）</text>
+    <text x="660" y="198" fill="#45536b" font-size="12">Compound AI 各模型稀疏模式灵活</text>
+    <text x="660" y="220" fill="#45536b" font-size="12">（2:4 剪枝、注意力掩码、随机稀疏）</text>
+    <text x="660" y="250" fill="#45536b" font-size="12">→ 实际加速与理论（1/稀疏度）差距大</text>
+    <text x="660" y="292" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“静态+动态”通用稀疏加速</text>
+  </g>
+
+  <rect x="40" y="352" width="880" height="96" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="380" fill="#1d8a5f" font-size="13.5" font-weight="700">本文三招对应：</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">① 异质 CIM + 后乘积对齐（MantissaEE 格式）→ 精度损失 &lt;2⁻³⁰（对分布不敏感）；</text>
+  <text x="60" y="428" fill="#45536b" font-size="12.5">② 全数据路径存内（AIM 累加存内 + 混合格式）→ 数据搬移功耗大减；</text>
+  <text x="60" y="448" fill="#45536b" font-size="12.5">③ NIM + 动态启动器（静态 2:4 + 动态 Booth 池）→ 加速 5.30×，达稀疏理论上限的 92.6%。</text>
+</svg>

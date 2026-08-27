@@ -1,0 +1,213 @@
+===== PAGE 1 =====
+524  •  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.7
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Upon the rapid development of generative AI, there is an urgent need to embed LLM 
+inference support into client devices (PCs, mobiles) to improve response time, data privacy, 
+and customization. However, as shown in Fig. 30.7.1, challenges remain for edge-LLM 
+applications. Compared to cloud deployments, edge tasks typically use much smaller batch 
+sizes, which signiﬁcantly reduces data reuse during the generation stage of LLM inference 
+and makes the task more memory-intensive [1]. Meanwhile, existing client products are 
+limited by either computing power (CPU) or memory bandwidth (GPU), and GPU energy 
+consumption is prohibitive for battery-powered devices such as phones. Therefore, 
+supporting ofﬂine edge LLM inference requires an LLM-optimized design that delivers 
+sufﬁcient computing power and memory bandwidth, high energy efﬁciency, and easy 
+integration with existing edge platforms. 
+ 
+To mitigate the memory bottleneck, several processing-near-memory (PNM) architectures 
+have been proposed [2-5]. However, most prior works integrate compute directly within 
+the DRAM die, constraining compute capability due to DRAM process limitations. In parallel, 
+recent advances in 3D HB + mini-TSV integration enable high-bandwidth low-energy 
+memory access for 3D near-memory designs, motivating this work. Our design stacks two 
+DRAM dies with one logic die, providing 1GB on-chip DRAM capacity and a memory density 
+of 99.4Mb/mm2. Decoupling logic from DRAM allows implementing compute logic in 
+standard CMOS and seamlessly leveraging future improvements via advances in process 
+nodes. The 3D-stacked DRAM delivers GB-scale on-chip memory for LLM deployment, 
+greatly reducing off-chip trafﬁc, while the high-density HB + mini-TSV interconnect enables 
+near-in-die interconnects that offer low-latency, low-energy memory access, achieving a 
+bandwidth density of 12.77GB/s/mm2 to alleviate the LLM memory bottleneck. The design 
+also supports a DDR4-protocol-compatible external interface for ﬂexible system integration; 
+when PNM is disabled, the chip operates as conventional host DRAM. 
+ 
+Figure 30.7.2 illustrates the overall architecture of the presented 3D NMC design. The 
+presented design comprises eight 1Gb compute blocks, denoted as bankgroup (BG) blocks. 
+ Each BG block consists of two 512Mb DRAM blocks on the DRAM_N and DRAM_F dies, 
+and a compute module on the logic die. Each DRAM block contains 8 banks and each bank 
+contains 8 segments. Within each segment, 16 subarrays are arranged such that two 
+adjacent subarrays share a 512-SA stage to generate local DQ (LDQ) signals. By controlling 
+MDQ_sel, target column data are selected onto MDQ lines and then driven into a second-
+stage SA for faster reads. Each segment produces a 16b RDL output, so one BG block 
+provides a 2048b bus (=16×8×8×2). These RDLs connect to the logic die via 3D paths: 
+signals from DRAM_N use direct HB connections, while those from DRAM_F traverse HB-
+TSV-HB chains to pass through DRAM_N. For TSV reliability, two HB connections 
+accompany each TSV. The RDLs from the DRAM dies connect to a custom 3D DRAM PHY. 
+Because the 3D stack yields a much wider bus, the pin data rate required for equivalent 
+bandwidth is substantially lower; consequently, the 3D DRAM PHY is simpler than 
+DDR/HBM PHYs and primarily serves as a data synchronizer and level shifter, reducing 
+design complexity and power consumption. 
+ 
+Each compute module integrates two accelerator (ACC) units that perform near-memory 
+computation and access DRAM through the memory controller. The general-purpose 
+system host accesses DRAM and manages the ACCs via a DDR-compatible interface. Two 
+additional DDR4-formatted commands, T-ACC and Act-Reg, are introduced to trigger target 
+ACCs and set conﬁguration registers. When the host issues a command, the DDR interface 
+and decoder accept and decode it, and then assert the corresponding control signals to the 
+target module (ACC or memory controller). This scheme maintains full host compatibility 
+while providing a lightweight command extension mechanism for near-memory control. 
+ 
+Figure 30.7.3 shows the 3D DRAM datapath, including ACC-DRAM and system-memory-
+DRAM paths. Our RISC-V-based ACC includes a core that supports common RISC-V 
+instructions. L1 instruction and data caches reduce access latency. An SRAM-based system 
+memory is connected to the ACC via the memory bus for local data storage. We designed 
+a custom FPU to accelerate critical ﬂoating-point operations for LLM workloads (fadd, fsub, 
+fmul, fdiv); other ﬂoating-point instructions, such as fsqrt, are also supported by the core. 
+As LLM workloads involve extensive consecutive loads and stores, a DMA module manages 
+bulk transfers to relieve the core of data-movement tasks. The ACC can issue direct DRAM 
+access commands or trigger DMA transfers between system memory and 3D DRAM space. 
+The memory controller decodes access requests from the system bus and forwards them 
+to the command scheduler, which generates DRAM commands. The scheduler FSM is also 
+shown in Fig. 30.7.3. We employ an open-page policy and add a 2048b buffer to hold the 
+most recently accessed data. On a new request, if buf_hit is asserted, the scheduler serves 
+data from the buffer; otherwise, it starts a DRAM request. For a row hit, the read/write 
+command is issued directly; on a row miss, precharge and activate commands are 
+scheduled before read/write. On DRAM reads, the returned data updates the buffer. 
+Scheduled commands ﬂow to a signal generator to form actual DRAM control signals, and 
+the corresponding timing waveform is presented in Fig. 30.7.3. A host programmable conﬁg 
+module enforces timing and refresh scheduling. A refresh control issues refresh requests 
+per the conﬁguration and forwards them to the scheduler. Generated DRAM signals and 
+external host signals are selected by a switch according to the current mode and remapped 
+to DRAM addresses. The 3D DRAM PHY comprises four 256Mb PHY submodules to service 
+the 1Gb DRAM space.  
+ 
+Figure 30.7.3 also illustrates the GEMM dataﬂow. GEMM is the dominant kernel in  
+LLM computation, thus our evaluation focuses on this task. Cross-BG or cross-chip  
+data accesses require host intervention and should be avoided whenever possible. For 
+example, in a full-chip assignment for an M×N×K GEMM (M×N input multiplied by N×K 
+weight), M and K are each partitioned by four, and the resulting submatrices are assigned 
+to the 16 ACCs across the 8 BGs (e.g., I0W0→BG0/ACC0, I0W1→BG0/ACC1, 
+I0W2→BG1/ACC0,…). Each accelerator computes a submatrix of the ﬁnal output, which 
+the host can directly concatenate without additional accumulation. When scaling to multiple 
+NMC chips, M and K can be further partitioned. Within each accelerator, all weight data are 
+stored consecutively and read via DMA, while each input row is evenly distributed across 
+all banks accessed sequentially, enabling complete input reads through all-bank parallelism. 
+When an input row is ready, it will be sent to the digital logic with the corresponding weight 
+data for MAC and potentially activation function (AF) computation. Normalized GEMM 
+performance results show that adding DMA and the 2048b buffer yields substantial 
+improvement: on average, throughput increases by 53.8% relative to a baseline without 
+DMA or buffer, demonstrating the beneﬁts of local buffering plus DMA-assisted data 
+movement. Furthermore, in some speciﬁc scenarios, parameters like weights can be 
+uploaded to 3D DRAM only once after powering on, which could greatly reduce the off-chip 
+access amount. 
+ 
+Figure 30.7.4 presents the measurement system and prototype board. The setup uses one 
+host FPGA and two test PNM chips to verify scalability. A host CPU in an FPGA (serves as 
+the general-purpose CPU system in application scenarios) accesses the test chips via the 
+host memory controller and a DDR4-compatible interface. Control signals (commands and 
+addresses) are broadcast to both chips. The 16b DDR4 data bus is evenly split and 
+connected to the two test chips. Inside each test chip, control and data signals are broadcast 
+to the 8 BGs, and the target BGs activate according to decoded information. A high-speed 
+IO chip is used for ACC program loading and debug transfer, providing program ﬂexibility. 
+ 
+Figure 30.7.4 also shows DRAM measurement results. The DRAM shmoo indicates 
+operation at 526Mbps at 1.2V, corresponding to 12.77GB/s/mm2 bandwidth density, which 
+exceeds GDDR6 by 8.63× and HBM3E by 1.22×. DRAM retention testing (96ms at 98°C) 
+failed on <0.05% of wafer chips, indicating good DRAM quality. The results of 3D integration 
+yield veriﬁcation, and the corresponding testing circuit is also presented in Figure 30.7.4. 
+Only 0.58% additional failure rate is detected after 3D integration, proving that the 
+integration technology maintains a good yield rate. The 3D integration architecture enables 
+0.67pJ/b memory energy efﬁciency, which is 9% of GDDR6 and 28% of HBM3E. 
+ 
+As shown in Fig. 30.7.5, the 3D-stacked chip integrates high-density HB and mini-TSV 
+interconnects with HB pitch=3μm and TSV pitch=5μm. Figure 30.7.5 reports voltage-
+frequency scaling, logic-die area breakdown, and chip power breakdown. It also presents 
+memory-access latency and GEMM execution results. In an 8192-access consecutive test, 
+we measure 3.21ns write and 3.24ns read latency, reductions of 90% and 93% versus a 
+scaled LPDDR4 system (system frequency scaled to 1.2GHz); for random access, we 
+measure 45.12ns write and 50.01ns read latency, reductions of 37% and 44%. These results 
+30.7    A 1.2GHz 12.77GB/s/mm2 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications 
+ 
+Yue Cao1,2,3, Jinghao Jiang1, Haijun Jiang3, Qian Zhang3, Xuanzhi Liu2, Jinhui Cheng2, Zhongze Han2, Xiping Jiang4, Fengguo Zuo4, Song Wang4, Fujun Bai4,  
+Yixin Guo4, Chunmeng Dou2, Jianguo Yang1,2,3, Hangbing Lv2, Qi Liu1, Ming Liu1,2 
+ 
+1Fudan University, Shanghai, China, 2Institute of Microelectronics of the Chinese Academy of Sciences, Beijing, China, 3Zhangjiang Laboratory, Shanghai, China 
+4Xi’an UniIC Semiconductors, Xi’an, China 
+ 
+A high-bandwidth-density (12.77GB/s/mm2) high-memory-density (99.4Mb/mm2) low-
+energy-consumption (0.67pJ/b) 3D PNM design that operates at 1.2GHz is presented. The 
+design adopts a two-DRAM-one-logic architecture that enables near-DRAM computing 
+through a high-density 3D integration path, reducing memory-access latency by up to 93% 
+and GEMM execution time by up to 98%, demonstrating strong potential for edge-LLM 
+workloads. 
+Abstract
+2026 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-8936-3/26/$31.00 ©2026 IEEE | DOI: 10.1109/ISSCC49663.2026.11409184
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:11 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 30.7.1: Client-side LLM application challenges and the presented 3D integrated 
+near-DRAM computing design.
+Figure 30.7.2: Overall design architecture and the extended DDR4 command list.
+ISSCC 2026 / February 18, 2026 / 10:55 AM
+525  
+DIGEST OF TECHNICAL PAPERS  •
+30
+show that the 3D near-memory architecture substantially reduces memory latency, 
+beneﬁting latency-sensitive edge LLM workloads. Compared to a 2.1GHz Intel i7-13700F, 
+our design reduces execution time for a 128×128×128 GEMM by 86%. When scaling our 
+work to an 8-chip DIMM system with 8GB DRAM capacity and 128 ACCs, the reduction 
+can be further improved to 98%, illustrating practical gains for common inference kernels. 
+ 
+Figure 30.7.6 compares our design with SOTA PNM designs. Unlike prior works, our 
+design supports a DDR4-compatible interface for general-purpose integration. The two-
+die stacked DRAM with 3D integration achieves 12.77GB/s/mm2 bandwidth density, 
+99.4Mb/mm2 memory density, and 0.67pJ/b energy efﬁciency, while a separate 28nm 
+CMOS logic die enables 1.2GHz compute frequency, which provides suitable computing 
+power for client LLMs. The design FoM is 7.33× higher than a prior 3D PNM design and 
+5.13× higher than an active-interposer design [7]. By consolidating the logic and DRAM 
+dies through 3D integration, this work leverages PNM-DRAM advancements without 
+compromising the compute capability  provided by standard CMOS logic, achieving 
+outstanding bandwidth density and logic frequency compared with existing PNM designs. 
+Moreover, this industrial-standard fabricated prototype demonstrates the feasibility and 
+commercial potential of 3D PNM solutions for edge LLM deployment. The die micrographs 
+and key speciﬁcations are shown in Fig. 30.7.7. 
+ 
+Acknowledgement: 
+This research was supported by the National Natural Science Foundation of China (NSFC) 
+under grants 62488101, 62222119, 62025406. Corresponding author: Jianguo Yang. 
+ 
+References: 
+1] C. Li et al., “H2-LLM: Hardware-Dataﬂow Co-Exploration for Heterogeneous Hybrid-
+Bonding-based Low-Batch LLM Inference”, ISCA, pp. 194-210, June 2025.  
+https://doi.org/10.1145/3695053.3731008 
+[2] H. Shin et al., “McDRAM: Low Latency and Energy-Efﬁcient Matrix Computations in 
+DRAM,” IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 
+vol. 37, no. 11, pp. 2613-2622, Nov. 2018. https://doi.org/10.1109/TCAD.2018.2857044 
+[3] F. Devaux, “The True Processing In Memory Accelerator,” IEEE Hot Chips, pp. 1-24, 
+Aug. 2019. https://doi.org/10.1109/HOTCHIPS.2019.8875680 
+[4] Y.-C. Kwon et al., “A 20nm 6GB Function-In-Memory DRAM, Based on HBM2 with a 
+1.2TFLOPS Programmable Computing Unit Using Bank-Level Parallelism, for Machine 
+Learning Applications,” ISSCC, pp. 350-351, Feb. 2021.  
+https://doi.org/10.1109/ISSCC42613.2021.9365862 
+[5] S. Lee et al., “A 1ynm 1.25V 8Gb, 16Gb/s/pin GDDR6-based Accelerator-in-Memory 
+supporting 1TFLOPS MAC Operation and Various Activation Functions for Deep-Learning 
+Applications,” ISSCC, pp. 176-177, Feb. 2022.  
+https://doi.org/10.1109/ISSCC42614.2022.9731711 
+[6] D. Niu et al., “184QPS/W 64Mb/mm2 3D Logic-to-DRAM Hybrid Bonding with Process-
+Near-Memory Engine for Recommendation System,” ISSCC, pp. 462-463, Feb. 2022. 
+https://doi.org/10.1109/ISSCC42614.2022.9731694 
+[7] B. Jiao et al., “SHINSAI: A 586mm2 Reusable Active TSV Interposer with 
+Programmable Interconnect Fabric and 512Mb 3D Underdeck Memory,” ISSCC, pp. 612-
+613, Feb. 2025. https://doi.org/10.1109/ISSCC49661.2025.10904819
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:11 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+Figure 30.7.3: Datapath and access timing for 3D DRAM, and dataﬂow and performance 
+test for GEMM.
+Figure 30.7.4: Measurement system architecture and 3D DRAM measurement results.
+Figure 30.7.5: 3D integration details, area and power breakdown, and design 
+measurements.
+Figure 30.7.6: Comparison with prior works.
+Figure 30.7.7: Die micrographs and design speciﬁcations.
+•  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.7
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:11 UTC from IEEE Xplore.  Restrictions apply. 

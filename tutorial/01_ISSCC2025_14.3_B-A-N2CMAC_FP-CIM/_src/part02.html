@@ -1,0 +1,32 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>浮点格式与“指数对齐”难题</h2>
+
+<h3 id="sec2-1">2.1 BF16 格式：1 符号 + 8 指数 + 7 尾数</h3>
+<p>本文支持 <strong>BF16（bfloat16）</strong>，一种 16 位浮点格式，布局与 FP32 相同（8 位指数），只是尾数从 23 位砍到 7 位。好处：与 FP32 数值范围完全一致（指数一样），训练/推理时可以“直接截断转换”。</p>
+<figure>
+  <img src="assets/diagrams/d02_fp_basics.svg" alt="浮点格式与对齐" style="max-width:920px">
+  <figcaption>图 2.1　BF16 格式与“指数对齐”问题：乘法=指数相加+尾数相乘；加法=先对齐再相加（CIM 最头疼的一步）。</figcaption>
+</figure>
+<div class="formula">数值 = (−1)<sup>S</sup> × 1.M × 2<sup>(E−127)</sup><span class="tag">式 2.1</span></div>
+<div class="box key">
+<div class="bt">🧠 浮点乘加为什么贵？</div>
+<ul>
+<li><strong>乘法</strong>：指数相加（简单）+ 尾数相乘（和整数乘法一样）；</li>
+<li><strong>加法/累加</strong>：两个数指数不同 → 小指数的尾数要<strong>右移对齐</strong>到指数大的那个 → 移位量 = 指数差（最大 8 位）→ 需要桶形移位器；</li>
+<li>更麻烦的是 <strong>CIM 的 MAC 是把很多数一起累加</strong>：每个输入的指数不同，对齐量各不相同，还要在加法树里统一对齐——这就是“对齐与 CIM 广播结构冲突”的技术根源。</li>
+</ul>
+</div>
+
+<h3 id="sec2-2">2.2 交互演示 A：亲手体验“指数对齐”</h3>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 浮点对齐演示（拖动两个数的指数看对齐过程）</div>
+<canvas id="demoA" width="980" height="330"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">数 A 指数：</label><input id="demoA-ea" type="range" min="0" max="15" value="10" style="flex:1;accent-color:#0f7cb6">
+  <label class="hint" style="margin:0">数 B 指数：</label><input id="demoA-eb" type="range" min="0" max="15" value="4" style="flex:1;accent-color:#e8a33d">
+  <button id="demoA-play" class="on">▶ 播放对齐动画</button>
+  <span class="stat" id="demoA-stat">指数差 6 → B 的尾数要右移 6 位</span>
+</div>
+<div class="hint">红色=指数大的数（对齐基准），蓝色=指数小的数（右移）。指数差越大，需要的桶形移位量越大——这就是并行对齐电路贵的原因。本文用“每周期移 2b”的串行方式摊薄它。</div>
+</div>
+</section>

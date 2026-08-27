@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">OR 累加的非线性与训练建模（论文 Fig.13）</text>
+
+  <!-- OR nonlinearity -->
+  <rect x="40" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#d08a10" font-size="13.5" font-weight="700">OR 累加 = 非线性加法</text>
+  <g font-size="11.5">
+    <text x="60" y="138" fill="#45536b">两输入 OR：输出概率 = a + b − ab</text>
+    <text x="60" y="160" fill="#45536b">多输入 OR：输出 ≈ 1 − e^(−s)，s = 精确和</text>
+    <text x="60" y="188" fill="#45536b">小输入时近线性（0~1 之间接近直线）</text>
+    <text x="60" y="210" fill="#45536b">输入大时在 1 处饱和 → 非线性</text>
+    <g>
+      <line x1="80" y1="240" x2="360" y2="240" stroke="#45536b" stroke-width="2"/>
+      <line x1="80" y1="280" x2="80" y2="240" stroke="#45536b" stroke-width="2"/>
+      <path d="M 80 280 Q 200 278 350 250" stroke="#f0a030" stroke-width="3" fill="none"/>
+      <text x="120" y="268" fill="#f0a030" font-size="10.5">OR 输出 ≈1−e^(−s)</text>
+      <text x="300" y="282" fill="#45536b" font-size="10">精确和 s→</text>
+      <text x="70" y="232" fill="#45536b" font-size="10">1</text>
+    </g>
+  </g>
+
+  <!-- training model -->
+  <rect x="490" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">训练时建模两类误差</text>
+  <g font-size="11.5">
+    <text x="510" y="138" fill="#1d8a5f" font-weight="600">误差① OR 非线性累加</text>
+    <text x="530" y="160" fill="#45536b">把 OR 累加建模为精确累加后的<strong>非线性激活函数</strong>（[15] 思路）</text>
+    <text x="530" y="182" fill="#45536b">→ 反向传播能算梯度 → 网络学会补偿</text>
+    <text x="510" y="212" fill="#1d8a5f" font-weight="600">误差② 随机流表示</text>
+    <text x="530" y="234" fill="#45536b">训练时用<strong>精确的 LFSR 序列和 SNG</strong>模拟比特流</text>
+    <text x="530" y="256" fill="#45536b">乘法也用 AND 操作（流间）建模</text>
+    <text x="530" y="278" fill="#45536b">乘法输出转浮点、精确相加（细节见 [13]）</text>
+    <text x="510" y="306" fill="#45536b" font-size="11.5">PRNG 确定性流 + 模型可学流模式 → 允许 SNG 间适度共享随机数</text>
+  </g>
+
+  <!-- results -->
+  <rect x="40" y="314" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="340" fill="#0e5a8a" font-size="14" font-weight="700">训练效果</text>
+  <g font-size="12.5">
+    <text x="60" y="370" fill="#45536b">SOTA 精度（MNIST/CIFAR-10）可与 8-bit 定点实现媲美</text>
+    <text x="60" y="404" fill="#1d8a5f" font-weight="600">关键洞察：SC 的误差是「可学习的」</text>
+    <text x="80" y="430" fill="#45536b">① OR 累加建模为激活函数 → 网络自动补偿非线性；② 确定性 LFSR 流 → 模型学习流模式</text>
+    <text x="80" y="456" fill="#45536b">③ 适度共享随机数（不同 LFSR 多项式/种子）不影响精度</text>
+    <text x="60" y="490" fill="#45536b">→ 用「训练时建模硬件误差」的算法-硬件协同，让近似硬件达到定点精度</text>
+  </g>
+</svg>

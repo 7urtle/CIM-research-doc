@@ -1,0 +1,56 @@
+<section class="chapter" id="sec0">
+<h1 class="title">广播对齐浮点存内计算零基础精讲：让浮点精度也拥有整数级能效
+<span class="en">A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers（ISSCC 2025 · Paper 14.3）</span></h1>
+<div class="meta">论文作者：Xing Wang*, Tianhui Jiao* 等（*共同一作）· 东南大学 + 国家 EDA 创新中心 + 清华大学（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.3
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>之前的存内计算（CIM）大多只做<strong>整数</strong>（INT8），因为浮点（FP）的“指数对齐”和 CIM 的广播结构天生不合。本论文（东南大学司鑫组）在 <strong>28nm</strong> 上做了一个 <strong>64kb 浮点 CIM 宏</strong>，用三招化解浮点的三大难题：</p>
+<ol>
+<li><strong>广播输入 + 嵌入式轻量转换器（ESICU）</strong>：把浮点输入拆成“8b 并行指数 + 2b 串行尾数”，16 个阵列共享一份输入 → 输入复用性大幅提升；</li>
+<li><strong>嵌入式自适应 2b 串行对齐</strong>：用“倒计时器 + 比较器 + 寄存器链”替代“减法器 + 桶形移位器”，对齐电路面积 −36.23%；</li>
+<li><strong>格式混合非二进制补码 MAC（N2CMAC）</strong>：权重用符号-数值格式存储，把有符号 MAC 拆成“无符号 MAC + 符号补偿”→ 负权重位级稀疏性提升 1.83×，功耗大幅下降。</li>
+</ol>
+<p>实测：<strong>BF16 模式 62.84 TFLOPS/W</strong>、<strong>INT8 模式 90.15 TOPS/W</strong>（FP32 输出，28nm）——把浮点精度做到了整数级能效。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>浮点 = 指数 + 尾数：</strong>浮点数像科学计数法（1.25 × 2³）。乘法=指数相加+尾数相乘（简单）；加法=先“对齐”再相加（麻烦）。CIM 里的麻烦全来自“对齐”。</li>
+<li><strong>对齐为什么贵：</strong>传统做法给每个输入配一个“减法器+桶形移位器”做并行对齐——面积大、功耗高。本文换思路：用一个倒计时器统一节奏，所有输入“每周期移 2 位”，把对齐摊到多个周期（串行），面积就下来了。</li>
+<li><strong>负数的存储格式决定功耗：</strong>2 的补码里负数全是 1（翻转多、费电）；符号-数值格式只翻符号位（数值位保持稀疏）。换存储格式 = 直接省加法树功耗，这是 N2CMAC 的物理直觉。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“FP incurs higher energy and area overhead due to complex FP multiplication and accumulation (MAC) operations”</td>
+<td>浮点乘加比整数复杂（对齐、归一化、舍入），能耗和面积开销大——这是 FP-CIM 要解决的核心矛盾。</td></tr>
+<tr><td class="num">“(1) the difficulty of balancing FP-computation precision and input reusability, as alignment operations are unfriendly to CIM structure”</td>
+<td>挑战 1：对齐依赖每个输入自己的指数 → 输入没法整齐广播复用，精度与复用率二选一。</td></tr>
+<tr><td class="num">“(2) a large performance loss or area overhead due to peripheral parallel-alignment schemes”</td>
+<td>挑战 2：外围并行对齐（减法器+桶形移位器）要么吃掉面积，要么拖慢性能。</td></tr>
+<tr><td class="num">“(3) huge digital-MAC dynamic-energy consumption due to low 2's-complement (2C) negative-weight sparsity, coupled with an additional sign-bit computation overhead”</td>
+<td>挑战 3：2 的补码格式负权重位级稀疏性差 + 符号位计算开销 → 数字 MAC 动态功耗高。</td></tr>
+<tr><td class="num">“achieved an energy efficiency of 62.84TFLOPS/W for BF16 and 90.15TOPS/W for INT8”</td>
+<td>实测：BF16 62.84 TFLOPS/W，INT8 90.15 TOPS/W（28nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>广播输入 + 嵌入式转换（ESICU）</strong>：GIN（8b 指数 + 2b 串行尾数）被 16 个 TS-A 共享，消除前作浮点输入无法跨阵列复用的利用率损失；</li>
+<li><strong>自适应 2b 串行对齐</strong>：SDT 倒计时 + EC 比较 + LC 存/移两态，对齐电路面积比传统方案 −36.23%；</li>
+<li><strong>格式混合 N2CMAC</strong>：符号-数值权重 + 无符号 MAC + 符号补偿，负权重位级稀疏性 1.83×，计算周期 −19.80%（8b 输入）/−16.50%（10b 输入）；</li>
+<li><strong>一芯四用</strong>：普通读写 + BF16A/BF16B/INT8 三种计算模式，BF16A/B 保留 10b/8b 对齐尾数分别服务 CNN 与 Transformer；</li>
+<li><strong>实测成绩</strong>：62.84 TFLOPS/W、697.17 GFLOPS/mm²、ViT @ImageNet 精度 79.818%、FoM 相对前作提升 1.93–116.90×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂浮点/整数量化的：从 §5（串行对齐）和 §6（N2CMAC）开始，这两章是本文最核心的两个创新。</p>
+</div>
+</section>

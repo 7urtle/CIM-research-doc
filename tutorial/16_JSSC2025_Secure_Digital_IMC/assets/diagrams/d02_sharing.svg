@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Boolean 共享（Boolean Sharing）：把秘密拆成看似随机的份</text>
+
+  <!-- sharing idea -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">3 份共享（3 shares）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">每个比特 b 拆成 3 份：b = b1⊕b2⊕b3</text>
+    <text x="60" y="160" fill="#45536b">单独看任何一份都是随机的（看不出 b）</text>
+    <text x="60" y="182" fill="#45536b">3 份合起来才能恢复 b</text>
+    <g>
+      <rect x="70" y="196" width="100" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="120" y="218" text-anchor="middle" fill="#1d8a5f" font-size="10.5">b1（随机）</text>
+      <rect x="182" y="196" width="100" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="232" y="218" text-anchor="middle" fill="#1d8a5f" font-size="10.5">b2（随机）</text>
+      <rect x="294" y="196" width="100" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="344" y="218" text-anchor="middle" fill="#1d8a5f" font-size="10.5">b3=b1⊕b2⊕b</text>
+      <text x="120" y="250" text-anchor="middle" fill="#45536b" font-size="10.5">b1⊕b2⊕b3 = b</text>
+    </g>
+    <text x="60" y="276" fill="#1d8a5f" font-size="11.5" font-weight="600">类似多方安全计算：n 方分信息，至少 x 方串通才能恢复</text>
+  </g>
+
+  <!-- TI properties -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">共享电路的三条性质（阈值实现 TI）</text>
+  <g font-size="12">
+    <text x="510" y="140" fill="#1d8a5f" font-weight="600">① 正确性（Correctness）</text>
+    <text x="530" y="162" fill="#45536b">t = F(b,c)，则 t1⊕t2⊕t3 = Fsh((b1..3),(c1..3)) 恢复正确结果</text>
+    <text x="510" y="192" fill="#1d8a5f" font-weight="600">② 非完备性（Non-Completeness）</text>
+    <text x="530" y="214" fill="#45536b">每个子函数 Fj 只用输入份的严格子集 → 任何子电路都碰不到完整秘密</text>
+    <text x="510" y="244" fill="#1d8a5f" font-weight="600">③ 均匀性（Uniformity）</text>
+    <text x="530" y="266" fill="#45536b">理想：任意非共享输入下，共享表示的分布均匀（无偏差可被利用）</text>
+    <text x="510" y="288" fill="#45536b">AND 门不满足 → 本论文放宽为“近似均匀”（见下）</text>
+  </g>
+
+  <!-- why random bits bad -->
+  <rect x="40" y="304" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">为什么 IMC 不能要随机比特？（本论文核心约束）</text>
+  <g font-size="12.5">
+    <text x="60" y="360" fill="#45536b">传统 TI 需要每时钟周期注入新随机比特（刷新均匀性）→ 对传统加速器可行</text>
+    <text x="60" y="388" fill="#e66e5a" font-weight="600">但 IMC 每周期并行成千上万甚至百万个 MAC → 每个 MAC 若都要几个随机比特，PRNG 开销反超计算</text>
+    <text x="60" y="416" fill="#1d8a5f" font-weight="600">→ 任何 IMC 安全方案必须「消除运行期新鲜随机比特」</text>
+    <text x="60" y="452" fill="#45536b">本论文方案：</text>
+    <text x="80" y="476" fill="#1d8a5f" font-weight="600">乘法用「原生安全的线性 XNOR 门」</text>
+    <text x="80" y="498" fill="#45536b">线性逻辑（XOR）可独立计算每份、天然保持均匀性与抗毛刺 → 无需随机比特、无需输出寄存器</text>
+  </g>
+</svg>

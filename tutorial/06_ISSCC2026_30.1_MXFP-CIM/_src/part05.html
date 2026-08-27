@@ -1,0 +1,41 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：HDM 无害数据映射与层次化隐藏位解码器</h2>
+<figure>
+  <img src="assets/diagrams/d06_hdm.svg" alt="HDM 映射" style="max-width:940px">
+  <figcaption>图 5.1　HDM 无害数据映射：MXFP8（9 数/子阵列）与 MXFP6（12 数/子阵列）都塞满同一 18×4 子阵列；层次化解码器“写时全局预解码、算时本地恢复”。</figcaption>
+</figure>
+<p><strong>问题：</strong>MXFP6 和 MXFP8 的“每数位数”不同（6b vs 8b），如果存储器按一种格式硬编码布局，切到另一种格式就会浪费容量。论文的 <strong>HDM（Harmless Data Mapping，无害数据映射）</strong>让两种格式都“塞满”同一块存储：</p>
+<ul>
+<li><strong>MXFP8（E4M3）</strong>：每个 18 行 × 4 列子阵列放 <strong>9 个数</strong>——偶数行存“符号 + 3b 尾数”，奇数行存“4b 指数”；9 × 8b = 72b 正好等于子阵列容量；</li>
+<li><strong>MXFP6（E2M3）</strong>：每子阵列放 <strong>12 个数</strong>——偶数行存“符号 + 3b 尾数”，奇数行<strong>并排 2 个 MXFP6 指数</strong>；12 × 6b = 72b，同样满用。</li>
+</ul>
+<p><strong>隐藏位解码器（解决 §2.2 的问题）：</strong></p>
+<ul>
+<li><strong>写权重时（全局预解码器，只有 1 个）</strong>：把隐藏位解出来，权重从符号-数值（SM）转成 2C（{SW, MW[3:0]}），然后<strong>丢掉 MW[3]（隐藏位）</strong>，只把 {SW, MW[2:0]} 写进 SRAM；</li>
+<li><strong>计算时（24 个本地小解码器）</strong>：由 {SW, MW[2:0]} 和指数 EW 恢复 MW[3]。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 为什么这是“无害”且“省面积”的？</div>
+<p>① <strong>隐藏位不占存储</strong>：MW[3] 在写权重时算好扔掉，SRAM 不存它 → 每个数省 1 位，内存容量满用；② <strong>解码器面积摊薄</strong>：复杂的隐藏位判断（SM→2C、查指数是否全 0）集中在“只做一次”的全局预解码器里，24 个本地解码器只做简单的“恢复”，总解码器面积比“每个单元都放完整解码器”的直接方案 [7] 减 <strong>63.1%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_1_4_映射与分配.png">
+  <source src="assets/videos/v02_mapping.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · MXFP8/MXFP6 映射动画：同一 18×4 子阵列，两种格式都恰好用满 72b（MXFP8 的奇数行=1 个 4b 指数；MXFP6 的奇数行=2 个 2b 指数并排）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_1_4_映射与分配.png" alt="论文图 30.1.4">
+  <figcaption>图 5.2　论文原图 Fig. 30.1.4：MXFP6/8 重配置映射、层次化隐藏位解码器与层-组双级分配。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🗺 演示 B · MXFP8 / MXFP6 映射对比（同一子阵列，两种格式都塞满）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-8" class="on">MXFP8（9 数/子阵列）</button>
+  <button id="demoB-6">MXFP6（12 数/子阵列）</button>
+  <span class="stat" id="demoB-stat">MXFP8：偶数行=符号+尾数，奇数行=指数</span>
+</div>
+<div class="hint">蓝色格子=被占用；橙色=指数行；空格的格子=该格式下不用的存储位。对比两种格式都恰好用满 72b——切换格式不浪费容量（“无害”）。</div>
+</div>
+</section>

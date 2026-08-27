@@ -1,0 +1,197 @@
+===== PAGE 1 =====
+528  •  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.9
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Artiﬁcial Intelligence (AI) hardware accelerators continue to drive advances in computer 
+vision, speech recognition, large language models (LLMs), and image and video processing. 
+Compute-in-memory (CiM) architectures reduce data-movement overhead by integrating 
+distributed memory and compute with wide adder-trees, enabling highly parallel 
+computation. Digital compute-in-memory (DCiM) provides deterministic accuracy, with 
+process and voltage scalability along with immunity to parametric variation, while a fully 
+synthesizable design enables portability across technology nodes, and simpliﬁes integration 
+using standard design tools and cell libraries, promoting broader adoption. This work 
+presents a fully synthesizable DCiM on-die accelerator featuring 128 input channels, 32 
+output channels, 2 weight sets, high-density multibit interruptible 12T-latch-based memory 
+storage, radix-4 stationary weight encoded Booth computation, a unique unsigned-to-signed 
+mapping scheme, and support for zero-point-quantized INT8×INT8 data format. Fabricated 
+in Intel 18A technology [1] (Fig. 30.9.7), the DCiM accelerator operates at 2.62GHz 
+measured at maximum supply voltage of 1.1V and 25°C, occupying a compact area of 
+0.0856mm2 while achieving: (i) peak area efﬁciency of 250TOPS/mm2 and throughput of 
+21.5TOPS, at 1.1V and 25°C, (ii) robust functionality of DCiM measured down to 400mV at 
+25°C with peak energy efﬁciency of 147TOPS/W and power consumption of 6.1mW, at 25% 
+input activity, (iii) energy efﬁciency scalable to 254TOPS/W at 3.5mW for 10% input activity 
+for supply voltage of 400mV and 25°C, (iv) unique unsigned-to-signed mapping and zero-
+point expansion with pre-computing saving 20% power/17% area, (v) Booth encoding on 
+stationary weights with 28% reduction in compute power, and (vi) use of high-density 
+multibit latch bitcell resulting in 20% reduction in weight-storage area.   
+ 
+The DCiM accelerator organization consists of 128 input channels and 32 output channels, 
+supporting zero-point quantized 8b unsigned/signed activations and weights (Fig. 30.9.1). 
+Zero-point quantization improves computation accuracy by quantizing more precisely for 
+data not symmetrically centered around zero. However, this requires addition of an origin 
+shift constant from activations and weights, resulting in an effective signed 9b computation. 
+Pre-computing both an unsigned-to-signed bias and zero-point expansion converts the 
+datapath to signed 8b×8b. The converted signed 8b weights are Booth encoded as four 3b 
+Booth selects (single, neg, pos). These Booth selects for a compute column of 128 weights 
+are written every cycle, completing the entire weight-set write in 32 cycles. A double buffered 
+scheme stores two weight sets per compute column. Computations are performed on the 
+selected weight set, which is read through a static 2:1 multiplexor only at the beginning of 
+each compute operation for reduced read power. The second weight location can be updated 
+in the background, eliminating any update stalls when the latency of compute operation is 
+longer than writing a new set of weights. Balanced optimization of throughput and power 
+results in four pipeline stages to complete 128-way MAC.  The unsigned-to-signed 
+conversion with zero-point offset is performed in the ﬁrst pipeline stage while the next two 
+stages complete the 32-way bank results. The converted signed 8b activations from the 
+ﬁrst stage are broadcast across all compute columns, generating four partial products per 
+multiplication. Partial products are added using 32-way carry-save adder trees, ﬁrst with 
+addition across multipliers, followed by merging the shifted partial-products sum. Finally, 
+the outputs from four banks are summed to complete 128-way MAC in the last pipeline 
+stage. 
+ 
+When optimizing for power and area, Booth multipliers offer unique beneﬁts when applied 
+to DCiM datapaths. Radix-4 Booth encoding reduces partial products by half but requires 
+one multiplier input to be Booth encoded. Therefore, this encoder overhead can limit the 
+power and area savings of Booth multipliers, especially for low data bit widths. The DCiM 
+dataﬂow is unique, because weight inputs are stored and remain stationary for multiple 
+compute cycles, while activation inputs are broadcast across compute columns. Booth 
+encoding can be applied to either the broadcast activation or the stored weights. The 8b 
+activation can be encoded once in the periphery, with 12b Booth selects broadcast across 
+the compute columns. This amortizes the encoder area and power across all 32 compute 
+columns but increases the number of input bits switching every cycle from 8 to 12, thereby 
+increasing compute power. Alternatively, pre-encoding 8b weights and storing 12b Booth 
+selects eliminates encoder power during compute but increases storage area (Fig. 30.9.2). 
+Since weights are stored and written per column, moving the weight encoder to the memory 
+write path enables reuse and reduces encoder area by 32× due to lower throughput 
+requirements. Booth S-bits, which only depend on multipliers (weights), are pre-computed 
+and stored in the weight memory for later addition with the ﬁnal sum. Furthermore, encoding 
+of the weights preserves typically low MSB activity of activation inputs into the adder-tree. 
+Overall, the implemented weight encoding design results in only 7% increase in area, while 
+enabling 28% lower compute power with stationary weights, compared to activation 
+encoding. Double buffered weights are stored using interruptible 12T multibit latch standard 
+cells. This enables robust low supply voltage write operation and memory read through 
+static 2:1 multiplexor followed by Booth selectors. A modiﬁed Booth encoding is designed 
+with single/neg/pos instead of single/double/neg select signals, which encodes ±0 by forcing 
+both neg/pos signal to either 0 or 1. This modiﬁed Booth encoding results in up to 12% 
+lower Booth selector area. 
+ 
+Radix-4 Booth multiplication with 8b unsigned/signed activations and weights results in 
+ﬁve partial products. Five carry-save adder trees sum these partial products in groups with 
+the same alignment across multipliers. Zero-point quantization requires addition of a 
+constant, converting these inputs to 9b signed integers. The radix-4 Booth with 9b signed 
+multiplication would not only generate 5 partial products but would also increase their width 
+from 9b to 10b (Fig. 30.9.3). Instead, a unique unsigned-to-signed mapping converts the 
+8b unsigned integer to 8b signed integer by subtracting a bias of 128. This conversion can 
+be done by conditionally inverting the MSB based on input format. Likewise, the zero-point 
+constant must also be added from every activation and weight. The bias and zero-point 
+constant are combined and added to the mapped 8b signed integer, representing ﬁnal 
+activation and weights with zero-point quantization. The DCiM sum of product computation 
+is represented by the equation (ΣNAZWZ) shown in Fig. 30.9.2. Expanding this equation splits 
+each 9b×9b signed multiplication (ΣNAZWZ) into an 8b×8b signed multiplication (ΣNASWS) 
+plus three extra terms. In the DCiM dataﬂow the activation inputs are shared across multiple 
+compute columns. The weight inputs are stationary (stored in memory) and constant for 
+multiple cycles. Therefore, the compute cost of the three extra terms is amortized to reduce 
+area and power. The sum of the activations (ΣNAS) multiplied with the constant (C+ZW) is 
+computed once every cycle and shared across multiple compute columns. The sum of 
+weights (ΣNWS) multiplied with the constant (C+ZA) is precomputed and stored in memory 
+during weight writes, and therefore does not consume power during compute operations. 
+Finally, the third term N(C+ZW)(C+ZA) is a ﬁxed constant. All three terms are added at the 
+end of the compute datapath. This intrinsic zero-point compute with unsigned-signed 
+mapping within the DCiM dataﬂow reduces the 9b×9b signed multiplication to an 8b×8b 
+signed multiplication. This reduces the partial product width by 10% and decreases the 
+number of partial products from 5 to 4, resulting in only 4 adder trees to complete the MAC 
+operation. This technique lowers overall DCiM power by 17% and area by 21%. 
+ 
+DCiM area and power breakdown are shown in Fig. 30.9.4. The storage latch and read 
+multiplexor circuits contribute 21% of the area, even though they consume only 11% of 
+total write power. However, the write data driver and decoder contribute 56% of write power 
+but occupy only 3% of area. The Booth encoder along with S-bit and zero-point pre-
+computation contribute only 16% of write power and 2% of total area, because of sharing 
+across 32 columns. Double buffering allows concurrent update and compute. When 
+compute latency is higher than writing a new set of weights, the DCiM becomes compute 
+power bound, leading to maximum energy-efﬁciency. Booth selectors and adder trees, 
+which contribute 74% of the DCiM area, reach 98% of the total compute power. The design 
+is implemented with ﬁve different latch types ranging from single-bit to high-density multibit 
+with two cycle compute-after-write timing constraints. This optimized timing achieves 
+95.5% high-density multibit insertion ratio, resulting in 20% weight storage area reduction.  
+ 
+The DCiM is synthesized using Intel 18A standard cell library, occupying total accelerator 
+area of 0.0856mm2. The DCiM implements 128 input channels, 32 output channels and 2 
+weight sets supporting 8b unsigned/signed zero-point quantized activations and weights. 
+Weights are stored using interruptible 12T latch standard cells for robust low supply voltage 
+write operation. The fabricated test-chip demonstrates a maximum throughput of 21.5TOPS 
+at 2.62GHz, consuming 1.23W, with peak area efﬁciency of 250TOPS/mm2 (measured at 
+1.1V and 25°C) (Fig. 30.9.5). The DCiM achieves peak energy efﬁciency of 147TOPS/W for 
+input activity of 25%, weight 1=50%, consuming 6.1mW (measured at 400mV and 25°C). 
+Energy efﬁciency scales to 254TOPS/W at 10% input activity, consuming 3.5mW. The 
+double buffered scheme enables MAC computations on the selected weight set, while the 
+30.9    A 147TOPS/W, 250TOPS/mm2, Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point  
+           Quantization in Intel 18A Technology 
+ 
+Amit Agarwal1, Steven K. Hsu1, Mark A. Anders1, Arnab Raha2, Deepak A. Mathaikutty3, Ram Krishnamurthy1 
+ 
+1Intel, Hillsboro, OR, 2Intel, Santa Clara, CA, 3Intel, Chandler, AZ 
+A fully synthesizable DCiM on-die accelerator with 128 input channels, 32 output channels, 
+and 2 weight sets, supporting zero-point-quantized INT8×INT8 computation, is fabricated 
+in Intel 18A technology and occupies 0.0856mm2. The DCiM accelerator operates at 2.62GHz 
+for a supply voltage of 1.1V, and 25°C, achieving a peak area-efﬁciency of 250TOPS/mm2. 
+Robust operation of DCiM is maintained down to 400mV, 25°C, where it delivers a peak 
+energy-efﬁciency of 147TOPS/W at 25% input activity, with a power consumption of 6.1mW. 
+Abstract
+2026 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-8936-3/26/$31.00 ©2026 IEEE | DOI: 10.1109/ISSCC49663.2026.11409207
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:31 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 30.9.1: DCiM accelerator organization supporting zero-point quantized 8b 
+unsigned/ signed activation and weights.
+Figure 30.9.2: Radix-4 Booth encoded weights, interruptible 12T multibit latch storage 
+with static 2:1 multiplexor read, S-bit compute, and modiﬁed Booth encoder.
+ISSCC 2026 / February 18, 2026 / 11:45 AM
+529  
+DIGEST OF TECHNICAL PAPERS  •
+30
+second weight set is updated in the background for 32 cycles. As the number of total 
+compute cycles increases, the write power contribution reduces to 1% and the DCiM 
+becomes compute power bound reaching peak energy efﬁciency. Figure 30.9.6 compares 
+the proposed work with recent state-of-the-art digital CiMs, showing best-in-class area 
+efﬁciency (TOPS/mm2) and energy efﬁciency (TOPS/W). Figure 30.9.7 presents the 
+photograph of the test-chip, its die dimensions, and a performance summary table.  
+ 
+Acknowledgment: 
+The authors thank M. Langan, V. Ilderem, V. De, and J. Tschanz, for encouragement and 
+discussions.  
+ 
+References: 
+[1] K. Fischer et al., “Intel 18A Platform Technology Featuring RibbonFET (GAA) and 
+PowerVia for Advanced High-Performance Computing,” IEEE Symp. VLSI Circuits, pp.1-
+3, June 2025. https://doi.org/10.23919/VLSITechnologyandCir65189.2025.11075006 
+[2] H. Mori et al., “A 4nm 6163-TOPS/W/b 4790−TOPS/mm2/b SRAM Based Digital-
+Computing-in-Memory Macro Supporting Bit-Width Flexibility and Simultaneous MAC 
+and Weight Update,” ISSCC, pp. 132-133, Feb. 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067555 
+[3] G. Desoli et al., “A 40-310TOPS/W SRAM-Based All-Digital Up to 4b In-Memory 
+Computing Multi-Tiled NN Accelerator in FD-SOI 18nm for Deep-Learning Edge 
+Applications,” ISSCC, pp. 260-261, Feb. 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067422 
+[4] H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm2 and 3.78Mb/mm2 Fully-Digital 
+Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC Architecture 
+and Foundry 6T-SRAM Bit Cell,” ISSCC, pp. 572-574, 2024.  
+https://doi.org/10.1109/ISSCC49657.2024.10454556 
+[5] H. Mori et al., “A 3nm 125 Tops/W-29 TFLOPS/W, 90 TOPS/mm2-17 TFLOPS/mm2 
+SRAM-Based INT8 and FP16 Digital-CIM Compiler with Multi-Weight Update/Cycle,” IEEE 
+Symp. VLSI Circuits, pp. 1-3, June 2025.  
+https://doi.org/10.23919/VLSITechnologyandCir65189.2025.11074897
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:31 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+Figure 30.9.3: Intrinsic zero-point compute with unsigned-signed mapping within the 
+DCiM dataﬂow.
+Figure 30.9.4: Area/power breakdown and weight storage area savings.
+Figure 30.9.5: Frequency, power, and energy efﬁciency measurements in Intel 18A 
+technology.
+Figure 30.9.6: Power, performance, area summary, and comparison to prior work.
+Figure 30.9.7: Packaged Intel 18A test-chip photograph, die dimensions, and 
+performance summary table.
+•  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.9
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:31 UTC from IEEE Xplore.  Restrictions apply. 

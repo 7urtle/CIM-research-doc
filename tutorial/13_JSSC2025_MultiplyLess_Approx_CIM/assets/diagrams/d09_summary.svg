@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">与 SOTA 对比 · 创新点总结 · 未来方向</text>
+
+  <!-- comparison -->
+  <rect x="40" y="84" width="880" height="180" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#0e5a8a" font-size="14" font-weight="700">与 SOTA 数字 CIM 对比（表 III，8-bit 权/激活）</text>
+  <g font-size="11.5">
+    <line x1="60" y1="128" x2="900" y2="128" stroke="#c9d8ea"/>
+    <line x1="60" y1="128" x2="60" y2="228" stroke="#c9d8ea"/>
+    <line x1="250" y1="128" x2="250" y2="228" stroke="#c9d8ea"/>
+    <line x1="430" y1="128" x2="430" y2="228" stroke="#c9d8ea"/>
+    <line x1="600" y1="128" x2="600" y2="228" stroke="#c9d8ea"/>
+    <line x1="750" y1="128" x2="750" y2="228" stroke="#c9d8ea"/>
+    <text x="150" y="144" text-anchor="middle" fill="#0e5a8a">工作</text>
+    <text x="340" y="144" text-anchor="middle" fill="#0e5a8a">工艺</text>
+    <text x="515" y="144" text-anchor="middle" fill="#0e5a8a">能效(TOPS/W)</text>
+    <text x="675" y="144" text-anchor="middle" fill="#0e5a8a">面积效率</text>
+    <text x="825" y="144" text-anchor="middle" fill="#0e5a8a">验证数据集</text>
+    <text x="150" y="166" text-anchor="middle" fill="#45536b">本工作</text>
+    <text x="340" y="166" text-anchor="middle" fill="#45536b">28nm</text>
+    <text x="515" y="166" text-anchor="middle" fill="#1d8a5f" font-weight="700">102</text>
+    <text x="675" y="166" text-anchor="middle" fill="#1d8a5f" font-weight="700">4.4 TOPS/mm²</text>
+    <text x="825" y="166" text-anchor="middle" fill="#45536b">CIFAR-10 + ImageNet</text>
+    <text x="150" y="188" text-anchor="middle" fill="#45536b">近似数字CIM[15]</text>
+    <text x="340" y="188" text-anchor="middle" fill="#45536b">28nm</text>
+    <text x="515" y="188" text-anchor="middle" fill="#45536b">15.5</text>
+    <text x="675" y="188" text-anchor="middle" fill="#45536b">2.6 TOPS/mm²</text>
+    <text x="825" y="188" text-anchor="middle" fill="#45536b">CIFAR-10</text>
+    <text x="150" y="210" text-anchor="middle" fill="#45536b">[19] 前作</text>
+    <text x="340" y="210" text-anchor="middle" fill="#45536b">28nm</text>
+    <text x="515" y="210" text-anchor="middle" fill="#45536b">38–102</text>
+    <text x="675" y="210" text-anchor="middle" fill="#45536b">—</text>
+    <text x="825" y="210" text-anchor="middle" fill="#45536b">CIFAR-10</text>
+    <text x="60" y="250" fill="#1d8a5f" font-weight="600">vs 近似数字CIM[15]：能效 6.58×、面积效率 1.7× 提升，且首次在 ImageNet 上验证 → 首个 8-bit 超 100 TOPS/W 且 ImageNet 验证</text>
+  </g>
+
+  <!-- contributions -->
+  <rect x="40" y="284" width="880" height="140" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="310" fill="#0e5a8a" font-size="14" font-weight="700">三大创新点回顾</text>
+  <g font-size="12">
+    <text x="60" y="338" fill="#1d8a5f" font-weight="600">① 算法级 multiply-less NN 协同设计</text>
+    <text x="80" y="358" fill="#45536b">L1 距离替代点积；预计算分解为最小选择 → 面积 −1.5×、权重稀疏度 +86×</text>
+    <text x="60" y="382" fill="#1d8a5f" font-weight="600">② 位串行最小选择计算方案</text>
+    <text x="80" y="402" fill="#45536b">面积/能耗随位宽线性扩展（突破二次成本）；利用非结构化位分布</text>
+    <text x="60" y="406" fill="#1d8a5f" font-weight="600">③ 动态逻辑改进比较器 + 提前停止</text>
+    <text x="60" y="426" fill="#45536b">vs 静态逻辑面积 −1.7×、功耗 −4.1×；误差阈值从 2 提高到 6 个高-高对；读端口省电 1.8×</text>
+  </g>
+
+  <!-- future -->
+  <rect x="40" y="444" width="880" height="96" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="470" fill="#6b3fa0" font-size="14" font-weight="700">未来研究方向</text>
+  <g font-size="12">
+    <text x="60" y="496" fill="#45536b">① 扩展到 Transformer/大模型（L1 注意力、残差量化误差分析）</text>
+    <text x="60" y="516" fill="#45536b">② 动态位宽自适应 / 混合 multiply-less + MAC 混合粒度架构；③ 更先进工艺（5nm 以下）与三维集成</text>
+    <text x="60" y="536" fill="#45536b">④ 支持在线训练（L1 前向 + 可微近似反向）；⑤ 与稀疏激活联合调度（输入稀疏 × 权重稀疏双层）</text>
+  </g>
+</svg>

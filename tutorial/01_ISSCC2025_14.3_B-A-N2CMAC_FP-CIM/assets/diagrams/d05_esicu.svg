@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">ESICU：嵌入式串行输入转换单元（ASG 定移位，LC 做转换）</text>
+
+  <!-- ASG -->
+  <rect x="40" y="90" width="420" height="280" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="118" fill="#0e5a8a" font-size="13.5" font-weight="700">ASG（对齐信号生成器）</text>
+  <g font-size="11.5">
+    <rect x="60" y="134" width="180" height="44" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="150" y="156" text-anchor="middle" fill="#0e5a8a" font-weight="600">16 个指数加法器 EA</text>
+    <text x="150" y="172" text-anchor="middle" fill="#45536b">E 输入 + E 权重 → 指数和</text>
+    <rect x="260" y="134" width="180" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="350" y="156" text-anchor="middle" fill="#c25e2e" font-weight="600">最大值查找器 MVF</text>
+    <text x="350" y="172" text-anchor="middle" fill="#45536b">找最大指数和</text>
+    <rect x="60" y="196" width="180" height="44" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="150" y="218" text-anchor="middle" fill="#6b3fa0" font-weight="600">移位目标跟踪器 SDT</text>
+    <text x="150" y="234" text-anchor="middle" fill="#45536b">每周期减 1（倒计时）</text>
+    <rect x="260" y="196" width="180" height="44" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="350" y="218" text-anchor="middle" fill="#1d8a5f" font-weight="600">16 个相等比较器 EC</text>
+    <text x="350" y="234" text-anchor="middle" fill="#45536b">SDT vs SUM[8:1] → SHIFT</text>
+    <rect x="60" y="258" width="380" height="86" rx="8" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="80" y="282" fill="#45536b">SHIFT=0 → LC 处于“存储态”，依次存最小位；</text>
+    <text x="80" y="302" fill="#45536b">SHIFT=1 → LC 处于“移位态”，每周期输出 2b 已存值</text>
+    <text x="80" y="322" fill="#0e5a8a" font-weight="600">→ 生成 SHIFT0–15 控制 16 个 LC</text>
+  </g>
+
+  <!-- LC -->
+  <rect x="500" y="90" width="420" height="280" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="118" fill="#6b3fa0" font-size="13.5" font-weight="700">LC（轻量转换器）×16</text>
+  <g font-size="11.5">
+    <rect x="520" y="134" width="180" height="44" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="610" y="156" text-anchor="middle" fill="#1d8a5f" font-weight="600">ARRC 自适应复位</text>
+    <text x="610" y="172" text-anchor="middle" fill="#45536b">寄存器链（存/移两态）</text>
+    <rect x="720" y="134" width="180" height="44" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="810" y="156" text-anchor="middle" fill="#6b3fa0" font-weight="600">SAC 自对齐控制器</text>
+    <text x="810" y="172" text-anchor="middle" fill="#45536b">按 SHIFT 切换状态</text>
+    <rect x="520" y="196" width="180" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="610" y="218" text-anchor="middle" fill="#c25e2e" font-weight="600">OSIU 输出选择/取反</text>
+    <text x="610" y="234" text-anchor="middle" fill="#45536b">{~LIN[m-1], LIN[m-2:0]}</text>
+    <rect x="520" y="258" width="380" height="86" rx="8" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="540" y="282" fill="#45536b">ESICU 输出 OUT[1:0] → 本地输入 LIN[1:0]</text>
+    <text x="540" y="302" fill="#45536b">→ 喂给 N2CMACU 做 2b 串行 MAC</text>
+    <text x="540" y="322" fill="#6b3fa0" font-weight="600">串行对齐 = 每周期只移 2b，不需要桶形移位器</text>
+  </g>
+
+  <path d="M460,230 H500" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="480" y="218" text-anchor="middle" fill="#6b7a93" font-size="10.5">SHIFT0-15</text>
+
+  <rect x="40" y="396" width="880" height="100" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="424" fill="#1d8a5f" font-size="13.5" font-weight="700">为什么“2b 串行”能省面积？</text>
+  <text x="60" y="450" fill="#45536b" font-size="12.5">并行对齐：每个输入配减法器+桶形移位器（一次移任意位数）→ 面积大；</text>
+  <text x="60" y="472" fill="#45536b" font-size="12.5">串行对齐：用倒计时器（SDT）统一节奏，每周期只移 2b，寄存器链复用 → 对齐电路面积 −36.23%</text>
+  <text x="60" y="490" fill="#45536b" font-size="12.5">代价：对齐要多花几个周期（串行），但乘法本身也是 2b 串行 → 流水对齐，不拖慢总吞吐</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">计算跳算：平均池化把流长缩短 4×（论文 Fig.8）</text>
+
+  <!-- average pooling in SC -->
+  <rect x="40" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">SC 里的平均池化 = MUX</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">K×K 平均池化窗口 → K²:1 MUX 随机选一个输入</text>
+    <text x="60" y="158" fill="#45536b">输出概率 = 输入概率的平均（MUX 缩放加法）</text>
+    <g>
+      <rect x="70" y="172" width="60" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="100" y="194" text-anchor="middle" fill="#1d8a5f" font-size="10.5">输入1</text>
+      <rect x="138" y="172" width="60" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="168" y="194" text-anchor="middle" fill="#1d8a5f" font-size="10.5">输入2</text>
+      <rect x="206" y="172" width="60" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="236" y="194" text-anchor="middle" fill="#1d8a5f" font-size="10.5">输入3</text>
+      <rect x="274" y="172" width="60" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="304" y="194" text-anchor="middle" fill="#1d8a5f" font-size="10.5">输入4</text>
+      <rect x="160" y="216" width="90" height="34" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+      <text x="205" y="238" text-anchor="middle" fill="#a06510" font-size="10.5">4:1 MUX</text>
+      <text x="270" y="238" fill="#45536b" font-size="11">→ 平均</text>
+    </g>
+    <text x="60" y="286" fill="#45536b">4 输入平均池化：每个随机输入被选 1/4 的序列长度</text>
+  </g>
+
+  <!-- skipping -->
+  <rect x="490" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">跳算：没被选中的位不用算</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">每个输入流：未被 MUX 选中的随机位不贡献输出</text>
+    <text x="510" y="158" fill="#45536b">→ 这些位的计算可以<strong>跳过</strong>（省能省延迟）</text>
+    <text x="510" y="186" fill="#45536b">每个输入只需算 N/4 位（原 N 位流）</text>
+    <text x="510" y="208" fill="#45536b">更短流长等价于每个输入缩放 0.25</text>
+    <text x="510" y="230" fill="#45536b">4 个输入由累加并行计数器（APC）相加</text>
+    <text x="510" y="262" fill="#1d8a5f" font-weight="600">→ 平均池化场景流长缩短 4× → SCIM 能耗 ×4 优势</text>
+    <text x="510" y="286" fill="#45536b">（8-bit 无池化 1.6× vs 模拟 CIM → 带池化 6.4×）</text>
+  </g>
+
+  <!-- stream length -->
+  <rect x="40" y="324" width="880" height="210" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="350" fill="#0e5a8a" font-size="14" font-weight="700">流长 vs 精度：SC 的指数成本（论文 Fig.8）</text>
+  <g font-size="12.5">
+    <text x="60" y="380" fill="#45536b">N-bit 二进制 → 2ᴺ 个随机位、2ᴺ 次位逻辑求值（指数增长）</text>
+    <text x="60" y="406" fill="#45536b">定点逻辑能耗 ∝ N²；模拟 CIM 位并行-位串行也 ∝ N²（N² 次 MAC+ADC 求值）</text>
+    <text x="60" y="440" fill="#1d8a5f" font-weight="600">≤4-bit：SC 与 ADC 位串行 CIM 的求值数相当（4²=2⁴=16）</text>
+    <text x="60" y="466" fill="#e66e5a" font-weight="600">8-bit：SC 需 2⁸=256 次（比 CIM 的 64 次大 4×）→ 高精度是 SC 的软肋</text>
+    <text x="60" y="500" fill="#45536b">→ 平均池化跳算把流长缩 4× → 8-bit 计算能耗优势从 1.6× 提升到 6.4×（vs 模拟 CIM）</text>
+  </g>
+</svg>

@@ -1,0 +1,60 @@
+<section class="chapter" id="sec0">
+<h1 class="title">HUNBN 16nm 数字存内计算 SoC 零基础精讲：把“权重装进片上”当作第一原则
+<span class="en">HUNBN, a 16-nm Digital In-Memory-Compute SoC for Edge CNN Application Achieving 24 TOPs/W (4b) at System Level（IEEE JSSC, vol.60, no.7, 2025）</span></h1>
+<div class="meta">论文作者：Weijie Jiang, Cédric Caron, Prabhat Avasare, Marc Pauwels, Marian Verhelst, Wim Dehaene（KU Leuven + Sony Depthsensing Solutions）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 7, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前几篇论文都在做“宏（macro）”。这篇 KU Leuven + Sony 的工作把视角拉到<strong>完整 SoC（片上系统）</strong>：要做出系统级高能效，只优化宏不够，还必须让<strong>整个模型的权重都能装进片上 DIMC 内存</strong>（否则权重搬运会把省下的能效吃光）。HUNBN 用四项技术同时抓“存储密度 × 宏能效 × 数据流匹配”：</p>
+<ol>
+<li><strong>高密度存储</strong>：直接用 foundry 的 pushed-rule 6T 位单元（不做花哨单元）→ 存储密度 <strong>508 kB/mm²</strong>，整个边缘 CNN 模型装进片上；</li>
+<li><strong>分离 MAC 流程（Split MAC）</strong>：位级乘法/早期加法树用手动定制（面积 −20%），复杂少复用的部分用标准数字流程 → 省设计时间又不牺牲密度；</li>
+<li><strong>同步 DIMC 操作</strong>：把预充脉冲和字线脉冲同步摊到两个时钟周期 → 免掉又大又费电的延迟线 → 读路径变短、MAC 逻辑可降电压省能；</li>
+<li><strong>CNN 数据流与数据搬移优化</strong>：384 个宏按 4 种情形映射（含 4×4 转置卷积），特征图用四级数据结构（PixelPack→RowList→ColList→MapList）+ 滑动窗口 + 数据前瞻，把输入搬移压到最小。</li>
+</ol>
+<p>16nm 实测：<strong>宏级 126.3 TOPS/W、系统级 24.28 TOPS/W</strong>（4-bit MAC）；U-Net 19 TOPS/W、ResNet8 13.6 TOPS/W 等端到端工作负载验证。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>系统级能效 = 宏级能效 × 面积效率 × 利用率：</strong>宏做得再好，如果模型装不下、或某几层映射不上，系统能效都会被拉低。这篇论文的独到之处是同时盯住这三个乘数。</li>
+<li><strong>“存储密度”是 DIMC 的生命线：</strong>DIMC 省能的前提是权重不搬。权重 SRAM 访问一次 ≈ 计算一次的能量，权重来回搬等于白干。所以“装得下”比“算得快”更优先——这就是为什么论文用最普通的 6T 单元（密度优先）而不是 8T/12T。</li>
+<li><strong>“设计工作量”也是成本：</strong>手动定制电路面积小但费人力。论文的 split MAC 思想：<strong>重复最多的地方（位级乘法）值得手工抠面积，复杂但少重复的地方（后期累加）交给综合工具</strong>。这是一种“工程经济学”思维。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“a fully digital in-memory-compute (DIMC) system-on-chip (SoC) implemented using 16-nm FinFET CMOS technology”</td>
+<td>这是一颗完整的数字存内计算 SoC（不是单宏），16nm FinFET 工艺。</td></tr>
+<tr><td class="num">“enhances energy efficiency by significantly reducing the energy associated with static random access memory (SRAM)”</td>
+<td>核心手段：大幅降低与 SRAM 相关的能耗（权重就地存储、减少搬运）。</td></tr>
+<tr><td class="num">“1) the adoption of a foundry-pushed rule 6T bit-cell array; 2) a split MAC workflow; and 3) synchronous DIMC operation”</td>
+<td>宏级三招：foundry 6T 单元、分离 MAC 流程、同步 DIMC 操作。</td></tr>
+<tr><td class="num">“At the system level, the data movement is tailored to efficiently support both CNN and transposed CNN layers”</td>
+<td>系统级：数据搬移专门针对 CNN 与转置 CNN 层优化。</td></tr>
+<tr><td class="num">“achieves 126 TOPS/W (4-bit MAC) at the macro level and 24 TOPS/W at the system level”</td>
+<td>宏级 126 TOPS/W、系统级 24 TOPS/W（4-bit MAC）。</td></tr>
+<tr><td class="num">“offering a memory density of 508 kB/mm² and a compute density of 1.27 K MAC units/mm²”</td>
+<td>存储密度 508 kB/mm²、计算密度 1.27K MAC 单元/mm²。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>系统级视角</strong>：指出 DIMC SoC 系统能效的关键是“整模型装片上”，并定义面积利用率 FoM = (MB/mm²)×(#MAC/mm²)（0.64K，比最佳竞品高 20%）；</li>
+<li><strong>foundry pushed-rule 6T 存储</strong>：508 kB/mm² 高密度，256×96 每宏、384 宏共 2.36M 个 4b 权重；</li>
+<li><strong>Split MAC 流程</strong>：定制（乘法+早期加法树，面积 −20%）+ 综合（部分积合并+后期累加）分工；</li>
+<li><strong>同步 DIMC 操作</strong>：Φ/WL 摊两周期免延迟线，读临界路径缩短、MAC 逻辑可降电压；</li>
+<li><strong>CNN 数据流与搬移优化</strong>：4 种映射情形（含 4×4 转置）、四级数据结构、滑动窗口、数据前瞻、部分和精度控制；</li>
+<li><strong>完整实测</strong>：宏级 126.3 / 系统级 24.28 TOPS/W；U-Net/ResNet8/MobileNetV1/DS-CNN/深自编码器多工作负载验证。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级 DIMC SoC”的完整案例，读时注意四条主线：① 为什么 6T 高密度是第一优先（§3）；② split MAC 与同步操作怎么省面积/省能量（§4）；③ 384 个宏怎么映射各种 CNN 层（§5）；④ 特征图数据结构和滑动窗口怎么省搬移（§6）。</p>
+</div>
+</section>

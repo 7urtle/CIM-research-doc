@@ -1,0 +1,27 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：Radix16 + LUT 两周期数字 CIM 宏</h2>
+<figure>
+  <img src="assets/diagrams/d03_radix16_lut.svg" alt="Radix16+LUT 宏" style="max-width:940px">
+  <figcaption>图 3.1　4×32 CiM 宏：Radix16 编码器 ×4 → SRAM 阵列（内嵌移位器+LUT）→ PPRS → 4 输入加法树+累加器 → 18b 部分积。INT8 拆成两个 5b Radix16 码，两周期完成。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_6_Radix16与LUT.png" alt="论文图6">
+  <figcaption>图 3.2　论文原图 Fig. 6：Radix16+LUT 乘法机制与 Radix16 真值表。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p><strong>为什么需要 LUT？</strong>Radix16 的部分积分两类：</p>
+<ul>
+<li><strong>只移位</strong>：{±W, ±2W, ±4W, ±8W}——便宜，移位器即可；</li>
+<li><strong>移位+加法</strong>：{±3W, ±5W, ±6W, ±7W}——占全部编码的 <strong>53.3%</strong>（不含 0），±7W 甚至要两次额外加法，最贵。</li>
+</ul>
+<p>论文用 <strong>LUT</strong>（定制数字电路，结构与加法器类似，面积不大）直接“查表”生成这些部分积 → 省掉加法链 → <strong>宏动态功耗 −21.7%</strong>。评估（Virtuoso，0.9V/100MHz/TT）：虽然每周期功耗高于现有方案，但 <strong>每次完整 MAC 的功耗低 2.44×</strong>（周期少了）。</p>
+<div class="box key">
+<div class="bt">📊 面积/功耗分解</div>
+<p>单宏面积 8400 μm²；Radix16 编码器单元占 MAC 功耗 7.58%、权重编码器占 16.66%。对比 Radix4 [15]：Radix16 本身省电很少——<strong>LUT 才是功耗大降的关键</strong>（Fig. 8 的直接证据）。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_6_Radix16与LUT.png">
+  <source src="assets/videos/v01_twocycle.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 两周期乘法动画：INT8 拆成两个 5b Radix16 码，两周期完成；LUT 处理最贵的部分积。</div>
+</div>
+</section>

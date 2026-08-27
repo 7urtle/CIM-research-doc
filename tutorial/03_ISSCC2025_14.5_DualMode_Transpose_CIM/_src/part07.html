@@ -1,0 +1,21 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与四种格式</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　宏整体架构：读写控制 + 激活旋转对齐 + 上下两块（每块 = CWM-SRAM + DMBP-MAC）；AMBA 总线接口（AHB 内存、APB 控制）。</figcaption>
+</figure>
+<ul>
+<li><strong>读写控制电路</strong>：地址译码、读写信号、模式配置；</li>
+<li><strong>激活旋转与对齐电路</strong>：SFME 编码 + VWPA 预对齐 + 激活向量旋转（配合循环映射）；</li>
+<li><strong>上下两块 CWM-SRAM + DMBP-MAC</strong>：INT4 模式各自独立；INT8/FP8/BF16 模式一块处理高 4 位、一块处理低 4 位；</li>
+<li><strong>AMBA 总线</strong>：AHB 走内存访问、APB 走计算控制与结果 → 可直接集成进 SoC。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d09_formats.svg" alt="四种格式" style="max-width:940px">
+  <figcaption>图 7.2　四种格式统一：FP8（E5M2/E4M3）、BF16、INT4/INT8 全部映射进 4b/8b 数据通路。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_2_总体架构.png" alt="论文图 14.5.2">
+  <figcaption>图 7.3　论文原图 Fig. 14.5.2：转置数字 SRAM CIM 宏的总体架构。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

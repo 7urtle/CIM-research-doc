@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：3D 双 DRAM 单逻辑近存计算芯片（ISSCC 2026 30.7）</title>
+<meta name="description" content="面向零基础学生的 Processing-Near-Memory 硬件教学：深入讲解 ISSCC 2026 30.7 3D Two-DRAM-One-Logic 近存计算芯片的 3D 集成、DDR4 兼容接口、RISC-V 加速器与 GEMM 数据流。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">3D 近存计算（PNM）零基础精讲</div>
+    <div class="t2">ISSCC 2026 · Session 30 · Paper 30.7</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：边缘 LLM 的困境</a>
+  <a class="sub" href="#sec1-1">1.1 为什么边缘 LLM 是“内存密集”</a>
+  <a class="sub" href="#sec1-2">1.2 CPU/GPU 的短板</a>
+  <a class="sec" href="#sec2">02 · PNM 路线与 3D 集成</a>
+  <a class="sub" href="#sec2-1">2.1 算力放哪：DRAM 内 vs 3D 堆叠</a>
+  <a class="sub" href="#sec2-2">2.2 HB 与 mini-TSV</a>
+  <a class="sec" href="#sec3">03 · LLM 推理与 GEMM 基础</a>
+  <a class="sub" href="#sec3-1">3.1 为什么 LLM 访存是瓶颈</a>
+  <a class="sub" href="#sec3-2">3.2 GEMM：LLM 的主算子</a>
+  <a class="sec" href="#sec4">04 · 创新①：Two-DRAM-One-Logic 架构</a>
+  <a class="sub" href="#sec4-1">4.1 为什么是“两片 DRAM + 一片逻辑”</a>
+  <a class="sub" href="#sec4-2">4.2 2048b 总线与 3D DRAM PHY</a>
+  <a class="sec" href="#sec5">05 · 创新②：DDR4 兼容与 ACC 计算引擎</a>
+  <a class="sub" href="#sec5-1">5.1 一个芯片两种身份</a>
+  <a class="sub" href="#sec5-2">5.2 RISC-V + 自定义 FPU + DMA</a>
+  <a class="sec" href="#sec6">06 · 创新③：GEMM 数据流与访存优化</a>
+  <a class="sub" href="#sec6-1">6.1 M/K 切分与零跨块通信</a>
+  <a class="sub" href="#sec6-2">6.2 2048b 缓冲 + 开放页策略</a>
+  <a class="sec" href="#sec7">07 · 存储层次与数据通路</a>
+  <a class="sub" href="#sec7-1">7.1 bank→segment→subarray</a>
+  <a class="sub" href="#sec7-2">7.2 交互演示：3D 堆叠</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sub" href="#sec8-1">8.1 带宽/能量/延迟</a>
+  <a class="sub" href="#sec8-2">8.2 GEMM 收益与对比表</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM/近存计算实际研究的学生<br>配套素材：8 张教学图 · 4 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">3D 双 DRAM 单逻辑近存计算芯片零基础精讲：把 1GB 内存和 1.2GHz 算力叠在一起
+<span class="en">A 1.2GHz 12.77GB/s/mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications（ISSCC 2026 · Paper 30.7）</span></h1>
+<div class="meta">论文作者：Yue Cao, Jinghao Jiang 等 · 复旦大学 + 中科院微电子所 + 张江实验室 + 西安紫光国芯
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.7
+&nbsp;|&nbsp; 本教程配套素材：教学图 8 张、数据图 4 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>大语言模型（LLM）要在 PC、手机上跑，最大的瓶颈不是算力，而是<strong>内存</strong>：权重有 GB 级，必须反复从 DRAM 里搬。本论文把 <strong>两片 512Mb DRAM 晶圆 + 一片 28nm 逻辑晶圆</strong>用 3D 堆叠（混合键合 HB + mini-TSV）叠成一个 <strong>1GB 片上内存 + 1.2GHz 计算</strong>的芯片：</p>
+<ul>
+<li>带宽密度 <strong>12.77 GB/s/mm²</strong>（HBM3E 的 1.22×、GDDR6 的 8.63×）；</li>
+<li>每比特访问能量 <strong>0.67 pJ/b</strong>（GDDR6 的 9%、HBM3E 的 28%）；</li>
+<li>连续访问延迟降到 <strong>3.2 ns</strong>（比 LPDDR4 低 90%~93%）；</li>
+<li>对外 <strong>DDR4 兼容</strong>：既能当普通内存条用，也能通过扩展命令（T-ACC/Act-Reg）触发近存计算（PNM）。</li>
+</ul>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>LLM 推理 = 搬权重：</strong>生成式推理每输出一个 token，都要把所有权重读一遍；一次权重读的能耗/延迟远超一次计算。所以“把计算放到 DRAM 旁边”比“把计算做得更快”更关键——这就是近存计算（PNM）的出发点。</li>
+<li><strong>3D 堆叠 ≠ 3D 打印：</strong>它是指把几片已经做好的晶圆（die）像三明治一样叠起来，用微米级的互连（HB、TSV）上下打通。关键是互连密度——互连越密，带宽越高，这就是 12.77 GB/s/mm² 的来源。</li>
+<li><strong>DDR4 兼容是“产品化”的关键：</strong>论文没有发明新接口，而是让芯片在现有 DDR4 内存插槽上即插即用，还新增两条命令让主机触发计算——低集成门槛 = 真实部署的可能。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“edge tasks typically use much smaller batch sizes, which significantly reduces data reuse during the generation stage of LLM inference and makes the task more memory-intensive”</td>
+<td>终端一次只服务一个用户（batch=1），LLM 生成阶段每个 token 几乎不重复利用数据 → 任务从“算力密集”变成“内存密集”。</td></tr>
+<tr><td class="num">“most prior works integrate compute directly within the DRAM die, constraining compute capability due to DRAM process limitations”</td>
+<td>前作把计算做进 DRAM 晶圆，但 DRAM 工艺做不了高性能逻辑 → 算力被工艺卡死。本文把逻辑单独放一片晶圆。</td></tr>
+<tr><td class="num">“stacks two DRAM dies with one logic die, providing 1GB on-chip DRAM capacity and a memory density of 99.4Mb/mm²”</td>
+<td>两片 DRAM + 一片逻辑 = 1GB 片上内存，存储密度 99.4 Mb/mm²。</td></tr>
+<tr><td class="num">“high-density HB + mini-TSV interconnect… achieving a bandwidth density of 12.77GB/s/mm²”</td>
+<td>高密度混合键合 + mini-TSV 互连 → 带宽密度 12.77 GB/s/mm²。</td></tr>
+<tr><td class="num">“supports a DDR4-protocol-compatible external interface… when PNM is disabled, the chip operates as conventional host DRAM”</td>
+<td>兼容 DDR4 接口；PNM 关闭时就是普通 DRAM——两种身份无缝切换。</td></tr>
+<tr><td class="num">“reducing memory-access latency by up to 93% and GEMM execution time by up to 98%”</td>
+<td>访存延迟最多降 93%，GEMM 执行时间最多降 98%（8 芯片 DIMM 场景）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>Two-DRAM-One-Logic 3D 架构</strong>：逻辑与 DRAM 分开制造再 3D 堆叠 → 逻辑享受标准 CMOS（1.2GHz 频率），DRAM 保持密度（99.4 Mb/mm²），两不耽误；</li>
+<li><strong>高带宽密度互连</strong>：HB（pitch 3 μm）+ mini-TSV（pitch 5 μm），每 TSV 配两个 HB 冗余 → 12.77 GB/s/mm² 且良率可控（3D 集成仅增加 0.58% 失效率）；</li>
+<li><strong>极简 3D DRAM PHY</strong>：总线 2048b 很宽，引脚速率很低 → PHY 只做同步+电平转换，比 DDR/HBM PHY 简单省电（0.67 pJ/b）；</li>
+<li><strong>DDR4 兼容 + 双命令扩展</strong>：T-ACC（触发 ACC）、Act-Reg（配置寄存器）两条新命令，PNM 可关闭退化为普通 DRAM；</li>
+<li><strong>RISC-V ACC + 自定义 FPU + DMA</strong>：可编程计算引擎，fadd/fsub/fmul/fdiv 硬件加速，DMA 负责批量搬运（LLM 连续访存多）；</li>
+<li><strong>GEMM 数据流与访存优化</strong>：M/K 各切 4 份给 16 个 ACC（零跨块通信），开放页策略 + 2048b 缓冲（buf_hit 免 DRAM 访问）→ 吞吐 +53.8%，128³ GEMM 比 i7-13700F 快 86%，8 芯片 DIMM 快 98%。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂 DRAM/总线概念的：从 §4（3D 架构）和 §6（GEMM 数据流）开始，这两章是本文最精彩的设计取舍。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：边缘 LLM 的困境——为什么“在手机上跑大模型”这么难</h2>
+
+<h3 id="sec1-1">1.1 为什么边缘 LLM 是“内存密集”任务</h3>
+<p>云端跑 LLM 用<strong>大批量（large batch）</strong>：同时处理很多用户的请求，同一个权重可以被大量请求复用，计算密度高、数据复用率高。但终端设备（PC、手机）一次只服务一个用户，<strong>batch = 1</strong>。后果是：</p>
+<ul>
+<li><strong>预填充（prefill）阶段</strong>：处理用户输入，计算密集但只占一小部分时间；</li>
+<li><strong>生成（generation）阶段</strong>：逐个 token 生成输出，每个 token 都要读取<strong>全部模型权重</strong>做矩阵乘——但只算一小块。数据复用率极低 → 整个系统被“读权重”的访存带宽锁死（memory-intensive）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键数字直觉：LLM 生成阶段 ≈ 权重搬运工</div>
+<p>一个 7B 参数的模型，FP16 权重约 14 GB。每生成 1 个 token，都要把这 14 GB 从头到尾读一遍。哪怕算力再强，<strong>访存带宽决定生成速度（token/s）</strong>。所以“把带宽做上去、把访存能耗降下来”比堆算力更重要——这正是近存计算（PNM）的用武之地。</p>
+</div>
+<figure>
+  <img src="assets/diagrams/d01_edge_llm_challenge.svg" alt="边缘LLM挑战" style="max-width:900px">
+  <figcaption>图 1.1　边缘 LLM 的三大挑战：小批量 → 内存密集；CPU 算力不足、GPU 功耗过高；片上放不下权重 → 访存瓶颈。对应需求：算力 + 带宽 + 能效 + 易集成。</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 CPU / GPU 为什么都不合适</h3>
+<table>
+<tr><th>方案</th><th>算力</th><th>带宽</th><th>能效</th><th>结论</th></tr>
+<tr><td>CPU（如 i7）</td><td class="num">低</td><td class="num">低</td><td class="num">中</td><td>算力不足，128³ GEMM 要很久（论文实测对比对象）</td></tr>
+<tr><td>GPU（独立显卡）</td><td class="num">高</td><td class="num">受显存带宽限制</td><td class="num">差（几十~几百瓦）</td><td>功耗太高，电池设备无法接受</td></tr>
+<tr><td>NPU（端侧 AI 芯片）</td><td class="num">中</td><td class="num">片上 SRAM 太小</td><td class="num">好</td><td>权重放不下，仍需外接 DRAM → 访存瓶颈依旧</td></tr>
+</table>
+<p>结论：终端 LLM 需要一种“<strong>自带大容量内存 + 足够算力 + 高能效 + 好集成</strong>”的方案。论文把目光投向<strong>近存计算（Processing-Near-Memory, PNM）</strong>：让计算器住在 DRAM 隔壁，而不是隔着一整条内存总线。</p>
+<figure>
+  <img src="assets/figs/fig30_7_1_挑战与方案.png" alt="论文图 30.7.1">
+  <figcaption>图 1.2　论文原图 Fig. 30.7.1：客户端 LLM 应用的挑战与本文 3D 近存计算方案概览。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>PNM 的两条路线与本论文的选择：3D 堆叠</h2>
+
+<h3 id="sec2-1">2.1 算力放哪：DRAM 内计算 vs 3D 堆叠近存</h3>
+<p>“近存”的本质是让计算单元尽量靠近存储。业界尝试过两条路线：</p>
+<figure>
+  <img src="assets/diagrams/d02_pnm_roadmap.svg" alt="PNM 路线对比" style="max-width:920px">
+  <figcaption>图 2.1　路线①把计算做进 DRAM 晶圆（受 DRAM 工艺限制）；路线②（本论文）把 DRAM 和逻辑分开做，再用 3D 叠起来——各用各的工艺。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么“分开再做再叠”优于“直接做进 DRAM”？</div>
+<ul>
+<li><strong>DRAM 工艺不适合做逻辑</strong>：DRAM 晶圆追求存储密度（深沟槽电容、大漏电），晶体管性能差、标准单元库不全，能实现的逻辑频率和复杂度都很有限——前作 PNM（如 [2][3][4]）大多受此约束；</li>
+<li><strong>分开做</strong>：DRAM 用 DRAM 工艺保密度（99.4 Mb/mm²），逻辑用 28nm 标准 CMOS 保频率（1.2 GHz）；</li>
+<li><strong>3D 互连补带宽</strong>：HB + mini-TSV 把两片 DRAM 的行缓冲直接连到逻辑层，总线宽达 2048b → 带宽密度碾压传统引脚。</li>
+</ul>
+</div>
+
+<h3 id="sec2-2">2.2 3D 集成技术：混合键合（HB）与 mini-TSV</h3>
+<p>3D 堆叠的“胶水”是两种垂直互连：</p>
+<ul>
+<li><strong>混合键合（Hybrid Bonding, HB）</strong>：两片晶圆面对面直接金属键合，互连间距极小（本设计 pitch = 3 μm），密度极高——这是带宽密度 12.77 GB/s/mm² 的来源；</li>
+<li><strong>mini-TSV（硅通孔）</strong>：垂直穿通硅片的过孔（pitch = 5 μm）。因为堆了三层，中间那层 DRAM_N 的信号要“直连 HB”到逻辑层，而最上层 DRAM_F 的信号得走 “HB → TSV → HB” 链穿过 DRAM_N 才能到达逻辑层。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d03_3d_stack.svg" alt="3D堆叠结构" style="max-width:920px">
+  <figcaption>图 2.2　Two-DRAM-One-Logic 堆叠：DRAM_N 直连 HB，DRAM_F 走 HB-TSV-HB 链；每个 TSV 配两个 HB 冗余连接保证良率。</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 良率是 3D 集成的头号敌人</div>
+<p>TSV/HB 任何一个焊点失效，整条通路就断了。论文的可靠性技巧：<strong>每个 TSV 配两个 HB 连接</strong>（一主一备）。实测结果：3D 集成只引入 <strong>0.58%</strong> 的额外失效率，DRAM 本体良率也很好（96ms@98°C 保持测试失效率 &lt;0.05%）——这说明这套 3D 工艺已经具备量产可行性。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>LLM 推理与 GEMM 基础：先懂算子，才懂硬件</h2>
+
+<h3 id="sec3-1">3.1 为什么 LLM 访存是瓶颈（再深入一点）</h3>
+<p>LLM 的每一层几乎都是 <strong>线性层（全连接）或注意力（Attention）</strong>，本质都是矩阵乘法。以生成阶段为例，每输出一个 token：</p>
+<ol>
+<li>从 DRAM 读出该层的<strong>全部权重矩阵</strong>（GB 级）；</li>
+<li>与当前 token 的隐向量做矩阵乘（计算量其实很小）；</li>
+<li>结果喂给下一层，重复。</li>
+</ol>
+<p>所以“每 token 访存量 ≈ 模型大小”，而“每 token 计算量 ≈ 一个向量乘矩阵”。<strong>访存：计算 ≈ 模型大小 : 向量大小</strong>，差几个数量级——这就是“内存密集”的本质。</p>
+<div class="box key">
+<div class="bt">💡 论文对 LLM 负载的两条判断（决定架构）</div>
+<ul>
+<li>“<strong>低 batch → 低数据复用</strong>”：不能指望靠 batch 内复用掩盖访存，必须把访存本身做快；</li>
+<li>“<strong>连续的大块 load/store 非常多</strong>”：权重是按顺序连续存放的 → 适合 DMA 批量搬运 + 宽总线一次多取。</li>
+</ul>
+</div>
+
+<h3 id="sec3-2">3.2 GEMM：LLM 的主算子</h3>
+<p>GEMM（General Matrix Multiply，通用矩阵乘）C = A × B，是 LLM 占绝对主导的计算核。论文明确说 “GEMM is the dominant kernel in LLM computation, thus our evaluation focuses on this task”——整个芯片的评估都围绕 GEMM 展开。</p>
+<div class="formula">C<sub>[M×K]</sub> = A<sub>[M×N]</sub> × B<sub>[N×K]</sub>　　（M×K 个输出，每个输出是 N 次乘加）<span class="tag">式 3.1</span></div>
+<p>把 GEMM 放到多核/多块上跑，经典做法是<strong>分块（tiling）</strong>：把 M、K 维切成小块分给不同处理单元。怎么切、怎么分、怎么避免块间通信，就是 §6 的核心。</p>
+<figure>
+  <img src="assets/diagrams/d06_gemm.svg" alt="GEMM 数据流" style="max-width:920px">
+  <figcaption>图 3.1　GEMM 数据流（§6 详解）：M 切 4、K 切 4 → 16 个子矩阵 → 16 个 ACC，主机直接拼接输出。</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么生成阶段“batch=1”会让 GPU 也变慢？（提示：GPU 靠大批量隐藏访存延迟。）② 如果权重是 FP16 的 7B 模型，1GB 片上内存能装下吗？（提示：14 GB vs 1 GB——所以论文强调“减少离片访问”，但离片访问仍然存在，靠 DDR4 接口兜底。）</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：Two-DRAM-One-Logic 架构——带宽密度怎么做到 12.77 GB/s/mm²</h2>
+
+<h3 id="sec4-1">4.1 为什么是“两片 DRAM + 一片逻辑”</h3>
+<p>两片 512Mb DRAM（DRAM_N 与 DRAM_F）+ 一片 28nm 逻辑，组成一个 1Gb 的“bankgroup 块（BG）”，全芯片 8 个 BG = 1GB。这个结构的三个理由：</p>
+<ul>
+<li><strong>容量</strong>：两片 DRAM 叠在一起，1 个 BG 就有 1Gb → 8 个 BG 共 1GB，存储密度 99.4 Mb/mm²（把“片上内存做大”以装下更多模型）；</li>
+<li><strong>带宽</strong>：每片 DRAM 的行缓冲都通过宽总线连到逻辑层 → 带宽随 DRAM 片数翻倍；</li>
+<li><strong>工艺解耦</strong>：逻辑层用标准 CMOS（28nm），频率 1.2 GHz，且未来换更先进工艺只需重做逻辑片——论文原话 “decoupling logic from DRAM allows implementing compute logic in standard CMOS and seamlessly leveraging future improvements via advances in process nodes”。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d04_architecture.svg" alt="整体架构" style="max-width:940px">
+  <figcaption>图 4.1　3D NMC 芯片整体架构：主机经 DDR4 接口 → 解码器 → 广播到 8 个 BG；每个 BG = 两片 512Mb DRAM + 计算模块（2 个 ACC），输出 2048b 总线。</figcaption>
+</figure>
+
+<h3 id="sec4-2">4.2 2048b 总线与极简 3D DRAM PHY</h3>
+<p>每个 BG 的输出总线是 <strong>2048b</strong>（= 16 段 × 8 bank × 8 组 × 2 片 DRAM）。这带来一个连锁设计红利：</p>
+<div class="box key">
+<div class="bt">💡 “宽总线”让 PHY 变得几乎免费</div>
+<p>传统 DDR/HBM 为了在有限的引脚上获得高带宽，必须把<strong>引脚速率</strong>做得极高（GHz 级）→ PHY（物理层）要做均衡、时钟恢复、训练……复杂又费电。本设计 3D 总线宽达 2048b，同样带宽下<strong>每个引脚的速率低得多</strong> → 3D DRAM PHY 只需要“数据同步 + 电平转换”，几乎是个胶水电路。这就是 0.67 pJ/b 能效的来源之一。</p>
+</div>
+<p>再看 3D 堆叠的细节（论文 Fig. 30.7.5）：HB pitch 3 μm、TSV pitch 5 μm、每 TSV 两个 HB 冗余。这些参数决定了“每平方毫米能过多少数据”——带宽密度 = 互连密度 × 每线速率。</p>
+<figure>
+  <img src="assets/figs/fig30_7_5_3D集成细节.png" alt="论文图 30.7.5">
+  <figcaption>图 4.3　论文原图 Fig. 30.7.5：3D 集成细节（HB/TSV 参数）、逻辑 die 面积分解与芯片功耗分解。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_5_3D集成细节.png">
+  <source src="assets/videos/v01_3d_stack.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 3D 堆叠组装动画：DRAM_F、DRAM_N、逻辑晶圆依次叠合；TSV 穿过 DRAM_N，DRAM_F 的数据沿 “HB→TSV→HB” 链流到逻辑层。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_7_2_架构与扩展命令.png" alt="论文图 30.7.2">
+  <figcaption>图 4.2　论文原图 Fig. 30.7.2：3D NMC 整体架构与扩展的 DDR4 命令表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么 DRAM_F 的信号要“穿过” DRAM_N 而不是直接下到逻辑层？（提示：三明治结构，中间层挡路——这就是 TSV 的用途。）② 2048b 总线 = 256 字节/次，一次能取多少 FP16 权重？（提示：128 个。）③ 如果带宽不变、总线减半到 1024b，PHY 会变难还是变简单？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：DDR4 兼容接口与 RISC-V 计算引擎</h2>
+
+<h3 id="sec5-1">5.1 一个芯片，两种身份：PNM 开/关</h3>
+<p>很多 PNM 研究最“劝退”产业的一点是：要专用驱动、专用接口、专用软件栈。本论文用 <strong>DDR4 协议兼容</strong>化解集成难题：</p>
+<figure>
+  <img src="assets/diagrams/d08_ddr4_cmd.svg" alt="DDR4 兼容" style="max-width:900px">
+  <figcaption>图 5.1　芯片双身份：PNM 开启 = 近存计算模式（主机用扩展命令触发 ACC）；PNM 关闭 = 普通 DDR4 DRAM。</figcaption>
+</figure>
+<ul>
+<li><strong>两条新增命令</strong>（仍走 DDR4 命令格式）：<strong>T-ACC</strong>（触发指定加速器开始执行）、<strong>Act-Reg</strong>（设置配置寄存器）；</li>
+<li>主机照常访问 DRAM、通过 <strong>DDR 兼容接口</strong>管理 ACC——不需要专用硬件驱动；</li>
+<li>PNM 关闭时，芯片就是<strong>普通主机 DRAM</strong>（用户甚至不用感知它是个计算芯片）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 设计哲学：给“内存”加计算，而不是给“计算芯片”加内存</div>
+<p>市面上 GPU/NPU 是“算力芯片 + 外接内存”；本论文反着来：<strong>把计算引擎塞进内存芯片</strong>，对外保持内存的“职业素养”。这样主机软件可以渐进式迁移：先用它当内存，再逐步把 GEMM 卸载给 ACC——部署路径平滑。</p>
+</div>
+
+<h3 id="sec5-2">5.2 ACC 计算引擎：RISC-V + 自定义 FPU + DMA</h3>
+<p>每个 BG 的计算模块里有 <strong>2 个 ACC</strong>，每个 ACC 是：</p>
+<figure>
+  <img src="assets/diagrams/d05_acc.svg" alt="ACC 与内存控制器" style="max-width:940px">
+  <figcaption>图 5.2　计算模块内部：ACC（RISC-V 内核 + L1 缓存 + 自定义 FPU + DMA + SRAM 系统内存）+ 存储控制器（命令调度器、开放页、2048b 缓冲、刷新控制）+ 3D DRAM PHY。</figcaption>
+</figure>
+<ul>
+<li><strong>RISC-V 内核</strong>：支持通用指令（可编程！不是固定功能），sqrt 等由内核软实现；</li>
+<li><strong>自定义 FPU</strong>：硬件加速 LLM 的关键浮点指令 <strong>fadd / fsub / fmul / fdiv</strong>——GEMM 的 MAC 和 softmax/layernorm 都用得上；</li>
+<li><strong>L1 指令/数据缓存</strong>：降低指令与局部数据访问延迟；</li>
+<li><strong>SRAM 系统内存</strong>：挂在内存总线上，作为 ACC 的本地暂存；</li>
+<li><strong>DMA 模块</strong>：LLM 有大量<strong>连续 load/store</strong>，DMA 负责在“系统内存 ↔ 3D DRAM”之间批量搬运，让内核专注计算。</li>
+</ul>
+<p>存储控制器这边：命令调度器 FSM 采用<strong>开放页策略（open-page）</strong>（行激活后保持打开，后续访问同一行免激活）并加了 <strong>2048b 缓冲</strong>——命中（buf_hit）就直接从缓冲返回，整次 DRAM 访问都省了。刷新调度由可编程配置模块管理。</p>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么用可编程 RISC-V 而不是固定 GEMM 引擎？（提示：灵活性——能跑 layernorm、softmax、其他算子；代价是效率，所以配了专用 FPU 补性能。）② 2048b 缓冲什么时候命中率高？（提示：连续顺序访问——正好是 LLM 权重读取的模式！）</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：GEMM 数据流与访存优化——怎么喂饱 16 个加速器</h2>
+
+<h3 id="sec6-1">6.1 M/K 切分：零跨块通信的全芯片分配</h3>
+<p>一个 M×N×K 的 GEMM（M×N 输入 × N×K 权重），论文的分配方案：</p>
+<figure>
+  <img src="assets/diagrams/d06_gemm.svg" alt="GEMM 切分" style="max-width:940px">
+  <figcaption>图 6.1　GEMM 数据流：M 切 4 份、K 切 4 份 → 16 个子矩阵 → 8 个 BG × 2 个 ACC。每个 ACC 只算自己的子矩阵，主机直接拼接，无跨块累加。</figcaption>
+</figure>
+<ol>
+<li><strong>M 切 4、K 切 4</strong> → 16 个 (M/4)×(K/4) 子任务，分给 8 个 BG × 2 个 ACC；</li>
+<li>例如 I0W0 → BG0/ACC0，I0W1 → BG0/ACC1，I0W2 → BG1/ACC0……（图 6.1 底部）；</li>
+<li><strong>零跨块通信</strong>：每个 ACC 算出的子矩阵互不依赖，主机把 16 块结果直接拼成最终输出，<strong>不需要任何跨 BG/跨芯片的累加</strong>——这是吞吐能线性扩展的关键；</li>
+<li><strong>多芯片扩展</strong>：装 8 片 DIMM 时 M、K 继续切 → 128 个 ACC 并行（实测 GEMM 快 98% 的场景）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🧠 为什么“避免跨块通信”是硬性要求？</div>
+<p>论文原话：“Cross-BG or cross-chip data accesses require host intervention and should be avoided whenever possible.”——跨 BG/跨芯片访问要经过主机，延迟和能耗都高。所以 GEMM 的切分必须保证<strong>每个子任务的数据都本地可得</strong>（权重在本 BG 的 DRAM 里、输入用全 bank 并行读），数据流设计围着“本地性”转。</p>
+</div>
+
+<h3 id="sec6-2">6.2 访存优化：DMA + 2048b 缓冲 + 开放页</h3>
+<p>喂饱 ACC 的另一半是“读得快”。三个手段叠加：</p>
+<ul>
+<li><strong>DMA 批量搬运</strong>：权重在 3D DRAM 里<strong>连续存放</strong>，DMA 一次搬一大块，不用内核一条条 load；</li>
+<li><strong>输入行全 bank 并行</strong>：每个输入行均匀分布到所有 bank、顺序读取 → 一次激活多个 bank 的并行带宽；</li>
+<li><strong>2048b 缓冲 + 开放页</strong>：最近访问的数据留在缓冲里，连续访问时 buf_hit 直接命中；行命中免预充电/激活。</li>
+</ul>
+<p>论文实测：<strong>加上 DMA 和 2048b 缓冲后，GEMM 吞吐平均提升 53.8%</strong>（相对无 DMA/缓冲的基线）。此外，某些场景下权重<strong>开机只上传一次</strong>到 3D DRAM，之后整个推理过程的离片访问量大减——把“内存芯片”的容量优势用到了极致。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_3_数据通路与时序.png">
+  <source src="assets/videos/v02_gemm.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · GEMM 数据流动画：M、K 各切 4 份，活跃子矩阵依次分配到不同 BG/ACC，输出直接拼接。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">🧩 演示 B · GEMM 切分与 16 个 ACC 分配（可交互）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">I0W0 → BG0/ACC0（每 ACC 只算自己的子矩阵）</span>
+</div>
+<div class="hint">左侧输入矩阵（M×N）按行切 4、右侧权重矩阵（N×K）按列切 4 → 16 个子任务依次分给 8 个 BG × 2 个 ACC。注意：所有子任务数据本地可得，结果由主机直接拼接。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⚡ 演示 C · 2048b 缓冲与开放页策略（buf_hit 动画）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">等待…</span>
+</div>
+<div class="hint">绿色 = 缓冲命中（免 DRAM 访问，快）；红色 = 未命中走 DRAM（预充电+激活+读，慢）。连续顺序访问时命中率高——这正是 LLM 权重连续读取的模式。DMA + 缓冲使 GEMM 吞吐提升 53.8%。</div>
+</div>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_5_3D集成细节.png">
+  <source src="assets/videos/v03_access.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 访存延迟对比动画：传统 CPU↔LPDDR4 长路径往返 vs 本设计 ACC 就在 DRAM 旁边 + 2048b 缓冲命中（连续读 46ns → 3.24ns）。</div>
+</div>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么权重“连续存放”特别重要？（提示：DMA 和开放页都爱吃顺序访问；乱序访问会频繁 row miss。）② 输入行“均匀分布到所有 bank”是为了什么？（提示：bank 级并行度；同一 bank 的连续访问会被行冲突卡住。）③ 8 芯片 DIMM 场景里，输出矩阵在哪拼？（提示：主机。跨芯片拼一次的开销远小于跨芯片算。）</p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>存储层次与数据通路：一条 2048b 的数据是怎么“流”出来的</h2>
+
+<h3 id="sec7-1">7.1 DRAM 内部层次：bank → segment → subarray</h3>
+<p>要理解 3D 近存为什么快，得先知道 DRAM 内部长什么样（本设计的层次）：</p>
+<figure>
+  <img src="assets/diagrams/d07_dram_hierarchy.svg" alt="存储层次" style="max-width:940px">
+  <figcaption>图 7.1　DRAM 块（512Mb）= 8 bank；每 bank = 8 segment；每 segment = 16 subarray（两两共享一个 512-SA 读出放大级）→ 列选（MDQ_sel）→ 二级 SA → 16b RDL → 3D 路径 → 逻辑层。</figcaption>
+</figure>
+<ul>
+<li><strong>bank（8 个）</strong>：DRAM 的基本并行单元，不同 bank 可以同时服务不同访问；</li>
+<li><strong>segment（8 个/bank）</strong>：段内组织 subarray；</li>
+<li><strong>subarray（16 个/segment）</strong>：真正的存储阵列。<strong>两个相邻 subarray 共享一个 512-SA 读出放大级</strong>——SA（Sense Amplifier）是 DRAM 里最占面积的电路之一，共享 = 省一半读出电路面积；</li>
+<li><strong>列选（MDQ_sel）→ 二级 SA</strong>：把目标列的数据选到 MDQ 线上，二级 SA 加速读出；</li>
+<li><strong>16b RDL 输出</strong>：每个 segment 输出 16b；8 segment × 8 bank × 2 die = <strong>2048b/BG</strong>，经 3D 路径送进逻辑层。</li>
+</ul>
+
+<h3 id="sec7-2">7.2 交互演示 A：3D 堆叠与数据路径</h3>
+<div class="demo">
+<div class="dhead">🏗 演示 A · 3D 堆叠与数据路径（可交互）</div>
+<canvas id="demoA" width="980" height="360"></canvas>
+<div class="dbar">
+  <button id="demoA-layer1" class="on">DRAM_N 直连 HB</button>
+  <button id="demoA-layer2">DRAM_F 穿 TSV</button>
+  <button id="demoA-play" class="on">▶ 数据流动画</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">DRAM_N：信号直连 HB 到逻辑层</span>
+</div>
+<div class="hint">点按切换查看两层 DRAM 各自的 3D 路径：DRAM_N 走直连 HB；DRAM_F 要走 “HB → mini-TSV → HB” 链穿过 DRAM_N。播放时看数据块沿路径流动。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么 subarray 要“两两共享”读出放大级而不是每列一个？（提示：面积 vs 性能的折中，SA 面积大。）② 二级 SA 起什么作用？（提示：第一级读出信号很弱，需要再放大才能驱动长距离 RDL 总线。）③ 如果 RDL 是 16b/segment，一次 DRAM 读能取多少个 FP16 权重？2048b 呢？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：这颗 3D 芯片的成绩单</h2>
+
+<h3 id="sec8-1">8.1 带宽 · 能量 · 延迟</h3>
+<figure>
+  <img src="assets/charts/c01_bandwidth.png" alt="带宽密度对比" style="max-width:860px">
+  <figcaption>图 8.1　带宽密度 12.77 GB/s/mm² = HBM3E 的 1.22×、GDDR6 的 8.63×（HBM3E/GDDR6 为按倍数换算的参考值）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_energy.png" alt="每比特能量对比" style="max-width:860px">
+  <figcaption>图 8.2　每比特访问能量 0.67 pJ/b = GDDR6 的 9%、HBM3E 的 28%（越低越好）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_latency.png" alt="访问延迟对比" style="max-width:920px">
+  <figcaption>图 8.3　访存延迟：连续访问 3.21/3.24 ns（−90%/−93% vs 折算 1.2GHz 的 LPDDR4），随机访问 45.12/50.01 ns（−37%/−44%）。</figcaption>
+</figure>
+<ul>
+<li><strong>DRAM 本身质量</strong>：526 Mbps @ 1.2V 正常工作；96ms@98°C 保持测试，全晶圆失效率 &lt;0.05%；3D 集成只额外引入 0.58% 失效率 → 工艺成熟度可信；</li>
+<li><strong>频率</strong>：逻辑层 28nm CMOS，1.2 GHz。</li>
+</ul>
+
+<h3 id="sec8-2">8.2 GEMM 收益与整体对比</h3>
+<figure>
+  <img src="assets/charts/c04_gemm.png" alt="GEMM 执行时间对比" style="max-width:860px">
+  <figcaption>图 8.4　128×128×128 GEMM 执行时间（归一化）：本设计 1 芯片 −86%，8 芯片 DIMM（8GB/128 ACC）−98%（相对 2.1GHz i7-13700F）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_7_6_对比.png" alt="论文图 30.7.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.7.6：与近期 PNM 设计对比——FoM 是前作 3D PNM 的 7.33×、active interposer 方案的 5.13×。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>对比项</th><th>本论文</th><th>前作 3D PNM</th><th>active interposer [7]</th></tr>
+<tr><td>带宽密度</td><td class="num"><strong>12.77 GB/s/mm²</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>存储密度</td><td class="num"><strong>99.4 Mb/mm²</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>每比特能量</td><td class="num"><strong>0.67 pJ/b</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>计算频率</td><td class="num"><strong>1.2 GHz</strong>（28nm 逻辑）</td><td class="num">受 DRAM 工艺限制</td><td class="num">—</td></tr>
+<tr><td>接口</td><td class="num"><strong>DDR4 兼容</strong>（可关闭 PNM）</td><td class="num">专用</td><td class="num">专用</td></tr>
+<tr><td>FoM</td><td class="num"><strong>7.33× / 5.13×</strong></td><td class="num">1×</td><td class="num">1×</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 本论文的“组合拳”定位</div>
+<p>对比表最值得注意的一点：<strong>前作把算力做进 DRAM 所以频率上不去；本论文把逻辑单独放 28nm 逻辑片，所以 1.2 GHz 还吃到了带宽密度红利</strong>。“逻辑与 DRAM 工艺解耦 + 3D 高密度互连 + DDR4 兼容”三件事缺一不可：工艺解耦保频率、3D 互连保带宽、DDR4 保部署。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_7_4_测量系统与DRAM结果.png" alt="论文图 30.7.4">
+  <figcaption>图 8.6　论文原图 Fig. 30.7.4：测量系统（主机 FPGA + 两片测试芯片验证可扩展性）与 DRAM 测量结果（Shmoo、保持、3D 良率）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_7_7_芯片照片.png" alt="论文图 30.7.7">
+  <figcaption>图 8.7　论文原图 Fig. 30.7.7：裸片显微照片与设计规格表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 论文的对比对象大多只有“部分指标可比”：带宽密度、存储密度、pJ/b 是不同工作的不同强项，FoM 的权重选择（怎么综合成一个数）是作者定义的，读时要自己判断合不合理；② “相对 i7-13700F 快 86%”这类数字高度依赖 CPU 端代码优化水平（是否 AVX、是否缓存友好），只能作为量级参考；③ 3D 集成成本（良率、散热、测试）论文没有展开，但 0.58% 的额外失效率说明良率不是主要障碍。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>计算强度提升：从“访存引擎”到“真 GEMM 引擎”</strong>：本文 ACC 是通用 RISC-V + FPU，GEMM 主要靠软件循环 + DMA 喂数据。下一步可以在逻辑片上加入专用 MAC 阵列（如脉动阵列），把“带宽优势”直接变成“算力优势”——带宽已经是 12.77 GB/s/mm²，算力却还有上升空间；</li>
+<li><strong>更大的 3D 堆叠</strong>：2 DRAM + 1 逻辑是起点。往 4~8 层 DRAM、多片逻辑的方向堆，容量上到 8GB/16GB，配合多芯片 DIMM，就能在终端塞下更大模型；</li>
+<li><strong>LLM 全算子加速</strong>：论文只评估 GEMM。Attention（softmax、矩阵乘）、layernorm、KV cache 管理等算子在终端 LLM 里占比不低，把这些也搬进 ACC/加专用单元，才是完整方案；</li>
+<li><strong>软硬件协同编译栈</strong>：DDR4 命令扩展（T-ACC/Act-Reg）有了硬件钩子，但还没有编译器自动把 PyTorch 模型映射到 BG/ACC 分配 + DMA 调度。做一个“LLM → 3D PNM”的自动编译器是软件侧的金矿；</li>
+<li><strong>与 CiM 融合</strong>：3D PNM 解决“带宽”，CiM 解决“搬移”。如果逻辑片里再嵌入数字 CiM 宏（像 09/10 号论文那样），把权重就地计算，能效还能再上一个台阶——这是“近存 + 存内”的融合方向；</li>
+<li><strong>先进工艺与散热/良率工程</strong>：逻辑片换成更先进节点（如 5nm/3nm）直接提速；但 3D 堆叠的散热（多层 die 热量集中）和测试成本需要系统级方案，这也是产业落地的关键问题；</li>
+<li><strong>安全与隐私</strong>：终端 LLM 卖点是数据不出设备。PNM 芯片作为“内存+计算”一体设备，天然适合做受保护计算区域（TEE 式隔离）——把模型权重和用户数据都锁在片内。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>LLM（Large Language Model，大语言模型）</dt><dd>参数量数十亿起的语言模型，推理以 GEMM 为主。</dd>
+<dt>PNM（Processing-Near-Memory，近存计算）</dt><dd>把计算单元放到存储器旁边，缩短访存路径。</dd>
+<dt>PIM / CiM</dt><dd>Processing-In-Memory / Compute-In-Memory：计算放进存储阵列内部（更激进）；本文属于“近存”路线。</dd>
+<dt>Memory-Intensive（内存密集）</dt><dd>任务性能被访存带宽而非算力限制。</dd>
+<dt>Generation Stage（生成阶段）</dt><dd>LLM 逐 token 输出的阶段；batch=1 时数据复用极低。</dd>
+<dt>GEMM（General Matrix Multiply）</dt><dd>通用矩阵乘 C=A×B，LLM 的主导算子。</dd>
+<dt>3D 堆叠（3D Stacking）</dt><dd>把多片已制造完成的 die 垂直叠放并用垂直互连打通。</dd>
+<dt>HB（Hybrid Bonding，混合键合）</dt><dd>晶圆间金属-金属直接键合，互连密度极高（本设计 pitch 3μm）。</dd>
+<dt>TSV（Through-Silicon Via，硅通孔）</dt><dd>垂直穿过硅片的金属过孔（本设计 mini-TSV，pitch 5μm）。</dd>
+<dt>BG（BankGroup）</dt><dd>本设计的基本块：两片 512Mb DRAM + 一个计算模块，共 1Gb。</dd>
+<dt>RDL（Reduced/Row Data Line）</dt><dd>DRAM 段输出的数据线（本设计 16b/段），汇总为 2048b/BG。</dd>
+<dt>SA（Sense Amplifier，读出放大器）</dt><dd>DRAM 读出信号放大的关键电路；本设计两 subarray 共享 512-SA 级。</dd>
+<dt>ACC（Accelerator，加速器）</dt><dd>本设计逻辑片上的计算引擎：RISC-V + FPU + DMA。</dd>
+<dt>FPU（Floating-Point Unit）</dt><dd>浮点运算单元；本文自定义加速 fadd/fsub/fmul/fdiv。</dd>
+<dt>DMA（Direct Memory Access）</dt><dd>不经过 CPU 内核的批量数据搬运模块。</dd>
+<dt>开放页策略（Open-Page Policy）</dt><dd>DRAM 行激活后保持打开，同行后续访问免预充电/激活。</dd>
+<dt>buf_hit / 2048b 缓冲</dt><dd>最近访问数据的片上缓冲；命中时免去整次 DRAM 访问。</dd>
+<dt>PHY（Physical Layer，物理层）</dt><dd>接口的模拟前端。本设计 3D DRAM PHY 只需同步+电平转换。</dd>
+<dt>DDR4 兼容 / T-ACC / Act-Reg</dt><dd>对外保持 DDR4 协议；两条扩展命令分别触发 ACC、设置配置寄存器。</dd>
+<dt>带宽密度（GB/s/mm²）</dt><dd>单位面积可提供的带宽，3D 堆叠的核心指标（本设计 12.77）。</dd>
+<dt>FoM（Figure of Merit）</dt><dd>综合性能指标；本文 FoM 相对前作 3D PNM 7.33×、active interposer 5.13×。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y. Cao, J. Jiang, et al., “A 1.2GHz 12.77GB/s/mm² 3D Two-DRAM-One-Logic Process-Near-Memory Chip for Edge LLM Applications,” <em>ISSCC 2026</em>, Paper 30.7. DOI: 10.1109/ISSCC49663.2026.11409184</li>
+<li>C. Li et al., “H2-LLM: Hardware-Dataflow Co-Exploration for Heterogeneous Hybrid-Bonding-based Low-Batch LLM Inference,” <em>ISCA</em>, 2025.（低 batch LLM 数据流研究）</li>
+<li>H. Shin et al., “McDRAM: Low Latency and Energy-Efficient Matrix Computations in DRAM,” <em>IEEE TCAD</em>, vol. 37, no. 11, 2018.（DRAM 内计算前作）</li>
+<li>F. Devaux, “The True Processing In Memory Accelerator,” <em>IEEE Hot Chips</em>, 2019.（UPMEM PIM）</li>
+<li>Y.-C. Kwon et al., “A 20nm 6GB Function-In-Memory DRAM, Based on HBM2 with a 1.2TFLOPS Programmable Computing Unit…,” <em>ISSCC 2021</em>, pp. 350-351.（HBM 内计算前作）</li>
+<li>S. Lee et al., “A 1ynm 1.25V 8Gb, 16Gb/s/pin GDDR6-based Accelerator-in-Memory supporting 1TFLOPS MAC Operation…,” <em>ISSCC 2022</em>, pp. 176-177.</li>
+<li>D. Niu et al., “184QPS/W 64Mb/mm² 3D Logic-to-DRAM Hybrid Bonding with Process-Near-Memory Engine for Recommendation System,” <em>ISSCC 2022</em>, pp. 462-463.（3D 近存前作）</li>
+<li>B. Jiao et al., “SHINSAI: A 586mm² Reusable Active TSV Interposer with Programmable Interconnect Fabric and 512Mb 3D Underdeck Memory,” <em>ISSCC 2025</em>, pp. 612-613.（active interposer 对比 [7]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM/近存计算方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.7.1–30.7.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（12.77 GB/s/mm²、0.67 pJ/b、延迟、GEMM 加速等）均来自论文原文；对比图中的 HBM3E/GDDR6/LPDDR4 数值为按论文给出的倍数/缩减比例反推的换算参考值，已在图中注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 8 张（assets/diagrams/）· 数据图 4 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   3D PNM 教学教程 · 交互脚本
+   演示 A 3D 堆叠数据路径 · 演示 B GEMM 切分 · 演示 C 缓冲命中
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 3D 堆叠与数据路径
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 360);
+  if (!D) return;
+  const { ctx } = D;
+  let src = "N";      // N = DRAM_N 直连; F = DRAM_F 穿 TSV
+  let playing = true, t = 0, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "3D 堆叠：Two-DRAM-One-Logic", 30, 24, 15, PAL.white, "left");
+    // 三层
+    const layers = [
+      { name: "DRAM_F（512Mb）", y: 60, col: PAL.green },
+      { name: "DRAM_N（512Mb）", y: 160, col: PAL.green },
+      { name: "逻辑晶圆（28nm CMOS）", y: 260, col: PAL.blue },
+    ];
+    layers.forEach(l => {
+      ctx.fillStyle = "#14263c"; ctx.strokeStyle = l.col; ctx.lineWidth = 2;
+      rrect(ctx, 60, l.y, 500, 70, 10); ctx.fill(); ctx.stroke();
+      txt(ctx, l.name, 80, l.y + 35, 14, l.col);
+    });
+    // HB 线
+    ctx.strokeStyle = PAL.green; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+    ctx.beginPath(); ctx.moveTo(60, 130); ctx.lineTo(560, 130); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(60, 230); ctx.lineTo(560, 230); ctx.stroke();
+    ctx.setLineDash([]);
+    txt(ctx, "HB", 45, 130, 11, PAL.green, "right");
+    txt(ctx, "HB", 45, 230, 11, PAL.green, "right");
+    // TSV
+    ctx.fillStyle = PAL.orange;
+    ctx.fillRect(140, 160, 10, 100);
+    ctx.fillRect(460, 160, 10, 100);
+    txt(ctx, "mini-TSV ×2", 585, 210, 12, PAL.orange, "left");
+    // 右侧说明
+    if (src === "N") {
+      txt(ctx, "数据源：DRAM_N（直连 HB）", 620, 80, 14, PAL.green);
+      txt(ctx, "路径：DRAM_N → HB → 逻辑层", 620, 110, 13, PAL.gray);
+      txt(ctx, "一次跳变，最短路径", 620, 136, 12, PAL.gray);
+    } else {
+      txt(ctx, "数据源：DRAM_F（穿 TSV）", 620, 80, 14, PAL.orange);
+      txt(ctx, "路径：DRAM_F → HB → TSV → HB → 逻辑层", 620, 110, 13, PAL.gray);
+      txt(ctx, "要穿过 DRAM_N，多两段 HB", 620, 136, 12, PAL.gray);
+    }
+    // 数据块动画
+    if (playing) {
+      t = (t + 0.02) % 1;
+      if (src === "N") {
+        const y = 230 + t * 0; // DRAM_N 行 → 直接到逻辑
+        const x = 60 + t * 500;
+        ctx.fillStyle = PAL.green;
+        ctx.beginPath(); ctx.arc(x, 195, 9, 0, 6.28); ctx.fill();
+      } else {
+        const seg = Math.floor(t * 3);
+        const ft = (t * 3) % 1;
+        let x, y;
+        if (seg === 0) { x = 60 + ft * 420; y = 95; }
+        else if (seg === 1) { x = 480; y = 95 + ft * 140; }
+        else { x = 480 - ft * 420; y = 195; }
+        ctx.fillStyle = PAL.orange;
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.28); ctx.fill();
+      }
+    }
+    if (stat) stat.textContent = src === "N" ? "DRAM_N：信号直连 HB 到逻辑层" : "DRAM_F：信号走 HB-TSV-HB 链穿过 DRAM_N";
+  }
+
+  const b1 = document.getElementById("demoA-layer1");
+  const b2 = document.getElementById("demoA-layer2");
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (b1) b1.onclick = function () { src = "N"; b1.classList.add("on"); b2.classList.remove("on"); draw(); };
+  if (b2) b2.onclick = function () { src = "F"; b2.classList.add("on"); b1.classList.remove("on"); draw(); };
+  if (bPlay) bPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 数据流动画";
+    if (playing) { clearInterval(timer); timer = setInterval(draw, 50); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { t = 0; draw(); };
+  if (playing) timer = setInterval(draw, 50);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · GEMM 切分与 16 ACC 分配
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let k = 0, playing = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "GEMM 切分：M 切 4 × K 切 4 = 16 个子任务 → 8 BG × 2 ACC", 30, 24, 15, PAL.white, "left");
+    // 左侧输入矩阵
+    txt(ctx, "输入 I (M×N)", 130, 60, 13, PAL.blue, "center");
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const x = 60 + c * 60, y = 76 + r * 56;
+        ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, 56, 52);
+        if (r === Math.floor(k / 4)) { ctx.fillStyle = "rgba(30,144,220,0.35)"; ctx.fillRect(x, y, 56, 52); }
+      }
+    }
+    // 右侧权重矩阵
+    txt(ctx, "权重 W (N×K)", 370, 60, 13, PAL.red, "center");
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const x = 300 + c * 60, y = 76 + r * 56;
+        ctx.strokeStyle = PAL.red; ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, 56, 52);
+        if (c === Math.floor(k / 4)) { ctx.fillStyle = "rgba(230,110,90,0.35)"; ctx.fillRect(x, y, 56, 52); }
+      }
+    }
+    // 16 个 ACC 格子
+    txt(ctx, "16 个 ACC（8 BG × 2）", 760, 60, 13, PAL.green, "center");
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const idx = r * 4 + c;
+        const x = 640 + c * 60, y = 76 + r * 56;
+        ctx.strokeStyle = PAL.green; ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, 56, 52);
+        if (idx === k) {
+          ctx.fillStyle = "rgba(60,190,140,0.4)"; ctx.fillRect(x, y, 56, 52);
+          ctx.strokeStyle = PAL.orange; ctx.lineWidth = 3; ctx.strokeRect(x, y, 56, 52);
+        }
+      }
+    }
+    // 分配信息
+    const r = Math.floor(k / 4), c = k % 4;
+    const bg = (r * 2 + Math.floor(c / 2)) % 8;
+    const acc = (c % 2);
+    if (stat) stat.textContent = `I${r}W${c} → BG${bg}/ACC${acc}（每 ACC 只算自己的子矩阵，主机拼接输出，零跨块通信）`;
+    // 底部进度
+    txt(ctx, `子任务 ${k + 1}/16 · I${r}W${c} → BG${bg}/ACC${acc}`, 60, 300, 13, PAL.orange, "left");
+  }
+
+  function tick() { k = (k + 1) % 16; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 播放";
+    if (playing) { clearInterval(timer); timer = setInterval(tick, 450); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { k = 0; draw(); };
+  if (playing) timer = setInterval(tick, 450);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 2048b 缓冲与开放页（buf_hit）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let t = 0, playing = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  const hits = [true, true, false, true, true, true, false, true, true, true, true, false];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "访存优化：2048b 缓冲 + 开放页策略（连续访问命中动画）", 30, 24, 15, PAL.white, "left");
+    const idx = Math.floor(t * hits.length) % hits.length;
+    const hit = hits[idx];
+    // 缓冲区
+    ctx.fillStyle = "#14263c"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+    rrect(ctx, 60, 60, 420, 90, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "2048b 缓冲（最近访问的数据）", 80, 82, 14, PAL.orange);
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i === idx % 8 ? "rgba(240,180,70,0.7)" : "rgba(240,180,70,0.2)";
+      ctx.fillRect(80 + i * 48, 104, 40, 30);
+    }
+    txt(ctx, "buf_hit：" + (hit ? "命中！直接从缓冲返回，免 DRAM 访问" : "未命中：走 DRAM（预充电+激活+读）"), 60, 190, 14, hit ? PAL.green : PAL.red);
+    // DRAM 访问动画（未命中时）
+    if (!hit) {
+      const p = (t * 4) % 1;
+      const y = 220 + Math.sin(p * 3.14) * 20;
+      const x = 60 + p * 500;
+      ctx.fillStyle = PAL.red;
+      ctx.beginPath(); ctx.arc(x, y, 8, 0, 6.28); ctx.fill();
+      txt(ctx, "DRAM 访问（慢）", 620, 260, 13, PAL.red);
+    } else {
+      const p = (t * 4) % 1;
+      const x = 60 + p * 400;
+      ctx.fillStyle = PAL.green;
+      ctx.beginPath(); ctx.arc(x, 150, 8, 0, 6.28); ctx.fill();
+      txt(ctx, "缓冲直接返回（快）", 620, 150, 13, PAL.green);
+    }
+    // 统计
+    let nh = 0;
+    for (let i = 0; i < Math.min(idx + 1, hits.length); i++) if (hits[i]) nh++;
+    const total = Math.min(idx + 1, hits.length);
+    if (stat) stat.textContent = total > 0 ? `命中率 ≈ ${(nh / total * 100).toFixed(0)}%（连续顺序访问命中率高）` : "等待…";
+  }
+
+  function tick() { t = (t + 0.02) % 1; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 播放";
+    if (playing) { clearInterval(timer); timer = setInterval(tick, 90); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { t = 0; draw(); };
+  if (playing) timer = setInterval(tick, 90);
+  draw();
+})();
+
+</script>
+</body>
+</html>

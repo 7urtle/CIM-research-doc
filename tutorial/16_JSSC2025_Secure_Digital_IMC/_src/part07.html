@@ -1,0 +1,92 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>安全评估：CPA 与 DPA 证明</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① CPA（相关功耗分析）和 DPA（差分功耗分析）怎么攻击、怎么判读结果；② Chip Whisperer 平台为什么能给出“理想高 SNR”的严格测试；③ 结果：100 万采样不可攻破。</p>
+</div>
+
+<h3>7.1 测试平台：Chip Whisperer CW305</h3>
+<p>独立数字电路逐个实现在 Chip Whisperer FPGA 平台上（论文 Fig.8b）：把独立流水级（甚至单级子部分）分开实现和攻击 → 最小化背景切换 → 最大化攻击者 SNR。如果<strong>在理想测试下仍安全</strong>，真实场景（并行操作 + 无关活动降低 SNR）只会更安全。由于 Boolean 共享是<strong>算法性</strong>的，FPGA 上的安全结论同样适用于定制 IC；功耗 SCA 安全直接转化为 EM SCA 安全（共享计算空间太近，EM 探针无法分辨）。</p>
+
+<figure>
+<img src="assets/figs/fig16_8_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 8 · 论文 Fig.8：(a) 定制 ASIC 显微照片 (b) Chip Whisperer 高 SNR 定向测试平台。</figcaption>
+</figure>
+
+<h3>7.2 CPA：相关功耗分析（论文 Fig.9/10）</h3>
+<p>CPA 模拟真实攻击：攻击者控制一个变化输入（激活）、试图恢复固定秘密（权重）。对每个密钥猜测计算与功耗测量的相关性：</p>
+<ul>
+<li><strong>未保护</strong>（Fig.10）：正确密钥（红）相关性显著高于错误猜测（灰）→ 一击即中；</li>
+<li><strong>保护后</strong>（Fig.9a）：乘法+加法树各流水级子块中，正确密钥与错误猜测<strong>不可区分</strong>；累加器两级流水（Fig.9b）同样安全；</li>
+<li><strong>ASCON 密码</strong>（Fig.9c，固定密钥+变化 nonce，在初始化阶段密钥与状态结合处分析）：正确密钥不可区分。</li>
+</ul>
+<p>权重在 IMC SRAM 中静止 → 攻击全程共享方式不变；激活实时流入 → 每个样本重新共享（更严格）。</p>
+
+<figure>
+<img src="assets/diagrams/d07_eval.svg" alt="安全评估教学图">
+<figcaption>教学图 7 · CPA/DPA 测试方法与结果判读。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_9_CPA保护结果.png" alt="CPA保护结果">
+<figcaption>图 9 · 论文 Fig.9：保护后各子块的 CPA 结果——正确密钥（红）与错误猜测（灰）不可区分。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_10_CPA未保护结果.png" alt="CPA未保护结果">
+<figcaption>图 10 · 论文 Fig.10：未保护版本的 CPA 结果——正确密钥明显可区分（对照组）。</figcaption>
+</figure>
+
+<h3>7.3 DPA/TVLA：差分功耗分析（论文 Fig.11）</h3>
+<p>DPA 测试算法性安全保证：比较电路处理<strong>固定秘密</strong>与<strong>随机秘密</strong>时的侧信道是否有统计显著差异（Welch t-test 的 T 值）：</p>
+<ul>
+<li><strong>未保护</strong>：&lt;5000 个样本就有显著差异（T 值大）→ 可利用的数据相关泄漏存在；</li>
+<li><strong>保护后</strong>：超过 <strong>100 万样本</strong> T 值仍小 → 没有理由认为存在可利用的侧信道差异。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig16_11_DPA结果.png" alt="DPA结果">
+<figcaption>图 11 · 论文 Fig.11：未保护与保护 ASIC 计算的 DPA 结果。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c01_DPA对比.png" alt="DPA对比图">
+<figcaption>数据图 1 · DPA/TVLA 的 T 值 vs 采样数（示意，依据论文 Fig.11）：未保护快速显著，保护 100 万样本仍安全。</figcaption>
+</figure>
+
+<h3>7.4 PUF 密钥读出的 SCA 安全（表 II）</h3>
+<p>用 CNN 攻击尝试从 TMV SCA 重建密钥（先前工作证明 CNN 对 SCA 有高精度）：</p>
+<ul>
+<li>对 Boolean 共享密钥（3 份），考虑猜测非共享与共享密钥值的 RMS 误差；</li>
+<li>加 Boolean 共享 + 差分逻辑后，<strong>猜密钥难度显著增大</strong>。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig16_6_ASCON密码实现.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 模型解密流程：片外密文权重 → ASCON 片上解密 → SCA 安全 IMC 计算（BPA 安全）。</div>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig16_7_SRAM作PUF.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · SRAM PUF 密钥生成：反馈切断 → 制造失配沉降 → TMV 抗噪读出（密钥长在芯片里）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · CPA：正确密钥的相关性是否可区分？</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">未保护：正确密钥可区分</span>
+</div>
+<div class="hint">左（未保护）：对每个密钥猜测算与功耗测量的相关性——正确密钥（红）柱最高，可被识别；右（保护后）：所有猜测（含正确密钥，绿）相关性混杂在同一范围内，不可区分。这就是 CPA 测试的核心判读。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① CPA：保护后正确密钥与错误猜测不可区分（计算各块 + ASCON）；② DPA/TVLA：保护后 100 万采样 T 值仍小；③ CNN 攻击猜密钥 RMSE 显著增大；④ 高 SNR 理想测试 → 真实场景更安全。</p>
+</div>
+</section>

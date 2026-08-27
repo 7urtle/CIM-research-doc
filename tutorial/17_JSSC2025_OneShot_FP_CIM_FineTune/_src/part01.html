@@ -1,0 +1,42 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：预对齐 FP-CIM 的四步流程</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 为什么边缘 AI 需要浮点而不是 INT8；② 预对齐 FP-CIM 的四步是什么；③ 为什么第 3 步（尾数 MAC）是吞吐瓶颈。</p>
+</div>
+
+<h3>1.1 边缘 AI 为什么要浮点？</h3>
+<p>边缘 AI 任务（目标检测、片上微调）越来越复杂：</p>
+<ul>
+<li>INT8 量化不足以支撑复杂任务 → 需要基于浮点（FP）的更强模型；</li>
+<li>FP 运算（BF16/FP16）在 CIM 里的挑战：尾数乘法 + 指数对齐的数字电路开销巨大。</li>
+</ul>
+<p>早期 FP-CIM 把尾数乘法和指数加法都放进 CIM 阵列（如 FP8 全数字可配置宏 [22]）——但 INT 尾数 MAC 和指数对齐的电路消耗 <strong>98% 的能耗和面积</strong>。</p>
+
+<h3>1.2 预对齐 FP-CIM：把对齐提前做</h3>
+<p>为了省掉阵列内的对齐/移位，预对齐 FP-CIM（[17]–[21]）把输入对齐与 INT 尾数 MAC 交错：</p>
+<ol>
+<li><strong>XE_max 选择</strong>：用多级比较器找输入的最大指数（128 输入需 127 个 8 位比较器）；</li>
+<li><strong>输入对齐</strong>：把输入尾数对齐到 XE_max（供整数尾数 MAC 使用）；</li>
+<li><strong>尾数 MAC</strong>：与权重做整数尾数乘累加；</li>
+<li><strong>INT→FP 转换</strong>：整数结果归一化为 FP 格式（搜最高位 1 + 移位截断）。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_1_预对齐FP-CIM架构.png" alt="预对齐FP-CIM架构">
+<figcaption>图 1 · 论文 Fig.1：预对齐 FP-CIM 的典型架构——四步流水：XE_max 选择、输入对齐、尾数 MAC、INT→FP 转换。</figcaption>
+</figure>
+
+<h3>1.3 问题：第 3 步是吞吐瓶颈</h3>
+<div class="box key">
+<div class="bt">💡 87.5% 的闲置时间</div>
+<p>步骤①②④各 1 周期，但步骤③（INT 尾数 MAC）通常用<strong>位串行</strong>——每周期只送 1 位，BF16 的 INT8 尾数要 <strong>8 周期</strong>。结果：步骤①②④的电路 7/8 时间闲置（利用率仅 12.5%）。Booth 编码（[17]）可减到 4 周期，但要额外编解码电路；位并行则乘法器和加法树占 <strong>96%</strong> 的面积和能耗。</p>
+</div>
+<p>本论文的核心观察：<strong>问题的根源是“乘法”</strong>——如果不用乘法（multiply-less），步骤③就能变得足够简单，位并行才可行，FP 运算就能一个周期完成。</p>
+
+<figure>
+<img src="assets/diagrams/d01_challenges.svg" alt="挑战教学图">
+<figcaption>教学图 1 · 预对齐 FP-CIM 四步流程与三大挑战。</figcaption>
+</figure>
+</section>

@@ -1,0 +1,68 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：GEMM 数据流与访存优化——怎么喂饱 16 个加速器</h2>
+
+<h3 id="sec6-1">6.1 M/K 切分：零跨块通信的全芯片分配</h3>
+<p>一个 M×N×K 的 GEMM（M×N 输入 × N×K 权重），论文的分配方案：</p>
+<figure>
+  <img src="assets/diagrams/d06_gemm.svg" alt="GEMM 切分" style="max-width:940px">
+  <figcaption>图 6.1　GEMM 数据流：M 切 4 份、K 切 4 份 → 16 个子矩阵 → 8 个 BG × 2 个 ACC。每个 ACC 只算自己的子矩阵，主机直接拼接，无跨块累加。</figcaption>
+</figure>
+<ol>
+<li><strong>M 切 4、K 切 4</strong> → 16 个 (M/4)×(K/4) 子任务，分给 8 个 BG × 2 个 ACC；</li>
+<li>例如 I0W0 → BG0/ACC0，I0W1 → BG0/ACC1，I0W2 → BG1/ACC0……（图 6.1 底部）；</li>
+<li><strong>零跨块通信</strong>：每个 ACC 算出的子矩阵互不依赖，主机把 16 块结果直接拼成最终输出，<strong>不需要任何跨 BG/跨芯片的累加</strong>——这是吞吐能线性扩展的关键；</li>
+<li><strong>多芯片扩展</strong>：装 8 片 DIMM 时 M、K 继续切 → 128 个 ACC 并行（实测 GEMM 快 98% 的场景）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🧠 为什么“避免跨块通信”是硬性要求？</div>
+<p>论文原话：“Cross-BG or cross-chip data accesses require host intervention and should be avoided whenever possible.”——跨 BG/跨芯片访问要经过主机，延迟和能耗都高。所以 GEMM 的切分必须保证<strong>每个子任务的数据都本地可得</strong>（权重在本 BG 的 DRAM 里、输入用全 bank 并行读），数据流设计围着“本地性”转。</p>
+</div>
+
+<h3 id="sec6-2">6.2 访存优化：DMA + 2048b 缓冲 + 开放页</h3>
+<p>喂饱 ACC 的另一半是“读得快”。三个手段叠加：</p>
+<ul>
+<li><strong>DMA 批量搬运</strong>：权重在 3D DRAM 里<strong>连续存放</strong>，DMA 一次搬一大块，不用内核一条条 load；</li>
+<li><strong>输入行全 bank 并行</strong>：每个输入行均匀分布到所有 bank、顺序读取 → 一次激活多个 bank 的并行带宽；</li>
+<li><strong>2048b 缓冲 + 开放页</strong>：最近访问的数据留在缓冲里，连续访问时 buf_hit 直接命中；行命中免预充电/激活。</li>
+</ul>
+<p>论文实测：<strong>加上 DMA 和 2048b 缓冲后，GEMM 吞吐平均提升 53.8%</strong>（相对无 DMA/缓冲的基线）。此外，某些场景下权重<strong>开机只上传一次</strong>到 3D DRAM，之后整个推理过程的离片访问量大减——把“内存芯片”的容量优势用到了极致。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_3_数据通路与时序.png">
+  <source src="assets/videos/v02_gemm.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · GEMM 数据流动画：M、K 各切 4 份，活跃子矩阵依次分配到不同 BG/ACC，输出直接拼接。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">🧩 演示 B · GEMM 切分与 16 个 ACC 分配（可交互）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">I0W0 → BG0/ACC0（每 ACC 只算自己的子矩阵）</span>
+</div>
+<div class="hint">左侧输入矩阵（M×N）按行切 4、右侧权重矩阵（N×K）按列切 4 → 16 个子任务依次分给 8 个 BG × 2 个 ACC。注意：所有子任务数据本地可得，结果由主机直接拼接。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">⚡ 演示 C · 2048b 缓冲与开放页策略（buf_hit 动画）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">等待…</span>
+</div>
+<div class="hint">绿色 = 缓冲命中（免 DRAM 访问，快）；红色 = 未命中走 DRAM（预充电+激活+读，慢）。连续顺序访问时命中率高——这正是 LLM 权重连续读取的模式。DMA + 缓冲使 GEMM 吞吐提升 53.8%。</div>
+</div>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_5_3D集成细节.png">
+  <source src="assets/videos/v03_access.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 访存延迟对比动画：传统 CPU↔LPDDR4 长路径往返 vs 本设计 ACC 就在 DRAM 旁边 + 2048b 缓冲命中（连续读 46ns → 3.24ns）。</div>
+</div>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么权重“连续存放”特别重要？（提示：DMA 和开放页都爱吃顺序访问；乱序访问会频繁 row miss。）② 输入行“均匀分布到所有 bank”是为了什么？（提示：bank 级并行度；同一 bank 的连续访问会被行冲突卡住。）③ 8 芯片 DIMM 场景里，输出矩阵在哪拼？（提示：主机。跨芯片拼一次的开销远小于跨芯片算。）</p>
+</div>
+</section>

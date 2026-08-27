@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Two-DRAM-One-Logic 3D 堆叠：混合键合 + mini-TSV 怎么把三层“焊”在一起</text>
+
+  <!-- 3D 堆叠侧视图 -->
+  <g>
+    <rect x="120" y="90" width="300" height="52" rx="8" fill="#eefaf3" stroke="#1d8a5f" stroke-width="2"/>
+    <text x="270" y="113" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="600">DRAM_F（512Mb）</text>
+    <text x="270" y="132" text-anchor="middle" fill="#6b7a93" font-size="10.5">信号要“穿过” DRAM_N 才能到逻辑层</text>
+    <rect x="120" y="152" width="300" height="52" rx="8" fill="#eefaf3" stroke="#1d8a5f" stroke-width="2"/>
+    <text x="270" y="175" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="600">DRAM_N（512Mb）</text>
+    <text x="270" y="194" text-anchor="middle" fill="#6b7a93" font-size="10.5">通过直连 HB 直接到逻辑层</text>
+    <rect x="120" y="214" width="300" height="52" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="270" y="237" text-anchor="middle" fill="#0e5a8a" font-size="13" font-weight="600">逻辑晶圆（28nm CMOS）</text>
+    <text x="270" y="256" text-anchor="middle" fill="#6b7a93" font-size="10.5">计算模块 + 3D DRAM PHY</text>
+    <!-- HB 连接 -->
+    <line x1="120" y1="142" x2="420" y2="142" stroke="#1d8a5f" stroke-width="3" stroke-dasharray="10,4"/>
+    <line x1="120" y1="204" x2="420" y2="204" stroke="#1d8a5f" stroke-width="3" stroke-dasharray="10,4"/>
+    <text x="60" y="145" fill="#1d8a5f" font-size="11">HB</text>
+    <text x="60" y="207" fill="#1d8a5f" font-size="11">HB</text>
+    <!-- TSV -->
+    <rect x="160" y="160" width="8" height="54" fill="#e8a33d"/>
+    <rect x="360" y="160" width="8" height="54" fill="#e8a33d"/>
+    <text x="180" y="240" fill="#c25e2e" font-size="11">mini-TSV（穿过 DRAM_N）</text>
+  </g>
+
+  <!-- 右侧：互连细节 -->
+  <rect x="500" y="90" width="420" height="300" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="118" fill="#123a57" font-size="13.5" font-weight="700">两种互连 + 一个可靠性技巧</text>
+  <g font-size="12">
+    <text x="520" y="150" fill="#1d8a5f" font-weight="600">① 混合键合（Hybrid Bonding, HB）</text>
+    <text x="520" y="172" fill="#45536b">金属-金属直接键合，间距极小（本设计 pitch = 3 μm）</text>
+    <text x="520" y="194" fill="#45536b">→ 极高互连密度 = 极高带宽密度（12.77 GB/s/mm²）</text>
+    <text x="520" y="226" fill="#c25e2e" font-weight="600">② mini-TSV（硅通孔）</text>
+    <text x="520" y="248" fill="#45536b">垂直穿通硅片的过孔（本设计 pitch = 5 μm）</text>
+    <text x="520" y="270" fill="#45536b">DRAM_F 的信号走 “HB → TSV → HB” 链穿过 DRAM_N</text>
+    <text x="520" y="302" fill="#6b3fa0" font-weight="600">③ 可靠性：每个 TSV 配两个 HB 连接</text>
+    <text x="520" y="324" fill="#45536b">TSV 良率是 3D 集成的大敌：信号从 TSV 进出的两个焊点</text>
+    <text x="520" y="346" fill="#45536b">各配一个 HB 冗余 → 单点失效概率大幅下降</text>
+    <text x="520" y="376" fill="#1d8a5f" font-weight="600">实测：3D 集成只增加 0.58% 失效率（良率可控）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="416" width="880" height="84" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="444" fill="#0e5a8a" font-size="13" font-weight="700">3D 带来的“带宽密度”红利怎么理解？</text>
+  <text x="60" y="468" fill="#45536b" font-size="12.5">传统 DDR 靠“提高引脚速率”（GHz 级 pin rate）换带宽；3D 堆叠靠“加宽总线”（每 BG 2048b）换带宽——</text>
+  <text x="60" y="490" fill="#45536b" font-size="12.5">总线宽了，引脚速率可以很低 → 3D DRAM PHY 只是“数据同步器 + 电平转换”，又简单又省电（0.67 pJ/b）</text>
+</svg>

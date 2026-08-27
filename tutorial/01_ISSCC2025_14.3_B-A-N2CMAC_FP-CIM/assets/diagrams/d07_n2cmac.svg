@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">格式混合 N2CMAC：有符号 MAC = 无符号 MAC + 符号补偿</text>
+
+  <!-- 左侧：核心思想 -->
+  <rect x="40" y="80" width="420" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">核心思想：把“有符号乘法”拆开</text>
+  <g font-size="12" font-family="'Cambria Math','Times New Roman',serif">
+    <text x="60" y="140" fill="#1a2332">A × W = A × (|W| × sign(W))</text>
+    <text x="60" y="166" fill="#1a2332">= (A × |W|) × sign(W)</text>
+    <text x="60" y="198" fill="#45536b">权重 W 用<strong>符号-数值（sign-magnitude）</strong>格式存储：</text>
+    <text x="60" y="220" fill="#45536b">符号位 + 数值位分开，负权重只翻转符号位，</text>
+    <text x="60" y="242" fill="#45536b">数值位永远是“正数” → 位级稀疏性好</text>
+    <text x="60" y="272" fill="#1d8a5f" font-weight="600">有符号 MAC = 无符号 MAC + 符号补偿（在 CA&Q 里加回）</text>
+  </g>
+
+  <!-- 右侧：4 步流程 -->
+  <rect x="500" y="80" width="420" height="260" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">格式混合 N2CMAC 的 4 步</text>
+  <g font-size="11.5">
+    <rect x="520" y="122" width="380" height="36" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="710" y="144" text-anchor="middle" fill="#0e5a8a" font-weight="600">① 层次缓冲给 GIN（8b 指数 + 2b 串行尾数）</text>
+    <rect x="520" y="166" width="380" height="36" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="710" y="188" text-anchor="middle" fill="#6b3fa0" font-weight="600">② LC 串行转换：对齐（BF16）+ 符号取反 {~LIN, ...}</text>
+    <rect x="520" y="210" width="380" height="36" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="710" y="232" text-anchor="middle" fill="#1d8a5f" font-weight="600">③ DMU：按 MW 符号取反 LIN，乘 |MW|，加法树累加</text>
+    <rect x="520" y="254" width="380" height="36" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="710" y="276" text-anchor="middle" fill="#c25e2e" font-weight="600">④ CA&amp;Q：移位累加 + 预置补偿 → MACV 输出</text>
+    <text x="520" y="320" fill="#45536b">补偿值：2 个额外周期算出，或离线预置；</text>
+    <text x="520" y="338" fill="#45536b">多周期共享 → 摊薄开销</text>
+  </g>
+
+  <!-- 底部对比 -->
+  <rect x="40" y="310" width="880" height="100" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="338" fill="#0e5a8a" font-size="13" font-weight="700">为什么“符号-数值”格式更好？——负权重稀疏性</text>
+  <text x="60" y="364" fill="#45536b" font-size="12.5">2 的补码里，负数 = 全位取反+1，数值位几乎全 1 → 加法树翻转活动率高；</text>
+  <text x="60" y="386" fill="#45536b" font-size="12.5">符号-数值格式：负权重只是“符号位=1”，数值位保持稀疏 → ResNet50 负 INT8 权重的位级稀疏性提升 1.83×</text>
+  <text x="60" y="404" fill="#45536b" font-size="12.5">→ 无符号 MAC 省掉符号位计算开销，动态活动率下降</text>
+</svg>

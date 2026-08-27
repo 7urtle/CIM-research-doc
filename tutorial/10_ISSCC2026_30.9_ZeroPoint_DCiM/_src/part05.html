@@ -1,0 +1,65 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>Booth 编码的艺术：乘法怎么做得又小又省电</h2>
+
+<h3 id="sec5-1">5.1 部分积减半：Radix-4 Booth 的原理</h3>
+<p>二进制乘法的基础是“移位相加”：N 位乘数产生 N 个部分积（partial product），全部对齐相加。8b×8b 就有 8 个部分积——加法树又大又费电。<strong>Booth 编码</strong>用一个数学技巧把部分积数量减半：</p>
+<p>把乘数每 <strong>2 位一组</strong>（相邻组重叠 1 位，即每 3 位看一组），每组决定“被乘数 × {−2, −1, 0, +1, +2}”，于是 8b 乘数只需 <strong>4 个部分积</strong>（9b 乘数要 5 个）。例如乘数 Y=42（00101010₂）按 Radix-4 分组：</p>
+<figure>
+  <img src="assets/diagrams/d08_booth_pp.svg" alt="Booth 编码与部分积" style="max-width:900px">
+  <figcaption>图 5.1　Radix-4 Booth 编码规则（上）与 8b×8b 的 4 个部分积（下）。本教程视频 v01 用 85×42 做了逐步动画。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么 Booth 能减半部分积？——“把连续 1 串看成一个整体”</div>
+<p>直觉：2 的幂之和可以“借位”改写。例如乘 7 = 8 − 1，本来要加三个 1 的位（0111），写成“+8 再 −1”只需要两步。Booth 编码的每组 3 位就是在乘数的二进制里寻找这种“借位改写”的机会，把相邻位合并。数学上：<strong>部分积数量 = ⌈乘数位宽/2⌉</strong>，8b→4 个、9b→5 个。</p>
+</div>
+<div class="video-wrap">
+<video id="vid-booth" controls preload="metadata" poster="assets/figs/fig30_9_2_Booth与12T锁存.png">
+  <source src="assets/videos/v01_booth.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · Radix-4 Booth 乘法逐步动画：85 × 42 = 3570 被拆成 4 个错位部分积（−2X, −X, −X, +X）相加。注意每个部分积的“移位×2”来源。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">🧮 仿真 B · 自己挑一个乘法，看 Booth 怎么一步步拆（可交互）</div>
+<canvas id="demoB" width="980" height="360"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">被乘数 X：</label><input id="demoB-x" type="number" min="-127" max="127" value="85" style="width:70px;background:#10233c;color:#dbe6f4;border:1px solid #2c4d73;border-radius:6px;padding:4px 8px">
+  <label class="hint" style="margin:0">乘数 Y：</label><input id="demoB-y" type="number" min="-127" max="127" value="42" style="width:70px;background:#10233c;color:#dbe6f4;border:1px solid #2c4d73;border-radius:6px;padding:4px 8px">
+  <button id="demoB-run">▶ 开始 Booth 编码</button>
+  <button id="demoB-step">单步</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat"></span>
+</div>
+<div class="hint">点击“开始”后逐组显示 Booth 编码表（8b 乘数 → 4 组），再逐步显示 4 个部分积及其错位求和。尝试 Y = 42、−45、127 等值观察 −X/−2X 部分积的出现。</div>
+</div>
+
+<h3 id="sec5-2">5.2 关键决策：编码“静止的权重”，而不是“广播的激活”</h3>
+<p>Radix-4 Booth 要求<strong>乘数之一</strong>先被编码成“选择码”（每组 3 位 → 输出 ±1/±2/0 的选择信号，通常 3 根信号，8b 乘数共 4×3=12 根）。在 DCiM 里，每个乘法有两个输入：广播的激活和静止的权重。<strong>编码谁？</strong>论文给了两种方案的成本分析：</p>
+<table>
+<tr><th>方案</th><th>做法</th><th>优点</th><th>致命缺点</th></tr>
+<tr><td><strong>编码激活</strong><br>（activate-side）</td><td>在外围把 8b 激活编码成 12b 选择码，广播给 32 列</td><td>编码器只做一个，32 列共享，面积摊薄</td><td>广播总线每周期翻转的位数从 8 变成 12（多 50%！），<strong>计算功耗上升</strong>——因为广播总线是每周期都在翻的“热”信号</td></tr>
+<tr><td><strong>编码权重</strong><br>（weight-side，本文）</td><td>把 8b 权重预先编码成 12b 选择码，<strong>存进权重存储器</strong>；计算时直接读选择码</td><td>① 编码发生在<strong>写权重路径</strong>上：权重写入频率远低于计算频率，编码器吞吐要求低 → 面积可缩小 <strong>32×</strong>；② 计算期间编码器完全不工作，零编码功耗；③ 选择码存入锁存器后，每个周期<strong>不动</strong>，不会贡献翻转功耗</td><td>存储位宽从 8b 变 12b → 权重存储面积 +50%（但用高密度锁存 + 双缓冲弥补，见 §6）</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 这里的物理直觉：功耗 ≈ 翻转次数</div>
+<p>CMOS 动态功耗 ∝ 电容 × 电压² × <strong>翻转活动率</strong>。广播总线每周期都在翻（活动率高），而权重存储几乎不动（活动率低）。所以<strong>把“昂贵的编码”从高活动率的广播路径挪到低活动率的存储路径</strong>，就是把功耗从“每周期都付”变成“写一次付一次”。论文数字：权重侧编码相比激活侧编码，<strong>面积只多 7%，计算功耗却低 28%</strong>。</p>
+</div>
+<p>还有一个隐藏收益：激活的 MSB（高位）通常翻转较少（有符号数据高位变化慢），权重侧编码后，进加法树的部分积由激活的低活动率位决定，进一步压低加法树翻转。</p>
+
+<h3 id="sec5-3">5.3 修正 Booth 编码（single/neg/pos）与 S 位预计算</h3>
+<p><strong>（a）修正选择信号。</strong>标准 Radix-4 Booth 选择器用 <strong>single/double/neg</strong> 三根信号（single=1×，double=2×，neg=取负）。本论文改成 <strong>single/neg/pos</strong>：</p>
+<ul>
+<li>用 pos（正）替代 double（2×），把“2×”信息隐含在别的编码里（如把 +2X 编成 pos 与 single 的组合）；</li>
+<li><strong>±0 的编码</strong>：让 neg 与 pos 同时为 0（表示 +0）或同时为 1（表示 −0），选择器对两种 0 输出相同的全零部分积——于是选择器电路里可以省掉“判别 0”的逻辑；</li>
+<li>结果：Booth 选择器面积最多降低 <strong>12%</strong>。</li>
+</ul>
+<p>（b）<strong>S 位（Sign bit）预计算</strong>。部分积可能是负的（−X、−2X）。在二进制补码里，“负部分积”需要一个符号处理：对部分积取反加 1（或加符号修正位）。这个“符号修正”通常要在加法树入口实时生成。论文的招数是：<strong>S 位只由乘数（权重）决定，与激活无关</strong>——所以把每个部分积的 S 位在写权重时就算好、和选择码一起存进权重存储器，计算时直接取用。这样加法树入口不再需要生成 S 位的逻辑，又省一块面积和功耗。</p>
+<figure>
+  <img src="assets/figs/fig30_9_2_Booth与12T锁存.png" alt="论文图 30.9.2">
+  <figcaption>图 5.2　论文原图 Fig. 30.9.2：Radix-4 Booth 编码权重、可中断 12T 多比特锁存存储、静态 2:1 MUX 读取、S 位计算与修正 Booth 编码器。（© IEEE ISSCC 2026，本教程引用仅供教学）</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么“S 位只由权重决定”？提示：部分积 = 操作(±X 或 ±2X)，操作由哪组 3 位决定？X 是谁？② 修正 Booth 把 ±0 的 neg/pos 同时置 1，选择器输出什么？为什么两种 0 能共用输出？③ 如果改成编码激活，S 位还能预计算吗？</p>
+</div>
+</section>

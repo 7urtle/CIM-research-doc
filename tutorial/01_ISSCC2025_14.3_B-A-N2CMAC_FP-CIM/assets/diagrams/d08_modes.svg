@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">三种计算模式：BF16A / BF16B / INT8（一种硬件，三种精度）</text>
+
+  <!-- 模式表 -->
+  <g font-size="12">
+    <rect x="60" y="90" width="260" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="190" y="118" text-anchor="middle" fill="#0e5a8a" font-size="13.5" font-weight="700">BF16A</text>
+    <text x="80" y="146" fill="#45536b">• 保留对齐尾数 10 bit</text>
+    <text x="80" y="170" fill="#45536b">• 输入 BF16，权重 BF16</text>
+    <text x="80" y="194" fill="#45536b">• 输出 23 bit 累加</text>
+    <text x="80" y="226" fill="#1d8a5f" font-weight="600">适合：精度要求高的 CNN /</text>
+    <text x="80" y="248" fill="#1d8a5f" font-weight="600">Transformer（ViT 等）</text>
+    <text x="80" y="290" fill="#6b7a93">→ 62.84 TFLOPS/W</text>
+
+    <rect x="350" y="90" width="260" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">BF16B</text>
+    <text x="370" y="146" fill="#45536b">• 保留对齐尾数 8 bit</text>
+    <text x="370" y="170" fill="#45536b">• 输入 BF16，权重 BF16</text>
+    <text x="370" y="194" fill="#45536b">• 输出 21 bit 累加</text>
+    <text x="370" y="226" fill="#1d8a5f" font-weight="600">适合：对精度略不敏感的网络</text>
+    <text x="370" y="248" fill="#1d8a5f" font-weight="600">（省一个 bit 的尾数 = 省功耗）</text>
+    <text x="370" y="290" fill="#6b7a93">→ 同上（更省）</text>
+
+    <rect x="640" y="90" width="260" height="230" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="770" y="118" text-anchor="middle" fill="#c25e2e" font-size="13.5" font-weight="700">INT8</text>
+    <text x="660" y="146" fill="#45536b">• 纯整数 8b×8b</text>
+    <text x="660" y="170" fill="#45536b">• 输出 20 bit 累加</text>
+    <text x="660" y="194" fill="#45536b">• 无指数对齐，列选择当译码器</text>
+    <text x="660" y="218" fill="#45536b">（存储-计算比 SCR 更高）</text>
+    <text x="660" y="250" fill="#1d8a5f" font-weight="600">适合：已量化好的推理</text>
+    <text x="660" y="290" fill="#6b7a93">→ 90.15 TOPS/W</text>
+  </g>
+
+  <!-- 存储器配置 -->
+  <rect x="60" y="344" width="840" height="104" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="80" y="372" fill="#0e5a8a" font-size="13" font-weight="700">存储器配置（bank 复用技巧）</text>
+  <text x="80" y="398" fill="#45536b" font-size="12.5">• 相邻列共享 MUX：BF16A/B 模式用“交错映射”存指数与尾数；</text>
+  <text x="80" y="420" fill="#45536b" font-size="12.5">• INT8 模式列选择（CS）当列译码器 → 存储-计算比（SCR）提高；</text>
+  <text x="80" y="440" fill="#45536b" font-size="12.5">• 一个宏 = 普通读写 + 3 种计算模式 = “一芯四用”</text>
+</svg>

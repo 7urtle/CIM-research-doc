@@ -1,0 +1,37 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 8.1　实测能效：MXFP6/6 峰值 127.54 TFLOPS/W；MXFP8/8 峰值 117.42 TFLOPS/W；LLaMA-3.1 8B 推理 49.53；ResNet-18 训练 19.11 TFLOPS/W。</figcaption>
+</figure>
+<ul>
+<li><strong>面积效率</strong>：4.44 TFLOPS/mm²（MXFP8 @0.9V）；</li>
+<li><strong>频率</strong>：1.2 ns 时钟周期 @0.9V（Shmoo 确认）；</li>
+<li><strong>FoM</strong>（平均能效 × 归一化面积效率 × 存储密度）：相对前作 SRAM FP-CIM [5-11] 提升 <strong>2.8×–123×</strong>；</li>
+<li><strong>精度</strong>：LLaMA-3.1 8B 推理近无损、ResNet-18 @CIFAR-100 训练略优于 BF16。</li>
+</ul>
+<figure>
+  <img src="assets/charts/c02_pbw_mre.png" alt="PBW 与 MRE" style="max-width:860px">
+  <figcaption>图 8.2　平均相对误差（MRE）随 PBW 单调下降（趋势示意）：3~9b 覆盖 BERT 推理、11~17b 覆盖 LLaMA 推理、19~27b 覆盖训练。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_sdbs.png" alt="SDBS 收益" style="max-width:940px">
+  <figcaption>图 8.3　SDBS 收益：滑动对齐 vs 位并行/位串行对齐（面积 3.85×/1.53×、能量 1.44×/1.43×）；6 全加器压缩器（位宽 −42.9%、面积 −35.9%、功耗 −40%）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_5_仿真性能.png" alt="论文图 30.1.5">
+  <figcaption>图 8.4　论文原图 Fig. 30.1.5：仿真性能（面积/能量对比、精度-吞吐权衡）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_6_测量结果.png" alt="论文图 30.1.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.1.6：测量结果与前作对比表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_7_芯片照片.png" alt="论文图 30.1.7">
+  <figcaption>图 8.6　论文原图 Fig. 30.1.7：裸片显微照片与性能汇总表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① FoM 提升跨度 2.8–123× 极大：对比对象包括 CNN 推理与 Transformer 推理、不同位宽、不同工艺——数字只能说明“量级占优”，不能当精确倍数；② “训练略优于 BF16”是有条件的（ResNet-18 @CIFAR-100，特定 PBW 配置），不是普遍结论；③ 能效数字依赖稀疏度/翻转率条件，读论文时先找“测试条件”再比数字。</p>
+</div>
+</section>

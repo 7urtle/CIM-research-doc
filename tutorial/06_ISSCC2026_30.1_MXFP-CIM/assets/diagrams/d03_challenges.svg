@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">FP-CIM 的三大挑战（论文 Fig. 30.1.1）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：对齐浪费算力</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">输入对齐方案的“非垂直截断”</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">（按非整列位置切尾数），</text>
+    <text x="60" y="196" fill="#45536b" font-size="12">会多出无效位参与乘法，</text>
+    <text x="60" y="218" fill="#45536b" font-size="12">浪费计算资源 [6,7,9,11]</text>
+    <text x="60" y="262" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“垂直截断”的滑动方案（SDBS）</text>
+
+    <rect x="340" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：内存容量浪费</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">尾数/指数字宽可变时，</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">固定精度架构不能适应动态</text>
+    <text x="360" y="190" fill="#45536b" font-size="12">数据需求 → 存储单元空置</text>
+    <text x="360" y="218" fill="#45536b" font-size="12">（MXFP6 与 MXFP8 的布局不同，</text>
+    <text x="360" y="240" fill="#45536b" font-size="12">硬编码一种就浪费另一种）</text>
+    <text x="360" y="282" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“无害数据映射”（HDM）</text>
+
+    <rect x="640" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：位宽不可调</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">固定保留位宽（PBW）：</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">低 PBW 省电但精度不够（LLaMA），</text>
+    <text x="660" y="190" fill="#45536b" font-size="12">高 PBW 精度够但浪费（BERT）；</text>
+    <text x="660" y="218" fill="#45536b" font-size="12">硬/软件约束限制可变 PBW 支持</text>
+    <text x="660" y="262" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“双级分配”的自适应 PBW</text>
+  </g>
+
+  <rect x="40" y="344" width="880" height="104" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="372" fill="#1d8a5f" font-size="13.5" font-weight="700">本文三招对应：</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">① SDBS（串行双位滑动）：垂直截断、按 ESUM 优先级滑动、PBW 随周期数伸缩；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">② HDM（无害数据映射）+ 层次化隐藏位解码器：MXFP6/8 双格式内存满用、解码器面积 −63.1%；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">③ 双级分配（CGA+FGA）：层级 −14.8%、组级 −29.3% 平均位宽，精度无损。</text>
+</svg>

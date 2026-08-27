@@ -1,0 +1,40 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：动态逻辑 Pilot PE + OPC 外扩预充电</h2>
+
+<h3 id="sec5-1">5.1 Pilot PE 结构：14 个 SRAM + 8 邻接</h3>
+<figure>
+  <img src="assets/diagrams/d05_pe.svg" alt="Pilot PE" style="max-width:940px">
+  <figcaption>图 5.1　Pilot PE：SRAM_F（地图数据）+ SRAM_R（方向数据）+ 中心动态逻辑核心 + 8 个方向发射器（NW/N/NE/W/E/SW/S/SE）。</figcaption>
+</figure>
+<ul>
+<li><strong>SRAM_F</strong>（6T + 反相驱动器）：存 EN（使能）、STA（起点）、END（终点）、TJL（交通拥堵级）；</li>
+<li><strong>SRAM_R</strong>（6T + 本地复位 + 反相写入器）：存方向数据（信号从哪来）——比 DFF 省面积（§9 图）；</li>
+<li><strong>中心核心</strong>（动态逻辑）：处理最早到达的 IN[2:0]（IN0=信号到达、IN1=来自 START、IN2=来自 END），确定来源后<strong>停止接收</strong>其他输入；</li>
+<li><strong>8 个方向发射器</strong>：每个处理 3 个方向的输入、向对侧发射输出（例：N 发射器收 NW/N/NE、发 S 输出）；</li>
+<li><strong>TJL 电路</strong>：延迟树模拟路径速度（EMA[2:0]=111 = 最慢/堵车）；双动态逻辑冗余 + 额外输入信号抗 PVT。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_7_3_PilotPE.png" alt="论文图 14.7.3">
+  <figcaption>图 5.2　论文原图 Fig. 14.7.3：Pilot PE 详细电路与工作波形。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec5-2">5.2 OPC 外扩预充电：只充“即将用到”的 PE</h3>
+<figure>
+  <img src="assets/diagrams/d06_opc.svg" alt="OPC" style="max-width:940px">
+  <figcaption>图 5.3　OPC：预充电信号从 START/END 行开始，随波前逐行外扩；两股波前交汇即终止——只充即将用到的 PE。</figcaption>
+</figure>
+<p>动态逻辑用“预充电 → 求值”两相工作。传统做法<strong>全阵列同时预充电</strong>：波前还没到的 PE 也在白充，面积/容量浪费。OPC 利用 PE 阵列的逻辑传播延迟：</p>
+<ul>
+<li>预充电信号从 <strong>START/END 所在行</strong>开始，随波前<strong>逐行外扩</strong>（上下传播）；</li>
+<li>预充电速度<strong>略快于</strong> PE 阵列信号 → 波前到达时节点已就绪；</li>
+<li>两股波前<strong>交汇即终止</strong>外扩。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 OPC 收益</div>
+<p>保持时间（动态节点电荷保持）−1.49× → 动态逻辑容量需求 −1.35× → 面积 −1.32×；配合 MOS 电容（高密度）替代 MOM 电容，漏电也更小。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_4_OPC与回溯.png" alt="论文图 14.7.4">
+  <figcaption>图 5.4　论文原图 Fig. 14.7.4：外扩预充电、行列反馈与回溯流程。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

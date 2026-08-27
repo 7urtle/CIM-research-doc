@@ -1,0 +1,49 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新①：ESICU 与嵌入式 2b 串行对齐</h2>
+
+<h3 id="sec5-1">5.1 ESICU 结构：ASG 定“何时移”，LC 干“怎么移”</h3>
+<figure>
+  <img src="assets/diagrams/d05_esicu.svg" alt="ESICU 结构" style="max-width:940px">
+  <figcaption>图 5.1　ESICU = 对齐信号生成器（ASG）+ 16 个轻量转换器（LC）。ASG 算指数和、找最大值、倒计时；LC 按 SHIFT 信号在“存储态/移位态”间切换，每周期输出 2b。</figcaption>
+</figure>
+<p><strong>ASG（对齐信号生成器）</strong>：</p>
+<ul>
+<li><strong>16 个指数加法器（EA）</strong>：算“输入指数 + 权重指数”的和（浮点乘法的指数部分）；</li>
+<li><strong>最大值查找器（MVF）</strong>：找出 16 个指数和的最大值；</li>
+<li><strong>移位目标跟踪器（SDT）</strong>：从最大值开始，<strong>每个时钟周期减 1</strong>（倒计时器）；</li>
+<li><strong>16 个相等比较器（EC）</strong>：把 SDT 与各自的指数和高 8 位（SUM[8:1]）比较，生成 SHIFT0–15 控制信号。</li>
+</ul>
+<p><strong>LC（轻量转换器）</strong>：收到 SHIFT 后：SHIFT=0 → <strong>存储态</strong>（把尾数最小位依次存进自适应复位寄存器链 ARRC）；SHIFT=1 → <strong>移位态</strong>（每周期从链里移出 2b）；最后 OSIU 做符号处理输出 LIN[1:0]。</p>
+
+<h3 id="sec5-2">5.2 串行对齐的时间线：SDT 倒计时，全局同节奏</h3>
+<figure>
+  <img src="assets/diagrams/d06_serial_align.svg" alt="串行对齐时间线" style="max-width:940px">
+  <figcaption>图 5.2　2b 串行对齐：SDT 从最大值每周期 −1；每个 LC 的“存/移”切换点由自己的指数和决定。对齐差距大的先存后移，差距小的立刻移。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么这样能省面积？——把“空间”换成“时间”</div>
+<p>并行对齐 = 每个输入配一个<strong>桶形移位器</strong>（一次能移任意位数的电路，面积大）+ 减法器。串行对齐 = 用<strong>一个倒计时器（SDT）+ 16 个比较器 + 寄存器链</strong>，所有输入在同一个节奏下“每周期移 2b”——桶形移位器被换成了小移位链。代价是“对齐要多花几个周期”，但乘法本身就是 2b 串行输入的，<strong>对齐和乘法流水重叠</strong>，总吞吐不掉。净效果：对齐电路面积 −36.23%。</p>
+</div>
+
+<h3 id="sec5-3">5.3 视频与仿真：看串行对齐跑起来</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_3_3_ESICU串行对齐.png">
+  <source src="assets/videos/v01_serial_align.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 2b 串行对齐动画：SDT 每周期 −1，三个 LC（对齐差距 0/2/4）在“存/移”两态间切换，观察对齐节奏的统一。</div>
+</div>
+<div class="demo">
+<div class="dhead">⏱ 演示 B · 串行对齐仿真（三个输入不同对齐差距）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">SDT 倒计时驱动三个 LC 同步对齐</span>
+</div>
+<div class="hint">红/紫/绿三条流水线分别代表对齐差距 4/2/0 的输入。差距大的先“存”后“移”，差距小的直接“移”。所有输入最终在同一周期对齐完成。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_3_3_ESICU串行对齐.png" alt="论文图 14.3.3">
+  <figcaption>图 5.3　论文原图 Fig. 14.3.3：ESICU 结构（上）与 BF16 模式下的工作流示例（下）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

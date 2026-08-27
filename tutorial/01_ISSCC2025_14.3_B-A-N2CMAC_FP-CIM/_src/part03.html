@@ -1,0 +1,22 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>FP-CIM 的三大挑战（论文的问题定义）</h2>
+<p>论文 Fig. 14.3.1 把数字域 FP-CIM 的难题总结成三条，整篇论文就是围绕这三条展开的：</p>
+<figure>
+  <img src="assets/diagrams/d03_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 3.1　三大挑战：① 对齐与广播复用冲突；② 并行对齐面积/性能开销；③ 2C 负权重稀疏性差 + 符号计算开销。</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本论文对策</th></tr>
+<tr><td>① 精度 vs 输入复用性</td><td>对齐依赖各自指数 → 无法整齐广播</td><td>GIN 拆分（8b 指数并行 + 2b 尾数串行）+ ESICU 嵌入式转换 → 16 阵列共享</td></tr>
+<tr><td>② 并行对齐开销</td><td>减法器 + 桶形移位器面积大</td><td>SDT 倒计时 + 2b 串行对齐 → 面积 −36.23%</td></tr>
+<tr><td>③ MAC 动态功耗</td><td>2C 负权重位级稀疏性差 + 符号开销</td><td>符号-数值权重 + 无符号 MAC + 符号补偿（N2CMAC）</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig14_3_1_挑战与方案.png" alt="论文图 14.3.1">
+  <figcaption>图 3.2　论文原图 Fig. 14.3.1：FP-CIM 设计挑战与本文解决方案。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 读论文的姿势：先找“问题定义”再读方案</div>
+<p>注意论文的写法：Fig. 14.3.1 先画问题（三座山），然后每个创新点（B-A-N2CMAC 的三个组成）正好对应一座山。这种“挑战 → 对策”一一对应的结构是优秀芯片论文的标配，也是你读其他论文时应该主动寻找的骨架。</p>
+</div>
+</section>

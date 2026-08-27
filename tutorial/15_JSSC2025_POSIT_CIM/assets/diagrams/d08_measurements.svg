@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">芯片实测：规格 · 功耗面积分解 · 与 SOTA 对比</text>
+
+  <!-- spec -->
+  <rect x="40" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">芯片规格（论文 Fig.14）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">工艺 28nm CMOS · 面积 1.41 mm²</text>
+    <text x="60" y="162" fill="#45536b">电压 0.55–1.0 V · 功耗 5.5–237 mW</text>
+    <text x="60" y="186" fill="#45536b">最高频率 419 MHz · 峰值性能 3.86 TOPS（POSIT8）/ 1.91 TOPS（POSIT16）</text>
+    <text x="60" y="210" fill="#45536b">16 KB CIM 阵列 · 每周期激活 8 KB → 16384 个 4b 单元</text>
+    <text x="60" y="234" fill="#45536b">POSIT8 平均尾数位宽 3.55b → 平均 3.55 周期/计算</text>
+    <text x="60" y="258" fill="#1d8a5f" font-weight="600">峰值能效 83.23 TFLOPS/W @ POSIT(8,1)</text>
+    <text x="60" y="282" fill="#45536b">（0.65 V / 260 MHz）</text>
+    <text x="60" y="306" fill="#45536b">支持 POSIT8 / POSIT16 计算（1 乘 1 加 = 2 OPs）</text>
+  </g>
+
+  <!-- breakdown -->
+  <rect x="490" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="14" font-weight="700">功耗/面积分解（论文 Fig.15）</text>
+  <g font-size="11.5">
+    <line x1="510" y1="128" x2="900" y2="128" stroke="#c9d8ea"/>
+    <line x1="510" y1="128" x2="510" y2="288" stroke="#c9d8ea"/>
+    <line x1="650" y1="128" x2="650" y2="288" stroke="#c9d8ea"/>
+    <line x1="790" y1="128" x2="790" y2="288" stroke="#c9d8ea"/>
+    <text x="580" y="144" text-anchor="middle" fill="#d08a10">模块</text>
+    <text x="720" y="144" text-anchor="middle" fill="#d08a10">优化前/后功耗占比</text>
+    <text x="845" y="144" text-anchor="middle" fill="#d08a10">面积占比</text>
+    <text x="580" y="168" text-anchor="middle" fill="#45536b">CIM 阵列</text>
+    <text x="720" y="168" text-anchor="middle" fill="#1d8a5f" font-weight="700">56.3%→41.2%</text>
+    <text x="845" y="168" text-anchor="middle" fill="#45536b">—</text>
+    <text x="580" y="192" text-anchor="middle" fill="#45536b">加法树</text>
+    <text x="720" y="192" text-anchor="middle" fill="#1d8a5f" font-weight="700">23.4%→12.3%</text>
+    <text x="845" y="192" text-anchor="middle" fill="#45536b">+2.3%</text>
+    <text x="580" y="216" text-anchor="middle" fill="#45536b">BRPU</text>
+    <text x="720" y="216" text-anchor="middle" fill="#1d8a5f" font-weight="700">9.51%</text>
+    <text x="845" y="216" text-anchor="middle" fill="#45536b">9.45%</text>
+    <text x="510" y="244" fill="#45536b">CPCS 预计算/译码器开销仅 1.6%（只在加载时工作）</text>
+    <text x="510" y="266" fill="#45536b">CASU 只加少量 OR 门 → 面积开销可忽略（2.3%）</text>
+    <text x="510" y="288" fill="#d08a10" font-size="11" font-weight="600">三招都是“小面积换大能效”</text>
+  </g>
+
+  <!-- comparison -->
+  <rect x="40" y="334" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">对比 SOTA FP-CIM（论文表 II / III）</text>
+  <g font-size="12">
+    <text x="60" y="390" fill="#45536b">ViT-B / ImageNet（表 II，12 层同时间同能耗口径）：</text>
+    <text x="80" y="412" fill="#45536b">FP16-CIM → 数字 POSIT8（直接省 48.4% 时间、38.9% 能耗）→ POSIT8-CIM（再快 37.9%、省 19.0%）</text>
+    <text x="80" y="434" fill="#45536b">但 POSIT 动态特性拖累 → PD-CIM 三招解决 → vs 无优化 POSIT8-CIM：<tspan fill="#1d8a5f" font-weight="700">1.98× 加速、3.35× 省能</tspan></text>
+    <text x="60" y="464" fill="#45536b">表 III（同等训练/推理精度下）：PD-CIM 能效最高 83.23 TFLOPS/W</text>
+    <text x="80" y="486" fill="#45536b">vs [15]：平均 41.5 TFLOPS/W（超 2.36×）、加速 3.51×（419MHz 是其 2.68×，双位 MAC 1.31×）</text>
+    <text x="80" y="508" fill="#45536b">vs [16]（同 50% 稀疏）：能效超 2.6×；16-PD-CIM 系统线性扩展 15.3×</text>
+    <text x="60" y="530" fill="#45536b">速度来源：BRPU/CASU 简化计算释放关键路径 → 419 MHz；CPCS 双位 MAC → 吞吐 1.31×</text>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="490" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">TsCFP 三步粗/细路径流程：大图（如 1024×1024）也能高效导航</text>
+
+  <!-- 三步 -->
+  <g>
+    <rect x="40" y="80" width="280" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="108" text-anchor="middle" fill="#0e5a8a" font-size="13.5" font-weight="700">① 生成最小清晰粗图</text>
+    <text x="60" y="140" fill="#45536b" font-size="12">迭代调整分辨率，按“路径比”</text>
+    <text x="60" y="162" fill="#45536b" font-size="12">（原图 vs 转换图）打分，找到</text>
+    <text x="60" y="184" fill="#45536b" font-size="12">最小且仍清晰的粗图</text>
+    <text x="60" y="230" fill="#45536b" font-size="12">→ 解决“直接整图映射语义模糊”</text>
+
+    <rect x="340" y="80" width="280" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="108" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">② 粗图最短路径</text>
+    <text x="360" y="140" fill="#45536b" font-size="12">把粗图切成 32×32 段，用 SDS 或</text>
+    <text x="360" y="162" fill="#45536b" font-size="12">DDS 逐段导引；后续段由上一段</text>
+    <text x="360" y="184" fill="#45536b" font-size="12">END 点 + 原图大体方向决定</text>
+    <text x="360" y="230" fill="#45536b" font-size="12">→ 得到“走廊式”粗路径</text>
+
+    <rect x="640" y="80" width="280" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="108" text-anchor="middle" fill="#1d8a5f" font-size="13.5" font-weight="700">③ 细图最短路径</text>
+    <text x="660" y="140" fill="#45536b" font-size="12">沿粗路径“走廊”切出原图的细</text>
+    <text x="660" y="162" fill="#45536b" font-size="12">条带，逐段顺序处理（32×32 窗口）</text>
+    <text x="660" y="184" fill="#45536b" font-size="12">→ 在粗路径约束下求细路径</text>
+    <text x="660" y="230" fill="#45536b" font-size="12">→ 解决“拆图映射局部最优”</text>
+  </g>
+
+  <path d="M320,200 H340" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#ar)"/>
+  <path d="M620,200 H640" stroke="#6b3fa0" stroke-width="2.4" marker-end="url(#ar)"/>
+
+  <!-- 底部例子 -->
+  <rect x="40" y="344" width="880" height="122" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">实例：旧金山 1024×1024 地图（论文 Fig. 14.7.5）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">• 粗图：迭代分辨率直到“路径比”打分最优；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">• 粗路径：32×32 段逐段 DDS 导引，得到走廊；</text>
+  <text x="60" y="442" fill="#45536b" font-size="12.5">• 细路径：沿走廊切条带逐段精算；</text>
+  <text x="60" y="464" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 求解时间 373.82 ns、能耗 512.5 pJ、路径长度 1279.8L（单位长度）</text>
+</svg>

@@ -1,0 +1,48 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>Compound AI 的系统化编译与调度</strong>：16 个核怎么分配模型、核间融合怎么调度、动态精度怎么选——做一个“Compound AI → 多核 CIM”的自动编译器（模型划分、位宽分配、稀疏映射），是软件-硬件协同的下一个大问题；</li>
+<li><strong>后乘积对齐的通用化</strong>：本文针对 FP16/FP8。把后乘积对齐推广到 BF16/MXFP/FP32、以及“块浮点”场景；MantissaEE 的“指数折叠”能否扩展成更一般的格式族？</li>
+<li><strong>更多“存内算子”</strong>：AIM 把累加做进了内存。下一步：把归一化、激活、甚至 softmax 都“存内化”，让“全数据路径在存内”名副其实——但每个算子存内化的面积/精度代价要仔细权衡；</li>
+<li><strong>动态稀疏的在线检测</strong>：动态启动器目前靠“valid 字段”标记。能否在 CIM 内部实时检测激活稀疏（零检测）并动态跳过？配合 10T 无预充电单元，能效还能再翻；</li>
+<li><strong>大模型局部性利用</strong>：LLM 的注意力有“局部性”（相邻 token 相关性高）。把 Compound AI 的思想和 LLM 推理结合：不同 token/头分给不同核，核间只做必要的融合——这是边缘 LLM 的潜在路线；</li>
+<li><strong>工艺与 3D 集成</strong>：28nm → 先进节点；AIM/NIM 这类“存内逻辑”可以配合 3D 堆叠（08 号论文路线），把“存内数据路径”扩展到多层。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>Compound AI（复合式 AI）</dt><dd>多个专精小模型组合的系统，精度可匹敌巨模型。</dd>
+<dt>MantissaEE</dt><dd>本文格式：FP16 尾数按指数低 2 位折叠成 16b，兼容 FP8/INT8。</dd>
+<dt>后乘积对齐（Post-Product Alignment）</dt><dd>先乘后对齐；误差只在累加时出现一次（&lt;2⁻³⁰）。</dd>
+<dt>预对齐（Pre-Alignment）</dt><dd>传统先对齐再乘；移位误差注入每个乘积。</dd>
+<dt>SER（Signal-to-Error Ratio）</dt><dd>信号误差比 = 10log10(信号/误差)，本宏 60.1 dB。</dd>
+<dt>AIM（Accumulate-In-Memory）</dt><dd>累加存内：部分和/残差就地累加，数据不出内存。</dd>
+<dt>伪行（Pseudo-Row）</dt><dd>AIM 中执行 AND/NOR + 部分全加的行结构。</dd>
+<dt>ME-CIM（Mantissa-Exponent CIM）</dt><dd>尾数-指数存内计算单元（1.375kb）。</dd>
+<dt>混合格式（Hybrid Format）</dt><dd>输入 2C + 权重 SM：翻转最少、无加 1 补偿。</dd>
+<dt>NIM（Network-In-Memory）</dt><dd>网络存内：2:4 稀疏路由（静态）。</dd>
+<dt>动态启动器（Dynamic Launcher）</dt><dd>收集有效 Booth 池字段、前导 1 检测、选择性乘法（动态稀疏）。</dd>
+<dt>BPLS（Booth Pool-Lane Sharing）</dt><dd>Booth 池-道共享：把非零项重排到空闲道。</dd>
+<dt>2:4 压缩</dt><dd>4 个权重保留 2 个的静态剪枝（GPU 通用格式）。</dd>
+<dt>无预充电位单元（10T）</dt><dd>用反相器替代预充电；读 0 不耗电（省 1.95×）。</dd>
+<dt>异质 CIM 核</dt><dd>每核部署一个专精模型，核间加法器融合。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Z. Yue, X. Xiang, et al., “A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and &lt;2⁻³⁰ Loss for Compound AI,” <em>ISSCC 2025</em>, Paper 14.4. DOI: 10.1109/ISSCC49661.2025.10904702</li>
+<li>M. Zaharia et al., “The shift from models to compound AI systems,” <em>Berkeley AI Research Blog</em>, 2024.（Compound AI 概念 [2]）</li>
+<li>Y. Cai et al., “Reversible Column Networks,” <em>ICLR 2023</em>.（RevCol [3]）</li>
+<li>J. Yue et al., “STICKER-IM: A 65nm CIM NN Processor Using Block-Wise Sparsity Optimization…,” <em>IEEE JSSC</em>, vol. 57, no. 8, 2022.（[11]）</li>
+<li>F. Tu et al., “ReDCIM: Reconfigurable Digital CIM Processor with Unified FP/INT Pipeline…,” <em>IEEE JSSC</em>, vol. 58, no. 1, 2023.（[12]）</li>
+<li>J. Choquette et al., “The A100 Datacenter GPU and Ampere Architecture,” <em>ISSCC 2021</em>, pp. 48-50.（2:4 稀疏 [26]）</li>
+<li>H. Noguchi et al., “Which is the best dual-port SRAM in 45-nm… 8T, 10T single end, and 10T differential,” <em>ICICDT 2008</em>.（10T 单元 [27]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.4.1–14.4.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（51.6 TFLOPS/W、60.1 dB、5.30× 等）均来自论文原文；对比图中的换算值已注明依据。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

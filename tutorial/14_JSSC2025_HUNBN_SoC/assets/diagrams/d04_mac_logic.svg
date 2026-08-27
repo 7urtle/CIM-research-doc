@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">DIMC MAC 逻辑：1-bit×2-bit 乘法 + 分离 MAC 流程</text>
+
+  <!-- MAC logic -->
+  <rect x="40" y="84" width="430" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">1-bit × 2-bit 乘法（BL/BLB 各算一位）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">每周期读 24 个 4b 权重 W0–W23，同权位分组（4 组×24 位）</text>
+    <text x="60" y="158" fill="#45536b">每组配 2-bit 输入激活 → 1-bit×2-bit 乘法</text>
+    <g>
+      <rect x="70" y="176" width="130" height="42" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+      <text x="135" y="195" text-anchor="middle" fill="#1d8a5f">SRAM 读 BL / BLB</text>
+      <text x="135" y="211" text-anchor="middle" fill="#45536b" font-size="10">w 及其反相</text>
+      <rect x="230" y="176" width="130" height="42" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+      <text x="295" y="195" text-anchor="middle" fill="#a06510">1b×2b 乘法器</text>
+      <text x="295" y="211" text-anchor="middle" fill="#45536b" font-size="10">BL→bit0，BLB→bit1</text>
+      <path d="M 204 197 L 226 197" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+    </g>
+    <text x="60" y="248" fill="#45536b">权重与其反相读在 BL/BLB 上 → 两个激活位用不同符号保证位级乘法正确</text>
+    <text x="60" y="270" fill="#1d8a5f" font-size="11.5" font-weight="600">2-bit 串行重复 → 4b×4b MAC 只需 2 周期（比传统位串行快 2 倍）</text>
+    <text x="60" y="292" fill="#45536b">定制加法树在低电压域工作 → 静态电平移位器恢复摆幅（面积仅 +2%）</text>
+  </g>
+
+  <!-- split MAC -->
+  <rect x="490" y="84" width="430" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#6b3fa0" font-size="14" font-weight="700">分离 MAC 流程（Split MAC Workflow）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">传统：乘法器 + 全加法树都手动设计（工作量大）</text>
+    <rect x="510" y="152" width="170" height="44" rx="8" fill="#f5f0fc" stroke="#6b3fa0"/>
+    <text x="595" y="170" text-anchor="middle" fill="#6b3fa0" font-weight="600">手动定制部分</text>
+    <text x="595" y="188" text-anchor="middle" fill="#45536b" font-size="10.5">位级乘法 + 早期加法树</text>
+    <rect x="700" y="152" width="200" height="44" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="800" y="170" text-anchor="middle" fill="#a06510" font-weight="600">标准数字流程（RTL 综合）</text>
+    <text x="800" y="188" text-anchor="middle" fill="#45536b" font-size="10.5">部分积合并 + 后期累加</text>
+    <text x="510" y="224" fill="#1d8a5f" font-size="11.5" font-weight="600">收益①：重复最多的组件（位级乘法/早期累加）定制优化 → 面积 −20%</text>
+    <text x="510" y="246" fill="#45536b">（定制逻辑门高度 + 用最低金属层，数字工具无法利用）</text>
+    <text x="510" y="268" fill="#1d8a5f" font-size="11.5" font-weight="600">收益②：复杂但少复用的部分走标准流程 → 大幅缩短设计时间</text>
+    <text x="510" y="290" fill="#45536b">手动部分作为硬宏嵌入 HDL；硬宏的面积效率 + 综合逻辑的设计效率兼得</text>
+  </g>
+
+  <!-- adder tree detail -->
+  <rect x="40" y="344" width="880" height="190" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="370" fill="#0e5a8a" font-size="14" font-weight="700">为什么加法树要“分离”？—— 传统方案的痛点</text>
+  <g font-size="12.5">
+    <text x="60" y="400" fill="#45536b">传统 DIMC 的手动设计工作量集中在两处：</text>
+    <text x="80" y="424" fill="#45536b">① 乘法器：随权重/输入精度扩展；② 加法树：复杂度 ∝ 精度 × log(输入数) —— 每一级加法器位长不同，需要逐级单独设计</text>
+    <text x="60" y="452" fill="#1d8a5f" font-weight="600">本论文的解法：把加法树“早期级”并入定制乘法阶段（最重复、最值得优化），</text>
+    <text x="60" y="474" fill="#1d8a5f" font-weight="600">把“后期级”（部分积合并、后期累加）推给综合工具（复杂但不重复，综合更省力）</text>
+    <text x="60" y="500" fill="#45536b">结果：DIMC 发挥其最大优势的地方（位级乘法）做到极致，整体设计时间显著缩短 → “DIMC 之长处 × 标准流程之效率”</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">实测结果：GCN 与 DLRM 的成绩单</text>
+
+  <!-- 能效 -->
+  <rect x="40" y="80" width="440" height="220" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">核心指标（0.65V/175MHz，稀疏 GCN）</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">• 采集效率：<strong>3.7 nJ/Gather</strong>（FP32，GCN）</text>
+    <text x="60" y="164" fill="#45536b">　　DLRM：2.3 nJ/Gather</text>
+    <text x="60" y="188" fill="#45536b">• 代数能效（SpA）：<strong>8.3 TFLOPS/W</strong>（FP32）</text>
+    <text x="60" y="212" fill="#45536b">　　INT8：85.0 TOPS/W · INT16：14.2 TOPS/W</text>
+    <text x="60" y="244" fill="#45536b">• 总能耗节省：GCN <strong>4.58×</strong> · DLRM <strong>3.52×</strong>（vs 基线）</text>
+    <text x="60" y="272" fill="#45536b">　　SpG 省 3.55×/3.41× · SpA 省 5.95×/4.28×</text>
+  </g>
+
+  <!-- 对比 -->
+  <rect x="500" y="80" width="420" height="220" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">与 SOTA 对比（Table IV）</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• INT8 85.0 TOPS/W = TSMC 数字 CIM [5] 的 <strong>2.17×</strong>；</text>
+    <text x="520" y="164" fill="#45536b">• FP32 8.3 TFLOPS/W = 数字 CIM [16] 的 <strong>2.24×</strong>；</text>
+    <text x="520" y="188" fill="#45536b">• 3.7 nJ/Gather = 模拟 [16] 系统的 <strong>9.49×</strong> 更低；</text>
+    <text x="520" y="212" fill="#45536b">• GCN 总能耗 0.31 mJ = [16] 的 <strong>5.64×</strong> 更低；</text>
+    <text x="520" y="244" fill="#45536b">• NN-only 应用：平均加速 <strong>2.61×</strong>、能耗省 <strong>2.43×</strong>（5 个基准）。</text>
+    <text x="520" y="272" fill="#45536b">• 关键差异：前作只支持“稠密”张量乘法，</text>
+    <text x="520" y="290" fill="#45536b">　TensorCIM 有效跳过零（稀疏张量乘法）。</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="324" width="880" height="122" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="352" fill="#0e5a8a" font-size="13.5" font-weight="700">分层分析（GCN Pubmed）</text>
+  <text x="60" y="378" fill="#45536b" font-size="12.5">• 聚合阶段（SpG）占延迟 51.2%、能耗 46.3%；组合阶段（SpA）占 48.8%/53.7%——两半都要优化；</text>
+  <text x="60" y="400" fill="#45536b" font-size="12.5">• 带宽扩展分析（320Mb/s→2Gb/s）：延迟 2.109s→1.426s、能耗 0.312→0.221mJ——</text>
+  <text x="60" y="422" fill="#45536b" font-size="12.5">　因为重排+REGM 已降低带宽需求，&gt;1Gb/s 后趋于饱和（优化让带宽不再是瓶颈）；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">• 面积/功耗：REGM 3.6%/5.7%、EOCI 2.0%/3.0%（小代价大收益）。</text>
+</svg>

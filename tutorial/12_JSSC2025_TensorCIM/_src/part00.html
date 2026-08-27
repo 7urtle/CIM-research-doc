@@ -1,0 +1,58 @@
+<section class="chapter" id="sec0">
+<h1 class="title">TensorCIM 多芯粒数字存内计算张量处理器零基础精讲：让 CIM 走出“神经网络”
+<span class="en">TensorCIM: Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration（IEEE JSSC, vol.60, no.2, 2025）</span></h1>
+<div class="meta">论文作者：Yiqi Wang, Zihan Wu, Weiwei Wu, Leibo Liu, Yang Hu, Shaojun Wei, Fengbin Tu, Shouyi Yin · 清华大学 + 港科大
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 2, 2025（ISSCC'23 期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>之前的 CIM 都在加速“神经网络”。但现实世界还有<strong>Beyond-NN 应用</strong>：图卷积网络（GCN）和推荐模型（DLRM）——它们由<strong>稀疏采集（SpG）</strong>和<strong>稀疏代数（SpA）</strong>组成，规模巨大、需要 FP32 精度、访存密集。本论文（清华尹首一 + 港科大涂锋斌）用 <strong>数字 CIM + 多芯粒（MCM）</strong>的组合来加速它们，并逐个化解 MCM-CIM 系统的三大新挑战：</p>
+<ol>
+<li><strong>REGM（冗余消除采集管理）</strong>：SpG 有强局部性（重复访问、重复归约）——把高频特征和归约结果<strong>“住进”CIM</strong>，消掉冗余 DRAM/跨芯粒访问和重复归约（DRAM −1.74×、跨芯粒 −3.55×）；</li>
+<li><strong>EOCI（等操作 CIM 初始化）</strong>：不规则稀疏让不同宏的有效 MAC 数不同 → 按<strong>有效操作数</strong>在子阵列级平衡分配 WT/GT → 利用率 17.6%→95.4%；</li>
+<li><strong>ILA-CIM（输入前瞻 CIM）</strong>：空闲子阵列<strong>前瞻未来输入</strong>提前算 → 所有子阵列一直忙（联合加速 5.28×）。</li>
+</ol>
+<p>28nm 实测：<strong>3.7 nJ/Gather</strong> 采集效率、<strong>8.3 TFLOPS/W</strong> FP32 代数能效、GCN 总能耗省 <strong>4.58×</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>SpG 是“查表+求和”，SpA 是“稀疏矩阵乘”：</strong>GCN 的聚合=查邻居特征求和（SpG），组合=神经网络变换（SpA）；DLRM 的嵌入层=查表（SpG），FC 层=矩阵乘（SpA）。它们的数据都是稀疏、不规则的。</li>
+<li><strong>多芯粒（MCM）是 CIM 的“扩容”方案：</strong>单芯片装不下大应用，把多个 CIM 芯粒封进一个封装（可混搭工艺、坏芯粒可替换、按需增减）。但芯粒间带宽有限——所以“尽量本地化”成了核心设计目标。</li>
+<li><strong>稀疏的难点在“负载均衡”：</strong>稀疏数据跳过很容易（不读零就行），难的是“跳过之后谁干活”——有的宏算得多、有的算得少（宏间不平衡），有的输入行只激活半片阵列（宏内空闲）。论文的两招（EOCI、ILA）分别治这两个病。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“real-world scenarios have more applications beyond just NN processing like GCN and DLRM, which typically consist of sparse gathering (SpG) and sparse algebra (SpA)”</td>
+<td>Beyond-NN 应用（GCN/DLRM）由 SpG（稀疏采集）+ SpA（稀疏代数）组成。</td></tr>
+<tr><td class="num">“SpG involves repeated off-chip DRAM access, interchiplet access, and redundant reduction operations; SpA suffers from inter-CIM workload imbalance and intra-CIM under-utilization”</td>
+<td>两大新挑战：SpG 有重复访问/重复归约；SpA 有宏间不平衡与宏内空闲。</td></tr>
+<tr><td class="num">“the redundancy-eliminated gathering manager (REGM) dynamically maintains frequently accessed features and reduction results in the CIM”</td>
+<td>方案 1：REGM 动态把高频特征/归约结果维护在 CIM 里。</td></tr>
+<tr><td class="num">“the equal operation-based CIM initializer (EOCI) calculates effective MAC operations and initializes CIM macros with a balanced inter-CIM workload”</td>
+<td>方案 2：EOCI 按有效 MAC 数平衡宏间负载。</td></tr>
+<tr><td class="num">“the input-lookahead CIM (ILA-CIM) architecture looks ahead at future inputs to fully utilize CIM logic”</td>
+<td>方案 3：ILA-CIM 前瞻未来输入，充分利用 CIM 逻辑。</td></tr>
+<tr><td class="num">“consumes only 3.7 nJ/Gather for the GCN model, achieving 8.3-TFLOPS/W algebra efficiency at FP32”</td>
+<td>实测：3.7 nJ/Gather、FP32 代数能效 8.3 TFLOPS/W。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>访问张量重排 + SpG 工作负载重分区</strong>：最大化特征局部性、最小化跨芯粒访问（聚类后按组分配）；</li>
+<li><strong>REGM 冗余消除采集</strong>：高频特征过滤器 + 归约冗余推测器 + 归约复用生成器 + 驱逐 FIFO，REGM 面积/功耗仅 3.6%/5.7%（全芯片）；</li>
+<li><strong>EOCI 等操作初始化</strong>：有效操作识别（相交 ID）+ 平衡分配 + CIM 自适应 WT 映射（分片纵向遍历），面积 +1.96%；</li>
+<li><strong>ILA-CIM 输入前瞻</strong>：输入前瞻 + FP 对齐 + 输出合并三步流水，附加逻辑面积 +2.64%；</li>
+<li><strong>实测</strong>：3.7 nJ/Gather、8.3 TFLOPS/W（FP32）、GCN/DLRM 能耗省 4.58×/3.52×、NN-only 平均加速 2.61×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级 + 负载特性分析”的典范——先分析应用（SpG/SpA）再设计架构，读时注意“问题-对策”的一一对应。</p>
+</div>
+</section>

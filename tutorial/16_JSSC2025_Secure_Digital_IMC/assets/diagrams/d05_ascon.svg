@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">总线探测安全：ASCON 轻量密码 + 片上解密（论文 Fig.6）</text>
+
+  <!-- why -->
+  <rect x="40" y="84" width="880" height="110" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#d08a10" font-size="13.5" font-weight="700">为什么必须加密片外权重？</text>
+  <g font-size="12.5">
+    <text x="60" y="140" fill="#45536b">片上 SCA 保护对「探针直接测 DRAM↔ASIC 总线」无效 → 权重在片外必须以<strong>密文</strong>存储</text>
+    <text x="60" y="166" fill="#45536b">片上解密后才能计算 → 需要密码学保证 + 秘密密钥 + 密码本身 SCA 安全</text>
+  </g>
+
+  <!-- ascon -->
+  <rect x="40" y="214" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="240" fill="#1d8a5f" font-size="13.5" font-weight="700">为什么选 ASCON？</text>
+  <g font-size="12">
+    <text x="60" y="268" fill="#45536b">NIST 轻量密码竞赛冠军（2023）</text>
+    <text x="60" y="290" fill="#45536b">面积/能耗效率经过充分验证</text>
+    <text x="60" y="312" fill="#45536b">轻量密码中 AND 门占比最低</text>
+    <text x="60" y="334" fill="#45536b">（AND 的 Boolean 共享开销最大）</text>
+    <text x="60" y="356" fill="#45536b">其余 NOT/XOR/rotate 全是线性操作 → 共享成本低</text>
+    <text x="60" y="384" fill="#1d8a5f" font-size="11.5" font-weight="600">SCA 弹性好：猜中密码状态也不直接泄露密钥</text>
+  </g>
+
+  <!-- implementation -->
+  <rect x="490" y="214" width="430" height="200" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="240" fill="#6b3fa0" font-size="13.5" font-weight="700">SCA 安全实现</text>
+  <g font-size="12">
+    <text x="510" y="268" fill="#45536b">ASCON 置换的基础非线性步与 Keccak 相同</text>
+    <text x="510" y="290" fill="#45536b">→ 用 Daemen 的 "Changing of the Guards" 方法</text>
+    <text x="510" y="312" fill="#45536b">用状态内的比特互相 remask → 保持均匀性</text>
+    <text x="510" y="334" fill="#1d8a5f" font-weight="600">只需启动时 4 个外部随机比特</text>
+    <text x="510" y="356" fill="#1d8a5f" font-weight="600">运行期零随机比特</text>
+    <text x="510" y="384" fill="#45536b">阈值实现（TI）的 ASCON：低开销 SCA 安全</text>
+  </g>
+
+  <!-- flow -->
+  <rect x="40" y="434" width="880" height="80" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="458" fill="#0e5a8a" font-size="13.5" font-weight="700">解密流程</text>
+  <g font-size="12.5">
+    <text x="60" y="486" fill="#45536b">片外 DRAM/NVM（密文权重）→ ASCON 解密（片上，PUF 密钥）→ 明文权重写入 SRAM（SCA 安全 IMC 计算）</text>
+    <text x="60" y="506" fill="#45536b">权重加载一次、计算多次 → 解密开销被摊薄；解密延迟 +3.2× 但计算延迟主导 → 整体影响小</text>
+  </g>
+</svg>

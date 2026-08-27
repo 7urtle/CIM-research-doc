@@ -1,0 +1,59 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>POSIT 动态特性带来的三大挑战</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解三大挑战的量化来源：① regime 处理为什么贵 2.62×；② 为什么固定结构 CIM 会浪费 41.3% 单元；③ 为什么加法树会浪费 62.5% 能耗。这是理解三大创新的前提。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_3_三大挑战.png" alt="三大挑战">
+<figcaption>图 3 · 论文 Fig.3：设计高效 POSIT-CIM 的三大挑战——(a) regime 处理能耗；(b) 单元欠利用；(c) 加法树冗余。</figcaption>
+</figure>
+
+<h3>2.1 挑战一：regime 动态处理能耗 +2.62×</h3>
+<p>传统 FP 数据的指数是<strong>固定位宽</strong>，处理简单（直接取指数位）。POSIT 的 regime 是<strong>动态位宽温度计码</strong>，MAC 时需要：</p>
+<ol>
+<li><strong>提取</strong>：用前导 1/0 检测器找到温度计码边界；</li>
+<li><strong>译码</strong>：把温度计码转成十进制 RDA/RDB；</li>
+<li><strong>计算</strong>：RDA + RDB（两个 regime 相乘时指数相加）；</li>
+<li><strong>编码</strong>：把结果编码回温度计码格式。</li>
+</ol>
+<p>这套 extract + codec 逻辑比 FP 的固定指数处理多耗 <strong>2.62× 能耗</strong>——是 POSIT-CIM 能效的第一个杀手。</p>
+
+<h3>2.2 挑战二：CIM 单元欠利用 41.3%</h3>
+<p>CIM 阵列通常按<strong>固定位宽尾数</strong>设计（如每单元 4b）才能 100% 利用。但 POSIT 尾数位宽动态变化：</p>
+<ul>
+<li>POSIT(8,1) 中 2/3/4 位尾数占多数（图 8 的统计）→ 按 4b 设计时，<strong>61.9% 的单元存不满</strong>（2b 尾数只占一半）；</li>
+<li>POSIT16 尾数范围 [0:12] → 按 12b 设计浪费达 <strong>85.7%</strong>；</li>
+<li>直观解法“动态位宽 CIM 单元”不可行：N-bit 单元动态分区路由复杂度 O(N²)。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 关键洞察：闲置单元 = 免费的存储空间</div>
+<p>与其让空闲单元“闲着”，不如<strong>用它们存点有用的东西</strong>（预计算的关键位）→ 既保持固定结构，又把空闲变成算力。这就是 CPCS 的思路（§5）。</p>
+</div>
+
+<h3>2.3 挑战三：加法树能耗浪费 62.5%</h3>
+<p>尾数乘积按 regime 动态对齐后相加。当两个对齐的乘积<strong>没有重叠位</strong>时：</p>
+<ul>
+<li>所有全加器做 X+0=X 的运算 → 内部逻辑翻转完全冗余；</li>
+<li>X+0 的结果等于 X|0（逐位 OR）→ <strong>加法可以被 OR 替代</strong>；</li>
+<li>数据：TSMC 28nm 400MHz 下 16-bit 加法器 174.38 nW vs 16-bit OR 29.75 nW → OR 省 <strong>82.9%</strong>；</li>
+<li>POSIT8 尾数短（61.9% 的数据尾数 &lt;3 位）→ 28.4% 的对齐结果完全无重叠位 → 加法树浪费 62.5%。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d02_challenges.svg" alt="三大挑战教学图">
+<figcaption>教学图 2 · 三大挑战的量化与对策概览。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结：三个挑战 = 三个创新的靶子</div>
+<table>
+<tr><th>挑战</th><th>量化</th><th>对策（下一节起）</th></tr>
+<tr><td>regime 处理</td><td>能耗 +2.62×</td><td>BRPU：shift-OR 简化（§4）</td></tr>
+<tr><td>单元欠利用</td><td>41.3%（POSIT8）/85.7%（POSIT16）</td><td>CPCS：空闲单元存关键位 → 双位 MAC（§5）</td></tr>
+<tr><td>加法树浪费</td><td>62.5%</td><td>CASU：OR 替代加法（§6）</td></tr>
+</table>
+</div>
+</section>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">位并行 SC 数据流：把比特流存进内存、一次算完（论文 Fig.4）</text>
+
+  <!-- split-unipolar -->
+  <rect x="40" y="84" width="430" height="180" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">Split-Unipolar 表示</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">unipolar：1 的比例 ∈ [0,1]（只表示正数）</text>
+    <text x="60" y="158" fill="#45536b">split-unipolar：正流 − 负流 → 有符号数 ∈ [−1,1]</text>
+    <g>
+      <text x="70" y="186" fill="#45536b">W = −2/8：负流编码 2/8、正流为 0</text>
+      <text x="70" y="208" fill="#45536b">→ Prob(正流)−Prob(负流) = −2/8</text>
+      <text x="70" y="236" fill="#1d8a5f" font-weight="600">激活（ReLU 后非负）→ 只需正流；权重（有符号）→ 需正负两流</text>
+    </g>
+  </g>
+
+  <!-- bit parallel -->
+  <rect x="490" y="84" width="430" height="180" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">位并行映射：N 个宏并行处理 N 位流</text>
+  <g font-size="11">
+    <text x="510" y="136" fill="#45536b">宏 i 存激活向量第 i 位（a1_ti … ak_ti）</text>
+    <text x="510" y="156" fill="#45536b">权重第 i 位（wp_ti/wn_ti）施加到宏 i 的 CPWL</text>
+    <g>
+      <rect x="520" y="170" width="60" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="550" y="188" text-anchor="middle" fill="#1d8a5f" font-size="9.5">宏1:位1</text>
+      <rect x="588" y="170" width="60" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="618" y="188" text-anchor="middle" fill="#1d8a5f" font-size="9.5">宏2:位2</text>
+      <text x="658" y="188" fill="#7f93ad">…</text>
+      <rect x="672" y="170" width="80" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="712" y="188" text-anchor="middle" fill="#1d8a5f" font-size="9.5">宏N:位N</text>
+    </g>
+    <text x="510" y="216" fill="#45536b">全部宏并行 → 所有输出位 1 周期可得</text>
+    <text x="510" y="238" fill="#45536b">（传统位串 SC 要 N 个周期逐位处理）</text>
+  </g>
+
+  <!-- MAC detail -->
+  <rect x="40" y="284" width="880" height="250" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="310" fill="#0e5a8a" font-size="14" font-weight="700">MAC 运算（split-unipolar 交叉积）</text>
+  <g font-size="12.5">
+    <text x="60" y="340" fill="#45536b">激活正流 a 与权重正流 wp、负流 wn 的交叉积：</text>
+    <text x="80" y="366" fill="#45536b">每个元素 a_k 分别与 wp_k、wn_k 做 AND（乘法）→ 两个 OR 累加（加法）→ outp（正流）与 outn（负流）</text>
+    <text x="80" y="392" fill="#45536b">outp − outn = 点积的 split-unipolar 表示 ✓</text>
+    <g>
+      <rect x="70" y="410" width="90" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="115" y="432" text-anchor="middle" fill="#1d8a5f" font-size="10.5">ak∩wpk → AND</text>
+      <rect x="180" y="410" width="90" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="225" y="432" text-anchor="middle" fill="#1d8a5f" font-size="10.5">ak∩wnk → AND</text>
+      <rect x="290" y="410" width="110" height="34" rx="6" fill="#fdeeda" stroke="#f0a030"/><text x="345" y="432" text-anchor="middle" fill="#a06510" font-size="10.5">OR 累加 → outp</text>
+      <rect x="420" y="410" width="110" height="34" rx="6" fill="#fdeeda" stroke="#f0a030"/><text x="475" y="432" text-anchor="middle" fill="#a06510" font-size="10.5">OR 累加 → outn</text>
+      <text x="560" y="432" fill="#45536b" font-size="11">outp − outn = 点积</text>
+    </g>
+    <text x="60" y="480" fill="#45536b">十字交叉（交叉积）是因为 (a+ − a−)×(w+ − w−) 有四项：a+·w+、a−·w−（正贡献）、a+·w−、a−·w+（负贡献）</text>
+    <text x="60" y="506" fill="#1d8a5f" font-weight="600">本设计只实现正激活（视觉应用）：只需 a·w+ 和 a·w− 两项</text>
+  </g>
+</svg>

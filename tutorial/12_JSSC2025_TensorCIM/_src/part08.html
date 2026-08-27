@@ -1,0 +1,10 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>设计思想总结：负载特性驱动的三层协同</h2>
+<div class="box key">
+<div class="bt">🧠 这篇论文教会我们的“系统设计方法论”</div>
+<p>① <strong>先分析应用负载，再设计硬件</strong>：把 GCN/DLRM 拆成 SpG+SpA，各自找到“数据搬移”与“利用率”两个矛盾点，再逐一设计硬件对策；</p>
+<p>② <strong>把“数据本地性”当成第一公民</strong>：MCM 带宽有限 → 重排访问张量（软件）+ CIM 缓存高频数据（硬件）双管齐下，把跨芯粒访问从“常态”变成“例外”；</p>
+<p>③ <strong>稀疏优化的本质是“负载均衡”</strong>：跳过零很容易，难的是让“干活的人”均匀——EOCI 管初始化（分布侧）、ILA-CIM 管执行（执行侧），两个层面都堵住空闲；</p>
+<p>④ <strong>小面积大收益</strong>：REGM 3.6% + EOCI 1.96% + ILA 2.64% ≈ 8% 面积开销换 4.58× 能耗节省——“每 1% 面积换多少收益”是衡量架构创新的硬标准。</p>
+</div>
+</section>

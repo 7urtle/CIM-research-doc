@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：两周期宏 + Winograd + 双端稀疏 CIM 处理器（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 两周期数字 CIM 处理器的 Radix16+LUT 宏、混合 Winograd 卷积与宏级并行双端稀疏。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">两周期 CIM 处理器零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.1 · IMECAS</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：CiM 吞吐瓶颈</a>
+  <a class="sec" href="#sec2">02 · 乘法分解演进</a>
+  <a class="sec" href="#sec3">03 · 创新①：Radix16+LUT</a>
+  <a class="sec" href="#sec4">04 · Winograd 算法基础</a>
+  <a class="sec" href="#sec5">05 · 创新②：混合 Winograd</a>
+  <a class="sec" href="#sec6">06 · 创新③：MDPS 稀疏</a>
+  <a class="sec" href="#sec7">07 · 系统架构与模式</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">两周期数字存内计算处理器零基础精讲：电路、算法、数据，三层各破一关
+<span class="en">A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro Featuring Winograd-Domain Convolution and Macro-Level Parallel Dual-Side Sparsity（IEEE JSSC, vol.60, no.1, 2025）</span></h1>
+<div class="meta">论文作者：Hao Wu, Yong Chen, Yiyang Yuan, Jinshan Yue, Xinghua Wang, Xiaoran Li, Feng Zhang · 中科院微电子所 + 国科大 + 澳大 + 清华 + 北理工
+&nbsp;|&nbsp; 发表：IEEE Journal of Solid-State Circuits（JSSC），vol. 60, no. 1, 2025（早期公开 2024-06）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>CiM 的能效很高，但<strong>吞吐一直被“计算周期数”拖累</strong>：一个 INT8 MAC 结果要多个周期才能拼出来（位串行 8 周期、Booth 4 周期）。这篇 IMECAS 的 JSSC 长文从<strong>三个层级</strong>各出一招，把“吞吐-能效”的矛盾逐一化解：</p>
+<ol>
+<li><strong>电路级：Radix16 + LUT 数字 CIM 宏</strong>——一次处理 5 位激活，INT8 MAC 只需 <strong>2 个周期</strong>；用查表（LUT）实现最贵的 ±3W~±7W 部分积 → 动态功耗 −21.7%、完整 MAC 功耗 −2.44×；</li>
+<li><strong>微架构级：混合 Winograd（F2+F4 按层选）</strong>——用“变换”换掉乘法（F4 时乘法 ÷4）；按层混合避免 F4 的精度崩盘 → ResNet34 <strong>2.59× 加速、精度仅掉 0.6%</strong>；</li>
+<li><strong>数据级：MDPS 宏级并行双端稀疏</strong>——激活侧“连续 4 零跳过”、权重侧“水平压缩不存稀疏”→ 50% 双端稀疏时<strong>能效 3.11×</strong>。</li>
+</ol>
+<p>28nm 原型：<strong>峰值 258.5 TOPS/W</strong>（0.6V/116MHz）、19.9~258.5 TOPS/W 范围、归一化吞吐比 SOTA 高 2.55~7.08×。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>CiM 的吞吐 = 周期数的倒数：</strong>频率和 MAC 数固定后，一个 MAC 结果要几个周期，吞吐就是几分之一。所以“两周期宏”= 直接让吞吐翻 2~4 倍。</li>
+<li><strong>Winograd 是“用便宜运算换贵运算”：</strong>卷积的“乘法”很贵，Winograd 先用加/减/移位把数据变换到另一个域，在那里乘法变少（F4 减少 4 倍），算完再变换回来。关键是变换本身几乎不耗电。</li>
+<li><strong>稀疏 = 跳过而不是算：</strong>激活/权重里很多 0，跳过它们（而不是让加法器白算）就是最直接的省电。难点在“刚性阵列”上怎么灵活跳过——MDPS 的答案是“宏级调度 + 压缩重排”。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“current CiM schemes generally suffer from limited throughput… the key reason is that the CiM macro calculation must iterate through multiple cycles”</td>
+<td>CiM 吞吐受限的核心原因：宏计算必须迭代多个周期才出完整 MAC 结果。</td></tr>
+<tr><td class="num">“we present a Radix16-based digital-CiM macro with look-up table (LUT) optimization to reduce dynamic power consumption”</td>
+<td>贡献 1：Radix16 宏 + LUT 优化（两周期 + 低动态功耗）。</td></tr>
+<tr><td class="num">“we devise a hybrid Winograd microarchitecture and dataflow that supports (2, 3) and (4, 3) Winograd convolution”</td>
+<td>贡献 2：混合 Winograd（F2+F4）微架构与数据流，精度与减载的折中。</td></tr>
+<tr><td class="num">“we propose a macrolevel parallel dual-side sparse CiM core… to reduce the input cycle of activation data and improve the mapping efficiency of the weight data”</td>
+<td>贡献 3：宏级并行双端稀疏核——压缩激活输入周期、提升权重映射效率。</td></tr>
+<tr><td class="num">“achieves a peak system energy efficiency of 19.9–258.5-TOPS/W… 2.55–7.08× higher than other state-of-the-art CiM processors”</td>
+<td>实测：峰值 258.5 TOPS/W（0.6-1.1V、78-287MHz），归一化吞吐比 SOTA 高 2.55~7.08×。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>Radix16 + LUT 两周期宏</strong>：5 bit/周期、INT8 两周期；LUT 覆盖 53.3% 的“移位+加法”部分积 → 动态功耗 −21.7%、完整 MAC 功耗 −2.44×、宏级能效比 +1.84~2.44×；</li>
+<li><strong>混合 Winograd</strong>：F2/F4 按层选择 + 核分解（&gt;3×3）+ 激活分段（stride=2）+ PCO 映射 → ResNet34 2.59× 加速、精度 −0.6%；</li>
+<li><strong>MDPS 双端稀疏</strong>：ISPU（bit-mask + tile 压缩）+ PPRS（权重水平压缩重排）+ OMB（结果合并）→ 50% 双端稀疏 3.11× 能效（面积/功耗仅 +4.5%/+7.8%）；</li>
+<li><strong>三级技术解耦</strong>：电路/微架构/数据三级优化彼此独立，可单独复用、可与其他算法级稀疏正交叠加；</li>
+<li><strong>实测</strong>：258.5 TOPS/W 峰值、2.55~7.08× 归一化吞吐、Winograd+稀疏叠加 8.05×（ResNet34）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级三层优化”的范文——读的时候注意每个创新点分别对应哪一层、解决什么矛盾。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：CiM 的吞吐瓶颈 —— 周期数决定一切</h2>
+<figure>
+  <img src="assets/diagrams/d01_throughput_bottleneck.svg" alt="吞吐瓶颈" style="max-width:920px">
+  <figcaption>图 1.1　CiM 吞吐 = 频率 × MAC 数 ÷ 计算周期数：数字 CiM 的 MAC 要多个周期拼出来，这是与数字流水线的根本差距。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_1_吞吐瓶颈.png" alt="论文图1">
+  <figcaption>图 1.2　论文原图 Fig. 1：当前 CiM 架构的吞吐瓶颈。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>数字 CiM 的每个 MAC 结果需要多个计算周期：位串行 8 周期（INT8）、Booth/Radix4 4 周期。频率和 MAC 单元数固定后，<strong>吞吐完全由周期数决定</strong>——这就是 CiM 被限制在“低功耗场景”而进不了“高性能场景”的根本原因。论文把问题拆成三个层级（Fig. 2）：</p>
+<ul>
+<li><strong>电路级</strong>：减少宏的计算周期（同时别让每周期翻转暴增）；</li>
+<li><strong>微架构级</strong>：通用 Winograd 优化（支持各种卷积配置且不掉精度）；</li>
+<li><strong>数据级</strong>：灵活跳过稀疏计算。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig11_3_周期缩减方法.png" alt="论文图3">
+  <figcaption>图 1.3　论文原图 Fig. 3：前作减少计算周期的方法（阈值跳过/复制加法树/Booth 编码）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>乘法分解的演进：1 位 → 3 位 → 5 位</h2>
+<figure>
+  <img src="assets/diagrams/d02_multiplication.svg" alt="乘法分解" style="max-width:940px">
+  <figcaption>图 2.1　三种乘法分解：位串行（1 bit/周期、8 周期）→ Radix4（3 bit/周期、4 周期）→ Radix16（5 bit/周期、2 周期）。</figcaption>
+</figure>
+<div class="formula">位串行：I×W = Σ I[i]·W·2<sup>i</sup><span class="tag">式 2.1</span></div>
+<div class="formula">Radix4：I×W = Σ (−2I[i+1]+I[i]+I[i−1])·W·2<sup>i</sup><span class="tag">式 2.2</span></div>
+<div class="formula">Radix16：I×W = Σ (−8I[i+3]+4I[i+2]+2I[i+1]+I[i]+I[i−1])·W·2<sup>i</sup><span class="tag">式 2.3</span></div>
+<div class="box key">
+<div class="bt">🧠 权衡的本质</div>
+<p>每周期算的位数越多 → 周期越少（吞吐↑）→ 但每周期要处理的“加权部分积”越复杂（翻转↑、功耗↑）。Radix16 把周期压到 2，但部分积里出现 ±3W~±7W 这类“既要移位又要加法”的项——直接实现会让每周期功耗爆炸。<strong>LUT 就是来救这个场的</strong>（§3）。</p>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 A · 三种乘法分解的周期数对比</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">位串行 8 周期 vs Radix4 4 周期 vs Radix16 2 周期</span>
+</div>
+<div class="hint">三条流水线代表三种分解方式，脉冲 = 每个计算周期。观察 Radix16 只需 2 个脉冲就完成 INT8 乘法。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：Radix16 + LUT 两周期数字 CIM 宏</h2>
+<figure>
+  <img src="assets/diagrams/d03_radix16_lut.svg" alt="Radix16+LUT 宏" style="max-width:940px">
+  <figcaption>图 3.1　4×32 CiM 宏：Radix16 编码器 ×4 → SRAM 阵列（内嵌移位器+LUT）→ PPRS → 4 输入加法树+累加器 → 18b 部分积。INT8 拆成两个 5b Radix16 码，两周期完成。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_6_Radix16与LUT.png" alt="论文图6">
+  <figcaption>图 3.2　论文原图 Fig. 6：Radix16+LUT 乘法机制与 Radix16 真值表。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p><strong>为什么需要 LUT？</strong>Radix16 的部分积分两类：</p>
+<ul>
+<li><strong>只移位</strong>：{±W, ±2W, ±4W, ±8W}——便宜，移位器即可；</li>
+<li><strong>移位+加法</strong>：{±3W, ±5W, ±6W, ±7W}——占全部编码的 <strong>53.3%</strong>（不含 0），±7W 甚至要两次额外加法，最贵。</li>
+</ul>
+<p>论文用 <strong>LUT</strong>（定制数字电路，结构与加法器类似，面积不大）直接“查表”生成这些部分积 → 省掉加法链 → <strong>宏动态功耗 −21.7%</strong>。评估（Virtuoso，0.9V/100MHz/TT）：虽然每周期功耗高于现有方案，但 <strong>每次完整 MAC 的功耗低 2.44×</strong>（周期少了）。</p>
+<div class="box key">
+<div class="bt">📊 面积/功耗分解</div>
+<p>单宏面积 8400 μm²；Radix16 编码器单元占 MAC 功耗 7.58%、权重编码器占 16.66%。对比 Radix4 [15]：Radix16 本身省电很少——<strong>LUT 才是功耗大降的关键</strong>（Fig. 8 的直接证据）。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_6_Radix16与LUT.png">
+  <source src="assets/videos/v01_twocycle.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 两周期乘法动画：INT8 拆成两个 5b Radix16 码，两周期完成；LUT 处理最贵的部分积。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>Winograd 算法基础：用“变换”换掉乘法</h2>
+<figure>
+  <img src="assets/diagrams/d04_winograd.svg" alt="Winograd 基础" style="max-width:940px">
+  <figcaption>图 4.1　Winograd 核心：空间域卷积 → 变换（加/减/移位）→ 逐元素乘加（EWMM，乘法大幅减少）→ 逆变换。F(m,3) 的三个级别与代价。</figcaption>
+</figure>
+<p>Winograd 是 Toom-Cook 算法的扩展：用<strong>便宜的变换操作</strong>（加、减、移位）配合常数矩阵，把卷积的<strong>乘法次数</strong>降到最低。对于 3×3 卷积、输出块 m×m，记为 F(m,3)：</p>
+<div class="formula">空间域：d × g（每个输出块 9 次乘法）　→　Winograd 域：BᵀdB ⊙ GgGᵀ → Aᵀ[...]A<span class="tag">式 4.1</span></div>
+<ul>
+<li><strong>F(2,3)=F2</strong>：加速 1.92×，INT8 下<strong>无精度损失</strong>，变换开销小；</li>
+<li><strong>F(4,3)=F4</strong>：乘法 ÷4（加速 3.32×），但 INT8 下精度掉 <strong>9.1%</strong>（不可接受）；</li>
+<li><strong>F(6,3)=F6</strong>：加速最高，但变换功耗太高 + 精度损失太大 → 本文不用。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 为什么“变换”便宜？</div>
+<p>BᵀdB、GgGᵀ 这些变换矩阵的元素是 0、±1、±1/2 之类的小常数——乘它们就是<strong>加/减/移位</strong>，几乎不消耗“真正的乘法”。而 EWMM 阶段每个输出点只做一次乘法（F4 时乘法数 ÷4）。所以“变换开销 &lt;&lt; 省下的乘法开销” → 净加速。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_9_Winograd分解与F4.png">
+  <source src="assets/videos/v02_winograd.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · Winograd 流程动画：空间域 → BᵀdB+GgGᵀ 变换 → EWMM → Aᵀ()A 逆变换。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · Winograd F4：乘法从 9 次降到 4 次（÷4）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">空间域 9 乘法 → Winograd 域 4 乘法（÷4）</span>
+</div>
+<div class="hint">步骤 1：空间域 3×3 卷积 = 9 次乘法；步骤 2：变换后 4×4 EWMM 只有 4 个“真乘法”（橙点）；步骤 3：逆变换还原。变换 = 加/减/移位（便宜）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：混合 Winograd（F2+F4 按层选）微架构与数据流</h2>
+<figure>
+  <img src="assets/diagrams/d05_hybrid_winograd.svg" alt="混合 Winograd" style="max-width:940px">
+  <figcaption>图 5.1　混合策略（训练时决定每层用 F2/F4/空间域）+ 通用化（核分解 + 激活分段）+ PCO 映射与三变换单元数据流。</figcaption>
+</figure>
+<p><strong>为什么“混合”？</strong>单用 F2 无损但只 1.92×；单用 F4 有 3.32× 但掉 9.1%。混合策略在<strong>训练时</strong>为每一层决定用 F2、F4 还是空间域（Table III）：精度敏感层用无损选项、不敏感层用 F4 → <strong>ResNet34 加速 2.59×、精度仅掉 0.6%</strong>（站上帕累托前沿，见 d09）。</p>
+<figure>
+  <img src="assets/diagrams/d09_tradeoff.svg" alt="权衡图" style="max-width:920px">
+  <figcaption>图 5.2　加速-精度权衡：混合策略 vs 基线/F2/F4。</figcaption>
+</figure>
+<p><strong>如何支持各种卷积配置？</strong></p>
+<ul>
+<li><strong>核分解</strong>：&gt;3×3 的核（如 7×7）拆成多个 3×3 核，各自可用 Winograd（离线做）；</li>
+<li><strong>激活分段</strong>：stride=2 时把激活和核按“颜色”分区，每区做 stride=1 的 3×3 卷积（片上输入缓冲做）；</li>
+<li><strong>PCO 映射</strong>：Winograd 域是 EWMM——同一输出通道、不同输入通道的结果相加（COM 通道序，宏内）；不同像素并行（POM 像素序，宏间）→ 并行度可扩展。</li>
+</ul>
+<p><strong>三变换单元数据流</strong>：Bᵀ()B（激活输入变换）→ CiM 核 EWMM → Aᵀ()A（输出逆变换）→ SIMD 量化回 8b；权重经 G()Gᵀ 变换后存回权重 SRAM（省容量）。F2/F4 变换电路面积（功耗）占比 0.91%（5.33%）/ 10.76%（15.97%）。</p>
+<figure>
+  <img src="assets/figs/fig11_9_Winograd分解与F4.png" alt="论文图9">
+  <figcaption>图 5.3　论文原图 Fig. 9：7×7 核分解示例、stride=2 激活分段与 F4 Winograd 3×3 卷积细节。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：MDPS 宏级并行双端稀疏</h2>
+<figure>
+  <img src="assets/diagrams/d06_mdps.svg" alt="MDPS" style="max-width:940px">
+  <figcaption>图 6.1　MDPS：激活侧（bit-mask + tile 压缩、连续 4 零跳过）与权重侧（水平压缩 + PPRS 重排）双端并行；OMB 合并结果。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_13_MDPS策略.png" alt="论文图13">
+  <figcaption>图 6.2　论文原图 Fig. 13：MDPS 策略流程（激活压缩 + 权重水平压缩）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>稀疏优化在“刚性阵列”的 CiM 里很难做——随机分布的非结构化稀疏会让激活数据“重新进入”阵列。MDPS 的解法是<strong>只在宏级调度</strong>，分三步：</p>
+<ol>
+<li><strong>激活处理（ISPU）</strong>：bit-mask 生成器按激活稀疏度生成掩码；<strong>连续 4 个稀疏数据就跳过</strong>（对应单个 4×32 宏输入规模）；tile 压缩器去掉稀疏段、tile 分配器把有效数据依次送入；</li>
+<li><strong>右移累加 MAC（PPRS）</strong>：权重水平压缩（只改列位置、不改行位置 → 稀疏随机分布不引起激活重入）；PPRS 按权重索引把每个 P[10:0] 移回正确位置再进 4 输入加法树；</li>
+<li><strong>结果合并（OMB）</strong>：权重索引 + 合并配置（由 bit-mask 生成）控制写地址；有效结果写正确位置、零值写空白；Cout 太多时部分积经间隔周期送 SIMD + 全局 SRAM 补加（隐藏延迟）。</li>
+</ol>
+<div class="box key">
+<div class="bt">📊 MDPS 收益（ResNet34）</div>
+<p>50% 激活稀疏 → 1.84×；50% 权重稀疏 → 1.76×；<strong>双端 50% → 3.11×</strong> 能效。稀疏控制电路（ISPU/PPRS/OMB）面积仅 +4.5%、功耗仅 +7.8%。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_13_MDPS策略.png">
+  <source src="assets/videos/v03_mdps.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · MDPS 动画：激活连续 4 零跳过 + 权重水平压缩重排。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 激活压缩（连续 4 零跳过）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">连续 4 个零 → 整组跳过（宏级调度）</span>
+</div>
+<div class="hint">橙色=有效激活（送入宏计算）；红色=连续 4 个零的整组（跳过）。看“跳过”如何减少送入宏的输入周期。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与两种工作模式</h2>
+<figure>
+  <img src="assets/diagrams/d07_architecture.svg" alt="系统架构" style="max-width:940px">
+  <figcaption>图 7.1　系统架构：RISC-V 顶层控制器 + 6 个处理核（每核 = 144×32 CiM 核 + 激活输入缓冲 + 3 变换单元 + SIMD + 配置 SRAM）+ 全局/权重 SRAM。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_5_总体架构.png" alt="论文图5">
+  <figcaption>图 7.2　论文原图 Fig. 5：顶层架构（a）与两种模式的数据流方向（b）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<ul>
+<li><strong>6 个处理核</strong>：每个核含 144×32 CiM 核（= 4 × 36×32 宏 + ISPU + OMB）、激活输入缓冲、3 个 Winograd 变换单元（Bᵀ()B、G()Gᵀ、Aᵀ()A）、SIMD 单元、6kB 配置 SRAM；</li>
+<li><strong>全局存储</strong>：130.5kB 全局 SRAM + 121.5kB 权重 SRAM + 4kB 指令 SRAM；</li>
+<li><strong>两种模式</strong>：Winograd 域模式（CONV，三变换启用、SIMD 量化）与空间域模式（常规 CONV + FC GEMM，变换旁路）。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 “三层级解耦”设计哲学</div>
+<p>电路级（Radix16+LUT）· 微架构级（混合 Winograd）· 数据级（MDPS）三个创新彼此独立、互不干扰——每个都能作为“该层级的通用优化技术”单独使用，也能与其他算法级稀疏（如 Transformer 的 attention/token 稀疏）正交叠加。这是系统级论文最值得学的“模块化创新”写法。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　系统能效范围 19.9~258.5 TOPS/W（0.6~1.1V、78~287MHz），峰值 258.5 TOPS/W @0.6V/116MHz。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_winograd.png" alt="Winograd 权衡" style="max-width:860px">
+  <figcaption>图 8.2　Winograd 权衡：混合策略 2.59× 且几乎无损（对比 F2 1.92× / F4 3.32× 掉 9.1%）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_mdps.png" alt="MDPS 收益" style="max-width:860px">
+  <figcaption>图 8.3　MDPS 收益：激活 1.84×、权重 1.76×、双端 3.11×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d08_results.svg" alt="结果汇总" style="max-width:940px">
+  <figcaption>图 8.4　三级技术栈的各自贡献与叠加效果。</figcaption>
+</figure>
+<ul>
+<li><strong>芯片</strong>：28nm，6.02 mm²；0.6~1.1V、78~287MHz；</li>
+<li><strong>能效</strong>：峰值 258.5 TOPS/W（0.6V/116MHz，全三项技术）；</li>
+<li><strong>精度</strong>：ResNet34（Top-5）/ResNet50（Top-1）@ImageNet，精度损失 0.65% / 2.15%（主要是量化，Winograd 贡献很小）；</li>
+<li><strong>加速</strong>：混合 Winograd 2.59×/1.51×；叠加 50% 双端稀疏后 8.05×/4.85×；</li>
+<li><strong>归一化吞吐</strong>：1/（周期数 × 技术增益）指标下比 SOTA 高 <strong>2.55~7.08×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig11_17_芯片照片.png" alt="论文图17">
+  <figcaption>图 8.5　论文原图 Fig. 17：芯片照片与性能汇总。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 258.5 TOPS/W 是“三项技术全开 + 0.6V”的条件值；对比表里把前作能效<strong>按工艺和电压换算到 28nm/0.6V</strong>再比——换算本身有假设，读时要理解；② “归一化峰值吞吐”指标剥离了频率/MAC 数，只反映“周期数×技术增益”——这比直接比 TOPS 公平，但也没反映面积/功耗全貌；③ 精度损失大头是量化，Winograd 只贡献一小部分——别把两项的精度账混在一起。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更低位宽的两周期扩展</strong>：Radix16 是 5 bit/周期 → INT8 两周期。扩展到 FP8/MXFP（06 号论文）的“位宽可配两周期”宏？Radix32（一次 6~7 bit、INT8 一周期）？LUT 的面积与翻转代价要重新权衡；</li>
+<li><strong>Winograd 的深度集成</strong>：本文 F2/F4 变换是硬连线模块。做成“可编程变换单元”（支持 F6、1D-Winograd、不同 tile 大小），并研究“Winograd 域稀疏”（先变换后剪枝 [29] 的硬件化）——与 MDPS 在 Winograd 域内协同；</li>
+<li><strong>稀疏的在线化与自适应</strong>：MDPS 用静态 bit-mask。能否在线检测激活稀疏并动态调度（运行时自适应）？把 02 号论文的动态启动器思路和 MDPS 结合，稀疏加速更贴近真实数据分布；</li>
+<li><strong>训练支持</strong>：本文是推理。训练需要反向传播（转置乘，03 号论文）——把“两周期宏 + 转置读口”结合，得到“推理-训练两周期”处理器；</li>
+<li><strong>与 Transformer/LLM 的结合</strong>：三层级技术（Radix16/混合 Winograd/MDPS）都面向 CNN。Transformer 的 GEMM 部分能直接用两周期宏（空间域模式），注意力稀疏可正交叠加——做一个“CNN+Transformer 通吃”的通用 CIM 处理器；</li>
+<li><strong>更先进的工艺与集成</strong>：28nm → 先进节点（3nm 等），Radix16+LUT 的数字逻辑能效随工艺提升；配合 3D 堆叠（08 号论文）或 eNVM（05 号论文）做大容量集成。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>计算周期（Calculation Cycle）</dt><dd>CIM 宏出一个完整 MAC 结果所需的周期数；决定吞吐。</dd>
+<dt>Radix16</dt><dd>每次处理 5 位激活的乘法分解（INT8 两周期）。</dd>
+<dt>LUT（Look-Up Table）</dt><dd>查表电路；本文用它实现 ±3W~±7W 部分积，省加法链（−21.7% 功耗）。</dd>
+<dt>Winograd</dt><dd>Toom-Cook 扩展：变换到另一域做逐元素乘加，减少乘法次数。</dd>
+<dt>F(m,3)</dt><dd>3×3 卷积、输出块 m×m 的 Winograd 级别（F2/F4/F6）。</dd>
+<dt>EWMM（Elementwise Matrix Multiply）</dt><dd>逐元素矩阵乘（Winograd 域的核心运算）。</dd>
+<dt>Bᵀ()B / G()Gᵀ / Aᵀ()A</dt><dd>激活/权重输入变换与输出逆变换单元。</dd>
+<dt>核分解（Kernel Decomposition）</dt><dd>&gt;3×3 核拆成多个 3×3 核以使用 Winograd。</dd>
+<dt>激活分段（Activation Segmentation）</dt><dd>stride=2 时把激活分区，各区做 stride=1 卷积。</dd>
+<dt>PCO（Pixel/Channel Order）映射</dt><dd>COM（通道序，宏内）+ POM（像素序，宏间）。</dd>
+<dt>MDPS（Macrolevel Parallel Dual-Side Sparsity）</dt><dd>宏级并行双端稀疏：激活压缩 + 权重水平压缩。</dd>
+<dt>ISPU（Input Sparsity-Processing Unit）</dt><dd>输入稀疏处理单元：bit-mask + tile 压缩/分配。</dd>
+<dt>PPRS（Partial Product Right Shifter）</dt><dd>部分积右移器：把水平压缩后的权重 P[10:0] 移回正确位置。</dd>
+<dt>OMB（Output Merge Buffer）</dt><dd>输出合并缓冲：把有效 MAC 结果写回正确位置。</dd>
+<dt>归一化峰值吞吐</dt><dd>= 1 /（计算周期数 × 技术增益），剥离频率/MAC 数的公平指标。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>H. Wu, Y. Chen, Y. Yuan, J. Yue, X. Wang, X. Li, F. Zhang, “A 28-nm 19.9-to-258.5-TOPS/W 8b Digital Computing-in-Memory Processor With Two-Cycle Macro Featuring Winograd-Domain Convolution and Macro-Level Parallel Dual-Side Sparsity,” <em>IEEE JSSC</em>, vol. 60, no. 1, pp. 347-361, Jan. 2025. DOI: 10.1109/JSSC.2024.3409356</li>
+<li>A. Lavin and S. Gray, “Fast algorithms for convolutional neural networks,” <em>CVPR 2016</em>, pp. 4013-4021.（Winograd [21]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 255-257.（Radix4 前作 [15]）</li>
+<li>J. Yue et al., “A 28nm 16.9-300TOPS/W Computing-in-Memory Processor Supporting FP NN Inference/Training…,” <em>ISSCC 2023</em>, pp. 1-3.（[13]）</li>
+<li>F. Tu et al., “MuITCIM: A 28nm 2.24μJ/token Attention-Token-Bit Hybrid Sparse Digital CIM-Based Accelerator for Multimodal Transformers,” <em>ISSCC 2023</em>, pp. 248-250.（[17]）</li>
+<li>S. Han et al., “Learning both weights and connections for efficient neural network,” <em>NeurIPS 2015</em>, pp. 1135-1143.（稀疏压缩 [24]）</li>
+<li>X. Liu, J. Pool, S. Han, W. J. Dally, “Efficient sparse-Winograd convolutional neural networks,” <em>arXiv:1802.06367</em>.（Winograd 域稀疏 [29]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图版权归 IEEE/原作者所有，此处仅作教学引用（© 2024 IEEE）。所有实测数字（258.5 TOPS/W、2.59×、3.11×、2.55~7.08× 等）均来自论文原文；能效图中的“中值”为范围示意，已注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   两周期 CIM 处理器教学教程 · 交互脚本
+   演示 A 乘法分解 · 演示 B Winograd · 演示 C 激活压缩
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 乘法分解（周期数）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+  const schemes = [
+    { name: "位串行", cycles: 8, col: PAL.red, per: 1 },
+    { name: "Radix4 (Booth)", cycles: 4, col: PAL.purple, per: 3 },
+    { name: "Radix16 (本文)", cycles: 2, col: PAL.green, per: 5 },
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "INT8 乘法分解：每周期算的位数 vs 周期数", 30, 24, 15, PAL.white, "left");
+    schemes.forEach((s, i) => {
+      const y = 60 + i * 70;
+      ctx.fillStyle = "#14263c"; ctx.strokeStyle = s.col; ctx.lineWidth = 2;
+      rrect(ctx, 60, y, 160, 44, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, s.name + "（" + s.per + " bit/周期）", 70, y + 22, 12.5, s.col, "left");
+      // 周期脉冲
+      for (let k = 0; k < s.cycles; k++) {
+        const x = 260 + k * 60;
+        const lit = k <= cyc % s.cycles;
+        ctx.fillStyle = lit ? s.col : "#1c2838";
+        rrect(ctx, x, y + 8, 46, 28, 6); ctx.fill(); ctx.stroke();
+        txt(ctx, "周期" + k, x + 23, y + 22, 10, lit ? "#0a1119" : PAL.gray, "center");
+      }
+      txt(ctx, "共 " + s.cycles + " 周期", 260 + s.cycles * 60 + 14, y + 22, 12.5, s.col, "left");
+    });
+    txt(ctx, "Radix16 把周期压到 2 → 但每周期加权部分积更复杂 → LUT 救场（动态功耗 −21.7%）", 60, 280, 13, PAL.orange, "left");
+    if (stat) stat.textContent = "周期推进：位串行 8 · Radix4 4 · Radix16 2";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 500); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 500);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · Winograd F4（3×3 conv → EWMM 乘法 ÷4）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const k = cyc % 3;
+    txt(ctx, "Winograd F4：乘法从 9 次降到 2~4 次（÷4）", 30, 24, 15, PAL.white, "left");
+    if (k === 0) {
+      // 空间域 3x3 卷积
+      txt(ctx, "空间域：3×3 卷积（9 次乘法/输出块）", 60, 60, 13, PAL.red);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const x = 80 + c * 50, y = 80 + r * 40;
+          ctx.fillStyle = "#3c2a26"; ctx.strokeStyle = PAL.red; ctx.lineWidth = 1.5;
+          rrect(ctx, x, y, 44, 34, 4); ctx.fill(); ctx.stroke();
+        }
+      }
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const x = 340 + c * 50, y = 80 + r * 40;
+          ctx.fillStyle = "#2a243e"; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 1.5;
+          rrect(ctx, x, y, 44, 34, 4); ctx.fill(); ctx.stroke();
+        }
+      }
+      txt(ctx, "激活块 d × 卷积核 g → 9 个乘法", 300, 210, 12.5, PAL.gray, "center");
+    } else if (k === 1) {
+      txt(ctx, "Winograd 域：变换后做逐元素乘加（EWMM）", 60, 60, 13, PAL.blue);
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const x = 100 + c * 60, y = 90 + r * 34;
+          ctx.fillStyle = "#1e3c56"; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1.5;
+          rrect(ctx, x, y, 54, 28, 4); ctx.fill(); ctx.stroke();
+          if (r % 3 === 0 && c % 3 === 0) {
+            ctx.fillStyle = PAL.orange;
+            ctx.beginPath(); ctx.arc(x + 27, y + 14, 5, 0, 6.28); ctx.fill();
+          }
+        }
+      }
+      txt(ctx, "F4：4×4 变换块 → 只有 4 个“真正的乘法”（橙点）→ ÷4", 80, 260, 12.5, PAL.orange, "left");
+    } else {
+      txt(ctx, "逆变换 Aᵀ()A：还原空间域输出（加/减，便宜）", 60, 60, 13, PAL.green);
+      for (let r = 0; r < 4; r++) {
+        const x = 200 + r * 80;
+        ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+        rrect(ctx, x, 120, 70, 44, 8); ctx.fill(); ctx.stroke();
+        txt(ctx, "输出块 " + r, x + 35, 142, 11, PAL.green, "center");
+      }
+      txt(ctx, "→ 净加速 3.32×（F4）· 混合按层选 → 2.59× 且精度仅 −0.6%", 60, 210, 13.5, PAL.white, "left");
+      txt(ctx, "变换矩阵元素为 0/±1/±½ → 变换 = 加/减/移位，几乎不耗“乘法”", 60, 240, 12.5, PAL.gray, "left");
+    }
+    if (stat) stat.textContent = ["空间域 9 乘法", "Winograd 域 4 乘法（÷4）", "逆变换还原"][k];
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1600);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 激活压缩（连续 4 零跳过）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  const acts = [5, 0, 0, 0, 0, 3, 0, 0, 0, 0, 7, 1, 0, 0, 0, 0, 2, 6];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "激活压缩：连续 4 个零整组跳过（宏级调度）", 30, 24, 15, PAL.white, "left");
+    const shown = Math.min(acts.length, 6 + (cyc % (acts.length - 6)));
+    let sent = 0, skipped = 0;
+    for (let i = 0; i < shown; i++) {
+      const x = 70 + (i % 12) * 70, y = 60 + Math.floor(i / 12) * 60;
+      const v = acts[i];
+      const inZeroRun = v === 0 && i % 4 !== 0;
+      const isSkipGroup = v === 0 && i % 4 === 0;
+      ctx.fillStyle = v !== 0 ? "#1e3c2c" : (i % 4 === 0 ? "#3a2620" : "#141c2a");
+      ctx.strokeStyle = v !== 0 ? PAL.green : (i % 4 === 0 ? PAL.red : PAL.line);
+      ctx.lineWidth = v !== 0 ? 2 : 1.5;
+      rrect(ctx, x, y, 60, 40, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, v, x + 30, y + 20, 13, PAL.white, "center");
+      if (v !== 0) sent++;
+      else if (i % 4 === 0) skipped += 4;
+      // 跳过标注
+      if (v === 0 && i % 4 === 0) txt(ctx, "跳过×4", x + 30, y - 8, 9, PAL.red, "center");
+    }
+    txt(ctx, "送入宏的有效激活：" + sent + " · 跳过的零：" + skipped, 70, 190, 13.5, PAL.orange, "left");
+    txt(ctx, "→ 激活输入周期减少（50% 稀疏时 ~1.84× 能效提升）", 70, 220, 12.5, PAL.gray, "left");
+    txt(ctx, "bit-mask 记录稀疏位置 → 计算后 OMB 按掩码写回正确位置", 70, 248, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "已处理 " + shown + " 个激活 · 有效 " + sent + " · 跳过 " + skipped;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 900); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 900);
+  draw();
+})();
+
+</script>
+</body>
+</html>

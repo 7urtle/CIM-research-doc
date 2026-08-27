@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">乘法分解的演进：1 位 → 3 位 → 5 位（周期 8 → 4 → 2）</text>
+
+  <!-- 三种方式 -->
+  <g font-size="11.5">
+    <rect x="40" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="13.5" font-weight="700">位串行 [8]：1 bit/周期</text>
+    <text x="60" y="150" fill="#45536b">I×W = Σ I[i]·W·2^i</text>
+    <text x="60" y="180" fill="#45536b">每周期处理 1 位激活</text>
+    <text x="60" y="210" fill="#c25e2e" font-weight="600">INT8：8 个计算周期</text>
+    <text x="60" y="250" fill="#45536b">能效最高（翻转最少）</text>
+    <text x="60" y="280" fill="#45536b">但时间域效率极低</text>
+
+    <rect x="340" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">Radix4 [15]：3 bit/周期</text>
+    <text x="360" y="150" fill="#45536b">I×W = Σ(−2I[i+1]+I[i]+I[i−1])·W·2^i</text>
+    <text x="360" y="180" fill="#45536b">Booth 编码一次算 3 位</text>
+    <text x="360" y="210" fill="#6b3fa0" font-weight="600">INT8：4 个计算周期</text>
+    <text x="360" y="250" fill="#45536b">周期减半，但每周期</text>
+    <text x="360" y="280" fill="#45536b">电路翻转增加</text>
+
+    <rect x="640" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#1d8a5f" font-size="13.5" font-weight="700">Radix16（本文）：5 bit/周期</text>
+    <text x="660" y="150" fill="#45536b">I×W = Σ(−8I[i+3]+4I[i+2]+2I[i+1]+I[i]+I[i−1])·W·2^i</text>
+    <text x="660" y="180" fill="#45536b">一次算 5 位激活</text>
+    <text x="660" y="210" fill="#1d8a5f" font-weight="600">INT8：2 个计算周期！</text>
+    <text x="660" y="250" fill="#45536b">直接实现加权部分积翻转太多</text>
+    <text x="660" y="280" fill="#45536b">→ 需要 LUT 优化（见 §4）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="364" write="0" width="880" height="92" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="392" fill="#0e5a8a" font-size="13.5" font-weight="700">关键权衡</text>
+  <text x="60" y="418" fill="#45536b" font-size="12.5">每周期算的位数越多 → 周期越少（吞吐↑）→ 但每周期翻转越多（能效↓）。</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">Radix16 把周期压到 2，但“加权部分积”（±3W~±7W）的加法开销巨大 → 用 LUT 消除 → 动态功耗 −21.7%。</text>
+</svg>

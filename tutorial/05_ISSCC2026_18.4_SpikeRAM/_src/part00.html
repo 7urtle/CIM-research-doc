@@ -1,0 +1,58 @@
+<section class="chapter" id="sec0">
+<h1 class="title">SpikeRAM 事件驱动脉冲处理器零基础精讲：感知、计算、学习，全在芯片上
+<span class="en">SpikeRAM: A 48.1pW/Synapse/Bit Event-Driven Spiking Compute-Near/In-Memory Processor with Neuromorphic Sensor Enabling Life-Long On-Chip Learning（ISSCC 2026 · Paper 18.4）</span></h1>
+<div class="meta">论文作者：Haotian Fu, Yue Zhou 等 · 香港科技大学（广州）+ 时识科技（SynSense）等（通讯作者：郑博文）
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 18（领域专用加速器），论文 18.4
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>边缘感知芯片要同时做到<strong>高能效、隐私、自适应</strong>。SpikeRAM 把这三件事做成一个完整系统：<strong>事件相机（EVS）感知 + 脉冲网络（SNN）计算 + 片上在线学习（OCL）</strong>，并配套三个关键技术：</p>
+<ol>
+<li><strong>记忆中心的异步近传感器计算</strong>：EVS-sCNN 核直接消费 EVS 的异步事件（省帧转换、省搬移、省冗余 MAC）；</li>
+<li><strong>e-OTBP 在线学习算法</strong>：单时间步 + 资格迹（ET）训练多层网络，32 时间窗时内存需求 −73.1%；</li>
+<li><strong>三值梯度 + 格雷码权重</strong>：每次权重更新最多翻 1 位 → eNVM 编程次数平均 −89%（NMNIST），MRAM 寿命 +13.9×。</li>
+</ol>
+<p>实测：功率密度 <strong>48.1 pW/Synapse/Bit</strong>、实时处理总功耗 <strong>8.28 mW</strong>、支持 464M 突触，事件式签名验证 2-shot 学习达 94.3% 精度。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>事件相机 ≠ 摄像机：</strong>传统相机一帧一帧拍整幅图像；EVS 只在“像素亮度变化”时输出一个事件（坐标+时间+极性）。所以它的输出天然稀疏、异步、只有边缘信息——省电还保护隐私（不记录完整图像）。</li>
+<li><strong>SNN 的计算 = 加法：</strong>脉冲是 0/1，所以“脉冲 × 权重”不是真乘法，而是“要不要把这个权重加进膜电位”的选择题 → 硬件用<strong>移位加法器</strong>就行，根本不用乘法器。这是事件驱动计算省电的根本原因。</li>
+<li><strong>在线学习 ≠ 云端训练：</strong>OCL 在设备上就地训练，数据不出芯片（隐私），还能按用户习惯自适应。但代价是反复写非易失存储（eNVM），而 eNVM 写次数有限——所以论文花大力气把“写次数”压下来（三值梯度 + 格雷码）。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“an event-based vision sensor (EVS) with asynchronous, sparse and edge-only imaging, offers low power and high privacy”</td>
+<td>EVS 事件相机：异步、稀疏、只输出边缘 → 低功耗 + 高隐私。</td></tr>
+<tr><td class="num">“on-chip learning (OCL) with emerging non-volatile memories (eNVMs) enables permanent in-situ training without cloud computing”</td>
+<td>用 eNVM 做片上在线学习 → 永久保存训练结果、不上云（隐私）。</td></tr>
+<tr><td class="num">“Memory-centric asynchronous near-sensor computing… eliminating frame conversion, reducing data movement and redundant operations”</td>
+<td>方案 1：记忆中心的异步近传感器计算，去掉帧转换与冗余运算。</td></tr>
+<tr><td class="num">“Eligibility one-time backpropagation (e-OTBP)… trains a multi-layer network through a single TW and eligibility trace… reducing memory requirements by 73.1%”</td>
+<td>方案 2：e-OTBP 用单时间步 + 资格迹学习，32 TW 时内存需求 −73.1%。</td></tr>
+<tr><td class="num">“Ternary gradients with gray-code weights significantly reduce memory programming times”</td>
+<td>方案 3：三值梯度 + 格雷码权重，大幅减少存储编程次数（−89.1%/−88.4%）。</td></tr>
+<tr><td class="num">“48.1pW/Synapse/Bit… 464M synapses and 8.28mW power”</td>
+<td>实测：功率密度 48.1 pW/Synapse/Bit，464M 突触，系统功耗 8.28 mW。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>感-存-算-学一体化系统</strong>：片上 EVS + sCNN（近存 NMC）+ sFC（存内 CIM）+ OCL（eNVM 学习）——数据以事件形式从传感器流到存储器，几乎零格式转换；</li>
+<li><strong>全异步事件驱动计算</strong>：sCNN PE 用双轨握手（无时钟树），事件到达才激活卷积核、跳过空白区域；</li>
+<li><strong>e-OTBP 单时间步在线学习</strong>：内存需求 −73.1%（32 TW），计算/内存开销仅为 BPTT 的 4.3%/3.1%；</li>
+<li><strong>三值梯度 + 格雷码权重</strong>：编程次数 −89.1%（NMNIST）/−88.4%（DVS Gesture），MRAM 寿命 +13.9×；</li>
+<li><strong>真实世界演示</strong>：事件式签名验证（EHSV），2-shot 在线学习 94.3% 精度；NMNIST/DVS/DailyDVS 均 1 epoch 收敛（96.4%/92.9%/90.5%）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级”论文（不是单个 CIM 宏），读的时候注意它把 NMC、CIM、算法、存储寿命串成了完整故事——这是做系统的人最值得学的写法。</p>
+</div>
+</section>

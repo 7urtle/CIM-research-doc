@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">位并行 CIM 的三大挑战（论文 Fig. 30.4.1）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：布线拥塞与加法</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">8b 位并行 MAC 的部分积太多，</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">“位列加法”布线拥塞；</text>
+    <text x="60" y="196" fill="#45536b" font-size="12">已有招数都有代价：</text>
+    <text x="60" y="218" fill="#45536b" font-size="12">• 多周期拼接 INT4 → 吞吐降</text>
+    <text x="60" y="238" fill="#45536b" font-size="12">• ADC 当压缩器 → 面积大</text>
+    <text x="60" y="258" fill="#45536b" font-size="12">• 近似压缩器 → 精度损失</text>
+    <text x="60" y="300" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“无损 + 面积小”的位列加法</text>
+
+    <rect x="340" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：符号位处理</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">2 的补码有符号 MAC：</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">负权重/负输入需要符号扩展、</text>
+    <text x="360" y="190" fill="#45536b" font-size="12">符号修正位……</text>
+    <text x="360" y="218" fill="#45536b" font-size="12">传统做法：</text>
+    <text x="360" y="240" fill="#45536b" font-size="12">• 大块额外面积 [6,8]</text>
+    <text x="360" y="260" fill="#45536b" font-size="12">• 或额外周期 [11]</text>
+    <text x="360" y="300" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“嵌入式”的符号扩展</text>
+
+    <rect x="640" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：加法树空转</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">乘法/局部压缩产生的中间结果</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">在“高扇入加法器”里引起</text>
+    <text x="660" y="190" fill="#45536b" font-size="12">不必要翻转（毛刺/中间值），</text>
+    <text x="660" y="218" fill="#45536b" font-size="12">功耗被白白浪费；</text>
+    <text x="660" y="248" fill="#45536b" font-size="12">传统方案：加法树全程开闸，</text>
+    <text x="660" y="268" fill="#45536b" font-size="12">即使输入还没准备好也在翻转</text>
+    <text x="660" y="300" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“分阶段使能”的省电机制</text>
+  </g>
+
+  <rect x="40" y="352" width="880" height="126" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="380" fill="#1d8a5f" font-size="13.5" font-weight="700">本论文的三招对应：</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">① TCL（转移计数行）：用“数沿”代替“数 1 的个数”的无损位列压缩器 → 面积最小化、稀疏自适应；</text>
+  <text x="60" y="428" fill="#45536b" font-size="12.5">② 总线 TCL 嵌入符号位扩展：2C 有符号 MAC 只多 2.95% 面积、零延迟；</text>
+  <text x="60" y="450" fill="#45536b" font-size="12.5">③ 10 相分阶段使能：乘法相只开 MMU、加法相才开加法树 → 能效 +42%</text>
+</svg>

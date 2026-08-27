@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">模拟路径 CIM 的三大挑战（论文 Fig. 14.7.1）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：单向搜索浪费</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">单方向搜索（SDS）：</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">信号只从 START 出发，</text>
+    <text x="60" y="190" fill="#45536b" font-size="12">要“铺”满半个地图才到 END</text>
+    <text x="60" y="220" fill="#45536b" font-size="12">→ 一半的搜索时间被浪费</text>
+    <text x="60" y="264" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要双向搜索（DDS）</text>
+
+    <rect x="340" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：存储 PPA 差</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">DFF 暂存（方向数据）</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">面积大、功耗高（PPA 差）；</text>
+    <text x="360" y="198" fill="#45536b" font-size="12">动态逻辑替代品又容易漏电</text>
+    <text x="360" y="228" fill="#45536b" font-size="12">（动态节点电荷保持难）</text>
+    <text x="360" y="272" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“动态逻辑 PE + 预充电优化”</text>
+
+    <rect x="640" y="90" width="280" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：处理窗口有限</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">32×32 阵列只能处理小图；</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">大图（1024×1024）会任务失败</text>
+    <text x="660" y="198" fill="#45536b" font-size="12">直接整图映射 → 语义模糊；</text>
+    <text x="660" y="220" fill="#45536b" font-size="12">拆图映射 → 局部最优</text>
+    <text x="660" y="264" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“三步粗/细路径”（TsCFP）</text>
+  </g>
+
+  <rect x="40" y="344" width="880" height="102" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="372" fill="#1d8a5f" font-size="13.5" font-weight="700">NeuroPilot 三招对应：</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">① DDS 双向搜索：START 与 END 同时出发，中间交汇 → 时间 −2.1×、功耗 −1.13×；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">② 动态逻辑 Pilot PE + OPC 外扩预充电 → 面积 −1.32×、动态容量 −1.35×、漏电降低；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">③ TsCFP 三步流程：粗图 → 粗路径 → 细路径，大图高效导航。</text>
+</svg>

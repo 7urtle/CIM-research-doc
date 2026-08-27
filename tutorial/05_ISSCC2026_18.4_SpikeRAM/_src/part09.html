@@ -1,0 +1,57 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>片上 eNVM 一体化</strong>：本文的 eNVM 是“外接 4Mb MRAM”。把 MRAM/RRAM 直接 3D 集成或嵌入 sFC-OCL 核（像 08 号论文的 3D 路线），省掉片间搬运，学习延迟与功耗还能降；</li>
+<li><strong>终身学习（Life-Long Learning）</strong>：论文标题里有“Life-Long”。真正的终身学习要解决“灾难性遗忘”（学新任务忘旧任务）。把 e-OTBP 与弹性权重巩固（EWC）、情景记忆结合，是算法侧的自然延伸；</li>
+<li><strong>多传感器融合</strong>：本文只有视觉 EVS。融合音频事件（片上麦克风事件流）、IMU 事件，SpikeRAM 的“事件驱动”框架可以统一多模态——但 NoC 调度和跨模态同步是难点；</li>
+<li><strong>更深的网络与更复杂任务</strong>：目前是 sCNN + 两层 sFC。扩展到更深网络（ResNet 式 SNN、脉冲 Transformer）需要解决“深层 SNN 的梯度传播与收敛”，e-OTBP 的资格迹框架是很好的起点；</li>
+<li><strong>安全与隐私深化</strong>：签名验证是“数据不出芯片”的好例子。加硬件安全模块（加密、防物理攻击）、把 eNVM 变成“可信执行环境”，能把隐私卖点做成产品壁垒；</li>
+<li><strong>能耗-精度联合调度</strong>：LIF/IF/InoF 三种神经元 + 事件滤波器 + 动态电压频率缩放——做一个“按场景自适应”的运行时调度器（静态场景切 IF 省电、动态场景切 LIF 保精度）；</li>
+<li><strong>与云端的联邦学习协同</strong>：芯片本地 OCL 学到的“个性化模型”可以用差分隐私聚合回云端（联邦学习），兼顾隐私与全局性能。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>EVS（Event-based Vision Sensor）</dt><dd>事件视觉传感器：只在亮度变化时输出事件（x, y, 时间戳, 极性）。</dd>
+<dt>事件（Event）</dt><dd>一个像素亮度变化的记录；SNN 的输入脉冲。</dd>
+<dt>SNN（Spiking Neural Network）</dt><dd>脉冲神经网络：0/1 脉冲通信，事件驱动计算。</dd>
+<dt>OCL（On-Chip Learning）</dt><dd>片上在线学习：设备本地训练，数据不出芯片。</dd>
+<dt>eNVM（Emerging Non-Volatile Memory）</dt><dd>新兴非易失存储（MRAM/RRAM 等），写次数有限。</dd>
+<dt>NMC（Near-Memory Computing）</dt><dd>近存计算：计算单元贴近存储/传感器。</dd>
+<dt>CIM（Compute-in-Memory）</dt><dd>存内计算：计算在存储阵列内完成。</dd>
+<dt>NoC（Network-on-Chip）</dt><dd>片上网络：事件路由调度。</dd>
+<dt>双轨握手（Dual-Rail Handshake）</dt><dd>异步逻辑：请求/应答两线传递事件，无全局时钟。</dd>
+<dt>Vmem（Membrane Potential）</dt><dd>膜电位：神经元累加器（16b），撞阈值发放清零。</dd>
+<dt>LIF / IF / InoF</dt><dd>泄漏积分发放 / 纯积分发放 / 抑制性发放神经元行为。</dd>
+<dt>事件滤波器（Event Filter）</dt><dd>利用稀疏性跳过冗余计算（DVS Gesture −92.4%）。</dd>
+<dt>移位加法器（Shift-adder）</dt><dd>SNN 全连接的无乘法实现：选通 + 加法。</dd>
+<dt>TW（Time Window，时间窗）</dt><dd>SNN 学习的时间展开窗口。</dd>
+<dt>BPTT（Backprop Through Time）</dt><dd>按时间展开的反向传播（内存随 TW 增长）。</dd>
+<dt>e-OTBP（Eligibility One-Time BackProp）</dt><dd>资格迹一次性反向传播：单 TW 学习，内存 −73.1%。</dd>
+<dt>ET（Eligibility Trace，资格迹）</dt><dd>压缩历史贡献的迹（循环累加器实现）。</dd>
+<dt>Surr（Surrogate）函数</dt><dd>替代梯度：二值化后只需 2 个比较器。</dd>
+<dt>三值梯度（Ternary Gradient）</dt><dd>梯度量化 {−1, 0, +1}：0 不写、±1 一步长。</dd>
+<dt>格雷码（Gray Code）</dt><dd>相邻数值只差 1 位的编码；±1 更新只翻 1 位。</dd>
+<dt>NeuroPass 层</dt><dd>签名演示中的 LIF-sCNN 带通滤波层（提高信噪比）。</dd>
+<dt>EHSV 数据集</dt><dd>事件式签名验证数据集：1 类真 + 4 类伪。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>H. Fu, Y. Zhou, et al., “SpikeRAM: A 48.1pW/Synapse/Bit Event-Driven Spiking Compute-Near/In-Memory Processor with Neuromorphic Sensor Enabling Life-Long On-Chip Learning,” <em>ISSCC 2026</em>, Paper 18.4. DOI: 10.1109/ISSCC49663.2026.11409002</li>
+<li>P. Lichtsteiner et al., “A 128×128 120 dB 15μs Latency Asynchronous Temporal Contrast Vision Sensor,” <em>IEEE JSSC</em>, vol. 43, no. 2, 2008.（EVS 始祖 [7]）</li>
+<li>D. Huo et al., “A 67μW/Channel, 0.13 nW/Synapse/b Nose-on-a-Chip…,” <em>ISSCC 2025</em>, pp. 350-352.（功率密度对比 [2]）</li>
+<li>J. Zhang et al., “ANP-I: A 28nm 1.5pJ/SOP Asynchronous Spiking Neural Network Processor Enabling Sub-0.1μJ/Sample On-Chip Learning,” <em>ISSCC 2023</em>, pp. 21-23.（异步 SNN 前作 [4]）</li>
+<li>Y. Liu et al., “A 22nm 0.26nW/Synapse Spike-Driven SNN Processing Unit Using Time-Step-First Dataflow and Sparsity-Adaptive In-Memory Computing,” <em>ISSCC 2024</em>, pp. 484-486.（网络密度对比 [10]）</li>
+<li>Y. Zhong et al., “PAICORE: A 1.9-Million-Neuron 5.181-TSOPS/W Digital Neuromorphic Processor With Unified SNN-ANN and On-Chip Learning Paradigm,” <em>IEEE JSSC</em>, vol. 60, no. 2, 2025.（[5]）</li>
+<li>W. Zhang et al., “Edge Learning Using a Fully Integrated Neuro-Inspired Memristor Chip,” <em>Science</em>, vol. 381, 2023.（eNVM 边缘学习 [17]）</li>
+<li>C. Mu et al., “A 28-nm RRAM/SRAM Collaborative CIM Accelerator Supporting RRAM-Endurance-Latency Awareness for Edge Fine-Tuning,” <em>IEEE JSSC</em>, vol. 60, no. 10, 2025.（RRAM 寿命感知 [21]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM/神经形态计算方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 18.4.1–18.4.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（48.1 pW/Synapse/Bit、96.4%、−89.1%、+13.9× 等）均来自论文原文；对比图中前作数值为按论文倍数反推，已注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

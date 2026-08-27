@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="460" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">MCM 的价值：为什么“多芯粒”是 CIM 扩容的正解</text>
+
+  <!-- 单片问题 -->
+  <rect x="40" y="80" width="420" height="220" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#c25e2e" font-size="13.5" font-weight="700">单片 CIM 的容量困境</text>
+  <g font-size="12">
+    <text x="60" y="140" fill="#45536b">Beyond-NN 应用规模巨大（GCN 大图、DLRM</text>
+    <text x="60" y="162" fill="#45536b">大嵌入表）→ 单芯片装不下全部数据；</text>
+    <text x="60" y="192" fill="#45536b">数据要反复“倒出/重载”DRAM → 成为能效</text>
+    <text x="60" y="214" fill="#45536b">瓶颈（存储墙又回来了）</text>
+    <text x="60" y="252" fill="#c25e2e" font-weight="600">→ 需要把 CIM 的容量“扩出去”</text>
+  </g>
+
+  <!-- MCM -->
+  <rect x="500" y="80" width="420" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">MCM（多芯粒封装）的优势</text>
+  <g font-size="12">
+    <text x="520" y="140" fill="#45536b">• <strong>高良率</strong>：大单片 die 良率低，MCM 把系统</text>
+    <text x="520" y="162" fill="#45536b">　拆成小芯粒，坏芯粒单独替换 → 成本可控；</text>
+    <text x="520" y="192" fill="#45536b">• <strong>混合工艺</strong>：不同芯粒可用不同工艺节点</text>
+    <text x="520" y="214" fill="#45536b">　（存储芯粒用 DRAM 工艺、计算芯粒用逻辑工艺）；</text>
+    <text x="520" y="244" fill="#45536b">• <strong>按需扩展</strong>：模型多大就放几个芯粒。</text>
+    <text x="520" y="274" fill="#1d8a5f" font-weight="600">→ MCM-CIM = 数字 CIM 的“可扩展容量”</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="324" write="0" width="880" height="112" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="352" fill="#0e5a8a" font-size="13.5" font-weight="700">但 MCM-CIM 有新问题（本论文核心动机）</text>
+  <text x="60" y="378" fill="#45536b" font-size="12.5">① 芯粒间带宽有限 → 跨芯粒访问要尽量避免（REGM 的重排 + CIM 缓存解决）；</text>
+  <text x="60" y="400" fill="#45536b" font-size="12.5">② 每个芯粒独立初始化 → 稀疏导致芯粒间负载不均（EOCI 解决）；</text>
+  <text x="60" y="422" fill="#45536b" font-size="12.5">③ 计算中仍有空闲子阵列（ILA-CIM 解决）。</text>
+  <text x="60" y="440" fill="#1d8a5f" font-size="12.5" font-weight="600">→ “芯粒级优化”是 MCM-CIM 能否发挥优势的关键（本论文逐项给出答案）</text>
+</svg>

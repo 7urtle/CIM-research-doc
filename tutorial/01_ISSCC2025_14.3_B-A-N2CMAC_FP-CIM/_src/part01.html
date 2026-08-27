@@ -1,0 +1,13 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要浮点存内计算（FP-CIM）</h2>
+
+<p>先回顾一个老问题：CIM 最擅长的是整数 MAC（§10 教程已经讲过）。但 AI 世界里不是所有任务都能量化成 INT8——<strong>训练、微调、Transformer/ViT 类网络</strong>对精度敏感，需要浮点（FP）。浮点虽然精度高，但它的乘法/累加比整数复杂得多（指数对齐、归一化、舍入），能耗和面积天然更高。</p>
+<figure>
+  <img src="assets/diagrams/d01_fp_vs_int.svg" alt="FP vs INT" style="max-width:900px">
+  <figcaption>图 1.1　整数路线（便宜、省电，但精度受限）vs 浮点路线（高精度、高开销）。FP-CIM 的目标：两头的好处都拿。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么“高精度”越来越重要？</div>
+<p>① 模型变大：LLM/Transformer 对量化误差更敏感，8bit 往往不够；② 训练/微调：梯度更新需要 FP 精度；③ 终端混合精度：同一芯片既要跑已量化的 INT8 推理，又要跑需要 FP 的层。所以“一个宏既支持 INT8 又支持 BF16”成为刚需——本文的“一芯四用”正是为此设计。</p>
+</div>
+</section>

@@ -1,0 +1,1154 @@
+===== PAGE 1 =====
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+1697
+An Area-Eﬃcient Lookup-Table -Based eDRAM
+Digital CIM Macro for Neural Network Inference
+Yifan He , Member, IEEE, Shupei Fan , Graduate Student Member, IEEE,
+Xuan Li , Graduate Student Member, IEEE, Luchang Lei , Graduate Student Member, IEEE,
+Wenbin Jia, Graduate Student Member, IEEE, Chen Tang , Member, IEEE,
+Yaolei Li , Graduate Student Member, IEEE, Zongle Huang , Graduate Student Member, IEEE, Zhike Du,
+Jinshan Yue , Member, IEEE, Xueqing Li , Senior Member, IEEE, Huazhong Yang , Fellow, IEEE,
+Hongyang Jia , Member, IEEE, and Yongpan Liu , Senior Member, IEEE
+Abstract—Digital circuit is a promising approach to implement
+computing-in-memory
+(CIM)
+architecture
+for
+data-intensive
+applications, such as neural network inference. Previous digital
+CIM implementations have demonstrated higher throughput
+and robustness than the analog counterpart, beneﬁting from
+technology scaling and full-precision datapaths. However, the
+traditional digital CIM designs adopt a bulky adder tree as
+the computing circuit, limiting further improvements in area
+and energy eﬃciency. To address the above limitation, this work
+proposes a novel design methodology that combines the lookup-
+table (LUT) and high-density embedded dynamic RAM (eDRAM)
+cells. By storing precomputed weight summations in LUTs, the
+proposed approach reduces the ﬁrst two stages of the adder tree.
+Additionally, the row-level parallelism of the CIM architecture is
+utilized to amortize the overheads of LUT weight encoding and
+eDRAM refreshing. The 28-nm prototype demonstrates a peak
+area eﬃciency of 16.2 TOPS/mm2 and an energy eﬃciency of
+49.5 TOPS/W, both for 8-bit operations. The proposed eDRAM
+macro achieves a 2.4 and 0.48 Mb/mm2 density in memory and
+CIM mode, due to its balanced computing-storage ratio, enabling
+reconﬁgurability between computing cores and memory storage.
+Index Terms—Computing-in-memory (CIM), digital circuit,
+embedded dynamic RAM (eDRAM), lookup-table (LUT).
+I. INTRODUCTION
+M
+ATRIX-VECTOR multiplication lies in the heart of
+modern deep neural network models, where the huge
+weight parameters and massive multiply-and-accumulation
+Received 3 March 2025; revised 25 May 2025; accepted 21 July 2025. Date
+of publication 18 August 2025; date of current version 30 March 2026. This
+article was approved by Associate Editor Meng-Fan Chang. This work was
+supported by Beijing Major Science and Technology Project under Contract
+Z241100004224016. (Corresponding author: Yongpan Liu.)
+Yifan He was with the Department of Electronic Engineering, Tsinghua
+University, Beijing 100084, China. He is now with the School of Electrical
+and Computer Engineering, Cornell Tech, New York, NY 10044 USA.
+Shupei Fan, Luchang Lei, Wenbin Jia, Chen Tang, Yaolei Li, Zongle Huang,
+Zhike Du, Xueqing Li, Huazhong Yang, Hongyang Jia, and Yongpan Liu
+are with the Department of Electronic Engineering, Tsinghua University,
+Beijing 100084, China (e-mail: ypliu@tsinghua.edu.cn).
+Xuan Li is with the Department of Electronic Engineering, Tsinghua
+University, Beijing 100084, China, and also with Wiener Technology,
+Beijing 100080, China.
+Jinshan Yue is with the Institute of Microelectronics of the Chinese
+Academy of Sciences, Beijing 100029, China.
+Digital Object Identiﬁer 10.1109/JSSC.2025.3595012
+(MAC) operations put severe challenges for traditional com-
+puting platforms, such as CPU and GPU [1], [2]. The
+fundamental problem is due to the ineﬃcient data transmission
+between memory array and computing units for classic Von
+Neumann architectures [3], [4]. Therefore, the computing-
+in-memory (CIM) architecture is proposed to minimize the
+overhead by equipping memory array with computing capa-
+bility [5], [6]. Such approach enables both parallel readout
+and in situ dimension reduction, improving the throughput and
+eﬃciency at the same time [7], [8], [9].
+The proposal of digital CIM [10], [11] marks a milestone in
+the history of CIM developments. The digital approach directly
+integrates standard logic cells aside the bit cell. Compared
+with previous analog implementations [8], [12], [13], [14], the
+standard logic cell guarantees the robustness for reliable neural
+network inference. Also, the digital circuits can beneﬁt more
+from the advanced technology with increased transistor density
+and lower operating voltage, which brings both higher area
+and energy eﬃciency simultaneously [15], [16], [17]. Most
+importantly, the digital CIM macro provides easier integration
+with the digital SoC, especially when scaling up to large-
+scale CIM systems [18]. Actually, the developments of digital
+CIM have led to the widespread industrial application of CIM
+technology, ranging from embedded memories to DRAM [19],
+[20], [21].
+Although
+previous
+digital
+CIM
+implementations
+have
+demonstrated the advantages of digital CIM in terms of
+accuracy, performance, and scalability, the eﬃciency is fun-
+damentally limited by the bulky digital logic [22]. As shown
+in Fig. 1, a typical digital CIM macro can be transformed
+into a traditional weight stationary PE array by replacing the
+memory bit cells with latches. Considering that both adopt
+the same digital computing circuits, the main diﬀerence lies
+in the storage devices. However, the area of a fully parallel
+digital CIM array is mostly occupied by the massive logic
+cells, making the choice of memory cells less signiﬁcant.
+As a result, previous digital CIM macros [11], [15], [16],
+[17], due to its limited storage density, behave more like
+a computing engine, instead of a memory array. This leads
+us to an important question, if the beneﬁt of digital CIM
+solely comes from customized logic cells and manual layout?
+0018-9200 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+1698
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+Fig. 1. (a) Illustration of digital CIM and traditional weight-stationary digital
+PE array. (b) Comparison of a 22-nm digital CIM macro [11] and the PE
+array projected by replacing SRAM with latches.
+Sun et al. [23] summarize the mainstream digital CIM opti-
+mization approaches ranging from customized full adder to
+algorithm co-design. Although improving energy eﬃciency
+signiﬁcantly, most approaches can also be applied to a tra-
+ditional digital design ﬂow by merging the customized cells
+into standard cell libraries. In other words, both the eﬃciency
+of digital CIM and digital accelerators are still fundamentally
+limited by digital circuits.
+In this work, we break through the aforementioned limita-
+tion by revisiting the digital CIM design methodology. Rather
+than directly accumulating the results via full adders, we
+encode the weight summations into an area-eﬃcient lookup-
+table (LUT) made up of high-density embedded dynamic
+RAM (eDRAM) cells. This allows the MAC operations to be
+replaced by eﬃcient memory reads, thereby eliminating the
+ﬁrst two stages of the adder tree. The proposed eDRAM-LUT
+design leverages two feature of CIM architecture simultane-
+ously: stationary weights and high-density memory cells. This
+distinguishes our design from previous digital CIM work that
+still relied on the traditional digital circuit design methodology.
+The main contributions of our work are listed as follows.
+1) We propose an area-eﬃcient eDRAM-LUT-based adder
+(eLAD) tree, which reduces 42% area and 58% energy
+than a conventional digital CIM design.
+2) We reduce the overhead of LUT encoding and eDRAM
+refreshing by 2.9× and 16× via an in-memory acceler-
+ation approach.
+3) We propose a high-density computing-storage reconﬁg-
+urable eDRAM CIM macro with a density FoM1 5.8×
+higher than previous designs.
+This article is an extended version of [25]. Compared to
+the previous conference version, we split the voltage supplies
+of computing circuits and eDRAM write drivers to achieve
+lower operating voltage and 2.5× higher energy eﬃciency.
+1The density FoM is deﬁned as the product of storage density and 8-bit
+MAC operation area eﬃciency [24].
+The eDRAM cell is also optimized with an improved biasing
+scheme to extend the retention time by 7.7×. The layout of
+other computing and peripheral circuits is also optimized to
+reduce the whole macro area by 5.5%.
+II. BACKGROUND AND CHALLENGES
+A. Design Motivations
+While the LUT-based computing technique has been
+explored since the emergence of CNN accelerators [26],
+[27], it was ﬁrst adopted in digital CIM by [28], where a
+logic-based LUT was implemented to reduce dynamic power.
+Compared to the conventional digital CIM design, the logic-
+based LUT replaces the ﬁrst stage of the adder tree with a
+4-to-1 multiplexer. By using a static adder to compute the
+weight summation, the total dynamic power is reduced by
+21%. While such approach does utilize the weight stationary
+property of the CIM architecture, its digital logic area is
+actually increased due to the additional logic, which requires
+more input bit parallelism for amortization. The proposed
+eDRAM-LUT design moves one step further by building a
+memory-based LUT design. The area overhead of LUT can be
+fully tolerated by the high-density memory cells, which allows
+us to exploit more aggressive adder tree reduction. Compared
+to the both previous LUT-based CIM and traditional digital
+accelerators [26], [27], [29], which still rely on standard cells
+to build LUT, the proposed eDRAM-LUT design is both area
+and energy eﬃcient for general MAC operations.
+On the other hand, our eDRAM-LUT-based digital CIM
+architecture is also motivated by previous reconﬁgurable
+analog CIM designs [30], [31]. The capacitors from the
+charge-based CIM array can be reused as the CDAC in the
+SAR-ADC for area reduction. Similarly, the CIM macro built
+by high-density eDRAM LUTs can be reconﬁgured as a
+normal memory buﬀer to reduce the data transfer between
+diﬀerent macros. The eﬀectiveness of the dual-mode CIM
+has been demonstrated in previous work with reconﬁgurable
+dataﬂow [24] and optimized mapping strategy [32]. Com-
+pared to previous analog reconﬁgurable designs that rely
+on a multiplexer to switch between ADC and CIM modes,
+the eDRAM-LUT design enables reconﬁguration by simply
+updating the LUT content, incurring minimal area overhead
+while fully utilizing all bit-cells.
+B. Challenges to Eﬃcient eDRAM-LUT-Based CIM
+The key challenge to build an eﬃcient LUT-based digital
+CIM macro is the high-density memory cell design. Only when
+the inﬂated weight array has a smaller area than corresponding
+accumulation circuits, can the LUT-based optimization bring
+beneﬁts. However, previous eDRAM-based CIM work typi-
+cally employed thick oxide transistors or extra capacitors at
+the storage node to improve the retention time. The resulted
+cell area, though having less transistors, was even larger
+than an SRAM cell at the same technology node [30], [33].
+Such solutions sacriﬁcing the storage density for refreshing
+overhead are incompatible with the principle of LUT-based
+computing. As shown in Fig. 2(a), we adopt a compact
+eDRAM cell layout without additional MOM capacitors. As
+a result, the retention time is degraded by 10×. In such case,
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1699
+Fig. 2. Main challenges of eDRAM-LUT-based digital CIM. (a) Refreshing
+overhead of MOM-less high-density eDRAM and (b) LUT programming
+overhead.
+frequent periodic refreshing operation will incur more than
+50% overhead for computation operations at the worst scenario
+with high temperature and low operating frequency.
+Besides the eDRAM issue, the LUT itself also introduces an
+additional programming cost, since both original weights and
+their linear combination need to be stored. Fig. 2(b) compares
+two typical solutions: oﬀ-chip and on-chip LUT encoding.
+While ﬁrst one avoids the weight generation overhead by
+precomputing the LUT content during compilation stage, its
+drawback is also obvious since both oﬀ-chip storage and
+programming time inﬂates by 5×. As a tradeoﬀbetween
+on- and oﬀ-chip resources, the on-chip encoding approach
+locally accumulates the weight summation with additional
+computation units. However, both approaches still need to load
+weights into CIM macro serially, which inevitably consumes
+more programming time limited by I/O bandwidth.
+As a summary, implementing a compact memory cell
+and reducing the encoding cost are essential to make
+eDRAM-LUT-based CIM practical and eﬃcient.
+III. RECONFIGURABLE EDRAM-LUT-BASED DIGITAL
+CIM MACRO ARCHITECTURE
+The overall architecture of the proposed eDRAM-LUT-
+based digital CIM macro is shown in Fig. 3(a), highlighting
+three key innovations. First of all, the design consists of a
+40-Kb reconﬁgurable eDRAM array that serves dual purposes
+for both computing and storage. Unlike the digital CIM macros
+relying solely on logic circuits for computation [11], [22],
+[34], the proposed LUT-based implementation achieves the
+storage density higher than a logic-rule SRAM [35] in memory
+Fig. 3.
+(a) Overall architecture of the proposed eDRAM CIM macro with
+three key features and (b) function mapping of main components for CIM
+and normal memory modes.
+mode while maintaining full input and output parallelism for
+high-throughput CIM operations. The whole eDRAM array
+is partitioned into 16 banks corresponding to diﬀerent output
+channels, amortizing the WL decoder costs of 64-bit inputs.
+The diﬀerences between CIM and normal memory mode
+mainly lie in the decoder conﬁguration and LUT content. As
+shown in Fig. 3(b), the decoder is decomposed into LSB and
+MSB parts. In the memory mode, the MSB decoder is activated
+to select one of the 16 LSB decoders based on ADDR<7:4>,
+while the remaining address bits are forwarded to the selected
+LSB decoder to activate the corresponding WL. In contrast,
+the CIM mode bypasses the MSB decoder and enables all 16
+LSB decoders, allowing for parallel LUT-based computation.
+The activation bits are directly used to fetch the corresponding
+partial sums. Consequently, the LUT content in CIM mode
+consists of the 16 combinations of 4 × 8 b weights instead of
+the 16×10 b arbitrary data in the memory mode. The detailed
+operation of both CIM and memory modes is illustrated later
+in Section IV-B.
+Second, each CIM bank incorporates of 16 eLAD modules
+to perform eﬃcient MAC operations. The eLAD is equivalent
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+1700
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+Fig. 4. Schematic of 3T eDRAM cells in this work and previous version [25]
+with diﬀerent biasing schemes and readout port designs.
+Fig. 5. 10k-point Monte Carlo simulation of leakage test at 60 ◦C and diﬀerent
+WBL bias voltages.
+to the ﬁrst two stages of an adder tree, generating the MAC
+results of four input channels. Compared to the conventional
+digital logic implementations, the eLAD replaces complex
+full adders with simple 3 T eDRAM cells. Additionally, the
+dynamic power consumption caused by frequent switching is
+reduced through low-power memory read operations, thereby
+enabling both area- and energy-eﬃcient MAC operations, as
+illustrated later in Section IV-B. The outputs of eLAD modules
+are subsequently aggregated through a 16 × 10-bit adder tree.
+To minimize the digital logic area, the CIM macro adopts bit-
+serial processing for input activations. Thus, the shift adders
+are employed to accumulate the partial sums in an LSB-ﬁrst
+order over eight cycles, generating full-precision results for
+64-input 8-bit MAC operations.
+Lastly, dedicated local read and write ports are placed
+between eLAD modules and the following accumulation cir-
+cuits. The bidirectional ports enable ﬂexible and parallel data
+movements within the eDRAM array, an essential feature for
+eﬃcient in-memory refreshing and weight encoding opera-
+tions, as detailed in Section V. The macro also includes other
+peripherals for data movement and controlling, such as the
+I/O interfaces, timing modules, and the driver circuits for
+Fig. 6. (a) Schematic of eLADs, (b) layout implementation of the 3 T eDRAM
+cell compared to a standard nine-track full adder cell, and (c) data mapping
+of eLAD in CIM mode.
+Fig. 7. Timing diagram of eLAD-based CIM operations.
+global signals. Notably, diﬀerent from [25], the write circuits,
+including WWL decoders, GWBL, and WWL drivers, are
+grouped in an isolated high-voltage domain, separating them
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1701
+Fig. 8.
+Area and energy improvement of eLADs over the baseline digital
+CIM implementation.
+from the other low-voltage computing circuits and the eDRAM
+array. Such isolation can mitigate the threshold voltage loss
+in write selectors of eDRAM cells, especially in low-voltage
+operating conditions, as shown in Section VI.
+IV. ELAD TREE IMPLEMENTATIONS
+A. Design Details of Optimized 3T eDRAM Cell
+Before discussing the design tradeoﬀs of eLAD, we ﬁrst
+elaborate on the implementation details and modiﬁcations of
+the 3 T eDRAM cell compared to our previous work as
+shown in Fig. 4 [25]. As outlined in Section II-B, the removal
+of additional capacitors at the storage node enables a more
+compact layout. To compensate for the resulting reduction in
+retention time without compromising area eﬃciency, we adopt
+an alternative approach to suppress the leakage. Rather than
+employing negative WWL voltages, which requires dedicated
+negative voltage generator [36], we modify WBL bias voltage
+from to VSS to VDD to naturally establish a negative VGS for
+bit-“0.”
+Fig. 5 presents the Monte Carlo simulation results compar-
+ing leakage behavior under diﬀerent conﬁgurations. When the
+WBL is biased at VSS, the bit-“1” rapidly decays to VSS
+within 3 µs at the fastest corner, thereby limiting the overall
+retention time of the eDRAM macro. In contrast, the leakage
+current can be greatly reduced for bit-“1” by biasing the WBL
+at VDD. Although this conﬁguration causes bit-“0” to be
+charged toward bit-“1” gradually, the increased storage node
+voltage introduces a negative VGS, which eﬀectively suppresses
+the channel leakage current. To further mitigate the impact
+of increased bit-“0” voltage, the pair of read transistors in
+the eDRAM cell is changed from LVT to RVT devices. As a
+result, 220-mV voltage margin is preserved at 20 µs, leading
+to a more than 7× improvement in retention time, as presented
+in Section VI.
+Additionally, the readout port design has been simpliﬁed to
+further reduce the area and energy consumption of the eDRAM
+array, as illustrated in the right column of Fig. 4. The previous
+design employed a C2MOS-like dynamic latch to eliminate
+potential glitches during RBL precharging and discharging
+phases, at the cost of driving additional complementary control
+signals REN and RENB. The current implementation, similar
+to a TSPC register [37], employs a single NMOS transistor
+instead of a transmission gate while sharing the PRE signal.
+Although the modiﬁcation introduces output glitches during
+RBL discharging, the total power and area are reduced by 8%
+and 3% due to simpliﬁed readout port design.
+B. Eﬃcient eLAD
+Fig. 6(a) presents the implementation of the proposed LUT-
+based adder that utilizes compact 3 T eDRAM cells. The
+design incorporates a 16 × 10-bit eDRAM subarray with
+hierarchical write bitlines and the local RWL decoder shared
+by diﬀerent CIM banks. In the CIM mode, the eLAD performs
+MAC operations of 4 × 1-bit inputs and 4 × 8-bit weights
+per cycle through LUT access. As demonstrated in Fig. 6(b),
+the high-density memory cells enable eﬃcient LUT-based
+computing, with the implemented eDRAM cell occupying
+merely 0.145 µm2, which is 11.9× smaller than that of a
+standard nine-track full adder cell.
+Fig. 6 illustrates the weight data mapping organized by cor-
+responding activation binary codes. This conﬁguration allows
+the input bits to be directly used as LUT access address,
+thereby making the decoder logic consist with normal memory
+operation except for all-zero inputs. Since such case produces
+zero outputs irrespective of stored weights, the corresponding
+wordline is power-gated in the CIM mode by turning oﬀ
+discharging. Although it appears to waste storage capacity,
+the additional wordline can both simplify the decoder logic
+in memory mode and serve as a scratchpad for in-memory
+encoding operation, as discussed in Section V.
+Fig. 7 shows the detailed timing diagram of the eLAD and
+subsequent accumulation circuits for an 8-bit MAC operation.
+The entire process follows a three-stage pipeline: 1) eLAD
+partial sum generation; 2) adder tree accumulation; and 3) bit-
+shift accumulation. First, the input activations are fed to the
+CIM macro in a bit-serial, LSB-ﬁrst manner. The precharge
+signal initializes the RBL to prepare for readout. Then, for
+every four bits of activation data, a corresponding RWL pulse
+is generated to retrieve the partial sum DOUT from the
+eDRAM LUT. Second, these partial sums are accumulated by
+the adder tree, with its output SUM sampled on the rising edge
+of the next precharge pulse. Finally, the complete MAC result
+RES is generated by the shift-adders over eight cycles.
+Compared to the baseline digital CIM composed of the
+standard digital cell and adopting the same input bit-serial
+architecture, as shown in Fig. 8, the proposed eLAD-based
+design achieves 40% area and 54% energy reduction while
+maintaining the same throughput and full precision. The
+improvements come from both the high-density memory
+cell and eﬃcient LUT read operations. The current version
+achieves further reduction by simplifying the readout port, as
+illustrated in Fig. 4. In addition to the eﬃciency improvement,
+the proposed LUT-based computing strikes a balance of stor-
+age and computing. The eDRAM array dominates the overall
+area, leading to signiﬁcant storage density in the memory
+mode.
+Fig. 9 further explores the potential design space of
+LUT-based computing. First, we compare diﬀerent LUT
+implementations using SRAM cells ranging from 10 to 6 T,
+which reveals a tradeoﬀbetween area and readout energy,
+as shown in Fig. 9(a). When accounting for dummy cells
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+1702
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+Fig. 9. Design space exploration of LUT-based adders on (a) memory cell
+and (b) weight number selection.
+surrounding the 16 × 10-bit array, the 3 T eDRAM achieves
+a 36% and 22% area reduction compared to foundry-provided
+6 T high-performance and high-density SRAM, respectively.
+Although the 10 T SRAM [38], featuring a precharging-free
+and single-ended readout port, achieves the highest energy
+eﬃciency, the additional transistors result in a 3× area
+overhead, making it impractical for area-sensitive LUT-based
+computing. By adopting the area-energy product as a ﬁgure of
+merit (FoM), the FoM curve demonstrates that the proposed
+eDRAM-based solution achieves the optimal tradeoﬀof area
+and energy eﬃciency.
+In addition to memory cell selection, Fig. 9(b) analyzes
+the impact of diﬀerent LUT depths. As expected, the number
+of weights results in an exponential growth in memory size.
+While increasing the storage ratio and memory density, the
+overall beneﬁt of LUT-based computing diminishes gradually.
+Speciﬁcally, when >5 weights are contained, the area eﬃ-
+ciency of eLAD drops below that of standard digital logic.
+By jointly considering storage and computational density, the
+FoM curve deﬁned as their product reveals that the adopted
+four-weight LUT achieves the best tradeoﬀin density.
+V. IN-MEMORY REFRESHING AND ENCODING SCHEMES
+A. In-Memory Refreshing Implementations
+After analyzing the advantages and tradeoﬀs of eDRAM-
+LUT-based CIM, we introduce how to overcome its refreshing
+Fig. 10. Schematic of in-memory refreshing and encoding port.
+Fig. 11. Illustration of in-memory refreshing operations with detailed wave-
+forms.
+and programming overhead using the in-memory refreshing
+and encoding port. The proposed architecture contains a read
+port, which has been illustrated in Fig. 10, and two additional
+transistors marked in green and red, respectively.
+The green transistor, controlled by the refresh write-back
+signal (WB RFS), enables in situ refreshing through connect-
+ing the output of read port to LWBL. The red transistor, in
+contrast, redirects summation results from the following adder
+tree to LWBL for generating diﬀerent weight combinations.
+The detailed waveforms of in-memory refreshing are illus-
+trated in Fig. 11. The timing of refreshing operations can
+be divided into three phases: precharging, discharging, and
+write-back. The WB RFS signals are enabled following RWL
+pulse to realize write-back operation in one cycle. Unlike
+conventional row-by-row refreshing scheme, the in-memory
+refreshing activates diﬀerent LUTs in parallel to achieve a 16×
+speedup. As shown in Section VI, the accelerated refreshing
+relaxes the constraint on eDRAM retention time.
+B. In-Memory Encoding Implementations
+The in-memory encoding operation is similar to the
+refreshing one with a main diﬀerence that diﬀerent weight
+combinations are written back, instead of the original readout
+data. In order to minimize the area overhead of weight
+computing circuits, we reuse the adders from the subsequent
+adder tree. For the compatibility with the adder tree dataﬂow,
+where inputs are read from two neighboring LUTs, the initial
+weights require a double writing scheme.
+The whole encoding process is illustrated in Fig. 12, which
+are divided into two stages: the weight loading and generation.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1703
+Fig. 12.
+Illustration of in-memory encoding operations with detailed
+waveforms.
+Fig. 13.
+Latency and eﬃciency improvements of in-memory (a) refreshing
+operations and (b) encoding operations.
+Each weight data is stored in the corresponding LUT as well as
+its neighboring LUT to prepare for the next generation stage.
+The unused wordlines including WL0 serve as an intermediate
+weight buﬀer. Such double writing operation can be performed
+without latency overhead through activating both WWL in the
+same cycle.
+Fig. 14. Normalized macro energy eﬃciency and throughput considering the
+data loading time and energy under diﬀerent weight reuse times.
+During the generation process, the shared adder fetches
+intermediate data from two LUTs and write back the
+computation results by activating WB SUM signal. To ensure
+suﬃcient setup time for weight computing, the write back sig-
+nal, unlike the refreshing mode, is aligned with the precharging
+signal in the next cycle. Due to the parallel encoding, the
+weight generation stage takes up 23 cycles, 26% of the total
+programming time. Fig. 13 shows the whole process of in-
+memory encoding, where 1st, 7th, 11th, and 13th rows of each
+LUT are used to store the temporary value for LUT generation.
+By carefully arranging the order of weight read and write
+operations and leveraging the unused WL0, the whole process
+is data-collision free. Also, since the encoding stage requires
+no data interaction with external logic, it allows the LUT-
+based CIM macro to maintain a programming model similar
+to regular memory.
+Fig. 14 summarizes the in-memory refreshing and encoding
+schemes by the evaluation results. Leveraging the parallel in-
+memory bandwidth, the proposed design achieves 16× and
+2.9× reduction in refreshing and programming latency, respec-
+tively. In addition to the speed up, the in-memory technique
+improves 9.5× and 2.3× energy eﬃciency by reducing global
+data movement. The additional local read–write ports and
+write-back path from the adders increase the macro area by
+only 10% and 2%, respectively.
+We also evaluate the normalized energy eﬃciency and
+throughput of the LUT-based CIM macro considering the
+programming overhead under diﬀerent weight reuse times,
+as show in Fig. 15. Since the in-memory encoding stage
+consumes more power than normal computing due to con-
+current read and write operations, it requires more computing
+cycles to amortize the energy overhead than that of throughput.
+Nevertheless, when the weight reuse exceeds 70×, which is
+typical in CNN models, the programming overhead accounts
+for less than 10%.
+VI. MEASUREMENT RESULTS
+Fig. 16 presents the die photograph of the proposed eDRAM
+CIM macro and summarizes its main measurement results. The
+prototype chip is fabricated using 28-nm HKMG technology.
+The eDRAM macro occupies a 0.016 mm2 area with a 40-Kb
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+1704
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+Fig. 15. Whole process of in-memory encoding for two neighboring LUTs in 23 cycles. The superscript of W denotes the number of the LUT, while the
+subscript denotes the combination of weights.
+Fig. 16. Die photograph of fabricated prototype and chip summary.
+array. The test chip also includes a PLL for peak frequency
+test and SRAM buﬀers for input and output data. Fig. 17
+shows the testing setup, which includes the wire-bonded IC,
+the custom PCB, and an FPGA serving as a bridge between
+the chip and host PC. A thermoelectric heat pump controls the
+chip temperature, which is monitored by the thermal imager
+for retention test.
+Fig. 18(a) demonstrates the voltage–frequency scaling char-
+acteristics. The separated voltage domains for write driver
+and computing circuits enable CIM operation at reduced
+voltages down to 0.6 V with 100-MHz frequency. The peak
+performance of 1.05 GHz is obtained at 1.2 V. Although
+the design exhibits minor performance degradation at higher
+voltages, compared to [25], due to limited discharging speed
+of RVT read transistors, its area eﬃciency is maintained due
+to optimized layout.
+Fig. 17. Measurement setup.
+Fig. 18(b) presents the 8-bit energy-eﬃciency measurements
+across varying supply voltages and input bit sparsity levels,
+with weight bit sparsity ﬁxed at 50%. A peak energy eﬃciency
+of 49.5 TOPS/W is achieved when operating at 0.6 V with
+90% input sparsity.
+Note that the voltages shown in Fig. 18 and subsequent
+Fig. 19 refer to the low-voltage domain of the computing
+circuits and the eDRAM array, which account for more than
+80% of total power consumption, as indicated in Fig. 18.
+The high-voltage domain, which comprises the eDRAM write
+controllers and drivers, operates at 1.1 V when computing
+voltage is below 1.1 V and at 1.2 V otherwise.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1705
+Fig. 18. (a) Shmoo plot and (b) voltage-eﬃciency scaling result.
+Fig. 19(a) presents the number of leaked eDRAM cell
+changing over time under varying temperatures at nominal
+voltage. The leaked cells have a diﬀerent saturated number
+under various conditions due to our optimized bias scheme.
+As shown in the Monte Carlo simulation in Fig. 5, the ﬁnal
+state of eDRAM cell lies between “1” and “0” as the result
+of balanced leakage paths to both WBL at VDD and substrate
+at VSS. For most cells, the balanced voltage is lower than
+the threshold of “1,” causing them gradually decay to “0”
+over time. However, for some bits, the balanced states are still
+recognized at “1.” Such balanced states are sensitive to PVT
+conditions, resulting in a varied distribution across diﬀerent
+corners.
+Fig. 19(b) further shows the retention time across diﬀerent
+voltage and temperature corners. While the retention time is
+degraded to 4 µs at the worst case of 0.6 V and 60 ◦C, the
+eDRAM CIM macro maintains a refresh overhead less than
+5%, due to the in-memory refresh technique.
+Fig. 20 illustrates the detailed breakdown results. Compared
+to prior digital-dominated CIM designs, the proposed archi-
+tecture demonstrates a more balanced computing-storage ratio.
+The bottom of the ﬁgure shows the layout of an eDRAM CIM
+bank employing a sandwich-like ﬂoorplan, where adder trees
+and shift-accumulation circuits occupy less than half area. For
+the energy breakdown, the adder tree accounts for 49% of
+the total power consumption, which is increased compared
+Fig. 19. (a) Number of leaked cells at 0.9-V voltage and 25 ◦C–60 ◦C and (b)
+retention time and refreshing overhead of diﬀerent voltage and temperature
+corners.
+Fig. 20. Area and energy breakdown of the eDRAM-LUT-based CIM macro.
+with our previous implementation [25], due to glitches at
+eDRAM-LUT outputs. However, the overall energy eﬃciency
+is improved due to simpliﬁed eDRAM readout circuits and
+control signals.
+Table I compares this work with prior eDRAM- and SRAM-
+based analog and digital CIM designs. The proposed design
+combines the beneﬁts of eDRAM and digital CIM approaches,
+oﬀering both high density and accuracy. Compared to previous
+analog CIM designs, which suﬀered from the eﬃciency and
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+1706
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+TABLE I
+COMPARISON WITH PREVIOUS EDRAM AND SRAM CIM MACROS
+TABLE II
+NEURAL NETWORK PERFORMANCE AND EFFICIENCY BENCHMARKS
+SNR tradeoﬀ, this work achieves higher throughput and energy
+eﬃciency without compromising accuracy. Compared to other
+digital CIM implementations, including standard, approximate,
+and logic-LUT-based approaches, the proposed eDRAM-LUT-
+based design achieves the highest area and energy eﬃciency
+product at nominal voltage when normalized to 28-nm technol-
+ogy node. Besides, the proposed LUT-based design achieves
+a superior storage density of 2.4 Mb/mm2 in the memory
+mode, leading to a 5.8× normalized density FoM. Although
+the eﬀective density is reduced by 5× in CIM mode due to
+expanded LUT storage, it remains 1.9× higher than that of a
+12-nm logic-LUT-based design.
+Table II presents the benchmarking results of the proposed
+eDRAM-LUT-based macro on typical neural network models.
+It achieves 215.2/394.1 µJ per image energy consumption
+and 48.3/22.2 frames/s throughput for ResNet-18/ResNet-50
+models on ImageNet dataset. Due to the eﬃcient in-memory
+refreshing and encoding techniques, the total overhead of LUT
+programming and eDRAM refreshing is below 5%.
+VII. CONCLUSION
+Digital-based approach is a promising candidate to imple-
+ment reliable and large-scale CIM architecture, due to its
+exceeding performance, robustness, and scalability. However,
+the existing digital CIM solutions mainly focus on optimizing
+computing logic and dataﬂow, instead of taking memory and
+computing circuits as a whole.
+The proposed eDRAM-LUT-based design can break the lim-
+itation of digital logic and combine the beneﬁts of high-density
+eDRAM cell and high-throughput digital CIM architecture.
+The power and area consuming digital datapath are replaced
+by eﬃcient LUT. The eDRAM-LUT-based implementation
+achieves 42% and 58% area and energy reduction com-
+pared to traditional digital design methodology. To overcome
+the eDRAM leakage and LUT programming issues, the
+in-memory refreshing and weight encoding techniques are
+developed. Leveraging the parallel in-memory bandwidth, the
+refreshing and programming latency are reduced by 16× and
+2.9×.
+A 28-nm prototype is fabricated and measured to validate
+the proposed eDRAM-LUT-based CIM design. The measured
+results show a peak 8-bit energy and area eﬃciency of 49.5
+TOPS/W and 16.5 TOPS/mm2 with 2.4-Mb/mm2 storage
+density in the memory mode. The eﬃciency FoM and density
+FoM surpass previous work by 1.2× and 5.8×.
+REFERENCES
+[1]
+Y.-H. Chen, T. Krishna, J. S. Emer, and V. Sze, “Eyeriss: An
+energy-eﬃcient reconﬁgurable accelerator for deep convolutional neural
+networks,” IEEE J. Solid-State Circuits, vol. 52, no. 1, pp. 127–138,
+Jan. 2017.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1707
+[2]
+B. Moons, R. Uytterhoeven, W. Dehaene, and M. Verhelst, “Envision:
+A 0.26-to-10 TOPS/W subword-parallel dynamic-voltage-accuracy-
+frequency-scalable convolutional neural network processor in 28nm
+FDSOI,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech.
+Papers, Feb. 2017, pp. 246–247.
+[3]
+M. Horowitz, “Computing’s energy problem (and what we can do about
+it),” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers,
+Feb. 2014, pp. 10–14.
+[4]
+R. Hameed et al., “Understanding sources of ineﬃciency in general-
+purpose chips,” in Proc. 37th Annu. Int. Symp. Comput. Archit., Jun.
+2010, pp. 37–47.
+[5]
+M. Kang, M.-S. Keel, N. R. Shanbhag, S. Eilert, and K. Curewitz,
+“An energy-eﬃcient VLSI architecture for pattern recognition via deep
+embedding of computation in SRAM,” in Proc. IEEE Int. Conf. Acoust.,
+Speech Signal Process. (ICASSP), May 2014, pp. 8326–8330.
+[6]
+P. Chi et al., “PRIME: A novel processing-in-memory architecture for
+neural network computation in ReRAM-based main memory,” in Proc.
+ACM/IEEE 43rd Annu. Int. Symp. Comput. Archit. (ISCA), Jun. 2016,
+pp. 27–39.
+[7]
+H. Valavi, P. J. Ramadge, E. Nestler, and N. Verma, “A 64-tile 2.4-
+mb in-memory-computing CNN accelerator employing charge-domain
+compute,” IEEE J. Solid-State Circuits, vol. 54, no. 6, pp. 1789–1799,
+Jun. 2019.
+[8]
+W.-S. Khwa et al., “A 65nm 4Kb algorithm-dependent computing-in-
+memory SRAM unit-macro with 2.3ns and 55.8TOPS/W fully parallel
+product-sum operation for binary DNN edge processors,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2018,
+pp. 496–498.
+[9]
+Q. Liu et al., “A fully integrated analog ReRAM based 78.4TOPS/W
+compute-in-memory chip with fully parallel MAC computing,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2020,
+pp. 500–502.
+[10] H. Kim, Q. Chen, T. Yoo, T. T.-H. Kim, and B. Kim, “A 1–16b precision
+reconﬁgurable digital in-memory computing macro featuring column-
+MAC architecture and bit-serial computation,” in Proc. IEEE 45th Eur.
+Solid State Circuits Conf. (ESSCIRC), Sep. 2019, pp. 345–348.
+[11] Y.-D. Chih et al., “An 89TOPS/W and 16.3TOPS/mm2 all-digital
+SRAM-based full-precision compute-in memory macro in 22nm for
+machine-learning edge applications,” in IEEE Int. Solid-State Circuits
+Conf. (ISSCC) Dig. Tech. Papers, vol. 64, Feb. 2021, pp. 252–254.
+[12] X. Si et al., “A twin-8T SRAM computation-in-memory unit-macro for
+multibit CNN-based AI edge processors,” in Proc. IEEE J. Solid-State
+Circuits (JSSC), Apr. 2019, vol. 55, no. 1, pp. 189–202.
+[13] J.-W. Su et al., “A 28nm 64Kb inference-training two-way transpose
+multibit 6T SRAM compute-in-memory macro for AI edge chips,” in
+IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb.
+2020, pp. 240–242.
+[14] X. Si et al., “A 28nm 64Kb 6T SRAM computing-in-memory macro
+with 8b MAC operation for AI edge chips,” in IEEE Int. Solid-State
+Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2020, pp. 246–248.
+[15] H. Fujiwara et al., “A 5-nm 254-TOPS/W 221-TOPS/mm2 fully-digital
+computing-in-memory macro supporting wide-range dynamic-voltage-
+frequency scaling and simultaneous MAC and write operations,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65, Feb.
+2022, pp. 1–3.
+[16] H. Mori et al., “A 4nm 6163-TOPS/W/b 4790-TOPS/mm2/b SRAM
+based digital-computing-in-memory macro supporting bit-width ﬂexibil-
+ity and simultaneous MAC and weight update,” in IEEE Int. Solid-State
+Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2023, pp. 132–134.
+[17] H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm2
+and
+3.78Mb/mm2 fully-digital compute-in-memory macro supporting INT12
+× INT12 with a parallel-MAC architecture and foundry 6T-SRAM bit
+cell,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers,
+Feb. 2024, pp. 572–574.
+[18] P. A. Hager et al., “Metis AIPU: A 12nm 15TOPS/W 209.6TOPS SoC
+for cost- and energy-eﬃcient inference at the edge,” in IEEE Int. Solid-
+State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2024, pp. 212–214.
+[19] M.-E. Shih et al., “NVE: A 3nm 23.2TOPS/W 12b-digital-CIM-based
+neural engine for high-resolution visual-quality enhancement on smart
+devices,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech.
+Papers, Feb. 2024, pp. 360–362.
+[20] S. Lee et al., “A 1ynm 1.25V 8Gb, 16Gb/s/pin GDDR6-based
+accelerator-in-memory supporting 1TFLOPS MAC operation and var-
+ious activation functions for deep-learning applications,” in IEEE Int.
+Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65, Apr. 2022,
+pp. 1–3.
+[21] S. Lee et al., “Hardware architecture and software stack for PIM
+based on commercial DRAM technology: Industrial product,” in Proc.
+ACM/IEEE 48th Annu. Int. Symp. Comput. Archit. (ISCA), Jun. 2021,
+pp. 43–56.
+[22] Y. He et al., “A 28nm 38-to-102-TOPS/W 8b multiply-less approximate
+digital SRAM compute-in-memory macro for neural-network inference,”
+in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb.
+2023, pp. 130–132.
+[23] W. Sun et al., “A survey of computing-in-memory processor: From
+circuit to application,” IEEE Open J. Solid-State Circuits Soc., vol. 4,
+pp. 25–42, 2024.
+[24] S. Kim et al., “DynaPlasia: An eDRAM in-memory-computing-
+based
+reconﬁgurable
+spatial
+accelerator
+with
+triple-mode
+cell
+for
+dynamic
+resource
+switching,”
+in
+IEEE
+Int.
+Solid-
+State
+Circuits
+Conf.
+(ISSCC)
+Dig.
+Tech.
+Papers,
+Feb.
+2023,
+pp. 256–258.
+[25] Y. He et al., “A 28nm 2.4Mb/mm2 6.9–16.3TOPS/mm2 eDRAM-LUT-
+based digital-computing-in-memory macro with in-memory encoding
+and refreshing,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig.
+Tech. Papers, Feb. 2024, pp. 578–580.
+[26] D. Shin, J. Lee, J. Lee, and H.-J. Yoo, “14.2 DNPU: An 8.1TOPS/W
+reconﬁgurable CNN-RNN processor for general-purpose deep neural
+networks,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech.
+Papers, Feb. 2017, pp. 240–241.
+[27] J. Lee, C. Kim, S. Kang, D. Shin, S. Kim, and H.-J. Yoo, “UNPU:
+An energy-eﬃcient deep neural network accelerator with fully variable
+weight bit precision,” IEEE J. Solid-State Circuits, vol. 54, no. 1,
+pp. 173–185, Jan. 2019.
+[28] C.-F.
+Lee
+et
+al.,
+“A
+12nm
+121-TOPS/W
+41.6-TOPS/mm2
+all
+digital full precision SRAM-based compute-in-memory with con-
+ﬁgurable
+bit-width
+for
+AI
+edge
+applications,”
+in
+Proc.
+IEEE
+Symp. VLSI Technol. Circuits (VLSI Technol. Circuits), Jun. 2022,
+pp. 24–25.
+[29] C. Tang, X. Lin, Z. Huang, W. Sun, H. Jia, and Y. Liu, “A 28nm
+4.35TOPS/mm2 transformer accelerator with basis-vector based ultra
+storage compression, decomposed computation and uniﬁed LUT-assisted
+cores,” in Proc. IEEE Symp. VLSI Technol. Circuits (VLSI Technol.
+Circuits), Jun. 2024, pp. 1–2.
+[30] S. Xie, C. Ni, A. Sayal, P. Jain, F. Hamzaoglu, and J. P. Kulka-
+rni, “EDRAM-CIM: Compute-in-memory design with reconﬁgurable
+embedded-dynamic-memory array realizing adaptive data convert-
+ers and charge-domain computing,” in IEEE Int. Solid-State Cir-
+cuits
+Conf.
+(ISSCC)
+Dig.
+Tech.
+Papers,
+vol. 64,
+Feb.
+2021,
+pp. 248–250.
+[31] K.
+Yoshioka,
+“A
+818–4094
+TOPS/W
+capacitor-reconﬁgured
+analog CIM for uniﬁed acceleration of CNNs and transformers,”
+IEEE
+J.
+Solid-State
+Circuits,
+vol. 60,
+no. 5,
+pp. 1844–1855,
+May 2024.
+[32] S. Zhao et al., “Be CIM or be memory: A dual-mode-aware DNN com-
+piler for CIM accelerators,” in Proc. 30th ACM Int. Conf. Architectural
+Support Program. Lang. Operating Syst., Mar. 2025, pp. 63–78, doi:
+10.1145/3676641.3716248.
+[33] J. Song et al., “A calibration-free 15-level/cell eDRAM computing-in-
+memory macro with 3T1C current-programmed dynamic-cascoded MLC
+achieving 233-to-304-TOPS/W 4b MAC,” in Proc. IEEE Custom Integr.
+Circuits Conf. (CICC), Apr. 2023, pp. 1–2.
+[34] B. Yan et al., “A 1.041-Mb/mm2 27.38-TOPS/W signed-INT8 dynamic-
+logic-based ADC-less SRAM compute-in-memory macro in 28nm with
+reconﬁgurable bitwise operation for AI and embedded applications,” in
+IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65,
+Feb. 2022, pp. 188–190.
+[35] C.-H. Lu, Y.-T. Hsu, B.-C. Wu, and T.-T. Liu, “A 270-mV 6T SRAM
+using row-based dual-phase VDD control in 28-nm CMOS,” IEEE
+Trans. Circuits Syst. I, Reg. Papers, vol. 67, no. 12, pp. 4774–4783, Dec.
+2020.
+[36] A. Yigit, E. N. Casarrubias, R. Giterman, and A. Burg, “A 128-kbit GC-
+eDRAM with negative boosted bootstrap driver for 11.3× lower-refresh
+frequency at a 2.5% area overhead in 28-nm FD-SOI,” IEEE Solid-State
+Circuits Lett., vol. 6, pp. 13–16, 2023.
+[37] B.
+Razavi,
+“TSPC
+logic
+[a
+circuit
+for
+all
+seasons],”
+IEEE
+Solid
+StateCircuits
+Mag.,
+vol. 8,
+no. 4,
+pp. 10–13,
+Fall. 2016.
+[38] Y. Li et al., “A 28 nm 0.25–0.61 mW 31-60fps versatile SoC for
+diverse extreme edge ML workloads with ﬂexible hetero-fabric dataﬂow
+orchestration and compute/storage-density-adjustable CIM,” in Proc.
+IEEE Eur. Solid-State Electron. Res. Conf. (ESSERC), Sep. 2024,
+pp. 149–152.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 12 =====
+1708
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, MARCH 2026
+Yifan He (Member, IEEE) received the B.S. and
+Ph.D. degrees from the Department of Electronic
+Engineering, Tsinghua University, Beijing, China, in
+2019 and 2024, respectively.
+In March 2025, he works as a Post-Doctoral
+Researcher at the School of Electrical and Computer
+Engineering, Cornell Tech, New York, NY, USA. His
+research focuses on emerging nonvolatile memories
+and in-memory computing designs, with a focus on
+digital circuit technology for superior eﬃciency and
+compute density.
+Dr. He was a recipient of the IEEE Solid-State Circuits Society (SSCS)
+Predoctoral Achievement Award from 2023 to 2024.
+Shupei Fan (Graduate Student Member, IEEE)
+received the B.S. and M.S. degrees from Tsinghua
+University, Beijing, China, in 2019 and 2025,
+respectively.
+His research interests include architecture designs
+on CNN and transformer accelerators.
+Xuan Li (Graduate Student Member, IEEE) received
+the B.Eng. degree from the University of Elec-
+tronic Science and Technology of China (UESTC),
+Chengdu, China, in 2015. He is currently pursuing
+the Ph.D. degree with Tsinghua University, Beijing,
+China.
+He
+is
+the
+Founder
+of
+Wiener
+Technology,
+Beijing. His research interests include energy-
+eﬃcient data converter design, mixed-signal and
+analog signal processing systems, and emerging
+sensing technology.
+Luchang Lei (Graduate Student Member, IEEE)
+received the B.S. degree in electronic science
+and technology from Tsinghua University, Beijing,
+China, in 2022, where he is currently pursuing the
+Ph.D. degree in electronic science and technology
+with the Department of Electronic Engineering.
+His research interests include in-memory process-
+ing architecture and circuit and hardware accelera-
+tion for homomorphic encryption.
+Wenbin Jia (Graduate Student Member, IEEE)
+received the B.S. degree from the Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2022, where he is currently
+pursuing the Ph.D. degree.
+His
+research
+interests
+include
+computing-
+in-memory
+circuit
+design
+and
+3-D
+integration
+architectures.
+Chen Tang (Member, IEEE) received the B.S.
+degree from the Department of Electronic Engineer-
+ing, Tsinghua University, Beijing, China, in 2020.
+He is currently pursuing the Ph.D. degree.
+His research interests include neural network com-
+pression and machine learning accelerator.
+Yaolei
+Li
+(Graduate
+Student
+Member,
+IEEE)
+received the B.S. degree from the Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2021, where he is currently pur-
+suing the Ph.D. degree.
+His current research interests include computing-
+in-memory
+system
+design
+and
+3-D
+integration
+architectures.
+Zongle Huang (Graduate Student Member, IEEE)
+received the B.S. degree from the Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2023, where she is currently
+pursuing the Ph.D. degree.
+Her research interests include distributed systems
+and architecture design for AI applications.
+Zhike Du received the B.S. degree from the Depart-
+ment of Computer Science, Beihang University,
+Beijing, China, in 2005.
+Since 2020, he has been working as a Hard-
+ware Engineer at Tsinghua University, Beijing.
+His research interests include computing-in-memory
+circuits,
+digital
+accelerator,
+and
+emerging
+AI
+applications.
+Jinshan Yue (Member, IEEE) received the B.S. and
+Ph.D. degrees from the Department of Electronic
+Engineering, Tsinghua University, Beijing, China,
+in 2016 and 2021, respectively.
+From 2021 to 2024, he was a Post-Doctoral
+Researcher with the Institute of Microelectronics
+of the Chinese Academy of Sciences (IMECAS),
+Beijing,
+where
+he
+is
+currently
+an
+Associate
+Researcher. His current research interests include
+energy-eﬃcient
+neural
+network
+processors,
+nonvolatile
+memory,
+and
+computing-in-memory
+systems.
+Dr. Yue served as a TPC Member for IEEE A-SSCC and ICCAD.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 13 =====
+HE et al.: AREA-EFFICIENT LUT-BASED eDRAM DIGITAL CIM MACRO FOR NEURAL NETWORK INFERENCE
+1709
+Xueqing Li (Senior Member, IEEE) received the
+B.S.
+and
+Ph.D.
+degrees
+from
+the
+Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2007 and 2013, respectively.
+He is currently an Associate Professor with the
+Department of Electronic Engineering, Tsinghua
+University. He has more than 170 publications and
+30 China and U.S. patents. His research interests
+include mixed-signal circuit design, emerging mem-
+ory, and memory-oriented computing exploration for
+AI acceleration.
+Dr. Li is a Senior Member of CCF China. He received a few best paper
+awards, including HPCA’15, ASP-DAC’17, and 2016 IEEE TMSCS, several
+teaching and thesis awards, and the 2019 National Early-Career Award.
+He serves as a TPC Member for a few conferences, including ISSCC,
+DAC, ICCAD, DATE, and ASP-DAC. He is an Associate Editor of IEEE
+TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS,
+IEEE TRANSACTIONS ON EMERGING TOPICS IN COMPUTING (TETC), and
+Journal of Electronics and Information Technology, and a Guest Editor of
+a few journal issues, including IEEE JOURNAL OF SOLID-STATE CIRCUITS
+(JSSC), International Journal of Circuit Theory and Applications, and Flexible
+and Printed Electronics.
+Huazhong Yang (Fellow, IEEE) received the B.S.
+degree in microelectronics and the M.S. and Ph.D.
+degrees in electronic engineering from Tsinghua
+University, Beijing, China, in 1989, 1993, and 1998,
+respectively.
+In 1993, he joined the Department of Electronic
+Engineering, Tsinghua University, where he has
+been a Full Professor since 1998. He has been
+in charge of several projects, including projects
+sponsored by the National Science and Technology
+Major Project, the 863 Program, NSFC, and sev-
+eral international research projects. He has authored or co-authored over
+500 technical articles, seven books, and over 180 granted Chinese patents. His
+research interests include wireless sensor networks, data converters, energy-
+harvesting circuits, nonvolatile processors, and brain-inspired computing.
+Prof. Yang has served as a Navigating Committee Member for AsianHOST
+2018 and a TPC Member for ASP-DAC 2005, APCCAS 2006, ICCCAS
+2007, ASQED 2009, and ICGCS 2010. He received the Distinguished Young
+Researcher by NSFC in 2000, the Cheung Kong Scholar by Chinese Ministry
+of Education (CME) in 2012, the Science and Technology Award First Prize
+by China Highway and Transportation Society in 2016, the Technological
+Invention Award First Prize by CME in 2019, the Gold Prize of iNEA 2019,
+and several best paper awards, including ISVLSI 2012, FPGA 2017, NVMSA
+2017, and ASP-DAC 2019. He has served as the Chair for the Northern
+China ACM SIGDA Chapter Science in 2014 and the General Co-Chair for
+ASP-DAC 2020.
+Hongyang Jia (Member, IEEE) received the B.E.
+degree from Tsinghua University, Beijing, China,
+in 2014, and the M.A. and Ph.D. degrees from
+Princeton University, Princeton, NJ, USA, in 2016
+and 2021, respectively.
+From 2021 to 2022, he was a Post-Doctoral
+Researcher with NVIDIA, Santa Clara, CA, USA.
+Since August 2022, he has been with the Department
+of Electronic Engineering, Tsinghua University,
+where he is currently an Assistant Professor. His
+research focuses on advanced computing technolo-
+gies and systems, rethinking how emerging computing fabrics can be
+integrated with architectures and algorithms to enhance system eﬃciency and
+performance. His primary research interests include approximate computing,
+mixed-signal computing, in-memory computing, energy-eﬃcient circuits, and
+architectures for robotic computing and security applications.
+Prof. Jia was a recipient or a co-recipient of the 2017 Outstanding Student
+Designer Award from ADI Inc., the 2022 Bede Liu Best Dissertation Award
+in electrical and computer engineering from Princeton ECE, and the 2024
+Edison Patent Award. He serves on the technical program committees for
+ESSERC, DAC, and ICCAD Conferences.
+Yongpan Liu (Senior Member, IEEE) received the
+B.S., M.S., and Ph.D. degrees from Tsinghua Uni-
+versity, Beijing, China, in 1999, 2002, and 2007,
+respectively.
+He is currently a Full Professor (Cheung Kong
+Scholar) with the Department of Electronic Engi-
+neering, Tsinghua University.
+Prof. Liu was a Program Committee Member for
+ISSCC, A-SSCC, and CICC. He has received the
+40 Young Innovators Award DAC 2017, the Best
+Paper/Poster Award from ASPDAC in 2017 and
+2021, the Micro Top Pick 2016, HPCA 2015, and the Design Contest Awards
+of ISLPED in 2012, 2013, and 2019. He served as the General Secretary
+for ASPDAC 2021 and the Technical Program Chair for ICAC2023. He
+was an Associate Editor of IEEE TRANSACTIONS ON COMPUTER-AIDED
+DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS, IEEE TRANSACTIONS
+ON CIRCUITS AND SYSTEMS—II, and IET Cyber-Physical Systems. He also
+served as A-SSCC2020/AICAS2022 Tutorial Speaker and an IEEE CASS
+Distinguished Lecturer in 2021.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:06:01 UTC from IEEE Xplore.  Restrictions apply. 

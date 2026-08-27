@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">安全数字 IMC 总结 · 可扩展性 · 未来方向</text>
+
+  <!-- summary -->
+  <rect x="40" y="84" width="880" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">三大贡献闭环（MIT + IBM Watson AI Lab）</text>
+  <g font-size="12.5">
+    <text x="60" y="140" fill="#45536b">① <strong>SCA 安全计算</strong>：Boolean 共享（3 份）+ 原生安全 XNOR 乘法（线性 → 免随机比特）+ 进位保存加法树（免半加器）+ 复用式随机 0 共享</text>
+    <text x="60" y="168" fill="#45536b">② <strong>BPA 安全</strong>：片外权重加密（ASCON 轻量密码，NIST 冠军），片上解密；TI-ASCON 用 "Changing of the Guards" 仅需 4 个一次性随机比特</text>
+    <text x="60" y="196" fill="#45536b">③ <strong>片上密钥</strong>：PUF 复用 IMC SRAM（反馈切断）→ 挑战-响应对 → 密钥，NIST 随机性全过、TMV+BCH 0% 误码</text>
+    <text x="60" y="232" fill="#1d8a5f" font-weight="600">结果：SCA/BPA 安全超 100 万采样（高 SNR 测试）· NN 精度零影响 · 8.1 TOPS/W</text>
+    <text x="60" y="258" fill="#45536b">运行期零随机比特（仅配置期一次性）——这是 IMC 安全的硬约束，本论文完全满足</text>
+  </g>
+
+  <!-- scalability -->
+  <rect x="40" y="304" width="880" height="110" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">可扩展性（论文 §IV-D）</text>
+  <g font-size="12">
+    <text x="60" y="358" fill="#45536b">商业规模 = 多宏并行（类似 chiplet）：各宏独立安全计算，安全协处理器合并共享输出</text>
+    <text x="60" y="382" fill="#45536b">并行宏多 → 攻击者更难从总功耗分辨 → 可用更少的安全门（安全等级可放宽）</text>
+    <text x="60" y="406" fill="#45536b">权重解密：ASCON-128a（8 周期 128 位）或每宏一个 ASCON 实例（仅占 16% 面积）→ 延迟受控</text>
+  </g>
+
+  <!-- future -->
+  <rect x="40" y="434" width="880" height="80" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="460" fill="#6b3fa0" font-size="14" font-weight="700">未来方向</text>
+  <g font-size="12">
+    <text x="60" y="486" fill="#45536b">① 进一步降低面积/能耗开销（刻画攻击者能力 → 找安全等级-共享开销最优权衡）；② 近似计算（[7]）与安全结合；</text>
+    <text x="60" y="506" fill="#45536b">③ 扩展更高阶安全（更多共享）；④ 与软件/微架构侧信道防护（RowHammer 等）联合；⑤ 更大规模集成验证</text>
+  </g>
+</svg>

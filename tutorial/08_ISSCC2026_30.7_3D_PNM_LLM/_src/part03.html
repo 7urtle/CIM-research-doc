@@ -1,0 +1,32 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>LLM 推理与 GEMM 基础：先懂算子，才懂硬件</h2>
+
+<h3 id="sec3-1">3.1 为什么 LLM 访存是瓶颈（再深入一点）</h3>
+<p>LLM 的每一层几乎都是 <strong>线性层（全连接）或注意力（Attention）</strong>，本质都是矩阵乘法。以生成阶段为例，每输出一个 token：</p>
+<ol>
+<li>从 DRAM 读出该层的<strong>全部权重矩阵</strong>（GB 级）；</li>
+<li>与当前 token 的隐向量做矩阵乘（计算量其实很小）；</li>
+<li>结果喂给下一层，重复。</li>
+</ol>
+<p>所以“每 token 访存量 ≈ 模型大小”，而“每 token 计算量 ≈ 一个向量乘矩阵”。<strong>访存：计算 ≈ 模型大小 : 向量大小</strong>，差几个数量级——这就是“内存密集”的本质。</p>
+<div class="box key">
+<div class="bt">💡 论文对 LLM 负载的两条判断（决定架构）</div>
+<ul>
+<li>“<strong>低 batch → 低数据复用</strong>”：不能指望靠 batch 内复用掩盖访存，必须把访存本身做快；</li>
+<li>“<strong>连续的大块 load/store 非常多</strong>”：权重是按顺序连续存放的 → 适合 DMA 批量搬运 + 宽总线一次多取。</li>
+</ul>
+</div>
+
+<h3 id="sec3-2">3.2 GEMM：LLM 的主算子</h3>
+<p>GEMM（General Matrix Multiply，通用矩阵乘）C = A × B，是 LLM 占绝对主导的计算核。论文明确说 “GEMM is the dominant kernel in LLM computation, thus our evaluation focuses on this task”——整个芯片的评估都围绕 GEMM 展开。</p>
+<div class="formula">C<sub>[M×K]</sub> = A<sub>[M×N]</sub> × B<sub>[N×K]</sub>　　（M×K 个输出，每个输出是 N 次乘加）<span class="tag">式 3.1</span></div>
+<p>把 GEMM 放到多核/多块上跑，经典做法是<strong>分块（tiling）</strong>：把 M、K 维切成小块分给不同处理单元。怎么切、怎么分、怎么避免块间通信，就是 §6 的核心。</p>
+<figure>
+  <img src="assets/diagrams/d06_gemm.svg" alt="GEMM 数据流" style="max-width:920px">
+  <figcaption>图 3.1　GEMM 数据流（§6 详解）：M 切 4、K 切 4 → 16 个子矩阵 → 16 个 ACC，主机直接拼接输出。</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么生成阶段“batch=1”会让 GPU 也变慢？（提示：GPU 靠大批量隐藏访存延迟。）② 如果权重是 FP16 的 7B 模型，1GB 片上内存能装下吗？（提示：14 GB vs 1 GB——所以论文强调“减少离片访问”，但离片访问仍然存在，靠 DDR4 接口兜底。）</p>
+</div>
+</section>

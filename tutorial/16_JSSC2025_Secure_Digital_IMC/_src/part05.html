@@ -1,0 +1,53 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：ASCON 轻量密码做片上模型解密</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么片外权重必须加密；② 为什么选 ASCON（NIST 轻量密码冠军）；③ TI-ASCON 怎么只用 4 个一次性随机比特实现 SCA 安全。</p>
+</div>
+
+<h3>5.1 为什么必须加密片外权重？</h3>
+<p>片上 SCA 保护对“直接探针测量 DRAM↔ASIC 总线”无效——权重在片外必须以<strong>密文</strong>存储，片上解密后才能计算。密码学提供<strong>数学保证</strong>，但前提是：</p>
+<ul>
+<li>有<strong>秘密密钥</strong>（§6 的 PUF 解决）；</li>
+<li>密码实现本身<strong>SCA 安全</strong>（解密过程不能泄露）；</li>
+<li>面积/功耗开销不能大（密码只是配角）。</li>
+</ul>
+
+<h3>5.2 为什么选 ASCON？</h3>
+<p>ASCON 是 <strong>NIST 轻量密码竞赛冠军</strong>（2023），原因：</p>
+<ul>
+<li>面积/能耗效率经过充分验证；</li>
+<li>轻量密码中 <strong>AND 门占比最低</strong>——AND 的 Boolean 共享开销最大（§3 讲过），其余 NOT/XOR/rotate 都是线性操作，可对每份独立计算、开销极小；</li>
+<li><strong>SCA 弹性好</strong>：猜中密码状态不直接导致恢复密钥 → 无法破解未来解密操作。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig16_6_ASCON密码实现.png" alt="ASCON密码实现">
+<figcaption>图 5 · 论文 Fig.6：ASCON 密码实现框图。</figcaption>
+</figure>
+
+<h3>5.3 TI-ASCON：只用 4 个一次性随机比特</h3>
+<p>ASCON 置换的基础非线性步与 Keccak 相同 → 直接用 Daemen 的 <strong>"Changing of the Guards"</strong> 方法（原用于 Keccak）：</p>
+<ul>
+<li>用状态内的各种比特互相 remask → 在非线性置换中保持均匀性；</li>
+<li>操作开始时只需 <strong>4 个外部随机比特</strong>，运行期<strong>零随机比特</strong>；</li>
+<li>→ 低开销的阈值实现（TI）ASCON。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d05_ascon.svg" alt="ASCON教学图">
+<figcaption>教学图 5 · ASCON 选择理由、TI 实现与解密流程。</figcaption>
+</figure>
+
+<h3>5.4 解密流程与开销</h3>
+<ol>
+<li>片外 DRAM/NVM 存密文权重 → 总线被窃听也只能得到密文；</li>
+<li>ASCON 解密（片上，用 PUF 密钥）→ 明文权重；</li>
+<li>明文权重写入 SRAM → SCA 安全 IMC 计算。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么解密开销可以接受？</div>
+<p>IMC 的权重加载<strong>一次、计算多次</strong>（最大化数据复用）→ 解密操作很少发生 → 功耗与延迟开销被摊薄。解密延迟 +3.2×，但计算延迟主导典型模型 → 整体影响小。</p>
+</div>
+</section>

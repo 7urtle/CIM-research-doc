@@ -1,0 +1,58 @@
+<section class="chapter" id="sec0">
+<h1 class="title">随机计算存内计算 CNN 处理器零基础精讲：用“扔硬币”的方式做乘法
+<span class="en">A 65-nm Digital Stochastic Compute-in-Memory CNN Processor With 8-bit Precision（IEEE JSSC, vol.60, no.10, 2025）</span></h1>
+<div class="meta">论文作者：Jiyue Yang, Tianmu Li, Wojciech Romaszkan, Puneet Gupta, Sudhakar Pamarti（UCLA）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 10, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前面的论文都在卷“数字精确计算”。UCLA 这篇换了一个完全不同的计算范式：<strong>随机计算（Stochastic Computing, SC）</strong>——用比特流里“1 的比例”表示数，<strong>乘法 = AND 门、累加 = OR 门</strong>（都是 1-bit 逻辑）。SC 与 CIM 结合（SCIM）后：</p>
+<ol>
+<li><strong>免掉 ADC/DAC</strong>：模拟 CIM 的最大负担是又大又费电的 ADC/DAC，SCIM 的 OR 累加在逻辑电平输出 1-bit 结果 → 感放即可，无 ADC；</li>
+<li><strong>10T 位单元</strong>：6T SRAM（存激活位）+ 4 个晶体管做 AND 乘法（vs 数字 CIM 每存储位 ~20 个额外晶体管）→ 面积密度高；</li>
+<li><strong>位并行数据流</strong>：把位串 SC 的逐位处理映射到 N 个宏并行（宏 i 存激活流第 i 位）→ 1 周期输出所有位；</li>
+<li><strong>SNG 大复用</strong>：激活随机流预转换存内存（滑动窗/通道复用 &gt;32×），滤波器 SNG 能耗共享 32 行 → 摊薄 SNG 的 25× 成本；</li>
+<li><strong>平均池化计算跳算</strong>：池化 = MUX 随机选输入 → 未选中的位不计算 → 流长缩短 4×。</li>
+</ol>
+<p>65nm 实测：<strong>7.96 TOPS/W</strong>（系统）、<strong>20 TOPS/W</strong>（宏）；14nm 宏：<strong>140 TOPS/W</strong>（8-bit 带池化）；精度与 INT8 相当（MNIST 99.1%、CIFAR-10 73.5%）。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“乘法可以不做乘法”：</strong>如果数用“比特流里 1 的比例”表示，两个数相乘就是两条流逐位 AND 后 1 的比例——因为概率的乘积 Prob(A)×Prob(B)=Prob(A∩B)。所以<strong>一个 AND 门就是乘法器</strong>，一个 OR 门就是近似加法器。这就是 SC 的核心魔法。</li>
+<li><strong>“模拟 CIM 的 ADC 是万恶之源”：</strong>模拟域计算要把结果转回数字（ADC），ADC 又大又费电、精度还受限。SCIM 让计算全程在数字逻辑电平（1-bit）完成 → 感放直接输出 → 无 ADC → 可扩展到先进工艺低电源。</li>
+<li><strong>“SC 的代价是流长指数增长”：</strong>8-bit 数需要 2⁸=256 位随机流 → 256 次求值。所以 SC 适合低精度；本论文用“平均池化跳算”把流长砍 4 倍来挽回优势。这是 SC 的“软肋与补丁”。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“current CIM solutions require bulky analog-to-digital converter (ADC)/digital-to-analog converters (DACs) that make the accelerator power hungry”</td>
+<td>模拟 CIM 的病根：ADC/DAC 又大又费电、难扩展到先进工艺低电源。</td></tr>
+<tr><td class="num">“Stochastic computing (SC) is an attractive alternative digital compute scheme that uses tiny bit-serial logic, e.g., AND and OR, to perform the basic MAC operations”</td>
+<td>SC 用极小的位逻辑（AND/OR）做 MAC——备选数字计算范式。</td></tr>
+<tr><td class="num">“we propose a stochastic CIM (SCIM) approach that combines the benefits of SC and CIM accelerators”</td>
+<td>本论文：SCIM = SC 的轻逻辑 + CIM 的低搬移。</td></tr>
+<tr><td class="num">“It eliminates the DACs/ADCs in CIM and adds CIM's benefits to SC”</td>
+<td>SCIM 免 ADC/DAC，并把 CIM 的好处带给 SC。</td></tr>
+<tr><td class="num">“achieves up to 7.96-TOPS/W peak energy efficiency in 65 nm and inference accuracy comparable to 8-b fixed point”</td>
+<td>65nm 峰值能效 7.96 TOPS/W，精度与 8-bit 定点相当。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>位并行 SC 数据流</strong>：把位串 SC 逐位处理映射到 SCIM 宏并行（宏 i 存激活流第 i 位、权重第 i 位施加）→ 1 周期输出所有位；</li>
+<li><strong>预转换随机数存内存</strong>：激活随机流存进位单元 → 卷积滑动窗/输出通道复用 &gt;32× → SNG 成本摊薄；并行 SNG 用 LFSR 状态作宏种子；</li>
+<li><strong>计算跳算</strong>：平均池化（MUX）时未选中的随机位不计算 → 流长缩短 4×（8-bit 能耗优势 1.6×→6.4×）；</li>
+<li><strong>10T SCIM 单元 + wired-OR 累加</strong>：+4 晶体管做 AND（vs 数字 CIM ~20）、伪 nMOS 预充 OR 累加免 ADC；</li>
+<li><strong>完整系统</strong>：32 SCIM 宏、IRS 数据流、乒乓 FIFO、并行计数器、定点域池化/BN/ReLU；OR 累加建模训练 → 精度 ≈ INT8；实测 7.96 TOPS/W（65nm）/ 140 TOPS/W（14nm 宏）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“计算范式”很独特：先理解 SC 的数学（概率与逻辑门的对应，§1/2），再看硬件怎么把 SC 塞进内存（§3/4），最后看系统怎么补 SC 的短板（§5/6）。读时反复问：<strong>这个设计决策在省什么？（ADC？SNG 能耗？流长？）</strong></p>
+</div>
+</section>

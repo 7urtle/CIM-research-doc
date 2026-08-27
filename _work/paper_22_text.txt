@@ -1,0 +1,948 @@
+===== PAGE 1 =====
+1502
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+A 3 nm FinFET 125 TOPS/W-29 TFLOPS/W,
+90 TOPS/mm2-17 TFLOPS/mm2 SRAM-Based
+INT8, and FP16 Digital-CIM Compiler With
+Support for Multi-Weight Update/Cycle
+Haruki Mori , Member, IEEE, Je-Min Hung , Wei-Chang Zhao, Kinshuk Khare, Brian Crafton, Member, IEEE,
+Hiroaki Ishii , Cheng-En Lee, Member, IEEE, Xiaochen Peng, Xiaoyu Sun , Yorinobu Fujino, Chia-Jung Tsen,
+Vineet Joshi, Chao-Kai Chuang, Takeshi Hashizume, Chia-Fu Lee, Tan-Li Chou,
+Kerem Akarvardar , Senior Member, IEEE, Saman Adham, Senior Member, IEEE,
+Yih Wang, Senior Member, IEEE, Hidehiro Fujiwara , Member, IEEE, Yu-Der Chih, Member, IEEE,
+Yen-Huei Chen , Member, IEEE, Hung-Jen Liao, Member, IEEE,
+and Tsung-Yung Jonathan Chang , Fellow, IEEE
+Abstract—This article presents an static random-access mem-
+ory (SRAM)-based digital compute-in-memory (CIM) compiler
+implemented with 3 nm high-κ metal gate (HKMG) FinFET
+technology, supporting ﬂexible INT8 and FP16 formats for
+weight and activation multiply-accumulate (MAC) operations,
+oﬀering conﬁguration ﬂexibility, high accuracy, and improved
+area and power eﬃciency. The FP16 digital computing in memory
+(DCIM) compiler achieves high arithmetic accuracy by adopt-
+ing a multiplication-ﬁrst (MF) FP computation ﬂow, while the
+INT8 DCIM compiler provides improved power-performance-
+area (PPA). The DCIM compiler engine enables the automatic
+generation of ﬂexible CIM macro conﬁgurations based on the
+tiling of block-level leaf cells. Our test chip in 3 nm technology
+is fully validated and exhibits 124.6 TOPS/W at 0.5 V and 90.2
+TOPS/mm2 at 1.1 V for INT8 DCIM, and 28.6 TFLOPS/W at 0.5
+V and 17.4 TFLOPS/mm2 at 1.1 V for FP16 DCIM, respectively.
+Index Terms—Digital-computing in memory (DCIM), DCIM
+compiler, ﬂoating-point (FP), integer, leaf-cell tiling, logic bitcell,
+multiplication-ﬁrst, static random-access memory (SRAM).
+I. INTRODUCTION
+A
+S DNNs support increasingly complex image and
+language applications including generative AI, the accu-
+racy, ﬂexibility, and power eﬃciency requirements become
+more stringent. Compute-in-memory (CIM) has emerged as
+Received 5 September 2025; revised 24 November 2025; accepted 14
+December 2025. Date of publication 29 December 2025; date of current
+version 30 March 2026. This article was approved by Associate Editor John
+Wuu. (Corresponding author: Haruki Mori.)
+Haruki
+Mori,
+Je-Min
+Hung,
+Wei-Chang
+Zhao,
+Kinshuk
+Khare,
+Cheng-En
+Lee,
+Chia-Jung
+Tsen,
+Chao-Kai
+Chuang,
+Chia-Fu
+Lee,
+Tan-Li Chou, Yih Wang, Hidehiro Fujiwara, Yu-Der Chih, Yen-Huei
+Chen, Hung-Jen Liao, and Tsung-Yung Jonathan Chang are with Taiwan
+Semiconductor Manufacturing Company, Hsinchu 30075, Taiwan (e-mail:
+hmoria@tsmc.com).
+Brian Crafton, Xiaochen Peng, Xiaoyu Sun, and Kerem Akarvardar are
+with TSMC North America, San Jose, CA 95134 USA.
+Hiroaki Ishii, Yorinobu Fujino, and Takeshi Hashizume are with TSMC
+Design Technology Japan, Yokohama, Kanagawa 220-0012, Japan.
+Vineet Joshi and Saman Adham are with TSMC Design Technology Canada
+Inc., Kanata, ON K2K 3E7, Canada.
+Digital Object Identiﬁer 10.1109/JSSC.2025.3646072
+Fig. 1. Concept and ﬂoorplan comparison between high-density (HD) SRAM
+and SRAM-based DCIM.
+a promising solution, particularly for MAC-intensive com-
+putations. However, in analog-based CIM, realizing both
+better power-performance-area (PPA) and high accuracy is
+the major challenge for practical implementation. Recent
+works examined the trade-oﬀs among multiply-accumulate
+(MAC)throughput, energy eﬃciency, and accuracy in analog-
+based or analog-digital mixed CIM designs [1], [2], [3]. On
+the other hand, digital computing in memory (DCIM) has
+gained attention for its ability to deliver massively parallel
+computation without any accuracy loss, leveraging distributed
+small static random-access memory (SRAM) arrays and cus-
+tomized MAC units as shown in Fig. 1. Fig. 2 illustrates the
+normalized TOPS/W and TOPS/mm2 with technology scaling
+from 22 to 3 nm. An all-digital SRAM-based CIM macro was
+introduced at ISSCC 2021, and we have been exploring and
+developing DCIMs since 2020, with several papers published
+on the topic [4], [5], [6], [7], [8]. Over this period, DCIM
+achieved signiﬁcant advancements in power, performance, and
+area eﬃciency, improving TOPS/W by approximately 5× and
+TOPS/mm2 by over 10× as technology scaled from 22 to 3
+nm node.
+Although prior DCIM designs demonstrated excellent power
+eﬃciency, achieving a balance between hardware (HW)
+utilization and energy eﬃciency remains as one of the sig-
+0018-9200 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+MORI et al.: 90 TOPS/mm2-17 TFLOPS/mm2 SRAM-BASED INT8 AND FP16 DIGITAL-CIM COMPILER
+1503
+Fig. 2. Normalized TOPS/W and TOPS/mm2 with technology scaling from
+22 to 3 nm.
+Fig. 3. Impact of macro dimensions on HW utilization and energy eﬃciency,
+TOPS/W.
+niﬁcant challenges. Fig. 3 presents our evaluation results
+using ML workloads [9]. The analysis reveals that smaller
+input channels tend to achieve higher HW utilization, while
+larger input channels enhance power eﬃciency. These trends
+also vary based on the type of neural network and the
+dimensions of the matrix operations involved. This high-
+lights the need to design diﬀerent macro sizes tailored to
+each network type, rather than relying on a ﬁxed macro
+conﬁguration.
+Mobile devices are increasingly adopting a wide range of AI
+techniques, from low-precision tasks utilizing integer formats
+to high-precision operations using ﬂoating-point (FP) formats
+for weight training (e.g., face/image recognition, object detec-
+tion, and language processing). Consequently, picking the most
+suitable bit precision for diﬀerent ML applications is critical
+to achieve both higher arithmetic accuracy and better PPA at
+the same time. Table I summarizes the correlation between bit
+precision and neural network accuracy. FP16 allows AI models
+to operate without any loss in inference accuracy. On the other
+hand, using narrower bit widths signiﬁcantly reduces memory
+usage and MAC complexity. For instance, INT8 achieves four
+to ﬁve times higher power eﬃciency (TOPS/W) compared to
+the FP16 format.
+To address these challenges, we developed the DCIM
+compiler to oﬀer the ﬂexibility of picking most suitable
+TABLE I
+BIT PRECISION AND NETWORK ACCURACY
+Fig. 4.
+Comparison of the two common ﬂows of FP processing; the AF
+approach and the MF approach.
+macro conﬁguration. In this article, we present the ﬁrst
+DCIM compiler that supports both INT8 and FP16 for-
+mats; INT8-optimized macros deliver excellent PPA, while
+FP16 macros ensure higher arithmetic accuracy. Our compiler
+engine automatically generates ﬂexible CIM macro conﬁg-
+urations by leveraging the tiling of the block-level leaf
+cells.
+The remainder of this article is organized as follows.
+Section II discusses FP computation ﬂows and presents our
+arithmetic accuracy analysis. Section III provides an overview
+of the architecture and operation of the INT8 and FP16 DCIM
+compiler. Chip implementation and Si measurement results are
+presented in Section IV. Section V summarizes the relevant
+ﬁndings of this work.
+II. FLOATING POINT PROCESSING
+A. Computation Flow
+The complexity of FP computation primarily comes from
+the exponent alignment, prior to the accumulation. Multiplying
+two FP numbers involves two key steps: adding their exponent
+values and multiplying mantissa values. Before accumulation,
+the exponent values must be aligned by determining the
+maximum exponent value among all FP products. During
+alignment, the mantissa of each product is shifted by the expo-
+nent diﬀerence between its local exponent and the maximum
+exponent. These steps introduce signiﬁcant complexity to the
+MAC implementation compared to the integer formats.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+1504
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+Fig. 4 compares two common ﬂows for FP computation.
+As shown in the left side, the alignment ﬁrst (AF) approach
+aligns mantissa bits according to the maximum exponent
+(EMAX) values before multiplying the weights and activations
+(XIN). Applying the AF approach eliminates the need for shift
+operations related to exponent alignment, thereby allowing FP
+mantissa processing to utilize existing INT-based MAC units.
+Prior works demonstrated high-energy eﬃciency, TOPS/W,
+by employing weight and activation prealignment with oﬀ-
+macro digital circuits and software, which eliminates shift
+functions related to exponent alignment within their macro
+[10],[11], [12]. However, this still requires oﬀ-macro conver-
+sions for pre- and postalignment, which introduces additional
+overhead at oﬀ-macro, impacting the PPA. Furthermore, in
+terms of arithmetic accuracy, because the mantissa alignment
+and truncation are performed upfront, errors from both weight
+and XIN individually contribute to mantissa product. Accord-
+ingly, we observe a visible arithmetic accuracy loss with AF
+approach, which had been adopted by several prior designs
+[10], [11],[12], [13] using brain ﬂoating (BF) point format
+(featuring similar trends as FP format with respect to MF
+versus AF). In contrast, the multiply ﬁrst (MF) approach
+performs mantissa multiplication before the bit alignment as
+shown in the right side. Therefore, it prevents information loss
+and preserves arithmetic accuracy for a 22 bit mantissa product
+(considering 11 bit mantissa for FP16, including the hidden bit
+information).
+B. Arithmetic Accuracy
+To evaluate the computation accuracy of the MF and AF
+approaches, we perform inference with each scheme across
+four representative ML models(i.e., MobileNet-v2, Inception-
+v1, EﬃcientNet-B1, and MobileViT-v2) and obtain the ﬁnal
+outputs for each model. We use FP32-software as reference to
+compute the signal-to-quantization noise ratio (SQNR) [14] of
+model output accordingly, with following equation:
+SQNR = 10log10
+
+Output2
+FP32
+(OutputFP32 −OutputCIM)2
+
+.
+(1)
+Fig. 5 shows the SQNR-based arithmetic accuracy as a
+function of postaligned mantissa bitwidth. The results are
+averaged over the output SQNR of all four models, and each
+model is evaluated using the ImageNet dataset. The software
+baseline is running AI workloads inference with FP16 input
+and weight, whose products are in FP32 and will be further
+accumulated to FP32 output. For MF, we follow the exact
+HW scheme to run AI workloads and get accuracy. Compared
+with software baseline, the MF scheme with narrower bit loses
+information due to truncation of postaligned product mantissa
+and leads to accuracy drops. Considering the MF’s SQNR is
+as high as the FP16 software for≥16 b (and visibly higher
+than the AF’s SQNR with 22 b), in this work, we proceeded
+with MF ﬂow featuring a mantissa bitwidth of 16 b before
+partial sum accumulation.
+III. INT8 AND FP16 DCIM COMPILERS
+This section presents the architecture overviews and oper-
+ations of INT8 and FP16 DCIM designs, along with the
+Fig. 5. Arithmetic accuracy based on the SQNR as a function of postaligned
+mantissa bitwidth.
+TABLE II
+DCIM COMPILER FEATURES
+supported conﬁguration ranges for the DCIM compiler.
+Table II summarizes the DCIM compiler features. In this
+design, two types of DCIM compilers are developed: the INT8
+DCIM compiler and the FP16 DCIM compiler. Both INT8 and
+FP16 compilers share the same conﬁguration ranges for input
+channels, output channels, and extra SRAM storage rows.
+Speciﬁcally, the input channel range is supported from 16 to
+64 channels with a step size of 16 channels, the output channel
+ranges from 2 to 8 channels with a step size of 1 channel, and
+the additional SRAM storage rows from 2 to 18 rows with a
+step size of 2 rows.
+A. INT8 DCIM Compiler
+Fig. 6 presents an overview of the INT8 DCIM compiler
+in 3-nm technology. The largest DCIM macro conﬁguration
+supports 64 input channels, 8 output channels, and 18 weight
+sets. Weight memory storage is partitioned into 32 banks.
+Each bank consists of 18 rows and 128 columns. A total
+of 128 columns include 8 bits for INT8, 2 input channels
+and 8 output channels (i.e., 8 × 2 × 8). The INT8 DCIM
+macro supports MAC operations with signed/unsigned INT8
+for weight and XIN. The MAC unit supports parallel MAC
+scheme based on look-up-tables (LUTs) with a three-stage
+pipeline like the prior designs, comprising one SRAM array
+access stage and two MAC pipeline stages [8]. The MAC unit
+processes INT8 × INT8 parallel MAC with 4096 bits weight
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+MORI et al.: 90 TOPS/mm2-17 TFLOPS/mm2 SRAM-BASED INT8 AND FP16 DIGITAL-CIM COMPILER
+1505
+Fig. 6. Architecture overview of INT8 DCIM compiler design (top), Timing
+diagram of three-stage MAC pipeline and signed and unsigned format
+handling in INT8 DCIM (bottom).
+Fig. 7. Architecture overview of FP16/INT8 DCIM compiler design; exponent
+handling parts are newly adopted (top), timing diagram of three-stage MAC
+pipeline and FP16 and INT8 modes handling (bottom).
+(8 bits × 64 input × 8 output channels) and 512 bits XIN
+(8 bits × 64 input channels). Each local-MAC (LMAC)
+includes 16 columns × 2 to 18 rows SRAM storage,
+8 × 8 bit multiplier and two stage adder trees, and the
+global-IO (GIO)includes 20 to 22 bit sub-global and global
+adders. The signed/unsigned formats for both weights and
+inputs (XINs) can be switched independently using the control
+signals.
+B. FP16 DCIM Compiler
+As illustrated in Fig. 7, the FP16 DCIM supports FP16 and
+signed/unsigned INT8 formats for both weight and XIN. In
+this design, exponent handling with EXP addition/subtraction,
+EMAX search, mantissa shifter, and FP32 output format
+converters are newly adopted in the LMAC and GIO. The
+Fig. 8. Layout ﬂoorplan for the LMAC with two stacked weight storage and
+the LV 12 T bitcell schematic.
+FP16 converter handles the hidden bit at the interface. The
+weight storage stores the 17 bits by appending one bit of
+hidden information. The FP16 × FP16 or INT8 × INT8
+parallel MAC operations are handled by the MAC unit with
+8704 bits weight (17 bits × 64 input × 8 output channels)
+and 1088 bits XIN (17 bits × 64 input channels). The FP
+computation ﬂow is divided into two stages. In the ﬁrst stage,
+multiplication is performed by adding two diﬀerent exponent
+values and multiplying their corresponding mantissa values.
+The parallel MAC operation is implemented with a Booth
+multiplier to support mantissa alignment at each channel. The
+EMAX search module receives 384 bits (6-bit ESUM × 64
+input channels) and sends the 6-bit EMAX to LMAC. An EXP
+subtraction block computes EXP diﬀerence, while a shifter
+block aligns and truncates mantissa to 16 bits based on this
+diﬀerence. After conversion to the 2’s compliment format
+for accumulation, LMAC outputs a 17-bit product (1 bit-sign
++ 16 bit-data). The GIO includes 18 to 23 bit adders and
+FP32 output format converter. In the second stage, the adders
+accumulate partial sums (PSUMs) into 23 bits. The output
+format converter combines this 23-bit PSUM and 6-bit EMAX
+to produce a FP32 output (NOUT). The macro can operate in
+FP16 mode or INT8 mode, which is controlled by the FLOATE
+signal.
+Fig. 8 illustrates the layout ﬂoorplan for the LMAC and
+bitcell array. We placed two weight data in vertical direction
+to mitigate routing congestion due to the adder tree and EMAX
+search. In order to support compiler function, the number of
+extra SRAM storage rows is made tunable from 2 to 18. In
+the largest macro conﬁguration, weight memory storage is
+partitioned into 32 banks. Each bank consists of 18 rows and
+272 columns. 272 columns include 17 bits for FP16, 2 input
+channels and 8 output channels (i.e., 17 × 2 × 8). A low-
+voltage 12 T bitcell [15] is adopted to enable simultaneous
+MAC + write functions, and wide range dynamic voltage-
+frequency scaling (DVFS) with VMIN <0.5 V. The bitcell area
+is 0.055µm2.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+1506
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+Fig. 9.
+Maximum exponent (EMAX) search with hierarchical and bitwise
+comparators.
+Fig. 10. Performance comparison between MAC stages 1 and 2 with STA.
+Fig. 9 shows the block diagram of EMAX search with
+hierarchical and bitwise comparator. In the early stages of EXP
+search, a four-way comparator is used to minimize the number
+of gate delay stages for fast operation. On the other hand,
+bitwise comparison with a two-way comparator is adopted for
+the later stages of EXP search to minimize global wire tracks
+for better routing.
+Fig. 10 illustrates the comparison of maximum operating
+frequency( fMAX) between the ﬁrst and second MAC pipeline
+stages across swept voltages. Device-level static timing analy-
+sis (STA) is used to evaluate critical path delays. We monitor
+the number of gate delay stages between MAC stage 1
+(4-layer EMAX search + mantissa shifter) and the MAC
+stage 2 (adder tree + FP32 output format converter) are
+accordingly balanced. STA results conﬁrm that the diﬀerence
+in the total number of gate delay stages is less than 5%, and
+the fMAX of MAC stage 2 is within 7% of MAC stage 1 at
+0.975 V.
+C. Multi-Weight Update per Cycle
+Fig. 11 (Top) shows the optimization of memory array.
+Running decoder-based generative AI models are highly mem-
+ory bounded due to the lack of weight reuse. Prior designs
+[7], [8] updated weight data for one input channel per cycle
+(17 bits across 8 output channels). This limited bandwidth
+leads to computation stalls, which are particularly problematic
+for vector–matrix multiplications with no weight reuse. For
+Fig. 11. Conceptual and timing diagram of the multi-weight update per cycle
+(top) and weight update data ﬂow (bottom).
+Fig. 12. Tokens/sec versus weight update BW for the decode phase of llama2-
+7B model.
+instance, in an M × N DCIM macro, updating all weights
+takes M cycles, whereas computation requires just one cycle.
+To address this issue, we adopt a multi-weight update per cycle
+(e.g., 17 bits × 2 input channels across 8 output channels),
+doubling the write bandwidth and halving cycles, enhancing
+utilization and throughput with negligible area overhead.
+Fig. 11 (Bottom) shows a weight update data ﬂow.
+Our DCIM macro with multirow weight storage supports
+concurrent weight update and CIM. For a DCIM macro
+of size IN CH ×OUT CH with storage row size of
+N, it can execute a matrix multiplication of size (M,
+IN CH) ×(IN CH, OUT CH) in M cycles. Although updat-
+ing all weights stored in N storage rows for all input channels
+takes N · IN CH/2 cycles (assuming 2 weight-row update per
+cycle), the computation can proceed once one weight set of
+size IN CH × OUT CH is updated (which takesIN CH/2
+cycles), while the subsequent set is being updated in parallel.
+Fig. 12 summarizes evaluation results of tokens/sec versus
+weight update bandwidth for the decode phase with llama 2-7B
+model. The throughput increases linearly with the weight
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+MORI et al.: 90 TOPS/mm2-17 TFLOPS/mm2 SRAM-BASED INT8 AND FP16 DIGITAL-CIM COMPILER
+1507
+Fig. 13. Power and performance comparison between proposed SUM-inversed
+FA and conventional polarity-inversed FA.
+Fig. 14. Tiling method for DCIM compiler; the memory row tiling and the
+output channel tiling (top), and the input channel tiling (bottom).
+update bandwidth. For 8-weight updates per cycle, the write
+bandwidth achieves (INT8 × 8 out ch × 8 sets × 1.54 GHz =
+98.56 GB/s), which, however, will be bottlenecked by the
+DRAM bandwidth(e.g., 51.2 GB/s for LPDDR5). The area
+overhead is 5% in macro level (mainly from additional DFFs)
+in the case of 8-weight updates per cycle.
+D. Circuit Optimization
+As depicted in Fig. 13, a SUM-inversed full-adder (FA) is
+introduced to enhance low-power MAC operation. The SUM-
+inversed FA inverts only the SUM outputs while keeping a
+positive carry path, which ensures faster propagation along the
+carry direction. The MAC operation with the SUM-inversed
+FA achieves 8% improved power eﬃciency and 7% faster
+operation compared to the conventional polarity-inverted FA,
+which slows both carry and sum propagations due to the large
+fan-out, causing MSB side timing gap and glitches.
+E. DCIM Tiling
+Fig. 14 illustrates how tiling is supported in the DCIM
+compiler. Flexible DCIM macro conﬁgurations are automat-
+ically generated by the compiler engine based on block-level
+Fig. 15. Test chip micrograph alongside the layout plot and the speciﬁcation
+table.
+leaf cells. In order to implement leaf cell tiling, we deﬁned
+three conﬁguration parameters. The number of rows and output
+channels correspond to the word depth and word width in the
+SRAM compilers, respectively. The number of input channels
+can be handled as similar to the number of banks in single-
+port multibank (SPMB) SRAM design. In the SPMB, reuse
+of leaf cells is convenient because global routing can be
+shared among the leaf cells in conﬁguration range. On the
+other hand, in the DCIM, global adders need extra tie-low
+leaf cells to maintain global routing since the number of
+input channels is reduced. For instance, when the number of
+input channels decreases from 64 to 32, the ﬁnal-stage adder
+requires tie-low leaf cells to maintain the global routing, it
+incurs slight overhead on the PPA. In addition to the tie-low
+cells, peripheral logic (e.g., GIO, WL/XIN DRVs, GCTRL)
+involves additional overheads especially for the smaller output
+channel conﬁgurations. We set the compiler range for the extra
+SRAM storage rows from 2 to 18 with a step size of 2 rows,
+the number of output channels from 2 to 8 with a step size of
+1 channel, and the number of input channels from 16 to 64
+with a step size of 16 channels.
+IV. CHIP IMPLEMENTATION AND
+MEASUREMENT RESULTS
+Fig. 15 presents a die photograph of the test chip for
+the FP16 and INT8 DCIM compiler implemented in 3 nm
+FinFET technology, along with a speciﬁcation table. Macro
+area for the largest conﬁguration of FP16 DCIM compiler
+is 464.1
+× 92.1 µm (=0.04274 mm2), and macro area
+for the largest conﬁguration of INT8 DCIM compiler is
+355.5 ×49.2 µm (=0.01749 mm2). The maximum bit capacity
+per macro is 153 kb for FP16 DCIM compiler and 72 kb for
+INT8 DCIM compiler.
+Since BIST and DFT schemes are key components for
+mass production, we implemented CIM BIST based on a
+commercial MBIST engine. The CIM BIST includes a cus-
+tom algorithm for the DCIM macro and realizes > 99%
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+1508
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+Fig. 16.
+Measured VMIN. (a) VMIN at testing frequency of 160 MHz and
+(b) VMIN at testing frequency of 5 MHz.
+Fig. 17.
+Measured shmoo plot and fMAX. (a) fMAX for INT8 DCIM and
+(b) fMAX for FP16 DCIM.
+fault coverage in gate-level fault simulation. The CIM BIST
+can achieve faster silicon feedback after the fabrication. On
+the other hand, the MBIST + ATPG testing method has
+better debug capability with custom pattern generation. We
+also utilize MBIST for memory and the ATPG for MAC
+logic. The CIM BIST can verify each macro with testing
+time < 2 ms.
+Fig. 16(a) and (b) summarizes the minimum operating
+voltage(VMIN). We observed that VMIN is 0.37 and 0.41 V
+for INT8 and FP16 DCIM, respectively, at 160 MHz
+and −40 ◦C with 95% yield. The VMIN for FP16 is limited
+by CIM fMAX during measurements at a testing frequency
+of 160 MHz. When the testing frequency is slowed down to
+5 MHz, both INT8 and FP16 DCIM achieve an equal VMIN
+of 0.30 V at −40 ◦C with 95% yield. Fig. 17(a) and (b)shows
+measured shmoo plot and fMAX. We conﬁrmed fMAX with 1.54
+and 0.72 GHz for INT8 and FP16 DCIM, respectively, at 1.1 V
+and −40 ◦C. We observed that the fMAX of INT8 MAC mode
+in the FP16 DCIM macro is 0.84 GHz, at 1.1 V and −40 ◦C
+(=16.6% faster than the FP16 MAC mode).
+Fig. 18(a)–(d) presents the power eﬃciency (TOPS/W ver-
+sus voltage)for INT8 DCIM and FP16 DCIM. The weight
+activation ratio is 50%and diﬀerent toggle rate, 10% and
+25%, for XIN are considered. The TOPS/W increases when
+the toggle rate and/or voltage is low. A toggle rate with
+10% results in 124.6 TOPS/W with INT8 DCIM and 28.6
+TFLOPS/W with FP16 DCIM at 0.5 V and no memory
+access condition. We observed a good correlation between the
+Fig. 18.
+Power comparison with voltage sweep, diﬀerent XIN toggle rate,
+and diﬀerent memory row switch frequency (RSW). (a) and (b) INT8 DCIM
+with XIN toggle = 10% and 25% and (c) and (d) FP16 DCIM with XIN
+toggle = 10% and 25%.
+Fig. 19. Power comparison for INT8 MAC mode in FP16 DCIM. (a) XIN
+toggle = 10% and (b) XIN toggle = 25%.
+simulated and measured power. Fig. 19 presents the power
+eﬃciency with the INT8 MAC mode in the FP16 DCIM
+macro. The power eﬃciency is improved by 1.86× compared
+to the FP16 MAC mode. We observed that a toggle rate with
+10% results in 53.2 TOPS/W with INT8 MAC in the FP16
+DCIM at 0.5 V and no memory access condition.
+Fig. 20 presents PPA with diﬀerent macro conﬁgurations.
+Switching from 18 to 2 rows conﬁguration improves area
+eﬃciency, while reducing the macro’s memory capacity. Area
+and power overhead from peripheral logic (e.g., GIO, WL/XIN
+DRVs, GCTRL) are increased when the macro conﬁguration
+is reduced for the input channel from 64 to 16 and the output
+channel from 8 to 2, compared to larger macro conﬁgurations
+(64 in ch × 8 out ch).
+Table III compares this work with prior art. The DCIM
+macro with LV 12 T bitcell enables ultralow voltage operation
+and wider DVFS from 0.3 to 1.1 V. The DCIM compiler
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+MORI et al.: 90 TOPS/mm2-17 TFLOPS/mm2 SRAM-BASED INT8 AND FP16 DIGITAL-CIM COMPILER
+1509
+TABLE III
+PPA SUMMARY TABLE AND COMPARISON TO PRIOR WORKS
+Fig. 20.
+PPA with diﬀerent conﬁgurations. (a) INT8 DCIM compiler and
+(b) FP16 DCIM compiler.
+supports ﬂexible conﬁguration ranges for the input and output
+channels, and the number of additional SRAM rows. The
+prior works employed the AF approach and eliminates the
+need for shift operations related to exponent alignment, have
+demonstrated high-energy eﬃciency, TOPS/W as their weight
+and activation are prealigned at oﬀ-macro digital circuits and
+software. However, this still requires oﬀ-macro conversions for
+pre- and postalignment which introduces additional overhead
+at oﬀ-macro. Our FP16 DCIM compiler demonstrated higher
+arithmetic accuracy with the MF FP computation ﬂow, which
+incorporates a 16-bit mantissa bit width, while the INT8 DCIM
+achieves comparable PPA to the rigid INT8 DCIM design
+in [8].
+V. CONCLUSION
+We presented the ﬁrst DCIM compiler oﬀering ﬂexible
+conﬁguration range and high-compute precision, and improved
+PPA in 3 nm technology. Our INT8 DCIM oﬀers better
+energy eﬃciency and the FP16 DCIM compiler oﬀers higher
+arithmetic precision by adopting the multiply ﬁrst approach.
+Our compiler engine automatically generates ﬂexible macro
+conﬁgurations. Our 3 nm test chip is fully validated by using
+CIM-BIST/ATPG, and demonstrated 124.6 TOPS/W at 0.5 V
+and 90.2 TOPS/mm2 at 1.1 V for INT8 DCIM, and 28.6
+TFLOPS/W at 0.5 V and 17.4 TFLOPS/mm2 at 1.1 V for
+FP16 DCIM, respectively.
+ACKNOWLEDGMENT
+The authors would like to thank the physical design team
+for the chip implementation, the RD team for wafer manufac-
+turing, and the test department for chip measurements.
+REFERENCES
+[1]
+S. Yin et al., “PIMCA: A 3.4-mb programmable in-memory computing
+accelerator in 28 nm for on-chip DNN inference,” in Proc. Symp. VLSI
+Circuits, Jun. 2021, pp. 1–2.
+[2]
+H. Wang et al., “A 32.2 TOPS/W SRAM compute-in-memory macro
+employing a linear 8-bit C-2C ladder for charge domain computation
+in 22 nm for edge inference,” in Proc. IEEE Symp. VLSI Technol.
+Circuits (VLSI Technol. Circuits), Honolulu, HI, USA, Jun. 2022,
+pp. 36–37.
+[3]
+J.-W. Su et al., “16.3 A 28 nm 384kb 6T-SRAM computation-in-memory
+macro with 8b precision for AI edge chips,” in IEEE Int. Solid-State
+Circuits Conf. (ISSCC) Dig. Tech. Papers, San Francisco, CA, USA,
+Feb. 2021, pp. 250–252.
+[4]
+Y.-D. Chih et al., “16.4 An 89TOPS/W and 16.3TOPS/mm2 all-digital
+SRAM-based full-precision compute-in memory macro in 22 nm for
+machine-learning edge applications,” in IEEE Int. Solid-State Circuits
+Conf. (ISSCC) Dig. Tech. Papers, San Francisco, CA, USA, Feb. 2021,
+pp. 252–254.
+[5]
+H. Fujiwara et al., “A 5-nm 254-TOPS/W 221-TOPS/mm2 fully-digital
+computing-in-memory macro supporting wide-range dynamic-voltage-
+frequency scaling and simultaneous MAC and write operations,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65, San
+Francisco, CA, USA, Feb. 2022, pp. 1–3.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+1510
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+[6]
+C.-F. Lee et al., “A 12 nm 121-TOPS/W 41.6-TOPS/mm2 all digital full
+precision SRAM-based compute-in-memory with conﬁgurable bit-width
+for AI edge applications,” in Proc. IEEE Symp. VLSI Technol. Circuits
+(VLSI Technol. Circuits), Honolulu, HI, USA, Jun. 2022, pp. 24–25.
+[7]
+H. Mori et al., “A 4 nm 6163-TOPS/W/b 4790–TOPS/mm2/b SRAM
+based digital-computing-in-memory macro supporting bit-width ﬂexibil-
+ity and simultaneous MAC and weight update,” in IEEE Int. Solid-State
+Circuits Conf. (ISSCC) Dig. Tech. Papers, San Francisco, CA, USA,
+Feb. 2023, pp. 132–134.
+[8]
+H. Fujiwara et al., “34.4 A 3 nm, 32.5TOPS/W, 55.0TOPS/mm2
+and 3.78Mb/mm2 fully-digital Compute-in-Memory macro supporting
+INT12 × INT12 with a parallel-MAC architecture and foundry 6T-
+SRAM bit cell,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig.
+Tech. Papers, San Francisco, CA, USA, Feb. 2024, pp. 572–574.
+[9]
+X. Sun et al., “Eﬃcient processing of MLPerf mobile workloads
+using digital compute-in-memory macros,” IEEE Trans. Comput.-Aided
+Design Integr. Circuits Syst., vol. 43, no. 4, pp. 1191–1205, Apr. 2024.
+[10] P.-C. Wu et al., “A 22 nm 832Kb hybrid-domain ﬂoating-point
+SRAM in-memory-compute macro with 16.2–70.2TFLOPS/W for high-
+accuracy AI-edge devices,” in IEEE Int. Solid-State Circuits Conf.
+(ISSCC) Dig. Tech. Papers, San Francisco, CA, USA, Feb. 2023,
+pp. 126–128.
+[11] A. Guo et al., “A 28 nm 64-kb 31.6-TFLOPS/W digital-domain ﬂoating-
+point-computing-Unit and double-bit 6T-SRAM computing-in-memory
+macro for ﬂoating-point CNNs,” in IEEE Int. Solid-State Circuits Conf.
+(ISSCC) Dig. Tech. Papers, San Francisco, CA, USA, Feb. 2023,
+pp. 128–130.
+[12] F. Tu et al., “A 28 nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8
+reconﬁgurable digital CIM processor with uniﬁed FP/INT pipeline
+and bitwise in-memory booth multiplication for cloud deep learning
+acceleration,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech.
+Papers, vol. 65, San Francisco, CA, USA, Feb. 2022, pp. 1–3.
+[13] W.-S.
+Khwa
+et
+al.,
+“34.2
+A
+16
+nm
+96Kb
+integer/ﬂoating-
+point
+dual-mode-gain-cell-computing-in-memory
+macro
+achieving
+73.3–163.3TOPS/W and 33.2–91.2TFLOPS/W for AI-edge devices,”
+in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, San
+Francisco, CA, USA, Feb. 2024, pp. 568–570.
+[14] B. D. Rouhani et al., “With shared microexponents, a little shifting goes
+a long way,” in Proc. 50th Annu. Int. Symp. Comput. Archit., Orlando,
+FL, USA, Jun. 2023, pp. 1–13.
+[15] M. E. Sinangil, Y.-T. Lin, H. J. Liao, and J. Chang, “A 290MV ultra-low
+voltage one-port SRAM compiler design using a 12T write contention
+and read upset free bit-cell in 7NM FinFET technology,” in Proc. IEEE
+Symp. VLSI Circuits, Honolulu, HI, USA, Jun. 2018, pp. 13–14.
+Haruki Mori (Member, IEEE) received the B.E.,
+M.E., and Ph.D. degrees from Kobe University,
+Kobe, Japan, in 2014, 2016, and 2019, respectively.
+From 2018 to 2019, he was a JSPS Research
+Fellow with Kobe University. He is currently the
+Technical Manager of Taiwan Semiconductor Man-
+ufacturing Company (TSMC), Hsinchu, Taiwan. His
+research interests include SRAM circuit design for
+advanced CMOS technology and energy-eﬃcient AI
+hardware design.
+Dr. Mori is a member of the IEEE Solid-State
+Circuit Society.
+Je-Min Hung received the Ph.D. degree in electrical
+engineering from National Tsing Hua University,
+Hsinchu, Taiwan, in 2023.
+He is currently the Principal Engineer of Taiwan
+Semiconductor Manufacturing Company (TSMC),
+Hsinchu. His current research interests include
+advanced memory circuit design, in-memory com-
+puting, and AI accelerators.
+Wei-Chang
+Zhao
+received the B.S. and M.S.
+degrees in electrical engineering from National
+Tsing Hua University, Hsinchu, Taiwan, in 2015 and
+2017, respectively.
+In 2017, he joined Taiwan Semiconductor Manu-
+facturing Company (TSMC), Hsinchu. His current
+research interests include SRAM circuit design
+for advanced CMOS technology and compute-in-
+memory.
+Kinshuk Khare received the B.E. degree from
+the Madhav Institute of Technology and Science,
+Gwalior, India, in 2016, and the M.E. degree from
+Indian Institute of Science, Bengaluru, India, in
+2019.
+Since 2019, he has been working with Taiwan
+Semiconductor Manufacturing Company (TSMC),
+Hsinchu, Taiwan. His research interests include
+SRAM circuit design for advanced CMOS technol-
+ogy and energy-eﬃcient AI hardware design.
+Brian Crafton (Member, IEEE) received the B.S.
+degree in computer engineering from Northeastern
+University, Boston, MA, USA, in 2017, and the
+Ph.D. degree from Georgia Institute of Technology,
+Atlanta, GA, USA, in 2023.
+He is currently the Principal Engineer with
+TSMC, San Jose, CA, USA. His research inter-
+ests include in-memory and near-memory computing
+for energy-eﬃcient machine learning and emerging
+applications.
+Hiroaki Ishii received the B.E. and M.E. degrees
+from Ritsumeikan University, Kusatsu, Japan, in
+1997 and 1999, respectively.
+From 1999, he worked with Panasonic Corpora-
+tion, Osaka, Japan (originally known as Matsushita
+Electric Industrial Company Ltd.) engaged in semi-
+conductor digital circuit design. Since 2022, he
+has been working with TSMC Design Technology
+Japan, Osaka. His ﬁeld covers ASIC/SoC hardware
+design, memory applications, and energy-eﬃcient AI
+hardware design.
+Cheng-En Lee (Member, IEEE) received the M.E.
+degree
+from
+National
+Tsing
+Hua
+University,
+Hsinchu, Taiwan, in 2017.
+Since 2017, he has been working with Taiwan
+Semiconductor Manufacturing Company (TSMC),
+Hsinchu. His previous research involved ADPLL
+compiler, PUF, and digital hardware design.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+MORI et al.: 90 TOPS/mm2-17 TFLOPS/mm2 SRAM-BASED INT8 AND FP16 DIGITAL-CIM COMPILER
+1511
+Xiaochen Peng received the Ph.D. degree in electri-
+cal and computer engineering from Georgia Institute
+of Technology, Atlanta, GA, USA.
+She has been with TSMC Corporate Research,
+San Jose, CA, USA, since May 2021. Her research
+interests include compute-in-memory, algorithm-
+hardware co-design/optimization for advanced AI
+workloads and acceleration, and 2.5-D/3-D inte-
+grated memory systems.
+Xiaoyu Sun received the Ph.D. degree in electrical
+engineering from Georgia Institute of Technology,
+Atlanta, GA, USA, in 2020.
+He is currently the Technical Manager of TSMC
+Corporate Research, San Jose, CA, USA. His
+current research interests include AI accelerator
+design, performance modeling, and 3-D integration
+technologies.
+Yorinobu Fujino received the B.S. and M.S. degrees
+in electrical and electronic engineering from Tokyo
+Institute of Technology, Tokyo, Japan, in 2012 and
+2014, respectively.
+In 2014, he joined the Center for Semiconductor
+Research and Development, Toshiba Corporation,
+Yokohama, Japan, where he was engaged in the
+development of STT-MRAM circuit design. In 2020,
+he joined TSMC Design Technology Japan, Yoko-
+hama. He is currently working on SRAM custom
+macro and compiler design.
+Chia-Jung Tsen received the B.S. and M.S. degrees
+in electronics engineering from National Taiwan
+University, Taipei, Taiwan, in 2020 and 2022,
+respectively.
+In 2022, he joined Taiwan Semiconductor Manu-
+facturing Company (TSMC), Hsinchu, Taiwan, as a
+Circuit Design Engineer of design technology plat-
+form (DTP). He engaged in research on embedded
+nonvolatile memory circuit design.
+Vineet Joshi received the M.E. degree in electrical
+and computer engineering from the University of
+Toronto, Toronto, ON, Canada, in 2007.
+He has been working with TSMC, Hsinchu,
+Taiwan, for 18 years and has more than 25 years’
+industry experience specializing in ASIC design.
+Mr. Joshi is a member of the IEEE committee
+for the development of next generation of CTL
+standards for memories.
+Chao-Kai Chuang received the B.E. and M.E.
+degrees in electrical engineering from National Yang
+Ming Chao Tung University, Hsinchu, Taiwan, in
+1998 and 2000, respectively.
+He is currently working with Taiwan Semiconduc-
+tor Manufacturing Company (TSMC), Hsinchu. He
+has 15 years of experience specializing in SRAM
+circuit solutions.
+Takeshi Hashizume received the B.E. degree from
+Keio University, Minato, Japan, in 1987.
+He joined LSI Laboratory Mitsubishi Electric
+Corporation, Itami, Japan, in 1987, and transferred
+to Renesas Electronics Corporation, Tokyo, Japan.
+In 2020, he moved to TSMC Design Technology
+Japan, Inc., Yokohama, Kanagawa, Japan, where he
+is currently the Section Manager of Japan Memory
+Design Program within the Design and Technology
+Platform.
+Chia-Fu Lee received the B.S. degree in electronics
+engineering from the National Taipei University of
+Technology, Taipei, Taiwan, and the M.S. degree
+in electronics and electro-optical engineering from
+National Chiao Tung University, Hsinchu, Taiwan.
+He joined Taiwan Semiconductor Manufacturing
+Company, Hsinchu, in 2004. His research interests
+include analog and memory circuits. He worked in
+embedded ﬂash project, and now is working mainly
+on MRAM, RRAM, and CIM circuits design.
+Tan-Li Chou received the B.S. degree in electri-
+cal engineering from National Taiwan University,
+Taipei, Taiwan, in 1990, and the M.S. and Ph.D.
+degrees in electrical engineering from Purdue Uni-
+versity, West Lafayette, IN, USA, in 1993 and 1996,
+respectively.
+From 1996 to 2006, he was a StaﬀEngineer with
+Intel Corporation, Santa Clara, CA, USA. He was a
+Design Engineer with Silicon Laboratories, Austin,
+TX, USA, from 2006 to 2008. He joined Taiwan
+Semiconductor Manufacturing Company (TSMC),
+Hsinchu, Taiwan, in 2008.
+Kerem
+Akarvardar
+(Senior
+Member,
+IEEE)
+received the Ph.D. degree in electrical engineer-
+ing from Grenoble Institute of Technology (INPG),
+Grenoble, France.
+He is currently a TSMC Academician and the
+Senior Manager focusing on AI hardware under
+Corporate Research Organization.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+1512
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 61, NO. 4, APRIL 2026
+Saman Adham (Senior Member, IEEE) received the
+B.Sc. and M.Sc. degrees in electrical engineering
+from the University of Baghdad, Baghdad, Iraq, in
+1977 and 1979, respectively, and the Ph.D. degree
+in electrical engineering from Queen’s University,
+Kingston, ON, Canada, in 1991.
+He is currently the Deputy Director of the ASIC
+Design Group, TSMC, Hsinchu, Taiwan. He has
+more than 60 publications and holds more than 50
+patents worldwide in the area of design for test,
+built-in self-test, semiconductor security, compute in
+memory, and chiplet/3-D IC design and test.
+Dr. Adham was the Chair of the IEEE Test Technology Standard Committee
+and the Chair of the IEEE 1450.6.2 Standard.
+Yih Wang (Senior Member, IEEE) received the
+Ph.D. degree in electrical and computer engineering
+from the University of Florida, Gainesville, Florida,
+under the tutelage of Dr. Chih-Tang Sah.
+He is currently the Director of the Design and
+Technology Platform Group, TSMC, Hsinchu, Tai-
+wan. His industry career began with Intel’s logic
+technology development group in 2001, where he
+was the Senior Principal Engineer, driving critical
+design techniques for embedded memories from 90
+to 22 nm CMOS technologies. He is the author and
+co-author of more than 70 peer-reviewed journal and conference papers and
+230 U.S. patents.
+Dr. Wang has been a Technical Program Committee Member of ISSCC
+since 2021. He received the three Intel Achievement Awards for his contri-
+butions on development of embedded SRAM and DRAM technologies. He
+served on the Technical Program Committee of VLSI Symposium from 2016
+to 2018.
+Hidehiro Fujiwara (Member, IEEE) received the
+Ph.D. degree from Kobe University, Kobe, Japan, in
+2009.
+From 2009 to 2013, he was with Renesas Elec-
+tronics, Tokyo, Japan. Since 2013, he has been
+working with TSMC, Hsinchu, Taiwan. He is a
+TSMC Academician and the Senior Manager with
+TSMC. He is currently engaging SRAM test vehicle
+development for advanced node and application-
+speciﬁc memory design, including SRAM based
+digital compute-in-memory. He has authored or co-
+authored more than 50 technical articles and made several invited talks in
+conferences including a short course in IEDM 2022. He holds more than 100
+U.S. patents.
+Dr. Fujiwara served as a TPC Member for IEDM in 2023 and 2024.
+Yu-Der Chih (Member, IEEE) received the B.S.
+degree in physics from National Taiwan University,
+Taipei, Taiwan, in 1988, and the M.S. degree in
+electronics engineering from National Tsing Hua
+University, Hsinchu, Taiwan, in 1992.
+From 1992 to 1997, he was a Design Engineer
+of ethernet transceiver circuit for data communica-
+tion and a Circuit Design Engineer for SDRAM
+with Taiwan Semiconductor Manufacturing Com-
+pany (TSMC), Hsinchu. In 1997, he joined TSMC,
+for the development of embedded nonvolatile mem-
+ory IP, including embedded ﬂash, one-time programmable (OTP), multiple
+times-programmable (MTP), and emerging memory. He is currently a TSMC
+Academician and the Director of the Embedded Nonvolatile Memory Library
+Department, Memory Solution Division.
+Yen-Huei
+Chen
+(Member, IEEE) received the
+B.S. degree from National Tsing Hua University,
+Hsinchu, Taiwan, in 1995, and the M.S. degree
+from National Chiao Tung University, Hsinchu, in
+1998.
+In 2000, he joined Taiwan Semiconductor Manu-
+facturing Company (TSMC), Hsinchu, as a Process
+Integration Engineer, focusing on process develop-
+ment and product yield enhancement. Since 2003,
+he has been with the Design Service Division at
+TSMC, where he has conducted research on SRAM
+design for advanced technology development, ranging from 90 to 2 nm.
+He is currently the Deputy Director of design technology platform (DTP),
+working on SRAM test vehicle and SRAM compiler design for advanced
+technology. He has authored 14 IEEE conference articles and six articles in
+IEEE JOURNAL OF SOLID-STATE CIRCUITS. He holds over 100 patents. His
+research interests include low-power and high-speed SRAM/CMOS digital
+circuit design, in-memory computing design, test measurements, and yield
+analysis.
+Mr. Chen is a member of the IEEE Solid-State Circuits Society.
+Hung-Jen
+Liao
+(Member, IEEE) received the
+bachelor’s degree in electrical engineering from
+National Chiao-Tung University, Hsinchu, Taiwan,
+and the master’s degree in electrical engineering
+from National Taiwan University, Taipei, Taiwan.
+He joined TSMC, Hsinchu, in 1994. He is
+currently the Director working on SRAM tech-
+nology
+and
+compiler
+development
+for
+mobile,
+high-performance computing, IoT, and automotive
+applications. He is a TSMC Academician. He owns
+more than 100 U.S. patents.
+Tsung-Yung
+Jonathan
+Chang
+(Fellow, IEEE)
+received the B.S. degree in electrical engineering
+from National Taiwan University, Taipei, Taiwan,
+and the M.S. and Ph.D. degrees in electrical engi-
+neering from Stanford University, Stanford, CA,
+USA.
+He is a TSMC Fellow and the Senior Director
+leading memory IP development at TSMC, Hsinchu,
+Taiwan. He is responsible for SRAM DTCO and
+memory IP development for advanced technology
+nodes. He has published more than 90 technical
+papers in IEEE conferences or journals and held more than 110 patents in
+embedded memory design.
+Dr. Chang had served as the Memory Subcommittee Chair for ISSCC, a
+TPC members for ISSCC and VLSI. He served an Associate and a Guest
+Editors for JOURNAL OF SOLID-STATE CIRCUITS.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:11:44 UTC from IEEE Xplore.  Restrictions apply. 

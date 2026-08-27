@@ -1,0 +1,51 @@
+<section class="chapter" id="sec0">
+<h1 class="title">混合 SNN-CNN 全数字 SRAM 存内计算零基础精讲：一个宏，装下两种神经网络
+<span class="en">A 16nm, 1Mb, 1-to-8b-Configurable 444.21 TOPS/W Fully Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing（ISSCC 2026 · Paper 30.8）</span></h1>
+<div class="meta">论文作者：Yao-Kai Yeh*, Jian-Wei Su* 等（*共同一作）· 台湾清华大学 + 台湾工研院（ITRI）
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.8
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>神经网络有两种主流形态：<strong>CNN</strong>（卷积网络，精度高但费电）和 <strong>SNN</strong>（脉冲网络，事件驱动、超省电但精度略低）。真实边缘应用往往需要<strong>混合 SNN-CNN 模型</strong>——部分层用 SNN、部分层用 CNN。传统硬件要么做两套计算电路（面积翻倍），要么只支持一种。</p>
+<p>这篇来自清华+工研院的工作，在 <strong>16nm FinFET</strong> 工艺上造了一个 <strong>1Mb 全数字 SRAM 存内计算（SRAM-DCIM）宏</strong>，用<strong>一套共享的 MAC 电路</strong>同时支持 SNN 和 CNN，并支持 <strong>1-to-8b 可配置精度</strong>：SNN 模式实测 <strong>444.21 TOPS/W</strong>（1b 输入 × 8b 权重 × 14b 输出），CNN 模式 <strong>62.84 TOPS/W</strong>（8b×8b×22b）。这被认为是<strong>首个硅验证的、支持多比特混合 SNN-CNN 的纯数字 SRAM-CIM 宏</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>SNN 的输入是“1 还是 0”：</strong>SNN 的输入/输出是脉冲（spike），本质上就是 1bit。没有脉冲 = 没有计算 = 不耗动态功耗。所以 SNN 模式能效高得惊人（444 TOPS/W）——不是电路更快，而是<strong>大部分时间在“偷懒”</strong>。</li>
+<li><strong>膜电位（Membrane Potential, MP）是 SNN 的“记忆”：</strong>每个神经元内部有一个累积器（膜电位），输入脉冲不断往里面加，加到阈值就“发放”（输出一个脉冲）并清零。这个“累积-比较-发放”就是 MPDB（膜电位动力学）单元干的事。</li>
+<li><strong>混合模型 = 两种数据流：</strong>SNN 层输出脉冲（1b），CNN 层输出特征值（8b）。硬件必须能在这两种“流量”之间切换，而且最好共用同一套乘法器——这就是本文 CMDM-LCC 单元的使命。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“SNNs have demonstrated superior energy efficiency in event-driven applications… while CNNs provide high accuracy… Hybrid SNN-CNN models have shown promise in balancing accuracy and compute energy”</td>
+<td>SNN 省电（事件驱动），CNN 准确（图像/语音识别）。混合模型在两者之间取平衡——这是本论文的应用动机。</td></tr>
+<tr><td class="num">“designing SRAM-DCIM macros supporting hybrid SNN-CNN introduces two key challenges: (1) extra hardware overhead for supporting both SNN and CNN… (2) area-energy trade-off between PSUM storage and weight update”</td>
+<td>两大挑战：① 同时支持两种网络 = 两套电路 = 面积开销大；② 数据怎么映射：PSUM（部分和）存得少就得频繁更新权重，权重复用得多 PSUM 就得存很多。</td></tr>
+<tr><td class="num">“a compact fully-digital SNN-CNN reconfigurable computing (CFD-SC-RC) architecture that shares SNN-CNN MAC circuit”</td>
+<td>创新①：共享 MAC 电路的可重构架构（CFD-SC-RC），一套电路跑两种模式。</td></tr>
+<tr><td class="num">“a PSUM storage–weight reuse optimized data mapping (PS-WR-ODM) scheme”</td>
+<td>创新②：PSUM 存储-权重复用折中的数据映射方案（PS-WR-ODM）。</td></tr>
+<tr><td class="num">“444.21 TOPS/W with a 1bIN-8bW-14bOUT configuration in SNN mode, and 62.84 TOPS/W with an 8bIN-8bW-22bOUT configuration in CNN mode”</td>
+<td>实测：SNN 模式 444.21 TOPS/W、CNN 模式 62.84 TOPS/W（16nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>CFD-SC-RC 架构</strong>：跨模型共享 SNN-CNN MAC 电路，宏面积比“两套电路”方案节省 <strong>33%</strong>，能效提升 <strong>2.31×</strong>（相对前作混合方案 [4]）；</li>
+<li><strong>CMDM-LCC 单元</strong>：单个本地计算单元内集成两个 MUX 乘法器 + INT8 翻转缩减器（TR）+ 移位相加（SaA），支持 SNN 位宽输入（BW-IN）与 CNN 字宽输入（WW-IN）双模式，以及 <strong>INT4/INT8 双模权重映射</strong>；</li>
+<li><strong>DM-MPDBU 单元</strong>：数字多膜电位动力学单元，一套硬件支持 <strong>IF / LIF / IQIF</strong> 三种神经元模型（前作只支持 1 种），且不受工艺波动影响；</li>
+<li><strong>PS-WR-ODM 数据映射</strong>：把时间步分组、块内权重复用，FoM1（能效/面积/延迟）比两种极端映射提升 <strong>&gt;1.22×</strong>，综合 FoM2 提升 <strong>5.48×</strong>；</li>
+<li><strong>首个硅验证</strong>：16nm 流片，SNN 444.21 / CNN 62.84 TOPS/W，FoM3 最高提升 <strong>8.2×</strong>，1.3 ns 计算延迟（0.8V）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂 CNN 的：从 §3（神经元模型）开始读，本文最精彩的是 §4（电路共享）和 §6（数据映射折中）。</p>
+</div>
+</section>

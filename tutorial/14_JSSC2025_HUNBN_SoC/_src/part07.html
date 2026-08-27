@@ -1,0 +1,46 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>部分和精度控制与设计鲁棒性</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么大累加深度会溢出、四种精度模式怎么选；② 刷新机制在权重复用少时的退化；③ “精度作为可调资源按层分配”的设计思想。</p>
+</div>
+
+<h3>7.1 部分和精度控制：18-bit 原始 vs 12-bit 存储</h3>
+<p>一个输出像素由大量乘积累加而成（288 个 4b×4b 乘积），累加深度大 → 容易溢出。论文 Fig.14 给出四种模式：</p>
+<ul>
+<li>SRAM 里部分和只存 <strong>12-bit</strong>，但原始累加是 <strong>18-bit</strong>；</li>
+<li>用户按每层累加深度选择动态范围窗口：浅层（通道少）用 bit0–11，深层（通道多）用 bit4–15 等高位段 → <strong>牺牲 LSB 防止溢出</strong>；</li>
+<li>最终输出量化回 4-bit，动态范围用<strong>浮点缩放因子</strong>压缩；通道多的层用更小缩放因子 → LSB 差异对最终输出的影响更小。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_14_部分和精度控制.png" alt="部分和精度控制">
+<figcaption>图 14 · 论文 Fig.14：大累加深度的精度控制——18-bit 数据在 12-bit 存储上滑动选择 4 种动态范围。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 设计哲学：把“精度”当作可分配资源</div>
+<p>不做“一刀切全精度”，而是按每层累加深度选窗口：浅层精度用低段（保留小数位），深层用高段（防溢出）。牺牲的是 LSB，保住的是不发生溢出的正确性。这是一种很务实的“精度-硬件”权衡。</p>
+</div>
+
+<h3>7.2 刷新机制的退化场景</h3>
+<p>§4.3 说过：读后 BL 是浮空节点，需要刷新脉冲恢复全摆幅。刷新对能耗影响小的前提是“BL 值接近读值”。但<strong>当权重的时序复用减少时</strong>（例如每周期换一组权重、很少重复用同一地址），刷新恢复的电压差变大 → 刷新能耗上升 → 同步 DIMC 的优势减弱。论文 §V 通过不同工作负载的对比量化了这种影响。</p>
+<div class="box warn">
+<div class="bt">⚠️ 这提醒我们：优化技术都有适用条件</div>
+<p>同步操作的省能红利建立在“权重在 DIMC 地址上反复复用”的假设上。所以数据流设计（§5）专门用 weight-stationary 和滑动窗口来<strong>制造权重复用</strong>——软件与硬件是配套设计的。</p>
+</div>
+
+<h3>7.3 鲁棒性测量</h3>
+<p>论文 Fig.16 的 Shmoo 图测量 4 个样片：失败定义为“任一样片上所有宏的任意 MAC 结果出现第一个错误”。所有样片在 0.88 V 核心电压下最高跑到 <strong>165 MHz</strong>（sign-off 200 MHz，边缘场景降频省电）。</p>
+
+<figure>
+<img src="assets/figs/fig14_16_Shmoo图.png" alt="Shmoo图">
+<figcaption>图 15 · 论文 Fig.16：四个样片的 Shmoo 图——0.88V 下最高 165 MHz。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 部分和 18→12-bit 用窗口滑动防溢出，输出 4-bit 浮点量化；② 刷新机制依赖权重复用，数据流设计与之配套；③ Shmoo 验证 4 样片鲁棒性（165 MHz @ 0.88V）。</p>
+</div>
+</section>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="490" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">CWM-SRAM：循环权重映射，一套存储 + 一套 MAC 跑 FF 和 BP</text>
+
+  <!-- 映射 -->
+  <rect x="40" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">循环映射（cyclic mapping）</text>
+  <g font-size="11">
+    <text x="60" y="140" fill="#45536b">矩阵第 r 行：元素整体右移 r 格存储：</text>
+    <g transform="translate(60,152)">
+      <g stroke="#1d8a5f" stroke-width="0.8">
+        <rect x="2" y="2" width="40" height="24" fill="#eefaf3"/><rect x="44" y="2" width="40" height="24" fill="#eefaf3"/><rect x="88" y="2" width="40" height="24" fill="#eefaf3"/><rect x="132" y="2" width="40" height="24" fill="#eefaf3"/>
+        <rect x="0" y="28" width="40" height="24" fill="#dcefe2"/><rect x="42" y="28" width="40" height="24" fill="#eefaf3"/><rect x="84" y="28" width="40" height="24" fill="#eefaf3"/><rect x="126" y="28" width="40" height="24" fill="#eefaf3"/>
+        <rect x="0" y="54" width="40" height="24" fill="#dcefe2"/><rect x="40" y="54" width="40" height="24" fill="#dcefe2"/><rect x="80" y="54" width="40" height="24" fill="#eefaf3"/><rect x="120" y="54" width="40" height="24" fill="#eefaf3"/>
+      </g>
+      <text x="0" y="90" fill="#45536b">行 0：不移　行 1：右移 1　行 2：右移 2……</text>
+    </g>
+  </g>
+
+  <!-- 读端口 -->
+  <rect x="500" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">单端口 + 双读使能（共享 256b 读口）</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• 每个 4b 单元独立访问；</text>
+    <text x="520" y="164" fill="#45536b">• <strong>FF 读使能</strong>：连 4 行单元（行读）；</text>
+    <text x="520" y="188" fill="#45536b">• <strong>BP 读使能</strong>：连 4 对角单元（对角读）；</text>
+    <text x="520" y="220" fill="#6b7a93">布线：对角走第 3 层金属、对角连接第 4 层、</text>
+    <text x="520" y="242" fill="#6b7a93">行连接第 5 层 → 缓解布线拥塞</text>
+    <text x="520" y="274" fill="#1d8a5f" font-weight="600">→ 同一 256b 读口 → MAC 电路完全复用</text>
+    <text x="520" y="296" fill="#45536b">（对比前作 [7,8]：FF/BP 各要一套读口和 MAC）</text>
+    <text x="520" y="318" fill="#45536b">→ 面积与功耗显著下降</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="344" width="880" height="122" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">激活向量也要跟着转（activation rotator）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">权重循环移位后，激活向量也要相应右移才能保持“权重-激活”对齐——这个调整由外围的</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">“激活旋转与对齐电路（activation rotate-and-align）”完成，与 CWM-SRAM 配合。</text>
+  <text x="60" y="452" fill="#1d8a5f" font-size="12.5" font-weight="600">→ 结果：FF 和 BP 共用一套 6T-SRAM、一套 MAC —— 本论文“MAC 复用”的核心。</text>
+</svg>

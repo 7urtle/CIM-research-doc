@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">DIMC 宏存储器：foundry 6T 位单元 + 格雷码译码器</text>
+
+  <!-- 6T array -->
+  <rect x="40" y="84" width="420" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">6T SRAM 位单元阵列（256×96）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">foundry pushed-rule 6T 单元（规则最小化）</text>
+    <text x="60" y="158" fill="#45536b">存 256×24 个 4-bit 权重；每周期并行出 24 个 4b 权重</text>
+    <g>
+      <!-- cells -->
+      <g>
+        <rect x="70" y="176" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="83" y="193" text-anchor="middle" fill="#1d8a5f" font-size="10">6T</text>
+        <rect x="102" y="176" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+        <rect x="134" y="176" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+        <text x="152" y="193" fill="#7f93ad">…</text>
+        <rect x="158" y="176" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+      </g>
+      <g>
+        <rect x="70" y="208" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+        <rect x="102" y="208" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+        <text x="120" y="225" fill="#7f93ad">…</text>
+        <rect x="134" y="208" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+        <rect x="158" y="208" width="26" height="26" fill="#d9f0e4" stroke="#1d8a5f"/>
+      </g>
+      <text x="70" y="256" fill="#45536b">256 行（地址）× 96 列（数据）</text>
+    </g>
+    <text x="60" y="286" fill="#1d8a5f" font-size="11.5" font-weight="600">写/读外设：双向多路复用器（re 控制）</text>
+    <text x="60" y="306" fill="#45536b">re=0：96 位数据 D[0–95] 写入选中 WL；re=1：BL 施加预充电压 Vr</text>
+  </g>
+
+  <!-- gray decoder -->
+  <rect x="480" y="84" width="440" height="230" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="500" y="110" fill="#6b3fa0" font-size="14" font-weight="700">格雷码（Gray-Code）风格译码器</text>
+  <g font-size="12">
+    <text x="500" y="138" fill="#45536b">8-bit 地址 A[7:0] 分成三段：</text>
+    <g>
+      <rect x="510" y="150" width="110" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+      <text x="565" y="170" text-anchor="middle" fill="#6b3fa0">A[7:6]</text>
+      <text x="565" y="186" text-anchor="middle" fill="#45536b" font-size="10">块选择（4 块×64 地址）</text>
+      <rect x="640" y="150" width="110" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+      <text x="695" y="170" text-anchor="middle" fill="#6b3fa0">A[5:3]</text>
+      <text x="695" y="186" text-anchor="middle" fill="#45536b" font-size="10">瓦片选择（8 瓦片）</text>
+      <rect x="770" y="150" width="120" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+      <text x="830" y="170" text-anchor="middle" fill="#6b3fa0">A[2:0]（格雷码）</text>
+      <text x="830" y="186" text-anchor="middle" fill="#45536b" font-size="10">半个占空比信号</text>
+    </g>
+    <text x="500" y="224" fill="#45536b">二进制→温度计转换生成 ENi 使能块；块内 A[5:3] 选瓦片</text>
+    <text x="500" y="246" fill="#45536b">A[0] 用格雷码编码 → 相邻 WL 驱动之间只翻转 1 位</text>
+    <text x="500" y="268" fill="#1d8a5f" font-size="11.5" font-weight="600">收益：NAND 门栅极多晶接触共享（布局简化）+ WL 翻转最小化</text>
+    <text x="500" y="288" fill="#1d8a5f" font-size="11.5" font-weight="600">vs 二进制译码器：动态能量平均省 50%</text>
+  </g>
+
+  <!-- DIMC vs SRAM peripheral -->
+  <rect x="40" y="334" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">DIMC 与普通 SRAM 的两点关键差异（外设简化依据）</text>
+  <g font-size="12.5">
+    <text x="60" y="392" fill="#1d8a5f" font-weight="600">差异① 行数少 → BL 寄生电容小</text>
+    <text x="80" y="414" fill="#45536b">DIMC 用更少的 WL → BL 寄生显著低于普通 SRAM → BL 全摆幅读反而更省能</text>
+    <text x="60" y="442" fill="#1d8a5f" font-weight="600">差异② 写操作只需开机时一次</text>
+    <text x="80" y="464" fill="#45536b">模型能全部装进 DIMC → 运行期不需要写 → 省掉大量 write-assist 电路</text>
+    <text x="60" y="492" fill="#45536b">Vr（预充电压）可调：75% Vdd 可加快读速、降低能耗，但会降低单元鲁棒性、限制 MAC 逻辑最高电压</text>
+    <text x="60" y="514" fill="#45536b">所有操作只在控制信号 Φ 为高时改变（同步操作的基础）</text>
+  </g>
+</svg>

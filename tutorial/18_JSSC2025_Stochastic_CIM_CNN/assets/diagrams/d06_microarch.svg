@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">微架构：部分累加 · IRS 数据流 · 并行计数器</text>
+
+  <!-- partial accumulation -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">近内存部分二进制累加（论文 Fig.10）</text>
+  <g font-size="11.5">
+    <text x="60" y="136" fill="#45536b">把大 SC 点积拆成小段、用定点加法器相加 → 提高精度</text>
+    <text x="60" y="158" fill="#45536b">32 行累加器匹配宏高度；MUX 每 8 行一组</text>
+    <text x="60" y="180" fill="#45536b">MUX 选 8 行的 outp（正）与 outn（负）</text>
+    <text x="60" y="202" fill="#45536b">split-unipolar 解码：outp − outn（2-bit 减）</text>
+    <text x="60" y="224" fill="#45536b">→ 定点累加电路相加</text>
+    <text x="60" y="256" fill="#1d8a5f" font-size="11.5" font-weight="600">支持行驻留数据流（见右）</text>
+  </g>
+
+  <!-- IRS dataflow -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">输入-行驻留（IRS）数据流（论文 Fig.11）</text>
+  <g font-size="11.5">
+    <text x="510" y="136" fill="#45536b">激活只压平深度通道维（不压平空间维）→ 行可滑动复用</text>
+    <text x="510" y="158" fill="#45536b">每激活行存 SCIM 宏一行（32 行）</text>
+    <text x="510" y="180" fill="#45536b">滤波器同样压平为 2-D 映射</text>
+    <text x="510" y="202" fill="#45536b"><strong>Y 方向滑动并行</strong>（宏行间并行乘）· X 方向串行</text>
+    <text x="510" y="224" fill="#45536b">权重行逐周期施加 → 乒乓 FIFO（计算+加载同时）</text>
+    <text x="510" y="246" fill="#45536b">行 MUX 把感放输出移给下一行累加器 → 对角累加</text>
+    <text x="510" y="268" fill="#45536b">支持 3×3、5×5、7×7 核</text>
+  </g>
+
+  <!-- counter + fixed point -->
+  <rect x="40" y="304" width="880" height="230" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">随机→二进制转换与定点域处理（论文 Fig.12）</text>
+  <g font-size="12.5">
+    <text x="60" y="360" fill="#45536b">并行计数器阵列：每个 SCIM 宏产生 32 个 4-bit 部分二进制输出</text>
+    <text x="60" y="386" fill="#45536b">32 个宏中同一卷积结果的输出 → 一个并行计数器 → 32 个数相加 → 9-bit 结果</text>
+    <text x="60" y="412" fill="#45536b">计数器用二叉树 + 两段流水（第 3 加法级后插第一级流水寄存器 → 两段延迟均衡）</text>
+    <text x="60" y="446" fill="#1d8a5f" font-weight="600">定点域处理（流水化）：</text>
+    <text x="80" y="472" fill="#45536b">平均池化（2×2，跳算缩放输出 + 移位寄存器内 4 值相加；可旁路）→ BN 缩放 + 减偏置 → ReLU 截负 → 存激活 SRAM</text>
+    <text x="60" y="506" fill="#45536b">池化两个相邻列在不同时钟可得：第一列存移位寄存器，第二列算完 → 4 输入相加</text>
+  </g>
+</svg>

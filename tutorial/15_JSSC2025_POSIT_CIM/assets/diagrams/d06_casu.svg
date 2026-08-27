@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">CASU：无重叠位时用 OR 替代加法（论文 Fig.11–13）</text>
+
+  <!-- OR idea -->
+  <rect x="40" y="84" width="430" height="190" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">OR 替代：无重叠位时 X+0 = X = X|0</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">动态对齐后两个尾数乘积无重叠位 → 所有全加器做 X+0</text>
+    <g>
+      <text x="70" y="168" fill="#45536b" font-family="monospace">A = 1011000</text>
+      <text x="70" y="188" fill="#45536b" font-family="monospace">B = 0000101</text>
+      <line x1="70" y1="194" x2="190" y2="194" stroke="#45536b"/>
+      <text x="70" y="212" fill="#1d8a5f" font-family="monospace">A+B = 1011101 = A|B</text>
+    </g>
+    <text x="240" y="168" fill="#45536b">16b 加法器：174.38 nW</text>
+    <text x="240" y="192" fill="#1d8a5f">16b OR：29.75 nW</text>
+    <text x="240" y="216" fill="#1d8a5f" font-weight="600">OR 省 82.9% 功耗</text>
+    <text x="60" y="250" fill="#45536b">POSIT8：28.4% 的对齐结果无重叠位（尾数短）</text>
+  </g>
+
+  <!-- early detection -->
+  <rect x="490" y="84" width="430" height="190" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="13.5" font-weight="700">提前检测：有重叠位也可用 OR</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">A、B 有 2 个重叠位 A[1]/B[3] 与 A[0]/B[2]：</text>
+    <text x="510" y="162" fill="#45536b">若重叠位不同时为 1 → A[1]+B[3] = A[1]|B[3] → 仍可用 OR</text>
+    <text x="510" y="186" fill="#45536b">单个重叠位满足替代的概率 = 3/4</text>
+    <text x="510" y="210" fill="#45536b">n 个重叠位全满足 = (3/4)ⁿ（衰减快，n=4 时仅 23.7%）</text>
+    <text x="510" y="236" fill="#1d8a5f" font-weight="600">重叠位检测数 4 最优 → 减少 36.1% 加法器</text>
+    <text x="510" y="260" fill="#45536b">检测开销随位数线性增加 → 不贪多</text>
+  </g>
+
+  <!-- cyclical -->
+  <rect x="40" y="294" width="880" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="320" fill="#6b3fa0" font-size="13.5" font-weight="700">循环交替调度：制造“无重叠”（论文 Fig.12）</text>
+  <g font-size="12">
+    <text x="60" y="350" fill="#45536b">M0=W0×A0 与 M1=W1×A1 有 1 个重叠位 → 同步位串行计算时每一位都要加法器</text>
+    <!-- before -->
+    <text x="60" y="384" fill="#e66e5a" font-weight="600">同步（每个部分积都重叠）</text>
+    <g font-family="monospace" font-size="11">
+      <text x="80" y="404" fill="#45536b">A0[i]:   [0][1][2][3]  每列 W0×A0[i] 与 W1×A1[i] 重叠 → n 个加法器</text>
+    </g>
+    <!-- after -->
+    <text x="60" y="438" fill="#1d8a5f" font-weight="600">循环移位 A0（异步）→ 只有 A0[0] 与 A1[n] 重叠</text>
+    <g font-family="monospace" font-size="11">
+      <text x="80" y="458" fill="#45536b">A0′:   [1][2][3][0]  →  W0×A0[i+1] 与 W1×A1[i] 无重叠（i&lt;n）</text>
+    </g>
+    <text x="60" y="486" fill="#45536b">n 次加法 → (n−1) 个 OR + 1 个加法器</text>
+    <text x="60" y="510" fill="#6b3fa0" font-weight="600">→ 无重叠率 +36.4% · 计算功率再省 31.3%</text>
+    <text x="60" y="530" fill="#45536b">控制器：n−|RD0−RD1|≤0 → OR 模式；&gt;4 → 循环调度加法模式；0~4 → 先查替代条件再定</text>
+  </g>
+</svg>

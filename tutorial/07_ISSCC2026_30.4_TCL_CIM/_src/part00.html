@@ -1,0 +1,55 @@
+<section class="chapter" id="sec0">
+<h1 class="title">转移计数行（TCL）位并行存内计算零基础精讲：用“数边沿”代替“数 1”
+<span class="en">A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices（ISSCC 2026 · Paper 30.4）</span></h1>
+<div class="meta">论文作者：Lichen Feng, Yunlong Liu, Lin Wu, Dong Li, Zhangming Zhu · 西安电子科技大学
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.4
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>这是一篇“<strong>位并行</strong>”数字 SRAM CIM 论文，来自西安电子科技大学。位并行 CIM 直接按 8b 完整字做乘法（不用逐位串行），但面临“位列加法布线拥塞、符号位处理费面积、加法树空转费电”三大难题。论文用一个很巧妙的电路——<strong>TCL（Transition-Counting-Line，转移计数行）</strong>逐一化解：</p>
+<ul>
+<li><strong>数边沿代替数 1</strong>：把一列的位积串成链，让一个跳变沿沿着链传播，每遇到一个“1”就取反一次 → 计数器数沿的个数 = 列和！无损、零加法器、位积为 0 时完全静止（稀疏自适应）；</li>
+<li><strong>总线 TCL 嵌入符号位扩展</strong>：2 的补码有符号 MAC 的符号扩展直接“借用”TCL-14 的 MMU，只多 2.95% 面积、零额外延迟；</li>
+<li><strong>10 相分阶段使能</strong>：一个周期内 Ph0~7 逐位做乘法、Ph8 才开合并加法器、Ph9 才开加法树 → 加法器不空转 → 能效 +42%。</li>
+</ul>
+<p>28nm 实测：<strong>INT8 106.85 TOPS/W</strong>、<strong>BF16 77.68 TFLOPS/W</strong>、面积效率 1.24 TFLOPS/mm²。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>乘法 = 外积 + 位列求和：</strong>8b×8b 乘法产生 64 个“位积”（每对输入位相乘），按斜线分成 15 个“位列”（同移位位置）。把每个位列里的 1 数出来，就是乘法的部分和。所以“数 1 的个数”就是乘法的核心运算。</li>
+<li><strong>数 1 可以不靠加法器：</strong>本论文的妙招是把一列的位积串成一条链，一个电平“边沿”从头走到尾，每经过一个“1”就翻转一次。翻转了几次 = 有几个 1 = 列和。计数器（CNT）数沿即可——这比 8 输入加法器省太多晶体管。</li>
+<li><strong>让电路“按需工作”= 省电：</strong>10 相发生器把“乘法（Ph0~7）”“合并加法（Ph8）”“树加法（Ph9）”拆成时间上的三个阶段，没轮到的电路被强制接地不翻转——CMOS 动态功耗 ∝ 翻转次数，不翻转就不耗电。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“bit-parallel CIM directly matches the data format of computing systems, eliminating the parallel-to-serial conversion and specialized weight mapping strategies… It can also reduce the MSB toggle rate”</td>
+<td>位并行 CIM 直接按完整字计算：省掉串并转换、省掉特殊权重映射，还因为高位（MSB）不常翻转而省功耗。</td></tr>
+<tr><td class="num">“(1) For 8b MAC, bit-parallel CIM suffers from routing congestion… A tradeoff between throughput and area overhead is required. Approximate compressors… with accuracy loss”</td>
+<td>挑战 1：8b 位列加法布线拥塞；多周期 INT4 或 ADC 压缩都要在吞吐/面积间取舍；近似压缩器丢精度。</td></tr>
+<tr><td class="num">“(2) Handling sign bits for 2's-complementary MAC… demands large extra area or additional cycles”</td>
+<td>挑战 2：2C 有符号 MAC 的符号位处理要么费面积、要么费周期。</td></tr>
+<tr><td class="num">“(3) intermediates induce unnecessary toggling in high-fan-in adders, resulting in power inefficiency”</td>
+<td>挑战 3：乘法/压缩的中间结果让高扇入加法器无谓翻转，功耗浪费。</td></tr>
+<tr><td class="num">“106.85TOPS/W for INT8 and 77.68TFLOPS/W for BF16”</td>
+<td>实测：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W（28nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>TCL 无损位列压缩器</strong>：以“转移计数”实现 8-to-4 无损位列加法，晶体管数最小化、稀疏自适应（0 不翻转）；</li>
+<li><strong>总线 TCL 符号位嵌入</strong>：P<sub>m7</sub> 被 TCL-7~14 复用，2C 有符号 MAC 只多 2.95% 面积、零额外延迟；</li>
+<li><strong>10 相分阶段使能</strong>：MMU（Ph0~7）→ 合并加法器（Ph8）→ 加法树（Ph9）分时工作，能效 +42%、面积效率仅 −6%；</li>
+<li><strong>实测成绩</strong>：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W、1.24 TFLOPS/mm²、FoM1 提升 1.25–2.88×、FoM2 提升 2.20–19.9×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂数字 CIM 的：从 §3（外积）和 §4（TCL 原理）开始，这是本文最巧妙的电路创意。</p>
+</div>
+</section>

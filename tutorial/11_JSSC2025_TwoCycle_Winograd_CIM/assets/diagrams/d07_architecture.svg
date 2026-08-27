@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">系统架构：6 个处理核 + 两种工作模式</text>
+
+  <!-- 顶层 -->
+  <rect x="60" y="90" width="300" height="120" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="210" y="118" text-anchor="middle" fill="#6b3fa0" font-size="13" font-weight="600">RISC-V 顶层控制器 + 4kB 指令 SRAM</text>
+  <text x="210" y="148" text-anchor="middle" fill="#45536b" font-size="11">130.5kB 全局 SRAM · 121.5kB 权重 SRAM</text>
+  <path d="M360,150 H420" stroke="#6b3fa0" stroke-width="2.4" marker-end="url(#ar)"/>
+  <text x="390" y="138" text-anchor="middle" fill="#6b7a93" font-size="10.5">控制</text>
+
+  <!-- 6 核 -->
+  <rect x="425" y="80" width="495" height="300" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="445" y="108" fill="#0e5a8a" font-size="13" font-weight="700">6 个处理核（每个）</text>
+  <g font-size="10.5">
+    <rect x="445" y="122" width="150" height="50" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="520" y="142" text-anchor="middle" fill="#0e5a8a" font-weight="600">144×32 CiM 核</text>
+    <text x="520" y="160" text-anchor="middle" fill="#45536b">= 4 × 36×32 宏 + ISPU + OMB</text>
+    <rect x="615" y="122" width="130" height="50" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="680" y="142" text-anchor="middle" fill="#1d8a5f" font-weight="600">激活输入缓冲</text>
+    <text x="680" y="160" text-anchor="middle" fill="#45536b">（含分段）</text>
+    <rect x="765" y="122" width="140" height="50" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="835" y="142" text-anchor="middle" fill="#c25e2e" font-weight="600">3 个 Winograd 变换单元</text>
+    <text x="835" y="160" text-anchor="middle" fill="#45536b">Bᵀ()B·G()Gᵀ·Aᵀ()A</text>
+    <rect x="445" y="186" width="200" height="44" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="545" y="208" text-anchor="middle" fill="#6b3fa0" font-weight="600">SIMD 单元（量化/加法）</text>
+    <rect x="665" y="186" width="240" height="44" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="785" y="208" text-anchor="middle" fill="#1d8a5f">6kB 配置信息 SRAM</text>
+    <text x="445" y="270" fill="#45536b">每种模式：</text>
+    <text x="445" y="292" fill="#45536b">· Winograd 域：Bᵀ()B → CiM → Aᵀ()A → SIMD 量化</text>
+    <text x="445" y="314" fill="#45536b">· 空间域：跳过变换，直接 CiM + SIMD（CONV/GEMM）</text>
+    <text x="445" y="344" fill="#45536b">权重变换后存回权重 SRAM（省容量）</text>
+  </g>
+
+  <!-- 两种模式 -->
+  <rect x="60" y="240" width="300" height="140" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="80" y="268" fill="#1d8a5f" font-size="13" font-weight="600">两种工作模式（Fig. 5b）</text>
+  <g font-size="11">
+    <text x="80" y="296" fill="#45536b">① Winograd 域模式：CONV 工作负载，</text>
+    <text x="80" y="318" fill="#45536b">　三变换单元启用（F2/F4 按层选）；</text>
+    <text x="80" y="348" fill="#45536b">② 空间域模式：常规 CONV + FC 层 GEMM，</text>
+    <text x="80" y="368" fill="#45536b">　变换单元旁路。</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="60" y="404" width="860" height="72" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="80" y="432" fill="#0e5a8a" font-size="13" font-weight="700">“三层级解耦”设计哲学</text>
+  <text x="80" y="458" fill="#45536b" font-size="12.5">电路级（Radix16+LUT）· 微架构级（混合 Winograd）· 数据级（MDPS）彼此独立、互不干扰——</text>
+  <text x="80" y="478" fill="#45536b" font-size="12.5">每个都可作为该层级的“通用优化技术”单独使用，也可与其他算法级稀疏（如注意力/token 稀疏）正交叠加。</text>
+</svg>

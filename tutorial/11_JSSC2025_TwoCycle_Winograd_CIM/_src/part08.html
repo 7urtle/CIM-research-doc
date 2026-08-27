@@ -1,0 +1,34 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　系统能效范围 19.9~258.5 TOPS/W（0.6~1.1V、78~287MHz），峰值 258.5 TOPS/W @0.6V/116MHz。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_winograd.png" alt="Winograd 权衡" style="max-width:860px">
+  <figcaption>图 8.2　Winograd 权衡：混合策略 2.59× 且几乎无损（对比 F2 1.92× / F4 3.32× 掉 9.1%）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_mdps.png" alt="MDPS 收益" style="max-width:860px">
+  <figcaption>图 8.3　MDPS 收益：激活 1.84×、权重 1.76×、双端 3.11×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d08_results.svg" alt="结果汇总" style="max-width:940px">
+  <figcaption>图 8.4　三级技术栈的各自贡献与叠加效果。</figcaption>
+</figure>
+<ul>
+<li><strong>芯片</strong>：28nm，6.02 mm²；0.6~1.1V、78~287MHz；</li>
+<li><strong>能效</strong>：峰值 258.5 TOPS/W（0.6V/116MHz，全三项技术）；</li>
+<li><strong>精度</strong>：ResNet34（Top-5）/ResNet50（Top-1）@ImageNet，精度损失 0.65% / 2.15%（主要是量化，Winograd 贡献很小）；</li>
+<li><strong>加速</strong>：混合 Winograd 2.59×/1.51×；叠加 50% 双端稀疏后 8.05×/4.85×；</li>
+<li><strong>归一化吞吐</strong>：1/（周期数 × 技术增益）指标下比 SOTA 高 <strong>2.55~7.08×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig11_17_芯片照片.png" alt="论文图17">
+  <figcaption>图 8.5　论文原图 Fig. 17：芯片照片与性能汇总。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 258.5 TOPS/W 是“三项技术全开 + 0.6V”的条件值；对比表里把前作能效<strong>按工艺和电压换算到 28nm/0.6V</strong>再比——换算本身有假设，读时要理解；② “归一化峰值吞吐”指标剥离了频率/MAC 数，只反映“周期数×技术增益”——这比直接比 TOPS 公平，但也没反映面积/功耗全貌；③ 精度损失大头是量化，Winograd 只贡献一小部分——别把两项的精度账混在一起。</p>
+</div>
+</section>

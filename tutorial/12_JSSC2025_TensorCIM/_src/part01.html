@@ -1,0 +1,15 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：Beyond-NN 应用 —— GCN 与 DLRM</h2>
+<figure>
+  <img src="assets/diagrams/d01_beyond_nn.svg" alt="Beyond-NN 应用" style="max-width:920px">
+  <figcaption>图 1.1　GCN 与 DLRM 都由 SpG（稀疏采集）+ SpA（稀疏代数）组成。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_1_BeyondNN应用.png" alt="论文图1">
+  <figcaption>图 1.2　论文原图 Fig. 1：两个典型 Beyond-NN 应用（GCN 与 DLRM）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么 CIM 要“走出神经网络”？</div>
+<p>现实世界的数据不都是“规则张量”（图像/音频/文本），还有<strong>图</strong>（社交网络、知识图谱）和<strong>嵌入表</strong>（推荐系统）。GCN 在图上做卷积（聚合邻居特征 + NN 组合）；DLRM 查嵌入表生成推荐。两者的共同结构：<strong>SpG</strong>（按稀疏索引去“取”特征并求和）+ <strong>SpA</strong>（对取到的张量做稀疏矩阵乘）。它们规模巨大（大图/大表）、需要 FP32 精度 → <strong>数据搬移是主要瓶颈</strong> → 正好是 CIM 的主场。</p>
+</div>
+</section>

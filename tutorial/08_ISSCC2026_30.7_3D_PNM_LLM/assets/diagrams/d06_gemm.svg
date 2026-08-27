@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">GEMM 数据流：把大矩阵切成 16 块，分给 8 个 BG 的 16 个 ACC</text>
+
+  <!-- 矩阵划分 -->
+  <g>
+    <rect x="80" y="110" width="200" height="160" rx="6" fill="none" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="180" y="100" text-anchor="middle" fill="#0e5a8a" font-size="13" font-weight="600">输入 I：M×N</text>
+    <line x1="180" y1="110" x2="180" y2="270" stroke="#0e5a8a" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <line x1="80" y1="190" x2="280" y2="190" stroke="#0e5a8a" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <text x="140" y="152" text-anchor="middle" fill="#45536b" font-size="11">I0（M/4）</text>
+    <text x="232" y="152" text-anchor="middle" fill="#45536b" font-size="11">I1</text>
+    <text x="140" y="238" text-anchor="middle" fill="#45536b" font-size="11">I2</text>
+    <text x="232" y="238" text-anchor="middle" fill="#45536b" font-size="11">I3</text>
+    <rect x="340" y="110" width="200" height="160" rx="6" fill="none" stroke="#c25e2e" stroke-width="2"/>
+    <text x="440" y="100" text-anchor="middle" fill="#c25e2e" font-size="13" font-weight="600">权重 W：N×K</text>
+    <line x1="440" y1="110" x2="440" y2="270" stroke="#c25e2e" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <line x1="340" y1="190" x2="540" y2="190" stroke="#c25e2e" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <text x="400" y="152" text-anchor="middle" fill="#45536b" font-size="11">W0（K/4）</text>
+    <text x="492" y="152" text-anchor="middle" fill="#45536b" font-size="11">W1</text>
+    <text x="400" y="238" text-anchor="middle" fill="#45536b" font-size="11">W2</text>
+    <text x="492" y="238" text-anchor="middle" fill="#45536b" font-size="11">W3</text>
+    <rect x="620" y="110" width="260" height="160" rx="6" fill="none" stroke="#1d8a5f" stroke-width="2"/>
+    <text x="750" y="100" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="600">输出 O：M×K</text>
+    <line x1="750" y1="110" x2="750" y2="270" stroke="#1d8a5f" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <line x1="620" y1="190" x2="880" y2="190" stroke="#1d8a5f" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <text x="685" y="152" text-anchor="middle" fill="#45536b" font-size="11">O00（I0W0）</text>
+    <text x="800" y="152" text-anchor="middle" fill="#45536b" font-size="11">O01（I0W1）</text>
+    <text x="685" y="238" text-anchor="middle" fill="#45536b" font-size="11">O10（I1W0）</text>
+    <text x="800" y="238" text-anchor="middle" fill="#45536b" font-size="11">O11（I1W1）</text>
+  </g>
+
+  <!-- 分配 -->
+  <rect x="80" y="300" width="800" height="70" rx="10" fill="#eef7fd" stroke="#b8d9ee"/>
+  <text x="100" y="326" fill="#0e5a8a" font-size="13" font-weight="600">分配规则：M 分 4、K 分 4 → 16 个子矩阵 → 8 个 BG × 2 个 ACC</text>
+  <text x="100" y="350" fill="#45536b" font-size="12.5">例如：I0W0 → BG0/ACC0，I0W1 → BG0/ACC1，I0W2 → BG1/ACC0 …</text>
+
+  <!-- 关键点 -->
+  <rect x="80" y="388" width="800" height="108" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="100" y="416" fill="#1d8a5f" font-size="13" font-weight="700">这个划分的三个设计意图</text>
+  <text x="100" y="442" fill="#45536b" font-size="12.5">① <strong>零跨块通信</strong>：每个 ACC 只算自己的子矩阵，结果由主机直接拼接，无需跨 BG/跨芯片累加；</text>
+  <text x="100" y="464" fill="#45536b" font-size="12.5">② <strong>权重连续存放 + DMA 读取</strong>；输入行均匀分到所有 bank 顺序读 → 全 bank 并行；</text>
+  <text x="100" y="486" fill="#45536b" font-size="12.5">③ <strong>可扩展</strong>：多芯片时 M、K 继续切分（8 芯片 DIMM → 128 个 ACC）</text>
+</svg>

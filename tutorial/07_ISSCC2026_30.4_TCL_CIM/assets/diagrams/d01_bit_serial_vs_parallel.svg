@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c25e2e"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d8a5f"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">位串行（Bit-Serial）vs 位并行（Bit-Parallel）CIM</text>
+
+  <!-- 位串行 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">位串行 CIM（早期主流）</text>
+  <rect x="40" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="70" y="132" width="160" height="56" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="150" y="154" text-anchor="middle" fill="#1a2332" font-size="12.5" font-weight="600">1b 单元阵列</text>
+    <text x="150" y="174" text-anchor="middle" fill="#45536b">一次算 1 位（1b×1b）</text>
+    <path d="M230,160 H260" stroke="#c25e2e" stroke-width="2.4" marker-end="url(#a1)"/>
+    <rect x="265" y="132" width="160" height="56" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="345" y="154" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">串行累加器</text>
+    <text x="345" y="174" text-anchor="middle" fill="#45536b">移位累加多位结果</text>
+    <text x="70" y="226" fill="#45536b">• 单元极小（1b 存储）→ 面积效率高</text>
+    <text x="70" y="250" fill="#c25e2e">• 缺点：8b 乘法要 8 个周期串行做</text>
+    <text x="70" y="274" fill="#c25e2e">• 需要“并行→串行”转换 + 特殊权重映射</text>
+    <text x="70" y="296" fill="#45536b">• MSB（高位）反复翻转，功耗高</text>
+  </g>
+
+  <!-- 位并行 -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">位并行 CIM（本论文）</text>
+  <rect x="500" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="530" y="132" width="160" height="56" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="610" y="154" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">8b 权重整存</text>
+    <text x="610" y="174" text-anchor="middle" fill="#45536b">1 周期读出完整 8b</text>
+    <path d="M690,160 H720" stroke="#1d8a5f" stroke-width="2.4" marker-end="url(#a2)"/>
+    <rect x="725" y="132" width="160" height="56" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="805" y="154" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">位并行乘法器</text>
+    <text x="805" y="174" text-anchor="middle" fill="#45536b">8b×8b 一个周期完成</text>
+    <text x="530" y="226" fill="#45536b">• 直接匹配系统数据格式，无串并转换</text>
+    <text x="530" y="250" fill="#1d8a5f">• 吞吐高（1 周期 1 个乘法）</text>
+    <text x="530" y="274" fill="#45536b">• MSB 翻转率更低（数据符号稳定）</text>
+    <text x="530" y="296" fill="#c25e2e">• 缺点：8b MAC 布线拥塞、加法树大</text>
+  </g>
+
+  <rect x="40" y="330" width="880" height="126" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="358" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么“位并行”值得做？</text>
+  <text x="60" y="384" fill="#45536b" font-size="12.5">① 省掉串并转换与特殊权重映射（[2,3] 的额外开销）；② 高位（MSB）翻转率低 → 动态功耗低；</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">③ 直接支持 8b/16b 权重“不切片存储”，数据流与软件语义一致。</text>
+  <text x="60" y="430" fill="#45536b" font-size="12.5">但代价是布线拥塞、符号位处理和加法树空转——这正是本论文要解决的三个问题（下一张图）。</text>
+</svg>

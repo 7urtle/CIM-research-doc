@@ -1,0 +1,71 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新②：预计算（Precalculation）L1 计算方案——把减法+绝对值换成“最小选择”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 朴素 L1 硬件为什么不够好；② 数学恒等式 |x−w| = x + w − 2·min(x,w) 怎么把硬件从“减法+绝对值”变成“比较+选择”；③ 权重截断怎么白捡 86× 位级稀疏度。</p>
+</div>
+
+<h3>4.1 朴素 L1 计算的硬件问题</h3>
+<p>论文 Fig.6(a) 展示了传统 L1 距离计算方案：每个元素对要做<strong>减法</strong>（两个多位加法器）→ <strong>取绝对值</strong>（多路选择）→ 再累加。虽然比点积便宜，但：</p>
+<ul>
+<li><strong>多位加法器面积依然大</strong>——面积效率还是受限于数字逻辑；</li>
+<li><strong>绝对值运算在累加之前必须完成</strong> → 无法按位串行流水 → 很难利用位分布稀疏性（挑战三无解）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_6_L1计算方案.png" alt="L1计算方案">
+<figcaption>图 5 · 论文 Fig.6：(a) 传统 L1 距离计算方案（减法+绝对值+累加）；(b) 本论文的预计算方案（求和 + 最小选择）。</figcaption>
+</figure>
+
+<h3>4.2 核心恒等式：|x−w| = x + w − 2·min(x,w)</h3>
+<p>对任意两个数 x 和 w，都有：</p>
+<p class="formula">|x − w| = max(x,w) − min(x,w) = (x + w) − 2·min(x,w)</p>
+<p>把它代入 L1 距离并对 i 求和：</p>
+<p class="formula">Σ|x<sub>i</sub> − w<sub>i</sub>| = Σx<sub>i</sub> + Σw<sub>i</sub> − 2·Σmin(x<sub>i</sub>, w<sub>i</sub>)</p>
+<p>现在看三项各自的硬件成本：</p>
+<table>
+<tr><th>项</th><th>含义</th><th>硬件处理方式</th></tr>
+<tr><td><strong>Σw<sub>i</sub></strong>（WSUM）</td><td>所有权重之和</td><td><strong>权重是静态的</strong> → 模型编译期预计算好，存进 SRAM 的额外列（每列仅 15 个额外单元）→ 实时成本为零</td></tr>
+<tr><td><strong>Σx<sub>i</sub></strong></td><td>所有激活之和</td><td>由 ActACCU（激活累加器）逐位累加，结果<strong>广播共享</strong>给全部 16 个阵列 → 摊薄成本</td></tr>
+<tr><td><strong>2·Σmin(x<sub>i</sub>, w<sub>i</sub>)</strong></td><td>最小值和 ×2</td><td>实时只需<strong>比较器选最小值</strong> + 累加器（MinSEL + MinACCU）→ 最便宜的运算</td></tr>
+</table>
+<p>对比传统方案：减法 + 绝对值 + 累加 → 新方案只剩<strong>比较（min）+ 累加</strong>，绝对值和减法全部消失。论文报告：<strong>面积缩减 1.5×</strong>。这就是“预计算”的名字由来——把能提前算的都提前算掉（Σw），实时路径只剩最轻的运算。</p>
+
+<figure>
+<img src="assets/diagrams/d04_precalc.svg" alt="预计算L1方案">
+<figcaption>教学图 4 · 传统 L1 方案 vs 预计算方案，以及权重截断带来的稀疏度收益。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 直觉：把“贵的运算”变成“便宜的运算+提前做”</div>
+<p>减法器贵（多位加法）而且破坏位串行；min 选择便宜（比较器）而且天然按位比较。预计算的精髓是：<strong>能离线算的绝不实时算（Σw），能共享的绝不重复算（Σx 广播），实时只保留最便宜的（Σmin）</strong>。这就是“架构级近似”：不改算法语义，只改运算分解。</p>
+</div>
+
+<h3>4.3 权重截断：把负权重归零并并入 WSUM</h3>
+<p>既然 ReLU 激活非负（x<sub>i</sub> ≥ 0），论文进一步做了一步数学变形（论文式 2）：</p>
+<p class="formula">Σ|x<sub>i</sub> − w<sub>i</sub>| = Σ|x<sub>i</sub> − clamp(w<sub>i</sub>, 0, w<sub>max</sub>)| + Σ|w<sub>i</sub>|</p>
+<p>直观理解：x ≥ 0 时，min(x, w) 与 w 的负值无关（负数不可能被选中），所以可以把<strong>负权重截断到 0</strong>（clamp 到 [0, w<sub>max</sub>]），截掉的部分（Σ|w<sub>i</sub>| 中负权重对应的项）作为常数并入 WSUM——计算结果<strong>完全不变</strong>（等效计算）。这一步带来两个巨大的硬件红利：</p>
+<ul>
+<li><strong>权重稀疏度暴增</strong>：截断后大量权重变成 0。论文 Fig.7 的数据：ResNet-20（CIFAR-10）模型，预计算后权重稀疏度提升 <strong>86×</strong>！→ L1 计算单元的活动因子（activity factor）大幅下降 → 比较运算功耗降低；</li>
+<li><strong>全部非负</strong>：权重和激活都是非负数 → 不需要符号位、不需要补码 → 位宽减小、电路简化。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_7_权重稀疏度提升.png" alt="权重稀疏度提升">
+<figcaption>图 6 · 论文 Fig.7：预计算（权重截断）带来的权重稀疏度增益——ResNet-20/CIFAR-10 上稀疏度提升 86×。</figcaption>
+</figure>
+
+<div class="box warn">
+<div class="bt">⚠️ 注意：稀疏度提升 ≠ 结构性稀疏</div>
+<p>这里的稀疏是<strong>位级、非结构化</strong>的（每个比特的 0/1 分布）。它不需要稀疏训练，也不需要稀疏索引/跳零逻辑，而是通过<strong>电路行为</strong>（预充保持 + 提前停止，§6）自动省电。这正是挑战三的解法：用电路设计去“白捡”天然稀疏。</p>
+</div>
+
+<h3>4.4 小结与硬件收益汇总</h3>
+<ul>
+<li>预计算分解：减法/绝对值 → 最小选择 → <strong>面积 −1.5×</strong>；</li>
+<li>WSUM 预存：每列仅 15 个额外 SRAM 单元；Σx 广播共享；</li>
+<li>权重截断：<strong>权重稀疏度 +86×</strong>、无符号位 → 位宽减、电路简；</li>
+<li>为 §6 的位串行比较和提前停止铺平道路。</li>
+</ul>
+</section>

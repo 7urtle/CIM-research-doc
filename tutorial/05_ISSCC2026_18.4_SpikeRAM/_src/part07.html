@@ -1,0 +1,36 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>创新②：三值梯度 + 格雷码权重 —— eNVM 寿命的救星</h2>
+<figure>
+  <img src="assets/diagrams/d07_graycode.svg" alt="格雷码与三值梯度" style="max-width:940px">
+  <figcaption>图 7.1　格雷码（相邻数值只差 1 位）+ 三值梯度（{−1,0,+1}）：每次权重更新最多翻转 1 位。</figcaption>
+</figure>
+<p>在线学习要反复写 eNVM（MRAM/RRAM），而 eNVM 的<strong>写次数有限</strong>（endurance）。论文用两个机制把写压力压到最小：</p>
+<ul>
+<li><strong>三值梯度</strong>：梯度量化为 {−1, 0, +1}。梯度为 0 → 不写（省电省寿命）；梯度 ±1 → 权重只 ±1 步长；</li>
+<li><strong>格雷码权重</strong>：权重以格雷码存储（相邻数值只差 1 位）。二进制里 7→8（0111→1000）要翻 4 位；格雷码里相邻只翻 1 位 → <strong>每次更新最多写 1 位</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 格雷码为什么对“写寿命”特别友好？</div>
+<p>eNVM 的寿命是按“单器件写次数”算的。权重更新 ±1 时：二进制编码可能让多个位同时翻转（都写一次），格雷码保证只翻 1 位（只写 1 个器件）。加上三值梯度让大部分权重“不写”，<strong>总写次数和单器件写压力同时下降</strong>——这是“算法（三值化）+ 编码（格雷码）+ 硬件（eNVM）”三层协同的结果。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig18_4_5_签名验证与实测.png">
+  <source src="assets/videos/v03_graycode.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 格雷码更新动画：同一个“+1”更新，二进制翻 4 位、格雷码只翻 1 位。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 二进制 vs 格雷码：同一次更新，写几次？</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">格雷码：每次 ±1 更新只翻 1 位</span>
+</div>
+<div class="hint">循环显示若干权重的“±1 更新”：红色=二进制（可能翻多位），绿色=格雷码（恒翻 1 位）。累积写位数就是 eNVM 的磨损——格雷码让磨损最小化。</div>
+</div>
+<figure>
+  <img src="assets/diagrams/d09_mram.svg" alt="MRAM 集成" style="max-width:920px">
+  <figcaption>图 7.2　eNVM 集成：片上 SRAM（快、断电丢）vs 外接 4Mb MRAM（永久、可扩展 5.4×、寿命 +13.9×）。</figcaption>
+</figure>
+</section>

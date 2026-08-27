@@ -1,0 +1,21 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>三大挑战与 SpikeRAM 系统概览</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 推理低效（数据搬移+帧转换+冗余 MAC）；② 时空 OCL 开销随时间窗深度增长；③ eNVM 写寿命限制。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig18_4_1_动机挑战方案.png" alt="论文图 18.4.1">
+  <figcaption>图 2.2　论文原图 Fig. 18.4.1：边缘感知 SoC 的动机（上）、挑战（中）与 SpikeRAM 方案（下）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d03_system.svg" alt="系统总览" style="max-width:940px">
+  <figcaption>图 2.3　SpikeRAM 系统总览：片上 EVS → EVS-sCNN 核（近存，事件卷积）→ sFC-OCL 核（存内，移位相加+在线学习）→ 可选外接 MRAM（大网络+永久学习）。</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本文对策</th><th>对应章节</th></tr>
+<tr><td>① 推理低效</td><td>记忆中心异步近传感器计算（EVS-sCNN，省帧转换/搬移/冗余）</td><td>§4</td></tr>
+<tr><td>② 时空 OCL 开销</td><td>e-OTBP 单时间步在线学习（−73.1% 内存）</td><td>§6</td></tr>
+<tr><td>③ eNVM 寿命</td><td>三值梯度 + 格雷码权重（编程次数 −89%，寿命 +13.9×）</td><td>§7</td></tr>
+</table>
+</section>

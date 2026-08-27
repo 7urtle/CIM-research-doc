@@ -1,0 +1,18 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>核心概念：外积与位列加法——乘法器的“位级解剖”</h2>
+<p>要理解 TCL，先看 8b×8b 乘法在“位级”长什么样。两个 8b 数相乘，先做 <strong>外积（outer product）</strong>：</p>
+<figure>
+  <img src="assets/diagrams/d03_outer_product.svg" alt="外积与位列" style="max-width:940px">
+  <figcaption>图 3.1　8b×8b 外积：64 个位积 P[m][n] = X[m]×W[n] 排成 8×8 网格；按“斜对角线”（相同移位位置）分成 15 个位列，每列求和就是部分积。</figcaption>
+</figure>
+<div class="formula">X × W = Σ<sub>k=0..14</sub> (列 k 的位积和) × 2<sup>k</sup><span class="tag">式 3.1</span></div>
+<p>于是乘法变成两件事：</p>
+<ol>
+<li><strong>生成位积</strong>：P[m][n] = X[m] × W[n]，就是“与门”（1×1=1 仅当两者都是 1）；</li>
+<li><strong>位列求和</strong>：把每一列（斜线）上的位积加起来——<strong>这一列有几个 1，列和就是几</strong>。第 k 列最多有 8 个位积（中间列最宽）。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 “数 1 的个数”是乘法的核心</div>
+<p>传统数字乘法器用 <strong>压缩器（compressor）树</strong>（如 CSA 3:2 压缩器）把每列的 1 逐层加起来——8 个输入要 3~4 级压缩 + 进位传播。本论文的 TCL 换个思路：<strong>把“有几个 1”编码成“一个边沿翻转几次”</strong>，用一个计数器数沿——这就是下章的主角。</p>
+</div>
+</section>

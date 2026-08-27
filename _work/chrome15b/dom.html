@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>probe</title></head>
+<body><iframe id="f" src="http://127.0.0.1:8937/index.html" width="1200" height="4000"></iframe>
+<pre id="out">demoA: 980x320 nonbg=312995
+demoB: 980x320 nonbg=312965
+demoC: 980x320 nonbg=312469
+videos: 3
+missing imgs: 0</pre>
+<script>
+const out=document.getElementById('out');
+function run(){try{
+  const doc=document.getElementById('f').contentDocument;
+  if(!doc){out.textContent='no doc';return;}
+  const res=[];
+  ['demoA','demoB','demoC'].forEach(id=>{
+    const c=doc.getElementById(id);
+    if(!c){res.push(id+': NO CANVAS');return;}
+    const ctx=c.getContext('2d');
+    const dd=ctx.getImageData(0,0,c.width,c.height).data;
+    let nb=0;
+    for(let i=0;i<dd.length;i+=4){if(dd[i]<240||dd[i+1]<240||dd[i+2]<245)nb++;}
+    res.push(id+': '+c.width+'x'+c.height+' nonbg='+nb);
+  });
+  res.push('videos: '+doc.querySelectorAll('video source').length);
+  let miss=0;doc.querySelectorAll('img').forEach(im=>{if(im.complete&&im.naturalWidth===0)miss++;});
+  res.push('missing imgs: '+miss);
+  out.textContent=res.join('\n');
+}catch(e){out.textContent='ERR: '+e.message;}}
+setTimeout(run,3000);
+</script>
+</body></html>

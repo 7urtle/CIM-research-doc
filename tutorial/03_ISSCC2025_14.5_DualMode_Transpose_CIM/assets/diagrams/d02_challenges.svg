@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">转置 CIM（T-CIM）的三大挑战（论文 Fig. 14.5.1）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1：MAC 不复用</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">前作 FF 用一套电路、BP 另做一套</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">（转置阵列 [7,8]）→ 面积、能效双输；</text>
+    <text x="60" y="198" fill="#45536b" font-size="12">理想：一套 MAC 电路 + 读口，</text>
+    <text x="60" y="220" fill="#45536b" font-size="12">FF 读“行”、BP 读“对角”</text>
+    <text x="60" y="266" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“循环权重映射 + 单端口”</text>
+
+    <rect x="340" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2：INT 精度不足</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">训练需要比推理更高的分辨率；</text>
+    <text x="360" y="168" fill="#45536b" font-size="12">INT 表示训练精度显著下降 [10]</text>
+    <text x="360" y="198" fill="#45536b" font-size="12">前作 FP 方案用“预对齐”，但</text>
+    <text x="360" y="220" fill="#45536b" font-size="12">尾数截断损失依然存在</text>
+    <text x="360" y="266" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要 FP 支持 + 低损失的预对齐</text>
+
+    <rect x="640" y="90" width="280" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 3：PVT + 密度/面积</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">模拟 CIM 的 PVT 波动让训练</text>
+    <text x="660" y="168" fill="#45536b" font-size="12">精度雪上加霜；数字 CIM 能缓解，</text>
+    <text x="660" y="198" fill="#45536b" font-size="12">但“存储密度 MD × 面积效率 AF”</text>
+    <text x="660" y="220" fill="#45536b" font-size="12">与 MAC 电路的权衡难调 [1]</text>
+    <text x="660" y="266" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“高密度 + 紧凑 MAC + 双模”</text>
+  </g>
+
+  <rect x="40" y="352" width="880" height="104" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="380" fill="#1d8a5f" font-size="13.5" font-weight="700">本文三招对应：</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">① CWM-SRAM 循环权重映射：单端口 6T-SRAM，FF 读行/BP 读对角 → MAC 电路完全复用；</text>
+  <text x="60" y="428" fill="#45536b" font-size="12.5">② SFME 有符号定点尾数编码 + VWPA 向量级预对齐：FP8/BF16/INT4/INT8 一格式统一、截断损失小；</text>
+  <text x="60" y="448" fill="#45536b" font-size="12.5">③ DMBP-MAC 精确/近似双模：高密度集成进 CWM-SRAM，速度 +12%、功耗 −31%（近似模式）。</text>
+</svg>

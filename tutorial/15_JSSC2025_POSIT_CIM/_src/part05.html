@@ -1,0 +1,90 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：CPCS——把空闲单元变成“预计算的算力”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 双位 MAC（O = W×A[n] + W×A[n+2]）的数学原理；② “关键位 S[1]”是什么、为什么预计算存储它；③ 2–4b 关联和 3b 优先分区怎么处理 4b 与 POSIT16 长尾数。</p>
+</div>
+
+<h3>5.1 双位 MAC 的数学基础（论文 Fig.8）</h3>
+<p>把 3 位尾数 W 存进 4 位 CIM 单元（有 1 个空闲位）。传统单位串行每周期算 W×A[n]。本论文让单元每周期接收 <strong>A[n]|A[n+2]</strong>，做<strong>双位 MAC</strong>：</p>
+<p class="formula">O = W×A[n] + W×A[n+2]</p>
+<p>具体：单元先算部分积 P[2:0] = W×(A[n]|A[n+2])，再按 A[n+2]/A[n] 组合移位相加：</p>
+<ul>
+<li>00 或 01：O = P[2:0]；</li>
+<li>10：O = P[2:0] ≪ 2；</li>
+<li>11：O = P[2:0] + P[2:0]≪2 = S[3:0]‖P[1:0]。</li>
+</ul>
+<p>其中 <strong>S[1] = W[P] = W[1]∧(W[0]&amp;W[2])</strong> 是晶体管消耗最大的位（“关键位”）。</p>
+<div class="box key">
+<div class="bt">💡 CPCS 的核心：关键位预计算并存储</div>
+<p>与其运行时算 S[1]（最贵的位），不如在<strong>权重加载时</strong>预计算好，存进那 1 个空闲单元 → 运行时直接读出 → 每周期完成两个 MAC。这就是“critical-bit pre-compute-and-store”：<strong>把空闲位变成预计算的寄存器</strong>。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig15_8_CPCS机制原理.png" alt="CPCS机制原理">
+<figcaption>图 8 · 论文 Fig.8：CPCS 机制原理——3 位尾数存 4 位单元，预计算关键位实现双位 MAC。</figcaption>
+</figure>
+
+<h3>5.2 2–4b 关联：4 位尾数也能双位 MAC（论文 Fig.9）</h3>
+<p>4 位满尾数 Wn 没有空闲单元，无法存关键位。但若 <strong>Wn[0] = 0（LSB 为 0）</strong>：</p>
+<ul>
+<li>Wn[3:1] 可视为 3 位权重 → 双位 MAC：Wn[3:1]×A[n] + Wn[3:1]×A[n+2]；</li>
+<li>而存 2 位尾数 Wm 的单元有 2 个空闲位 → <strong>4 位单元借 2 位单元的一个空闲位</strong>存 Wn[P] → 双位 MAC 可行；</li>
+<li>吞吐提升 <strong>31%</strong>。</li>
+</ul>
+
+<h3>5.3 3b 优先分区：POSIT16 长尾数的处理（论文 Fig.9）</h3>
+<p>POSIT16 尾数可超 4 位 → 需多个 4 位单元存一个尾数。朴素做法“顺序分区”（9 位 “100111011” → “1001”“1101”“1XXX”）会让“1001”段无法双位 MAC（X 空闲全堆最后）。本论文的 <strong>3b 优先分区</strong>：</p>
+<ul>
+<li>“100111011” → “100X”“111X”“011X” → 三段都是 3 位有效 + 1 位空闲 → <strong>全部可双位 MAC</strong>；</li>
+<li>无法切成 3 位段时（如 10 位），动态调整让切出的 4 位段 LSB=0 → 走 2–4b 关联；</li>
+<li>POSIT16 吞吐提升 <strong>1.34×</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig15_9_2-4b关联与3b优先分区.png" alt="2-4b关联与3b优先分区">
+<figcaption>图 9 · 论文 Fig.9：CPCS 的 2–4b 权重关联与 3b 优先分区。</figcaption>
+</figure>
+
+<h3>5.4 CPCS CIM 阵列架构（论文 Fig.10）</h3>
+<p>CPCS 阵列 = 8×48 CIM 阵列 + 负载控制器 + 关键位计算单元 + 3:8 译码器。每行 48b = 12 个 4b CIM 单元。三种工作模式：</p>
+<ol>
+<li>存 3b 尾数 → 双位 MAC（关键位存本单元空闲位）；</li>
+<li>存 4b 且 W[0]=0 → 2–4b 关联（借同行的 2b 单元空闲位，结果左移 1 位补偿）；</li>
+<li>存 4b 且 W[0]=1 → 标准单位串行。</li>
+</ol>
+<p>负载控制器/关键位计算/3:8 译码器<strong>只在权重加载或更新时工作</strong> → 开销仅 <strong>1.6%</strong>（阵列 98.7% 周期在计算）。</p>
+
+<figure>
+<img src="assets/figs/fig15_10_CPCS阵列架构与时序.png" alt="CPCS阵列架构与时序">
+<figcaption>图 10 · 论文 Fig.10：CPCS CIM 阵列架构与时序图。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_cpcs.svg" alt="CPCS教学图">
+<figcaption>教学图 5 · CPCS 原理：空闲单元存关键位 → 双位 MAC，以及 2–4b 关联与 3b 优先分区。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig15_8_CPCS机制原理.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · CPCS 双位 MAC：3 位尾数存 4 位单元，空闲单元存预计算关键位，每周期完成两个 MAC。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · CPCS 双位 MAC（W=101 存 4b 单元）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">A 组合 0：O = P[2:0]</span>
+</div>
+<div class="hint">橙色框=存预计算关键位 S[1] 的空闲单元（加载时算好，运行时直接取）。橙色高亮=当前 A[n+2]/A[n] 组合，决定部分积 P 是否移位/相加。每周期完成 W×A[n]+W×A[n+2] 两个 MAC → 吞吐 +38.2%。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 双位 MAC 数学：O = W×A[n] + W×A[n+2]，关键位 S[1] 最贵 → 预计算存储；② 2–4b 关联：借位实现 4b 双位（+31%）；③ 3b 优先分区：POSIT16 全段双位（+1.34×）；④ 预计算开销仅 1.6%。整体：单元利用率 +63%、吞吐 +38.2%、系统能效 +1.46×（最高 1.96×）。</p>
+</div>
+</section>

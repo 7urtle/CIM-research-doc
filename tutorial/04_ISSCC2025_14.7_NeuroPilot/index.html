@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：NeuroPilot 模拟路径搜索 CIM 宏（ISSCC 2025 14.7）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2025 14.7 NeuroPilot 模拟路径搜索 CIM 宏的波前传播、双向搜索、动态逻辑 Pilot PE 与三步粗/细路径流程。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">模拟路径搜索 CIM（NeuroPilot）零基础精讲</div>
+    <div class="t2">ISSCC 2025 · Session 14 · Paper 14.7</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：路径搜索应用</a>
+  <a class="sec" href="#sec2">02 · 三大挑战</a>
+  <a class="sec" href="#sec3">03 · 波前传播基础</a>
+  <a class="sec" href="#sec4">04 · 创新①：DDS 双向搜索</a>
+  <a class="sec" href="#sec5">05 · 创新②：Pilot PE + OPC</a>
+  <a class="sub" href="#sec5-1">5.1 Pilot PE 结构</a>
+  <a class="sub" href="#sec5-2">5.2 OPC 外扩预充电</a>
+  <a class="sec" href="#sec6">06 · 创新③：TsCFP 三步流程</a>
+  <a class="sec" href="#sec7">07 · 架构与三阶段工作流</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">NeuroPilot 模拟路径搜索存内计算零基础精讲：让“寻路”像水波一样扩散
+<span class="en">NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching（ISSCC 2025 · Paper 14.7）</span></h1>
+<div class="meta">论文作者：An Guo*, Jingmin Zhang* 等（*共同一作）· 东南大学 + 国家 EDA 创新中心（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.7
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前面几篇 CIM 都在算“乘法累加”。这一篇完全不同：它算的是<strong>路径搜索（path finding）</strong>——自动驾驶微机器人导航、VLSI 布线、城市路径规划、波前传播都要用的基础算子。<strong>模拟路径 CIM（Mimetic-Path CIM）</strong>把地图网格映射成 PE 阵列，让“搜索信号”像水波一样在阵列里扩散，天然并行、天然省电。</p>
+<p>这篇东南大学司鑫组的 NeuroPilot（28nm 32×32）用三招解决旧方案的三大痛点：</p>
+<ol>
+<li><strong>DDS 双向搜索</strong>：START 和 END 同时发出波前，中间交汇 → 处理时间 −2.1×、功耗 −1.13×；</li>
+<li><strong>动态逻辑 Pilot PE + OPC 外扩预充电</strong>：每个 PE 只含 14 个 SRAM 单元 + 8 邻接传播核心，预充电信号跟着波前走（只充“即将用到”的 PE）→ 面积 −1.32×、动态容量 −1.35×；</li>
+<li><strong>TsCFP 三步粗/细路径</strong>：粗图找走廊 → 沿走廊切条带求细路径 → 1024×1024 大图也能高效导航（旧金山例：373.82ns / 512.5pJ）。</li>
+</ol>
+<p>实测：搜索率 <strong>3670M nodes/s</strong>、单节点能量 <strong>69.4 fJ</strong>、PE 面积 <strong>213.6 μm²</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>路径搜索可以“硬件化”：</strong>Dijkstra/BFS 这类算法在 CPU 上是顺序的；但把地图摊成 PE 阵列后，<strong>每个节点同时“看”自己的邻居</strong>——搜索并行度 = 地图大小，速度是 CPU 的千倍级。</li>
+<li><strong>双向搜索为什么省一半时间：</strong>单向搜索的信号要“铺”满 START 到 END 的整个区域；双向同时出发，各自只走一半距离就交汇——覆盖面积几乎减半。</li>
+<li><strong>动态逻辑是“省面积”的瑞士军刀，但怕漏电：</strong>动态逻辑节点靠电容保持电荷（比 DFF 省晶体管），但电荷会漏。OPC 让预充电“只充马上要用的 PE”，漏电窗口最短、容量需求最小。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“Autonomous micro-robots… require efficient path-finding algorithms… Similarly, VLSI routing, urban path planning, and wavefront propagation also demand optimal navigation”</td>
+<td>应用：微机器人导航、VLSI 布线、城市路径规划、波前传播——都需要高效寻路。</td></tr>
+<tr><td class="num">“(1) single-direction searching (SDS) inefficiently utilizes half of the available search time”</td>
+<td>挑战 1：单向搜索浪费一半搜索时间。</td></tr>
+<tr><td class="num">“(2) DFF-based temporary storage suffers from poor PPA, while dynamic-logic based alternatives are prone to leakage”</td>
+<td>挑战 2：DFF 暂存 PPA 差；动态逻辑又怕漏电。</td></tr>
+<tr><td class="num">“(3) limited processing windows can lead to task failures in large-scale maps”</td>
+<td>挑战 3：有限处理窗口在大图上任务失败（整图映射模糊、拆图局部最优）。</td></tr>
+<tr><td class="num">“(1) dual-direction searching (DDS)… (2) a dynamic-logic pilot PE with an outspread pre-charge (OPC) circuit… (3) a novel 3-step coarse/fine-path (TsCFP) flow”</td>
+<td>三招：DDS 双向搜索、动态逻辑 Pilot PE + OPC、TsCFP 三步粗/细路径。</td></tr>
+<tr><td class="num">“3670M nodes/s, 213.6μm² PE area, and a 69.4fJ node energy consumption”</td>
+<td>实测：3670M 节点/秒、213.6 μm² PE 面积、69.4 fJ/节点。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>DDS 双向搜索</strong>：START/END 同时出发、交汇即停 → 例图时间 −2.1×、功耗 −1.13×；32×32 无障碍图 −2.0×/−1.28×；</li>
+<li><strong>动态逻辑 Pilot PE</strong>：14 个 SRAM 单元（SRAM_F 地图数据 + SRAM_R 方向数据）+ 8 邻接发射器 + 中心核心；双动态逻辑冗余抗 PVT；</li>
+<li><strong>OPC 外扩预充电</strong>：预充电随波前外扩、交汇终止 → 保持时间 −1.49×、动态容量 −1.35×、面积 −1.32×；</li>
+<li><strong>TsCFP 三步流程</strong>：粗图 → 粗路径走廊 → 沿走廊细路径，解决大图导航（旧金山例 373.82ns）；</li>
+<li><strong>实测</strong>：3670M nodes/s、69.4 fJ/node、213.6 μm²；FoM（搜索率/能量/PE 尺寸）比前作 [1-5] 高 31.49 – 2.148e7×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇没有“乘法器”，全程是“信号的传播”故事——换个脑子读 CIM。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：路径搜索与“模拟路径 CIM”</h2>
+<figure>
+  <img src="assets/diagrams/d01_path_search.svg" alt="路径搜索应用" style="max-width:920px">
+  <figcaption>图 1.1　路径搜索的应用（微机器人导航/VLSI 布线/城市规划/波前传播）与模拟路径 CIM 的概念。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么路径搜索值得专门做硬件？</div>
+<p>路径搜索（Dijkstra、A*、BFS）在 CPU 上是<strong>顺序</strong>的：每次只扩展一个节点，地图越大越慢。模拟路径 CIM 把地图网格直接映射到 PE 阵列，<strong>信号并行传播</strong>——32×32 阵列 = 1024 个节点同时“在看邻居”。这就是它比数字加速器 [3-5] PPA 更优的原因。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_1_动机与挑战.png" alt="论文图 14.7.1">
+  <figcaption>图 1.2　论文原图 Fig. 14.7.1：模拟路径 CIM 的动机与挑战。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 单向搜索浪费一半时间；② DFF 暂存 PPA 差 / 动态逻辑怕漏电；③ 处理窗口有限，大图任务失败。</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 单向搜索浪费</td><td>信号从 START 一路铺到 END，覆盖面积浪费一半</td><td><strong>DDS 双向搜索</strong>：两端同时出发、中间交汇</td></tr>
+<tr><td>② 存储 PPA 差</td><td>DFF 面积大功耗高；动态逻辑怕漏电</td><td><strong>动态逻辑 Pilot PE + OPC</strong>：SRAM 存方向 + 预充电优化</td></tr>
+<tr><td>③ 处理窗口有限</td><td>32×32 阵列装不下大图；整图映射模糊、拆图局部最优</td><td><strong>TsCFP 三步流程</strong>：粗图 → 走廊 → 细路径</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>波前传播基础：搜索像水波一样扩散</h2>
+<figure>
+  <img src="assets/diagrams/d03_wavefront.svg" alt="波前传播" style="max-width:940px">
+  <figcaption>图 3.1　波前传播：信号从 START 出发按 8 邻接逐层扩散（虚线环 = 波前），遇障碍绕行。路径 CIM 与 MAC-CIM 的本质区别。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 路径 CIM 和前面的 MAC-CIM 有什么不同？</div>
+<table>
+<tr><th></th><th>MAC-CIM（前几篇）</th><th>路径 CIM（本文）</th></tr>
+<tr><td>存什么</td><td>权重</td><td>地图（障碍/起点/终点/拥堵级）</td></tr>
+<tr><td>算什么</td><td>Σ(激活×权重)</td><td>信号传播与选路</td></tr>
+<tr><td>输出</td><td>数值结果</td><td>路径方向</td></tr>
+</table>
+</div>
+<p>每个 PE 记住“信号从哪个方向来”（存进 SRAM_R），波前到达 END 后，<strong>沿方向数据回溯</strong>就能还原整条路径。这个“传播 + 记方向 + 回溯”的框架是理解全文的钥匙。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_2_结构与DDS.png">
+  <source src="assets/videos/v01_wavefront.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 波前传播动画：信号从 START 逐层扩散，遇到障碍绕行。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 波前传播仿真（自动播放）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">波前从 START（绿）逐层扩散</span>
+</div>
+<div class="hint">绿色环=波前已到达的节点；红色=障碍；灰色=未到达。观察波前如何绕过障碍向 END 扩散。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：DDS 双向搜索 —— 两端同时出发，中间交汇</h2>
+<figure>
+  <img src="assets/diagrams/d04_dds.svg" alt="DDS" style="max-width:940px">
+  <figcaption>图 4.1　SDS 单向（信号铺满大半个图）vs DDS 双向（两股波前各走一半，中间交汇）。</figcaption>
+</figure>
+<p>单向搜索（SDS）的信号从 START 一路“铺”到 END——波前覆盖的区域几乎是整个地图（最坏情况）。DDS 让 <strong>START 和 END 同时发出波前</strong>：</p>
+<ul>
+<li>两股波前各自以“8 邻接”扩散，在<strong>中间某个 PE 交汇（junction）</strong>；</li>
+<li>交汇 PE 产生 junction 信号：去激活自身、产生行列信号标记交汇位置、并终止 OPC 预充电（§5.2）；</li>
+<li>每个 PE 早已存好“从哪来的方向”→ 从交汇点向两端回溯 → 拼出完整路径。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 DDS 收益</div>
+<p>例图（ISSCC 风格地图）：<strong>时间 −2.1×、功耗 −1.13×</strong>；32×32 无障碍图：<strong>处理 −2.0×、功耗 −1.28×</strong>。直觉：两股波前各自只走“一半距离”，总覆盖面积几乎减半——搜索时间与能耗同时减半。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_2_结构与DDS.png">
+  <source src="assets/videos/v02_dds.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · DDS 双向搜索动画：绿波前从 START、红波前从 END 同时出发，橙色区域=交汇。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_2_结构与DDS.png" alt="论文图 14.7.2">
+  <figcaption>图 4.2　论文原图 Fig. 14.7.2：NeuroPilot CIM 结构、DDS 传播与工作流。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">⚔ 演示 B · DDS vs SDS 对比（处理时间与功耗）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">SDS 波前要铺满大半个图；DDS 两股波前各走一半</span>
+</div>
+<div class="hint">红色=SDS 的波前覆盖（几乎整图）；绿色/橙色=DDS 两股波前（各半图，橙色交汇）。看 DDS 的“覆盖面积”如何减半。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：动态逻辑 Pilot PE + OPC 外扩预充电</h2>
+
+<h3 id="sec5-1">5.1 Pilot PE 结构：14 个 SRAM + 8 邻接</h3>
+<figure>
+  <img src="assets/diagrams/d05_pe.svg" alt="Pilot PE" style="max-width:940px">
+  <figcaption>图 5.1　Pilot PE：SRAM_F（地图数据）+ SRAM_R（方向数据）+ 中心动态逻辑核心 + 8 个方向发射器（NW/N/NE/W/E/SW/S/SE）。</figcaption>
+</figure>
+<ul>
+<li><strong>SRAM_F</strong>（6T + 反相驱动器）：存 EN（使能）、STA（起点）、END（终点）、TJL（交通拥堵级）；</li>
+<li><strong>SRAM_R</strong>（6T + 本地复位 + 反相写入器）：存方向数据（信号从哪来）——比 DFF 省面积（§9 图）；</li>
+<li><strong>中心核心</strong>（动态逻辑）：处理最早到达的 IN[2:0]（IN0=信号到达、IN1=来自 START、IN2=来自 END），确定来源后<strong>停止接收</strong>其他输入；</li>
+<li><strong>8 个方向发射器</strong>：每个处理 3 个方向的输入、向对侧发射输出（例：N 发射器收 NW/N/NE、发 S 输出）；</li>
+<li><strong>TJL 电路</strong>：延迟树模拟路径速度（EMA[2:0]=111 = 最慢/堵车）；双动态逻辑冗余 + 额外输入信号抗 PVT。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_7_3_PilotPE.png" alt="论文图 14.7.3">
+  <figcaption>图 5.2　论文原图 Fig. 14.7.3：Pilot PE 详细电路与工作波形。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec5-2">5.2 OPC 外扩预充电：只充“即将用到”的 PE</h3>
+<figure>
+  <img src="assets/diagrams/d06_opc.svg" alt="OPC" style="max-width:940px">
+  <figcaption>图 5.3　OPC：预充电信号从 START/END 行开始，随波前逐行外扩；两股波前交汇即终止——只充即将用到的 PE。</figcaption>
+</figure>
+<p>动态逻辑用“预充电 → 求值”两相工作。传统做法<strong>全阵列同时预充电</strong>：波前还没到的 PE 也在白充，面积/容量浪费。OPC 利用 PE 阵列的逻辑传播延迟：</p>
+<ul>
+<li>预充电信号从 <strong>START/END 所在行</strong>开始，随波前<strong>逐行外扩</strong>（上下传播）；</li>
+<li>预充电速度<strong>略快于</strong> PE 阵列信号 → 波前到达时节点已就绪；</li>
+<li>两股波前<strong>交汇即终止</strong>外扩。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 OPC 收益</div>
+<p>保持时间（动态节点电荷保持）−1.49× → 动态逻辑容量需求 −1.35× → 面积 −1.32×；配合 MOS 电容（高密度）替代 MOM 电容，漏电也更小。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_4_OPC与回溯.png" alt="论文图 14.7.4">
+  <figcaption>图 5.4　论文原图 Fig. 14.7.4：外扩预充电、行列反馈与回溯流程。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：TsCFP 三步粗/细路径流程 —— 大图导航</h2>
+<figure>
+  <img src="assets/diagrams/d07_tscfp.svg" alt="TsCFP" style="max-width:940px">
+  <figcaption>图 6.1　TsCFP 三步：① 生成最小清晰粗图 → ② 粗图求“走廊”路径 → ③ 沿走廊求细路径。</figcaption>
+</figure>
+<p>32×32 阵列只能处理小图；1024×1024 的大图怎么办？直接整图映射会“语义模糊”（大格子把细节抹平），拆图独立求解又容易“局部最优”（每段各自最优、拼起来不是全局最优）。TsCFP 分三步化解：</p>
+<ol>
+<li><strong>生成最小清晰粗图</strong>：迭代调整分辨率，按“路径比”（原图与转换图的路径相似度）打分，找到<strong>最小但仍清晰</strong>的粗图；</li>
+<li><strong>粗图最短路径（走廊）</strong>：把粗图切成 32×32 段，用 SDS/DDS 逐段导引；后续段的起点由上一段的 END 点 + 原图大体方向决定 → 得到一条“走廊”；</li>
+<li><strong>细图最短路径</strong>：沿走廊切出原图的细条带，逐段顺序精算 → 在粗路径约束下求最优细路径。</li>
+</ol>
+<div class="box key">
+<div class="bt">📊 旧金山 1024×1024 地图实例</div>
+<p>求解时间 <strong>373.82 ns</strong>、能耗 <strong>512.5 pJ</strong>、路径长度 <strong>1279.8L</strong>（单位长度）。粗图约束走廊、走廊约束细路径——三层尺度协作，既不被大图淹没、也不会陷进局部最优。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_5_TsCFP流程.png">
+  <source src="assets/videos/v03_tscfp.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · TsCFP 三步流程动画：粗图 → 走廊 → 细路径。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_5_TsCFP流程.png" alt="论文图 14.7.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.7.5：TsCFP 映射流程与旧金山地图实例。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🗺 演示 C · TsCFP 大图分块（看 32×32 窗口如何覆盖大图）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">粗图→走廊→细路径三级尺度</span>
+</div>
+<div class="hint">先看粗图生成“走廊”（橙色粗线），再看窗口沿走廊移动精算细路径——三级尺度协作解决大图导航。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与三阶段工作流</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　NeuroPilot 宏：32×32 Pilot PE 阵列 + WL/BL 驱动 + IO + 行列译码器 + OPC + 主控制器；行列反馈定位交汇点。</figcaption>
+</figure>
+<p><strong>三阶段工作流</strong>（论文 Fig. 14.7.2 底部）：</p>
+<ol>
+<li><strong>地图写入（memory-write）</strong>：把地图数据——BLOCK（不可达单元）、START、END、TJL（交通拥堵级）——写入 PE 的 SRAM_F；</li>
+<li><strong>路径导引（path-pilot）</strong>：启动路径搜索（DDS），信号传播直到交汇收敛；每个 PE 把方向信息存进 SRAM_R；</li>
+<li><strong>读回（memory-read）</strong>：从交汇 PE 出发，沿 SRAM_R 的方向数据回溯，拼出最终路径（PC 进一步处理）。</li>
+</ol>
+<p>控制器先做<strong>地图预处理</strong>：根据地图尺寸决定走“直接 CIM 宏处理”（小图）还是“TsCFP 粗/细映射”（大图）。</p>
+<figure>
+  <img src="assets/diagrams/d09_junction.svg" alt="交汇与回溯" style="max-width:940px">
+  <figcaption>图 7.2　交汇与回溯：junction 信号标记交汇位置；方向数据存在 SRAM_R（比 DFF 省面积），向两端回溯拼接路径。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_metrics.png" alt="核心指标" style="max-width:960px">
+  <figcaption>图 8.1　核心指标：搜索率 3670M nodes/s、单节点能量 69.4 fJ、PE 面积 213.6 μm²（14.5×14.7）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_dds.png" alt="DDS 收益" style="max-width:920px">
+  <figcaption>图 8.2　DDS 收益：处理时间 −2.1×、功耗 −1.13×（例图）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_tscfp.png" alt="TsCFP 实例" style="max-width:900px">
+  <figcaption>图 8.3　TsCFP 旧金山地图实例：373.82ns / 512.5pJ / 1279.8L。</figcaption>
+</figure>
+<ul>
+<li><strong>工艺</strong>：28nm，32×32 NeuroPilot CIM 宏；</li>
+<li><strong>动态逻辑衰减分析</strong>：适用于最长 <strong>360L（84ns）</strong> 的任务，覆盖真实场景（50-100L）与复杂迷宫（&gt;100L）；</li>
+<li><strong>FoM</strong>（搜索率/单节点能量/PE 尺寸）：相对前作路径搜索工作 [1-5] 提升 <strong>31.49 – 2.148×10⁷×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_7_6_测量结果.png" alt="论文图 14.7.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.7.6：实测结果与前作对比表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_7_7_芯片照片.png" alt="论文图 14.7.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.7.7：裸片显微照片、设计汇总与短/长距离搜索示例。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① FoM 提升跨度高达 31.49 – 2.148e7×：因为对比对象 [1-5] 覆盖“时域波前加速器、数字路径规划处理器、PVT 补偿 AI 处理器”等不同路线，架构差异巨大，倍数只能说明量级；② 69.4 fJ/node 和 3670M nodes/s 是“路径传播”的能耗与速率，与 MAC-CIM 的 TOPS/W 不是一个量纲，不能直接比较；③ “360L 任务上限”由动态逻辑衰减决定，更大地图要依赖 TsCFP 分块——这是设计边界，读时要认清。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更大规模阵列与 3D 集成</strong>：32×32 是起点。128×128、256×256 阵列配合 3D 堆叠（08 号论文路线），单片覆盖更大地图；动态逻辑衰减的“360L 上限”也随工艺/阵列架构提升；</li>
+<li><strong>带权图与多目标寻路</strong>：本文的传播是“等速 + TJL 延迟树”。扩展到加权边（真实路网）、多目标点（TSP 类）、动态障碍（实时避障），需要 PE 支持“代价累积”；</li>
+<li><strong>与 MAC-CIM 融合的“感知-规划”芯片</strong>：前几篇做“看”（CNN 推理）、本文做“走”（路径规划）——把 EVS（05 号论文）+ CNN-CIM + 路径 CIM 集成成一个“感知-规划”一体化边缘芯片，是微机器人的完整大脑；</li>
+<li><strong>TsCFP 的自动化</strong>：粗图分辨率选择和路径比打分目前是启发式。做一个“地图自适应”的自动缩放器（结合机器学习预测最优粗图级别），大图流程更鲁棒；</li>
+<li><strong>动态逻辑的可靠性工程</strong>：漏电/保持时间是动态逻辑的软肋。引入片上电压/温度感知（PVT 补偿 [5]）、自适应预充电策略，让动态逻辑在更宽的工作范围可靠；</li>
+<li><strong>通用图算法加速</strong>：波前传播能加速的不只是寻路——连通性、最短路径树、洪水填充、神经网络的反向传播（图依赖）。把 PE 阵列做成“可重构图处理器”，应用面更广。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>Mimetic-Path CIM（模拟路径 CIM）</dt><dd>把地图映射成 PE 阵列、用信号传播做路径搜索的 CIM。</dd>
+<dt>波前传播（Wavefront Propagation）</dt><dd>信号从起点像水波一样逐层扩散的搜索方式。</dd>
+<dt>SDS（Single-Direction Searching）</dt><dd>单向搜索：信号只从 START 出发。</dd>
+<dt>DDS（Dual-Direction Searching）</dt><dd>双向搜索：START 与 END 同时出发，中间交汇（−2.1× 时间）。</dd>
+<dt>Junction（交汇点）</dt><dd>两股波前相遇的 PE；产生 junction 信号标记位置。</dd>
+<dt>Trace-back（回溯）</dt><dd>沿方向数据从交汇点向两端还原路径。</dd>
+<dt>Pilot PE</dt><dd>导引处理单元：14 个 SRAM + 中心动态逻辑核心 + 8 邻接发射器。</dd>
+<dt>SRAM_F / SRAM_R</dt><dd>地图数据存储（EN/STA/END/TJL） / 方向数据存储。</dd>
+<dt>TJL（Traffic-Jam Level）</dt><dd>交通拥堵级；延迟树模拟速度（EMA=111 最慢）。</dd>
+<dt>动态逻辑（Dynamic Logic）</dt><dd>预充电-求值两相的电路风格，省面积但需防漏电。</dd>
+<dt>OPC（Outspread Pre-Charging）</dt><dd>外扩预充电：预充电随波前外扩、交汇终止（−1.32× 面积）。</dd>
+<dt>TsCFP（3-Step Coarse/Fine-Path）</dt><dd>三步粗/细路径：粗图 → 走廊 → 细路径。</dd>
+<dt>路径比（Path Ratio）</dt><dd>原图与转换图路径相似度，用于粗图分辨率打分。</dd>
+<dt>EMA[2:0]</dt><dd>拥堵级编码（111 = 最慢）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>A. Guo, J. Zhang, et al., “NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching,” <em>ISSCC 2025</em>, Paper 14.7. DOI: 10.1109/ISSCC49661.2025.10904805</li>
+<li>C. Yu et al., “A Time-Domain Wavefront Computing Accelerator With a 32×32 Reconfigurable PE Array,” <em>IEEE JSSC</em>, vol. 58, no. 8, 2023.（前作 [1]）</li>
+<li>L. Everson et al., “A 40×40 Four-Neighbor Time-Based In-Memory Computing Graph ASIC Chip Featuring Wavefront Expansion and 2D Gradient Control,” <em>ISSCC 2019</em>, pp. 50-52.（前作 [2]）</li>
+<li>C. Chung et al., “A 1.5μJ/Task Path-Planning Processor for 2D/3D Autonomous Navigation of Micro Robots,” <em>ISSCC 2020</em>, pp. 324-326.（数字加速器对比 [3]）</li>
+<li>Y. Kim et al., “A 0.55V 1.1mW Artificial-Intelligence Processor with PVT Compensation for Micro Robots,” <em>ISSCC 2016</em>, pp. 258-260.（PVT 补偿 [5]）</li>
+<li>L. Everson et al., “A Time-Based Intra-Memory Computing Graph Processor Featuring A* Wavefront Expansion and 2-D Gradient Control,” <em>IEEE JSSC</em>, vol. 56, no. 7, 2021.（[6]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.7.1–14.7.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（3670M nodes/s、69.4 fJ、213.6 μm²、373.82ns 等）均来自论文原文。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   NeuroPilot 教学教程 · 交互脚本
+   演示 A 波前传播 · 演示 B DDS vs SDS · 演示 C TsCFP
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* 网格绘制辅助 */
+function gridWaves(ctx, opts) {
+  const { gx, gy, cell, rows, cols, cyc, obstacles, start, end, dual } = opts;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = gx + c * cell, y = gy + r * cell;
+      const isObs = obstacles.some(o => o[0] === c && o[1] === r);
+      const ds = Math.abs(r - start[1]) + Math.abs(c - start[0]);
+      let reachedS = ds <= cyc;
+      let fill, outline;
+      if (isObs) { fill = "#3a2620"; outline = PAL.red; }
+      else if (dual) {
+        const de = Math.abs(r - end[1]) + Math.abs(c - end[0]);
+        const reachedE = de <= cyc;
+        if (reachedS && reachedE) { fill = "#3a3a1e"; outline = PAL.orange; }
+        else if (reachedS) { fill = "#1e3c2c"; outline = PAL.green; }
+        else if (reachedE) { fill = "#3c2a1e"; outline = PAL.red; }
+        else { fill = "#141c2a"; outline = PAL.line; }
+      } else {
+        if (reachedS) { fill = "#1e3c2c"; outline = PAL.green; }
+        else { fill = "#141c2a"; outline = PAL.line; }
+      }
+      ctx.fillStyle = fill; ctx.strokeStyle = outline;
+      ctx.lineWidth = reachedS ? 2 : 1;
+      rrect(ctx, x, y, cell - 4, cell - 4, 4); ctx.fill(); ctx.stroke();
+    }
+  }
+  // start / end
+  ctx.fillStyle = PAL.green;
+  ctx.beginPath(); ctx.arc(gx + start[0] * cell + cell / 2, gy + start[1] * cell + cell / 2, 8, 0, 6.28); ctx.fill();
+  txt(ctx, "S", gx + start[0] * cell + cell / 2, gy + start[1] * cell + cell / 2, 9, "#0a1119", "center");
+  if (end) {
+    ctx.fillStyle = PAL.red;
+    ctx.beginPath(); ctx.arc(gx + end[0] * cell + cell / 2, gy + end[1] * cell + cell / 2, 8, 0, 6.28); ctx.fill();
+    txt(ctx, "E", gx + end[0] * cell + cell / 2, gy + end[1] * cell + cell / 2, 9, "#0a1119", "center");
+  }
+}
+
+/* ============================================================
+   演示 A · 波前传播（SDS）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+  const obstacles = [[4, 3], [5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "波前传播（SDS）：信号从 START 逐层扩散，绕过障碍", 30, 24, 15, PAL.white, "left");
+    gridWaves(ctx, { gx: 90, gy: 50, cell: 30, rows: 8, cols: 12, cyc: cyc % 14, obstacles, start: [1, 6], end: [10, 1], dual: false });
+    txt(ctx, "绿色环 = 波前已到达；红色 = 障碍；波前绕行继续扩散", 90, 300 - 8, 12, PAL.gray, "left");
+    if (stat) stat.textContent = "扩散距离 " + (cyc % 14) + " · 波前逐层传播（8 邻接）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 450); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 450);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · DDS vs SDS
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  const obstacles = [[5, 2], [6, 2], [7, 2], [5, 3], [6, 3]];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const c = cyc % 12;
+    // 左：SDS
+    txt(ctx, "SDS 单向（波前覆盖整图）", 180, 26, 14, PAL.red);
+    gridWaves(ctx, { gx: 60, gy: 50, cell: 30, rows: 8, cols: 9, cyc: c, obstacles, start: [1, 6], end: null, dual: false });
+    // 右：DDS
+    txt(ctx, "DDS 双向（各走一半，交汇）", 650, 26, 14, PAL.green);
+    gridWaves(ctx, { gx: 530, gy: 50, cell: 30, rows: 8, cols: 9, cyc: c, obstacles, start: [1, 6], end: [7, 1], dual: true });
+    txt(ctx, "左：单向波前要铺满大半个图才能到 END", 60, 300 - 8, 11.5, PAL.gray, "left");
+    txt(ctx, "右：两股波前各走一半就在中间交汇 → 时间 −2.1×、功耗 −1.13×", 530, 300 - 8, 11.5, PAL.orange, "left");
+    if (stat) stat.textContent = "扩散距离 " + c + "：SDS 覆盖 vs DDS 两股波前交汇";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 500); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 500);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · TsCFP
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const k = cyc % 3;
+    txt(ctx, "TsCFP 三步：" + ["① 生成最小清晰粗图", "② 粗图最短路径（走廊）", "③ 沿走廊求细路径"][k], 30, 24, 15, [PAL.blue, PAL.purple, PAL.green][k], "left");
+    if (k === 0) {
+      // 粗图网格
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 12; c++) {
+          const x = 100 + c * 60, y = 60 + r * 34;
+          const pass = (r + c) % 5 !== 0;
+          ctx.fillStyle = pass ? "#1e3c2c" : "#3a2620";
+          ctx.strokeStyle = pass ? PAL.green : PAL.red; ctx.lineWidth = 1;
+          rrect(ctx, x, y, 56, 30, 4); ctx.fill(); ctx.stroke();
+        }
+      }
+      txt(ctx, "1024×1024 → 迭代降低分辨率 → 最小清晰粗图（绿=可通行）", 100, 290, 12, PAL.gray, "left");
+    } else if (k === 1) {
+      for (let kk = 0; kk < 8; kk++) {
+        const x0 = 100 + kk * 105;
+        ctx.fillStyle = "#242a3e"; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+        rrect(ctx, x0, 90, 95, 110, 8); ctx.fill(); ctx.stroke();
+        txt(ctx, "段" + kk, x0 + 47, 112, 12, PAL.purple, "center");
+        if (kk > 0) txt(ctx, "→", x0 - 14, 145, 13, PAL.gray, "center");
+      }
+      ctx.strokeStyle = PAL.orange; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(110, 230); ctx.lineTo(920, 230); ctx.stroke();
+      txt(ctx, "粗路径 = 走廊（橙色）· 每段由上一段 END + 原图方向决定起点", 100, 290, 12, PAL.orange, "left");
+    } else {
+      for (let kk = 0; kk < 5; kk++) {
+        const x0 = 100 + kk * 170;
+        ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+        rrect(ctx, x0, 80, 160, 180, 8); ctx.fill(); ctx.stroke();
+        txt(ctx, "细条带" + kk, x0 + 80, 100, 11, PAL.green, "center");
+        ctx.strokeStyle = PAL.green; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(x0 + 20, 180); ctx.lineTo(x0 + 140, 180); ctx.stroke();
+      }
+      txt(ctx, "沿走廊切细条带 → 逐段精算 → 拼接（旧金山例：373.82ns / 512.5pJ / 1279.8L）", 100, 290, 12, PAL.gray, "left");
+    }
+    if (stat) stat.textContent = "步骤 " + (k + 1) + "/3：" + ["粗图", "走廊", "细路径"][k];
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1800); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1800);
+  draw();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：CiM 的吞吐瓶颈 —— 周期数决定一切</h2>
+<figure>
+  <img src="assets/diagrams/d01_throughput_bottleneck.svg" alt="吞吐瓶颈" style="max-width:920px">
+  <figcaption>图 1.1　CiM 吞吐 = 频率 × MAC 数 ÷ 计算周期数：数字 CiM 的 MAC 要多个周期拼出来，这是与数字流水线的根本差距。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_1_吞吐瓶颈.png" alt="论文图1">
+  <figcaption>图 1.2　论文原图 Fig. 1：当前 CiM 架构的吞吐瓶颈。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>数字 CiM 的每个 MAC 结果需要多个计算周期：位串行 8 周期（INT8）、Booth/Radix4 4 周期。频率和 MAC 单元数固定后，<strong>吞吐完全由周期数决定</strong>——这就是 CiM 被限制在“低功耗场景”而进不了“高性能场景”的根本原因。论文把问题拆成三个层级（Fig. 2）：</p>
+<ul>
+<li><strong>电路级</strong>：减少宏的计算周期（同时别让每周期翻转暴增）；</li>
+<li><strong>微架构级</strong>：通用 Winograd 优化（支持各种卷积配置且不掉精度）；</li>
+<li><strong>数据级</strong>：灵活跳过稀疏计算。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig11_3_周期缩减方法.png" alt="论文图3">
+  <figcaption>图 1.3　论文原图 Fig. 3：前作减少计算周期的方法（阈值跳过/复制加法树/Booth 编码）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>

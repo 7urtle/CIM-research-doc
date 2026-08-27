@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="490" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Pilot PE：14 个 SRAM 单元 + 8 邻接传播 + 动态逻辑核心</text>
+
+  <!-- PE 结构 -->
+  <rect x="40" y="80" width="420" height="330" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">Pilot PE 内部（每个地图节点）</text>
+  <g font-size="11">
+    <rect x="60" y="122" width="180" height="56" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="150" y="144" text-anchor="middle" fill="#1d8a5f" font-weight="600">SRAM_F（6T + 反相驱动）</text>
+    <text x="150" y="164" text-anchor="middle" fill="#45536b">EN/STA/END/TJL 地图数据</text>
+    <rect x="260" y="122" width="180" height="56" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="350" y="144" text-anchor="middle" fill="#6b3fa0" font-weight="600">SRAM_R（6T + 本地复位）</text>
+    <text x="350" y="164" text-anchor="middle" fill="#45536b">方向数据（从哪来）</text>
+    <rect x="60" y="196" width="380" height="60" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="250" y="218" text-anchor="middle" fill="#0e5a8a" font-weight="600">中心核心（动态逻辑）</text>
+    <text x="250" y="240" text-anchor="middle" fill="#45536b">处理最早到达的 IN[2:0]，决定来源并停止接收</text>
+    <rect x="60" y="274" width="380" height="52" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="250" y="294" text-anchor="middle" fill="#c25e2e" font-weight="600">8 个方向发射器（transmitters）</text>
+    <text x="250" y="314" text-anchor="middle" fill="#45536b">NW·N·NE·W·E·SW·S·SE 各自处理并向对侧发射</text>
+    <text x="60" y="360" fill="#45536b">例：N 发射器处理 NW/N/NE 的输入，向 S 输出</text>
+    <text x="60" y="382" fill="#45536b">IN[2:0]：IN0=信号到达 · IN1=来自 START · IN2=来自 END</text>
+    <text x="60" y="404" fill="#45536b">双动态逻辑冗余 + 额外输入信号 → 抗 PVT 误差</text>
+  </g>
+
+  <!-- 8 邻接 -->
+  <rect x="500" y="80" width="420" height="330" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">8 邻接连接</text>
+  <g font-size="10.5">
+    <g transform="translate(560,130)">
+      <g stroke="#6b3fa0" stroke-width="1">
+        <rect x="60" y="0" width="44" height="44" fill="#f5f0fc"/><rect x="0" y="52" width="44" height="44" fill="#f5f0fc"/><rect x="120" y="52" width="44" height="44" fill="#f5f0fc"/>
+        <rect x="60" y="104" width="44" height="44" fill="#f5f0fc"/><rect x="120" y="104" width="44" height="44" fill="#f5f0fc"/>
+        <rect x="0" y="156" width="44" height="44" fill="#f5f0fc"/><rect x="60" y="156" width="44" height="44" fill="#f5f0fc"/><rect x="120" y="156" width="44" height="44" fill="#f5f0fc"/>
+      </g>
+      <rect x="60" y="52" width="44" height="44" fill="#0e5a8a"/>
+      <text x="82" y="80" text-anchor="middle" fill="#fff" font-size="11">PE</text>
+      <text x="82" y="14" text-anchor="middle" fill="#6b3fa0">NW</text>
+      <text x="22" y="66" text-anchor="middle" fill="#6b3fa0">W</text>
+      <text x="142" y="66" text-anchor="middle" fill="#6b3fa0">E</text>
+      <text x="82" y="118" text-anchor="middle" fill="#6b3fa0">N</text>
+      <text x="22" y="170" text-anchor="middle" fill="#6b3fa0">SW</text>
+      <text x="82" y="170" text-anchor="middle" fill="#6b3fa0">S</text>
+      <text x="142" y="170" text-anchor="middle" fill="#6b3fa0">SE</text>
+      <text x="82" y="228" fill="#45536b">每个 PE 与 8 个邻居相连：</text>
+      <text x="82" y="250" fill="#45536b">信号可从任一方向进入、</text>
+      <text x="82" y="272" fill="#45536b">向对侧继续传播</text>
+    </g>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="430" width="880" height="36" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="480" y="453" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">TJL（交通拥堵级）：延迟树模拟路径速度——EMA[2:0]=111 表示最慢（堵车）</text>
+</svg>

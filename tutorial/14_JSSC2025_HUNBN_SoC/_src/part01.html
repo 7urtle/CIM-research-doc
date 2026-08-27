@@ -1,0 +1,69 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么系统级能效的关键是“权重装得下”</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 数字 PE 阵列的能耗瓶颈在哪？② DIMC 怎么解决？③ 为什么“存储容量够不够”决定系统级能效？④ 系统级能效的“三个乘数”是什么？</p>
+</div>
+
+<h3>1.1 数字 PE 阵列的困境：权重访问与寄存器开销</h3>
+<p>传统卷积加速器用<strong>数字 PE（处理单元）阵列</strong>：每个 PE 里有乘法器和加法树，权重从外部 SRAM 读进来、临时存在<strong>本地寄存器</strong>里。论文 Fig.1 对比了两者的本质差别：</p>
+<ul>
+<li><strong>权重访问能耗高</strong>：每个周期都要从权重 SRAM 读权重 → 数据搬移能耗远超计算能耗（Horowitz 的经典结论）；</li>
+<li><strong>寄存器数量爆炸</strong>：为了复用权重，每个 PE 都要复制权重副本 → 寄存器面积/能耗都大。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_1_PE阵列与DIMC对比.png" alt="PE阵列与DIMC对比">
+<figcaption>图 1 · 论文 Fig.1：数字 PE 阵列与 DIMC 阵列的对比——DIMC 把权重就地存进阵列，消除寄存器副本与反复访问。</figcaption>
+</figure>
+
+<h3>1.2 DIMC 的两大好处与一个大前提</h3>
+<p>DIMC（数字存内计算）把计算塞进存储：</p>
+<ul>
+<li><strong>省搬移</strong>：权重住在阵列里，不做“SRAM→PE”的搬运。论文引 [23] 的数据：相比传统数字 PE 阵列，直接省 <strong>28% 功耗</strong>；</li>
+<li><strong>高带宽</strong>：多行并行激活 → 大带宽（前面论文反复讲过）；</li>
+<li><strong>但有一个大前提</strong>：<strong>局部权重存储必须装得下整个工作负载</strong>。如果装不下，权重仍需在“权重 SRAM ↔ DIMC”之间搬运——省下的能效全被搬运动作吃光（negating the energy benefits）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 “装得下”为什么是第一原则？</div>
+<p>假设宏级能效 100 TOPS/W，但模型权重分 10 批搬进阵列，每搬一批的能耗≈算一批的能耗 → 系统级能效直接砍半。反过来，如果整模型装得下，权重加载只在开机时发生一次（一次性成本），运行期零搬移 → 系统级能效≈宏级能效 × 利用率。所以论文说：<strong>系统级能效依赖“把完整权重矩阵存在片上”的能力</strong>。</p>
+</div>
+
+<h3>1.3 系统级能效的三个乘数</h3>
+<p>论文明确提出系统级能效由三件事共同决定：</p>
+<table>
+<tr><th style="width:30%">因素</th><th>含义</th><th>本论文抓手</th></tr>
+<tr><td><strong>宏级面积利用率</strong></td><td>每 mm² 装多少存储和多少 MAC</td><td>FoM=(MB/mm²)×(#MAC/mm²)；6T pushed-rule 单元 + 格雷码译码器</td></tr>
+<tr><td><strong>宏级 MAC 能效</strong></td><td>宏内每瓦每秒多少运算</td><td>split MAC + 同步操作 + 低电压域加法树 → 126.3 TOPS/W</td></tr>
+<tr><td><strong>阵列利用率</strong></td><td>各层映射后的实际使用率</td><td>4 种数据流映射情形 + 转置卷积支持</td></tr>
+</table>
+<p>注意论文的提醒：<strong>峰值宏级能效高 ≠ 系统能效高</strong>——如果某些层映射不上（欠利用），平均能效会被拉低。支持所有映射会增大芯片面积、降低面积效率。所以系统级比较必须同时看宏级面积效率和宏级能效两个指标。</p>
+
+<figure>
+<img src="assets/diagrams/d01_pe_vs_dimc.svg" alt="PE vs DIMC 教学图">
+<figcaption>教学图 1 · 数字 PE vs DIMC 对比，以及系统级能效的三把钥匙。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_1_PE阵列与DIMC对比.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 数字 PE vs DIMC：权重搬运 vs 权重就地存储（省 28% 功耗的前提是容量够大）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 数字 PE vs DIMC（权重搬移对比）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">PE：权重每周期从 SRAM 搬入（红色动画）</span>
+</div>
+<div class="hint">左侧传统 PE 阵列：权重每周期从 SRAM 搬入 PE（红色圆点动画），搬移能耗 ≫ 计算能耗；右侧 DIMC：权重就地存储在 6T SRAM 中，只有开机一次性加载。蓝色能量条对比权重搬移占比。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 数字 PE 瓶颈：权重访问能耗高 + 寄存器爆炸；② DIMC 省搬移但前提是容量够；③ 系统级能效 = 面积效率 × 宏能效 × 利用率，三者都要抓。HUNBN 的“高密度 6T”正是为了满足那个前提——这是理解全篇的钥匙。</p>
+</div>
+</section>

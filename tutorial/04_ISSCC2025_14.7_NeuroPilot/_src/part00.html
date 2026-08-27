@@ -1,0 +1,59 @@
+<section class="chapter" id="sec0">
+<h1 class="title">NeuroPilot 模拟路径搜索存内计算零基础精讲：让“寻路”像水波一样扩散
+<span class="en">NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching（ISSCC 2025 · Paper 14.7）</span></h1>
+<div class="meta">论文作者：An Guo*, Jingmin Zhang* 等（*共同一作）· 东南大学 + 国家 EDA 创新中心（通讯作者：司鑫）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.7
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前面几篇 CIM 都在算“乘法累加”。这一篇完全不同：它算的是<strong>路径搜索（path finding）</strong>——自动驾驶微机器人导航、VLSI 布线、城市路径规划、波前传播都要用的基础算子。<strong>模拟路径 CIM（Mimetic-Path CIM）</strong>把地图网格映射成 PE 阵列，让“搜索信号”像水波一样在阵列里扩散，天然并行、天然省电。</p>
+<p>这篇东南大学司鑫组的 NeuroPilot（28nm 32×32）用三招解决旧方案的三大痛点：</p>
+<ol>
+<li><strong>DDS 双向搜索</strong>：START 和 END 同时发出波前，中间交汇 → 处理时间 −2.1×、功耗 −1.13×；</li>
+<li><strong>动态逻辑 Pilot PE + OPC 外扩预充电</strong>：每个 PE 只含 14 个 SRAM 单元 + 8 邻接传播核心，预充电信号跟着波前走（只充“即将用到”的 PE）→ 面积 −1.32×、动态容量 −1.35×；</li>
+<li><strong>TsCFP 三步粗/细路径</strong>：粗图找走廊 → 沿走廊切条带求细路径 → 1024×1024 大图也能高效导航（旧金山例：373.82ns / 512.5pJ）。</li>
+</ol>
+<p>实测：搜索率 <strong>3670M nodes/s</strong>、单节点能量 <strong>69.4 fJ</strong>、PE 面积 <strong>213.6 μm²</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>路径搜索可以“硬件化”：</strong>Dijkstra/BFS 这类算法在 CPU 上是顺序的；但把地图摊成 PE 阵列后，<strong>每个节点同时“看”自己的邻居</strong>——搜索并行度 = 地图大小，速度是 CPU 的千倍级。</li>
+<li><strong>双向搜索为什么省一半时间：</strong>单向搜索的信号要“铺”满 START 到 END 的整个区域；双向同时出发，各自只走一半距离就交汇——覆盖面积几乎减半。</li>
+<li><strong>动态逻辑是“省面积”的瑞士军刀，但怕漏电：</strong>动态逻辑节点靠电容保持电荷（比 DFF 省晶体管），但电荷会漏。OPC 让预充电“只充马上要用的 PE”，漏电窗口最短、容量需求最小。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“Autonomous micro-robots… require efficient path-finding algorithms… Similarly, VLSI routing, urban path planning, and wavefront propagation also demand optimal navigation”</td>
+<td>应用：微机器人导航、VLSI 布线、城市路径规划、波前传播——都需要高效寻路。</td></tr>
+<tr><td class="num">“(1) single-direction searching (SDS) inefficiently utilizes half of the available search time”</td>
+<td>挑战 1：单向搜索浪费一半搜索时间。</td></tr>
+<tr><td class="num">“(2) DFF-based temporary storage suffers from poor PPA, while dynamic-logic based alternatives are prone to leakage”</td>
+<td>挑战 2：DFF 暂存 PPA 差；动态逻辑又怕漏电。</td></tr>
+<tr><td class="num">“(3) limited processing windows can lead to task failures in large-scale maps”</td>
+<td>挑战 3：有限处理窗口在大图上任务失败（整图映射模糊、拆图局部最优）。</td></tr>
+<tr><td class="num">“(1) dual-direction searching (DDS)… (2) a dynamic-logic pilot PE with an outspread pre-charge (OPC) circuit… (3) a novel 3-step coarse/fine-path (TsCFP) flow”</td>
+<td>三招：DDS 双向搜索、动态逻辑 Pilot PE + OPC、TsCFP 三步粗/细路径。</td></tr>
+<tr><td class="num">“3670M nodes/s, 213.6μm² PE area, and a 69.4fJ node energy consumption”</td>
+<td>实测：3670M 节点/秒、213.6 μm² PE 面积、69.4 fJ/节点。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>DDS 双向搜索</strong>：START/END 同时出发、交汇即停 → 例图时间 −2.1×、功耗 −1.13×；32×32 无障碍图 −2.0×/−1.28×；</li>
+<li><strong>动态逻辑 Pilot PE</strong>：14 个 SRAM 单元（SRAM_F 地图数据 + SRAM_R 方向数据）+ 8 邻接发射器 + 中心核心；双动态逻辑冗余抗 PVT；</li>
+<li><strong>OPC 外扩预充电</strong>：预充电随波前外扩、交汇终止 → 保持时间 −1.49×、动态容量 −1.35×、面积 −1.32×；</li>
+<li><strong>TsCFP 三步流程</strong>：粗图 → 粗路径走廊 → 沿走廊细路径，解决大图导航（旧金山例 373.82ns）；</li>
+<li><strong>实测</strong>：3670M nodes/s、69.4 fJ/node、213.6 μm²；FoM（搜索率/能量/PE 尺寸）比前作 [1-5] 高 31.49 – 2.148e7×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇没有“乘法器”，全程是“信号的传播”故事——换个脑子读 CIM。</p>
+</div>
+</section>

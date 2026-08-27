@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：147 TOPS/W 全可综合数字 CiM 加速器（ISSCC 2026 30.9）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2026 30.9 全可综合数字存内计算加速器的零点量化、Booth 编码、双缓冲、数据流流水线与实测分析。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 测验 ---------- */
+.quiz{border:1px solid var(--line); border-radius:var(--radius); margin:16px 0; background:#fff; box-shadow:var(--shadow); overflow:hidden}
+.quiz .qh{background:#123a57; color:#fff; padding:10px 16px; font-weight:700; font-size:15px}
+.quiz .qb{padding:14px 18px}
+.quiz .q{font-weight:600; margin:10px 0 6px}
+.quiz label{display:block; padding:6px 12px; border-radius:8px; margin:4px 0; cursor:pointer; font-size:14.5px}
+.quiz label:hover{background:#f0f6fc}
+.quiz input{margin-right:8px}
+.quiz .ans{display:none; margin-top:8px; padding:10px 14px; background:#eefaf3; border:1px solid #bfe6d2; border-radius:8px; font-size:14px}
+.quiz .ans.show{display:block}
+.quiz button{background:var(--brand); color:#fff; border:0; border-radius:8px; padding:7px 18px; cursor:pointer; font-size:14px; font-family:inherit; margin-top:8px}
+.quiz button:hover{background:var(--brand2)}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">数字存内计算（DCiM）零基础精讲</div>
+    <div class="t2">ISSCC 2026 · Session 30 · Paper 30.9</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 为什么需要存内计算</a>
+  <a class="sub" href="#sec1-1">1.1 冯·诺依曼瓶颈</a>
+  <a class="sub" href="#sec1-2">1.2 CiM 的基本思想</a>
+  <a class="sec" href="#sec2">02 · 数字 CiM 与“可综合”</a>
+  <a class="sub" href="#sec2-1">2.1 模拟 vs 数字 CiM</a>
+  <a class="sub" href="#sec2-2">2.2 “全可综合”意味着什么</a>
+  <a class="sec" href="#sec3">03 · 零点量化基础</a>
+  <a class="sub" href="#sec3-1">3.1 为什么量化</a>
+  <a class="sub" href="#sec3-2">3.2 对称 vs 非对称量化</a>
+  <a class="sub" href="#sec3-3">3.3 交互演示：量化映射</a>
+  <a class="sec" href="#sec4">04 · 核心数学：零点量化分解</a>
+  <a class="sub" href="#sec4-1">4.1 问题：9b×9b</a>
+  <a class="sub" href="#sec4-2">4.2 无符号→有符号映射</a>
+  <a class="sub" href="#sec4-3">4.3 三个修正项怎么“白嫖”</a>
+  <a class="sub" href="#sec4-4">4.4 数值例子验证</a>
+  <a class="sec" href="#sec5">05 · Booth 编码的艺术</a>
+  <a class="sub" href="#sec5-1">5.1 部分积减半的原理</a>
+  <a class="sub" href="#sec5-2">5.2 编码权重还是编码激活？</a>
+  <a class="sub" href="#sec5-3">5.3 修正 Booth 编码与 S 位</a>
+  <a class="sub" href="#sec5-4">5.4 视频演示：Booth 乘法</a>
+  <a class="sec" href="#sec6">06 · 存储与双缓冲</a>
+  <a class="sub" href="#sec6-1">6.1 12T 可中断锁存</a>
+  <a class="sub" href="#sec6-2">6.2 多比特高密度</a>
+  <a class="sub" href="#sec6-3">6.3 双缓冲与静态 MUX</a>
+  <a class="sub" href="#sec6-4">6.4 视频演示：双缓冲</a>
+  <a class="sec" href="#sec7">07 · 系统架构与数据流</a>
+  <a class="sub" href="#sec7-1">7.1 架构总览</a>
+  <a class="sub" href="#sec7-2">7.2 4 级流水线</a>
+  <a class="sub" href="#sec7-3">7.3 交互演示：数据流</a>
+  <a class="sub" href="#sec7-4">7.4 视频演示：数据流流水线</a>
+  <a class="sec" href="#sec8">08 · 面积功耗与实测</a>
+  <a class="sub" href="#sec8-1">8.1 面积/功耗分解</a>
+  <a class="sub" href="#sec8-2">8.2 测量结果</a>
+  <a class="sub" href="#sec8-3">8.3 与近期工作对比</a>
+  <a class="sub" href="#sec8-4">8.4 Intel 18A 工艺</a>
+  <a class="sec" href="#sec9">09 · 自测 · 未来方向 · 术语表</a>
+  <a class="sub" href="#sec9-1">9.1 思考题与自测</a>
+  <a class="sub" href="#sec9-2">9.2 未来研究方向</a>
+  <a class="sub" href="#sec9-3">9.3 术语表</a>
+  <a class="sub" href="#sec9-4">9.4 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：11 张教学图 · 4 张数据图 · 3 个演示视频 · 5 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">数字存内计算（DCiM）零基础精讲：一台“全可综合、零点量化、INT8×INT8”的存内计算加速器
+<span class="en">A 147 TOPS/W, 250 TOPS/mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A Technology（ISSCC 2026 · Paper 30.9）</span></h1>
+<div class="meta">论文作者：Amit Agarwal, Steven K. Hsu, Mark A. Anders（Intel, Hillsboro）等 · Intel 实验室
+&nbsp;|&nbsp; 发表：2026 IEEE International Solid-State Circuits Conference（ISSCC 2026），Session 30（存内计算），论文 30.9
+&nbsp;|&nbsp; 本教程配套素材：教学图 11 张、数据图 4 张、演示视频 3 个、交互仿真 5 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>AI 推理要反复做“权重 × 激活”的矩阵乘法，而传统芯片把数据在存储器和计算单元之间搬来搬去，大部分能量都浪费在搬运上。<strong>存内计算（Compute-in-Memory, CiM）</strong>把计算直接嵌进存储器里：权重“躺”在存储单元中，激活值广播进来，每一列一次完成一大串乘法累加（MAC）。</p>
+<p>Intel 这篇工作，用<strong>100% 可综合的数字标准单元</strong>（连存储都是锁存器做的）在 <strong>Intel 18A 工艺</strong>上实现了一个 DCiM 加速器：<strong>128 输入通道 × 32 输出通道 × 2 组权重</strong>，支持带<strong>零点量化（Zero-Point Quantization）</strong>的 INT8×INT8 计算，实测最高 <strong>2.62 GHz</strong>、<strong>21.5 TOPS</strong>、面积效率 <strong>250 TOPS/mm²</strong>、能效 <strong>147 TOPS/W（400 mV 低压）</strong>，最低可工作在 <strong>400 mV</strong>。</p>
+<p>它的三个“独门绝技”是：① 用数学技巧把“零点量化导致的 9b×9b 乘法”无损变回“8b×8b 乘法”；② 把 Booth 编码器从“计算路径”搬到“权重写入路径”，编码一次、32 列共享；③ 用双缓冲 + 12T 可中断锁存器做权重存储，计算与更新权重零冲突。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉（非常重要）</div>
+<ul>
+<li><strong>TOPS 是什么：</strong>Tera Operations Per Second，每秒万亿次运算。一次 INT8 的“乘加（MAC）”按 2 次运算（1 乘 + 1 加）计，所以 1 MAC = 2 OPS。这篇论文 21.5 TOPS = 每周期 4096 个 MAC × 2.62 GHz × 2 ops ≈ 21.5×10¹²。</li>
+<li><strong>TOPS/W 是能效，TOPS/mm² 是面积效率：</strong>一个是“每瓦能算多少次”，一个是“每平方毫米能算多少次”。芯片行业既要比快，也要比省电、比面积小——AI 加速器论文基本都围绕这三个指标打架。</li>
+<li><strong>可综合 ≠ 性能低：</strong>你可能觉得“全标准单元 = 妥协 = 慢”。但请看数据：2.62 GHz、250 TOPS/mm²、与定制模拟 CiM 相比精度还确定——这说明<em>当设计意图正确时，可综合数字路径可以同时拿到能效与面积效率</em>。这正是本文最有说服力的地方。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>学习路径：这篇教程怎么带你读</h2>
+<p>这篇文章虽短（3 页），但信息密度极高。如果你直接读原文，很容易被“零点量化”“Booth 编码”“12T 锁存”“双缓冲”这些词砸晕。本教程按下面的路径，从“为什么”讲到“怎么做”，每一章都配图、配动画、配视频：</p>
+<table>
+<tr><th>章节</th><th>解决什么问题</th><th>配套素材</th></tr>
+<tr><td><a href="#sec1">01 为什么需要存内计算</a></td><td>冯·诺依曼瓶颈是什么？CiM 凭什么省电？</td><td>图 d01、d02</td></tr>
+<tr><td><a href="#sec2">02 数字 CiM 与“可综合”</a></td><td>模拟 vs 数字 CiM 怎么选？“可综合”到底指什么？</td><td>图 d02、d03</td></tr>
+<tr><td><a href="#sec3">03 零点量化基础</a></td><td>量化是什么？零点（非对称）量化为什么精度更好？</td><td>图 d04、仿真 A</td></tr>
+<tr><td><a href="#sec4">04 核心数学：零点量化分解</a></td><td>9b×9b 问题怎么变成 8b×8b？三个修正项怎么“白嫖”？</td><td>图 d05、数值验证、仿真 C</td></tr>
+<tr><td><a href="#sec5">05 Booth 编码的艺术</a></td><td>部分积为什么能减半？编码权重还是编码激活？</td><td>图 d08、视频 v01、仿真 B</td></tr>
+<tr><td><a href="#sec6">06 存储与双缓冲</a></td><td>12T 锁存器怎么存储？双缓冲怎么做到零停顿？</td><td>图 d09、d10、视频 v03</td></tr>
+<tr><td><a href="#sec7">07 系统架构与数据流</a></td><td>128×32×2 的加速器长什么样？数据怎么流动？</td><td>图 d06、d07、d11、视频 v02、仿真 D</td></tr>
+<tr><td><a href="#sec8">08 面积功耗与实测</a></td><td>面积/功耗花在哪？实测数字怎么读？</td><td>图 c01–c04、原文图</td></tr>
+<tr><td><a href="#sec9">09 自测 · 未来方向</a></td><td>检验学习效果，讨论还能怎么继续做研究</td><td>思考题 12 道、术语表</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>摘要逐句精读（含背景补全）</h2>
+<p>我们把论文摘要拆成 6 句，逐句翻译 + 解释，其中括号里是本教程补的背景知识：</p>
+<table>
+<tr><th style="width:44%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“Digital CiM provides deterministic accuracy, with process and voltage scalability along with immunity to parametric variation”</td>
+<td>数字 CiM 的每个加法都是逐位精确的，不受工艺波动（PVT）影响，结果可复现（deterministic）；并且能跟着工艺节点、电源电压一起缩放（低压也能跑）。（对比：模拟 CiM 的电流/电荷求和是模拟量，有噪声和 ADC 误差。）</td></tr>
+<tr><td class="num">“a fully synthesizable design enables portability across technology nodes… using standard design tools and cell libraries”</td>
+<td>全可综合意味着用 Verilog 描述 + 标准单元库 + 综合/布局布线工具就能做出来；换工艺节点只需换库重新综合（见 §2.2 图 d03）。</td></tr>
+<tr><td class="num">“128 input channels, 32 output channels, 2 weight sets”</td>
+<td>加速器规模：一次处理 128 个输入通道（如 128 个输入特征图），产生 32 个输出通道；权重准备了两份（双缓冲，见 §6.3）。</td></tr>
+<tr><td class="num">“high-density multibit interruptible 12T-latch-based memory storage”</td>
+<td>权重存储用的是“可中断的 12 管多比特锁存器”标准单元，而不是定制 SRAM 宏——这是“全可综合”的关键（见 §6.1、§6.2）。</td></tr>
+<tr><td class="num">“radix-4 stationary weight encoded Booth computation, a unique unsigned-to-signed mapping scheme, and support for zero-point-quantized INT8×INT8”</td>
+<td>乘法用 Radix-4 Booth 编码，而且编码对象是“静止不动的权重”（stationary weight）而不是广播的激活；配合一套无符号→有符号映射技巧，支持带零点的 INT8×INT8（见 §4、§5）。</td></tr>
+<tr><td class="num">“2.62 GHz … 0.0856 mm² … 250 TOPS/mm² … 21.5 TOPS … 147 TOPS/W at 400 mV … 254 TOPS/W at 10% input activity”</td>
+<td>实测成绩：1.1 V 下 2.62 GHz、21.5 TOPS；低压 400 mV 下能效 147 TOPS/W（输入活动率 25%），更低活动率 10% 时能效升到 254 TOPS/W（见 §8.2）。</td></tr>
+</table>
+
+<h2><span class="no">§0.3</span>论文的 6 条贡献（TL;DR 清单）</h2>
+<p>一篇 ISSCC 论文的贡献通常会在摘要里逐条列出。本文摘要明确给出了 6 条，我们在教程里逐条展开，你可以先记住这 6 条，读完全文再回来看：</p>
+<ol>
+<li><strong>峰值面积效率 250 TOPS/mm²、吞吐 21.5 TOPS</strong>（1.1 V、25°C、2.62 GHz）；</li>
+<li><strong>400 mV 低压鲁棒运行</strong>，峰值能效 <strong>147 TOPS/W</strong>（25% 输入活动率、6.1 mW）；</li>
+<li>能效随活动率可扩展到 <strong>254 TOPS/W</strong>（10% 活动率、3.5 mW、400 mV）；</li>
+<li><strong>无符号→有符号映射 + 零点扩展预计算</strong>：省 20% 功耗、17% 面积（摘要数字；正文为功耗 17%、面积 21%，见 §4.3 说明）（见 §4）；</li>
+<li><strong>静止权重 Booth 编码</strong>：计算功耗降低 28%（见 §5）；</li>
+<li><strong>高密度多比特锁存位单元</strong>：权重存储面积降低 20%（见 §6.2）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>如果你是完全零基础：按顺序读 01→09，中间每个交互仿真都玩一下、每个视频都看一遍，预计需要 60–90 分钟。如果你已经懂 CIM 基本概念：直接跳到 §4（核心数学）和 §7（架构数据流），这两章是本文最精彩的部分。所有公式都用“具体数字例子”验证过，你可以拿起计算器自己算一遍。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要存内计算？</h2>
+
+<p>要理解这篇论文，第一件事是理解它要解决的“大问题”。让我们从一个非常朴素的问题开始：<strong>为什么现在的 AI 芯片这么缺带宽、这么费电？</strong></p>
+
+<h3 id="sec1-1">1.1 冯·诺依曼瓶颈（Von Neumann Bottleneck）与存储墙（Memory Wall）</h3>
+<p>绝大多数计算机都遵循冯·诺依曼架构：<strong>存储器（Memory）</strong>和<strong>运算器（Arithmetic Unit）</strong>分开，数据通过总线来回搬运。CPU 从内存取指令、取数据，算完再把结果写回内存。这个结构在通用计算里简单高效，但对 AI 推理来说有个致命问题——</p>
+<div class="box key">
+<div class="bt">💡 直觉：一次乘法只要 1 个单位的能量，把数据搬过来要 100 个单位</div>
+<p>粗略数量级（业界常引用的数字）：一次 8bit 乘法+累加（MAC）约消耗 <strong>1 pJ</strong>，而一次 DRAM 访问约消耗 <strong>200 pJ</strong>（还要加上几十纳秒的延迟）。也就是说，<strong>只要权重不是“常驻计算单元旁边”，那么每做一次乘法，搬运数据消耗的能量就是计算本身的几百倍</strong>。AI 推理是“权重海量、反复重用”的负载，这个搬运成本被放得极大——很多研究表明推理任务中 <strong>60%~90% 的能量和延迟都花在数据搬运</strong>上，这就是所谓的“存储墙”（Memory Wall）。</p>
+</div>
+<p>更糟的是，这个差距还在扩大：AI 模型的算力需求（FLOPs）增长远快于 DRAM 带宽的增长，两者之间的“剪刀差”越来越大，业界称之为“带宽墙”。于是硬件研究者想：<strong>能不能不让数据搬来搬去，而是把计算搬到数据所在的地方？</strong>这就引出了两条路线：</p>
+<ul>
+<li><strong>近存计算（Near-Memory Computing, NMC）</strong>：把计算单元放到存储器旁边（比如 3D 堆叠），缩短搬运距离，但数据还是要经过接口进出；（本论文集里 08 号论文就是 Process-Near-Memory 的例子）</li>
+<li><strong>存内计算（Compute-in-Memory, CiM）</strong>：把计算直接嵌进存储阵列里——权重存在哪，就在哪算。这是本论文的路线。</li>
+</ul>
+
+<figure>
+  <img src="assets/diagrams/d01_von_neumann_vs_cim.svg" alt="冯诺依曼架构 vs 存内计算" style="max-width:860px">
+  <figcaption>图 1.1　冯·诺依曼架构与存内计算的本质区别：前者“搬数据”，后者“就地算”。（本教程自制示意图）</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 CiM 的基本思想：一次“列运算”代替无数次“读—算—写回”</h3>
+<p>神经网络的核心运算是<strong>矩阵乘法 / 卷积</strong>，而矩阵乘法归根结底是一堆<strong>点积（dot product）</strong>：输出 y<sub>j</sub> = Σ<sub>i</sub> a<sub>i</sub>·w<sub>j,i</sub>。在 CiM 里，这个求和被“并行地”完成：</p>
+<ol>
+<li><strong>权重静止存放</strong>：把权重 w<sub>j,0</sub>, w<sub>j,1</sub>, …, w<sub>j,N-1</sub> 提前写入一列存储单元，它们“躺”在那里不动；</li>
+<li><strong>激活广播</strong>：把激活值 a<sub>0</sub>, a<sub>1</sub>, …, a<sub>N-1</sub> 通过字线/总线广播到这一列的所有单元；</li>
+<li><strong>列内并行乘加</strong>：每个单元完成自己的乘法，然后在列的底部用一条“宽加法树”（wide adder tree）把 N 个乘积累加成一个结果——<strong>一个周期完成 N 路 MAC</strong>。</li>
+</ol>
+<div class="box info">
+<div class="bt">🧠 关键理解：CiM 的“并行度”来自存储器的结构本身</div>
+<p>传统芯片的并行度来自“复制计算单元”；而 CiM 的并行度来自“存储阵列的每一列天然就是一条并行计算流水线”。只要把列做宽（本论文一列 128 路 MAC）、把列做多（32 列），就能用很小的面积拿到巨大的并行度——这正是它面积效率高的根本原因。代价是：<strong>权重必须“写死”在存储里</strong>，所以 CiM 最适合权重固定（或低频更新）的推理场景，而不是频繁训练的场景。</p>
+</div>
+<p>本论文就是沿着这条路线：把“列”做成 128 路 MAC 的“计算列”，一共 32 列（对应 32 个输出通道），每周期完成 32×128 = 4096 个 MAC。剩下的问题全是工程细节：怎么存（12T 锁存）、怎么乘（Booth）、怎么处理量化（零点映射）、怎么不卡顿（双缓冲）——这就是后面每一章的由来。</p>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>如果 CiM 这么好，为什么以前没这么做？提示：① 模拟 CiM 的精度问题；② 权重更新不方便；③ 可综合性与工艺移植性；④ 与现有 SoC/CPU 的集成。带着这些问题读下一章。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>数字 CiM（DCiM）与“全可综合”：本论文的技术路线选择</h2>
+
+<h3 id="sec2-1">2.1 模拟 CiM vs 数字 CiM：一个决定性的选择</h3>
+<p>CiM 内部怎么“算”，业界分成两大流派：</p>
+<p><strong>模拟 CiM（Analog CiM）</strong>：让存储单元直接参与模拟运算——比如把权重编码成单元的电导/阈值电压，把激活编码成字线电压或位线电流，电流在位线上“自然累加”（基尔霍夫电流定律），最后在列尾用一个 ADC 把模拟结果转回数字。它的优点是：<em>单元面积最小、功耗可以极低、部分积“免费”</em>。但缺点是致命的：</p>
+<ul>
+<li><strong>精度不确定</strong>：电流求和是模拟量，受噪声、失调、温度影响；ADC 本身还有量化误差。同一个网络在不同芯片（甚至同一芯片不同温度）上结果不同——这对需要“确定性精度”的推理系统是灾难；</li>
+<li><strong>工艺缩放困难</strong>：模拟精度对工艺波动（PVT variation）极敏感，跟着工艺节点缩放时信噪比恶化；</li>
+<li><strong>难以移植</strong>：模拟电路几乎全是定制版图，换个工艺节点就要重新设计、重新验证。</li>
+</ul>
+<p><strong>数字 CiM（Digital CiM, DCiM）</strong>：存储单元只负责“存”数字 0/1（可以是最普通的锁存器/触发器/SRAM 位单元），读出后交给旁边的<strong>数字逻辑</strong>（乘法器、加法树）做精确运算。它的优点正好补上模拟的短板：<em>逐位精确、可复现；低压可运行；100% 标准数字设计流程</em>。代价是：单元面积比纯模拟大、每个乘法都要显式做（没有“免费的部分积”）。</p>
+<figure>
+  <img src="assets/diagrams/d02_analog_vs_digital.svg" alt="模拟 CiM vs 数字 CiM" style="max-width:880px">
+  <figcaption>图 2.1　模拟 CiM 与数字 CiM 的本质区别：模拟靠“电荷/电流累加”，数字靠“显式逻辑计算”。本论文坚定选择数字路线。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么这篇论文敢说“确定性精度 + 工艺电压可缩放”</div>
+<p>因为它是纯数字的：每一个加法都是布尔逻辑的确定结果，与电压高低、工艺角无关（只要满足时序）。所以它敢把电压一路压到 <strong>400 mV</strong>（1.1 V 的 1/3 都不到）来换能效——这在模拟 CiM 上几乎不可想象（400 mV 下模拟精度早就崩了）。这是“数字”给它的最大红利。</p>
+</div>
+
+<h3 id="sec2-2">2.2 “全可综合”（Fully Synthesizable）到底意味着什么？</h3>
+<p>芯片设计有两种典型流程：</p>
+<ul>
+<li><strong>全定制/半定制（Full-Custom / Semi-Custom）</strong>：画原理图、手动画版图、做 DRC/LVS 验证。存储宏（SRAM/Register File）通常是定制 IP。模拟 CiM 基本属于这一类。</li>
+<li><strong>可综合流程（Synthesizable RTL Flow）</strong>：用 Verilog/VHDL 描述功能 → <strong>逻辑综合</strong>（工具自动映射到标准单元库）→ <strong>布局布线（APR）</strong> → 签核（时序/功耗/DRC 检查）→ 出 GDSII 流片。整个流程工具化、自动化。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d03_synthesizable.svg" alt="可综合设计流程" style="max-width:880px">
+  <figcaption>图 2.2　可综合流程 vs 定制流程：前者换工艺只需换库重综合，后者要重新画版图。</figcaption>
+</figure>
+<p>本论文标题里的 <strong>“Fully Synthesizable”（全可综合）</strong> 有三个层次的含义，缺一不可：</p>
+<ol>
+<li><strong>计算逻辑可综合</strong>：Booth 选择器、CSA 加法树、流水线寄存器——这些本来就是标准数字逻辑，没什么稀奇；</li>
+<li><strong>存储也可综合</strong>：这是最关键的！权重存储不用定制 SRAM 宏，而是用<strong>标准单元库里的锁存器（Latch）</strong>拼出来的（12T 多比特锁存，见 §6）。锁存器是标准单元库的成员，所以“存储”也是综合工具能处理的对象——整个加速器没有一个定制 IP；</li>
+<li><strong>整个加速器作为一个宏（on-die accelerator）可综合</strong>：可以像普通 RTL 一样被嵌入 SoC，用标准工具链完成物理实现。</li>
+</ol>
+<div class="box info">
+<div class="bt">🧠 为什么要强调“可综合”？——为了推广与移植</div>
+<p>可综合意味着：① <strong>换工艺节点</strong>（比如 18A → 下一个节点）只需换标准单元库、重新综合布局布线，几周搞定，而不是重新画版图；② <strong>设计周期短</strong>，适合快速迭代验证新架构；③ 可以直接集成进 Intel 的 SoC 设计流程，降低采用门槛。论文摘要里那句 “promoting broader adoption”（促进更广泛采用）说的就是这个。当然代价也有：锁存器存储的面积/密度不如定制 SRAM，所以论文才要在“高密度多比特锁存”上花功夫（§6.2）。</p>
+</div>
+<div class="box warn">
+<div class="bt">⚠️ 一个容易误解的点：可综合 ≠ 性能差</div>
+<p>有人会觉得“用标准单元做存储、做计算”是妥协，性能肯定不如定制。但本文用结果说话：<strong>2.62 GHz、250 TOPS/mm²、147 TOPS/W</strong>，在能效和面积效率上对标甚至超过很多定制模拟 CiM。可综合路线真正牺牲的是“存储密度”（锁存器比 6T SRAM 大），而不是速度或能效——因为数字计算的功耗主要由“翻转活动率”决定，与是否定制无关。这其实是本文最重要的产业启示。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>量化基础：为什么有“零点量化”这种东西？</h2>
+
+<h3 id="sec3-1">3.1 为什么 AI 硬件离不开量化</h3>
+<p>神经网络训练时用 32 位浮点（FP32），但推理部署时几乎都会<strong>量化（Quantization）</strong>到 8 位甚至更低。原因非常实际：</p>
+<ul>
+<li><strong>面积与功耗</strong>：INT8 乘法器面积/功耗约为 FP32 的 1/10 量级；INT4/INT2 更低；</li>
+<li><strong>带宽与访存</strong>：权重从 FP32 压到 INT8，访存量直接除以 4，而访存是 AI 推理最大的能耗与延迟来源；</li>
+<li><strong>速度</strong>：位宽越低，同面积下能塞下的计算单元越多。</li>
+</ul>
+<p>量化的基本公式（以 8bit 为例）：把真实值 r 映射到整数 q。有两种主流方案——对称与非对称（零点）量化。</p>
+
+<h3 id="sec3-2">3.2 对称量化 vs 零点（非对称）量化</h3>
+<div class="formula">对称：r = s · q，q ∈ [−128, +127]　　（一个尺度参数 s）<span class="tag">式 3.1</span></div>
+<div class="formula">非对称（零点量化）：r = s · (q − z)，q ∈ [0, 255]　　（尺度 s + 零点 z）<span class="tag">式 3.2</span></div>
+<p>两者都是“线性映射”，区别在于<strong>零点 z 是否必须为 0</strong>：</p>
+<ul>
+<li><strong>对称量化</strong>把真实值域强制对称地映射到 [−128, 127]，零点对应 0。但如果数据本身是偏态的——比如 ReLU 后的激活值全是正的（0 到某个正值），对称量化会浪费一半的整数区间（负数区），导致<em>有效分辨率减半</em>；</li>
+<li><strong>零点量化</strong>让 z 可以落在任意整数位置，把整个 [0,255] 区间都用来表示实际数据范围。数据越偏态，零点量化的精度优势越大。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d04_quantization.svg" alt="对称 vs 非对称量化" style="max-width:880px">
+  <figcaption>图 3.1　对称量化（上）与非对称/零点量化（下）的映射关系。数据偏态越严重，零点量化的优势越明显。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 直觉：量化精度 = 区间长度 / 256</div>
+<p>无论对称还是非对称，8bit 都只有 256 个码字。谁用得更“紧”，谁的量化步长（分辨率）就小、误差就小。对称量化在偏态数据上实际只用了 ~128 个码字，等于“7bit 精度”；零点量化把 256 个码字全部用到实际区间上，是真正的“8bit 精度”。<strong>这就是论文说 “Zero-point quantization improves computation accuracy”（零点量化提升精度）的原因。</strong></p>
+</div>
+
+<h3 id="sec3-3">3.3 交互演示 A：亲手把一组偏态数据量化成 INT8</h3>
+<div class="demo">
+<div class="dhead">🎛 演示 A · 对称 vs 零点量化误差对比（可交互）</div>
+<canvas id="demoA" width="980" height="330"></canvas>
+<div class="dbar">
+  <span class="hint" style="margin:0">拖动滑块改变数据分布（min/max），观察两种量化方式的码字利用与均方误差：</span>
+  <button id="demoA-play" class="on">自动演示</button>
+  <button id="demoA-shuffle">随机分布</button>
+  <span class="stat" id="demoA-stat"></span>
+</div>
+<div class="hint">数据范围越偏（min≈0），对称量化的“浪费区间”越大、误差越大；零点量化总能贴住真实区间。这正是论文选择支持零点量化的动机。绿点=真实值，红点=量化-反量化后的值。</div>
+</div>
+
+<p>注意式 3.2 里那个 <strong>“− z”</strong>：反量化时要把整数先减掉零点再乘尺度。这个“减零点”看起来只是数学上的一小步，却会在硬件里引发一个大麻烦——这正是下一章的核心冲突。先记住两个记号，后面反复用：</p>
+<ul>
+<li>A<sub>z</sub>、W<sub>z</sub>：<strong>零点量化后的</strong>激活/权重（8b 无符号，0~255）；</li>
+<li>A<sub>s</sub>、W<sub>s</sub>：<strong>映射为有符号后</strong>的激活/权重（8b 有符号，−128~127）。</li>
+</ul>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>核心数学：把“零点量化”的代价从 9b×9b 压回 8b×8b</h2>
+
+<div class="box warn">
+<div class="bt">⚠️ 本章是全篇最硬核、也最精彩的一章——请放慢速度</div>
+<p>这一章回答论文里最反直觉的一个问题：<strong>明明输入是 8bit 整数，为什么“零点量化”会逼你去做 9bit 乘法？而 Intel 又是怎么用一条数学恒等式把它无损变回 8bit 乘法的？</strong>读完这一章，你就真正理解了这篇论文的灵魂。</p>
+</div>
+
+<h3 id="sec4-1">4.1 冲突：零点量化后的“无符号 8b”必须当成“有符号 9b”来乘</h3>
+<p>先看硬件想做什么。DCiM 每周期要算的是一条点积：</p>
+<div class="formula">Y = Σ<sub>i=1..N</sub> A<sub>z,i</sub> · W<sub>z,i</sub>　　（A<sub>z</sub>、W<sub>z</sub> 都是 0~255 的无符号 8b）<span class="tag">式 4.1</span></div>
+<p>如果 A<sub>z</sub>、W<sub>z</sub> 直接按无符号数相乘，部分积要做 5 组（Radix-4 Booth 对无符号数需要额外的符号处理组），每个部分积还更宽。而更麻烦的是，<strong>神经网络要的并不是式 4.1 本身，而是“减掉零点后”的结果</strong>。真实的输出是：</p>
+<div class="formula">y = s<sub>A</sub>·s<sub>W</sub> · [ Σ A<sub>z</sub>W<sub>z</sub> − z<sub>W</sub>ΣA<sub>z</sub> − z<sub>A</sub>ΣW<sub>z</sub> + N·z<sub>A</sub>z<sub>W</sub> ]<span class="tag">式 4.2</span></div>
+<p>（把 r = s(q − z) 代进 y = Σr<sub>A</sub>·r<sub>W</sub> 展开即可得到。）其中 z<sub>A</sub>、z<sub>W</sub> 是激活和权重的零点。式 4.2 的意思是：<strong>芯片只需要算式 4.1 的整数点积，再在外围做一次性的减零点和缩放修正</strong>——这是量化推理的标准做法，没问题。</p>
+<p>真正的问题出现在“想直接在乘法器里做修正”的时候：如果每个乘法都想“先减零点再相乘”，A<sub>z</sub> − z<sub>A</sub> 的取值范围是 [−z<sub>A</sub>, 255−z<sub>A</sub>]。当 z<sub>A</sub> 比较小（例如 10）时，范围是 [−10, 245]——<strong>超出 8b 有符号（−128~127）的表示能力，必须用 9b 有符号数</strong>（9b 有符号范围 −256~255）。于是朴素实现会退化成：</p>
+<div class="formula">Y = Σ (A<sub>z</sub> − z<sub>A</sub>)(W<sub>z</sub> − z<sub>W</sub>)　→　9b 有符号 × 9b 有符号<span class="tag">式 4.3</span></div>
+<div class="box key">
+<div class="bt">💰 9b×9b 贵在哪？（这是全文第一个“为什么”）</div>
+<ul>
+<li>Radix-4 Booth 下，8b 有符号乘法生成 <strong>4 个部分积</strong>；9b 有符号乘法生成 <strong>5 个部分积</strong>——多一整棵部分积加法树；</li>
+<li>每个部分积宽度从 9b 增到 <strong>10b</strong>——加法树整体加宽；</li>
+<li>面积、功耗、延迟全部上升。论文给出量化数字：这直接导致面积 +21%、功耗 +17%（即反过来，避免它省下 21% 面积、17% 功耗）。</li>
+</ul>
+</div>
+
+<div class="demo">
+<div class="dhead">🔬 演示 C · 8b×8b（4 个部分积）vs 9b×9b（5 个部分积）加法树对比</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-switch" class="on">8b×8b（4 个部分积）</button>
+  <button id="demoC-switch9">9b×9b（5 个部分积）</button>
+  <span class="stat" id="demoC-stat">加法树级数 2 · 部分积 4 个 · 总位宽 36b</span>
+</div>
+<div class="hint">点按切换 8b/9b 模式：多出来的那个部分积意味着整棵 CSA 加法树要加宽一层/一级。这正是论文靠“无符号→有符号映射”避免的代价（部分积宽度 −10%、数量 −20%）。</div>
+</div>
+
+<h3 id="sec4-2">4.2 绝招第一步：无符号 → 有符号的“免费”映射（MSB 取反）</h3>
+<p>Intel 的办法是<strong>不按式 4.3 做</strong>，而是先用一条恒等式把无符号 8b 变成有符号 8b：</p>
+<div class="formula">A<sub>s</sub> = A<sub>z</sub> − 128　（同样 W<sub>s</sub> = W<sub>z</sub> − 128）<span class="tag">式 4.4</span></div>
+<p>A<sub>s</sub> ∈ [−128, 127]，正好是 8b 有符号数的完整范围。<strong>而减 128 在二进制里有一个惊人的便宜实现：把最高位（MSB）取反（翻转）即可。</strong>验证一下：</p>
+<table>
+<tr><th>A<sub>z</sub>（无符号）</th><th>二进制</th><th>MSB 取反后</th><th>解释为有符号 A<sub>s</sub></th></tr>
+<tr><td class="num">200</td><td>1100 1000</td><td>0100 1000</td><td class="num">+72 = 200−128 ✓</td></tr>
+<tr><td class="num">50</td><td>0011 0010</td><td>1011 0010</td><td class="num">−78 = 50−128 ✓</td></tr>
+<tr><td class="num">0</td><td>0000 0000</td><td>1000 0000</td><td class="num">−128 = 0−128 ✓</td></tr>
+<tr><td class="num">255</td><td>1111 1111</td><td>0111 1111</td><td class="num">+127 = 255−128 ✓</td></tr>
+</table>
+<p>原理：8bit 无符号数加/减 128，等价于翻转最高位——因为第 7 位代表 128 的权重。这个映射<strong>不花一个加法器</strong>，每个激活只需一个异或门（XOR）按格式控制翻转。论文原话 “conditionally inverting the MSB based on input format” 说的就是它。</p>
+
+<h3 id="sec4-3">4.3 绝招第二步：零点扩展（Zero-Point Expansion）——三个修正项全“白嫖”</h3>
+<p>映射完之后，A<sub>z</sub> = A<sub>s</sub> + 128。但论文要处理的不只是 128 这个偏置，还有零点 z<sub>A</sub>、z<sub>W</sub>。于是把偏置和零点打包成两个常数：</p>
+<div class="formula">A<sub>z</sub> = A<sub>s</sub> + C<sub>A</sub>，　W<sub>z</sub> = W<sub>s</sub> + C<sub>W</sub>，　其中 C<sub>A</sub> = C + Z<sub>W</sub>，C<sub>W</sub> = C + Z<sub>A</sub>，C = 128<span class="tag">式 4.5</span></div>
+<p>（注意常数的配对：激活侧常数 C<sub>A</sub> 里含<strong>权重</strong>的零点 Z<sub>W</sub>，权重侧常数 C<sub>W</sub> 里含<strong>激活</strong>的零点 Z<sub>A</sub>。这个配对方式在下一步展开时会让修正项的成本分配最合理。）</p>
+<p>现在把式 4.1 的乘积展开：</p>
+<div class="formula">Σ A<sub>z</sub>W<sub>z</sub> = Σ (A<sub>s</sub>+C<sub>A</sub>)(W<sub>s</sub>+C<sub>W</sub>) = Σ A<sub>s</sub>W<sub>s</sub> + C<sub>W</sub>·ΣA<sub>s</sub> + C<sub>A</sub>·ΣW<sub>s</sub> + N·C<sub>A</sub>C<sub>W</sub><span class="tag">式 4.6</span></div>
+<p>展开后得到四个项，其中后三项就是“零点扩展”的代价。关键洞察在于——<strong>在 DCiM 的数据流里，这三项都便宜得几乎免费</strong>：</p>
+<table>
+<tr><th>项</th><th>含义</th><th>为什么便宜</th></tr>
+<tr><td>① Σ A<sub>s</sub>W<sub>s</sub></td><td>主项：8b×8b 有符号点积</td><td>就是乘法阵列本来的活，4 个部分积、9b 宽——<strong>这就是我们想要的全部计算</strong></td></tr>
+<tr><td>② C<sub>W</sub>·ΣA<sub>s</sub></td><td>常数 × 激活和</td><td>激活是<strong>广播共享</strong>的：32 个计算列用的是同一份激活！ΣA<sub>s</sub> 每周期算一次，32 列共享，摊薄到几乎为零</td></tr>
+<tr><td>③ C<sub>A</sub>·ΣW<sub>s</sub></td><td>常数 × 权重和</td><td>权重是<strong>静止</strong>的：ΣW<sub>s</sub> 在写权重时就预计算好、直接存进存储器，<strong>计算期间一分电都不花</strong></td></tr>
+<tr><td>④ N·C<sub>A</sub>C<sub>W</sub></td><td>固定常数</td><td>N 固定时就是常数，加一次即可</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d05_zero_point_decomp.svg" alt="零点量化数学分解" style="max-width:900px">
+  <figcaption>图 4.1　零点量化分解的完整流程：问题（9b×9b）→ 映射（MSB 取反）→ 展开（8b×8b + 三个廉价项）。</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 这段设计的精髓：把“按乘法的修正”变成“按整条点积的修正”</div>
+<p>朴素做法是在<strong>每个乘法内部</strong>做零点修正（→ 9b×9b，贵）；Intel 把修正挪到<strong>整条点积求和之后</strong>，利用“激活共享 + 权重静止”这两个数据流特性，把修正的代价从“每个乘法一次”摊薄成“每条点积一次，而且大部分预先算好”。这是典型的<strong>算法-架构协同设计（algorithm-architecture co-design）</strong>——同样的数学，放在不同的数据流里，成本完全不同。</p>
+</div>
+<p>论文给的收益：部分积宽度 −10%、部分积数量 5→4（少一棵加法树），总体 DCiM 功耗 −17%、面积 −21%。</p>
+<div class="box warn">
+<div class="bt">📌 研究素养提醒：论文内部的数字口径不一致</div>
+<p>细心对比会发现：论文<strong>摘要</strong>里这项技术写的是 “saving 20% power / 17% area”，而<strong>正文</strong>（Fig. 30.9.3 附近）写的是 “lowers overall DCiM power by 17% and area by 21%”。两个口径（20%/17% vs 17%/21%）对不上——这是论文自身的一个笔误或口径差异。读论文时<b>不要盲信任何单一数字</b>，要交叉核对摘要与正文；写自己的论文时，这类不一致正是审稿人最容易抓的问题。本教程正文沿用“功耗 −17%、面积 −21%”，并在 §0.3 标注了摘要口径。</p>
+</div>
+
+<h3 id="sec4-4">4.4 数值验证：亲手算一遍（强烈建议跟着算）</h3>
+<p>空谈不如验算。取 N=4，两组零点量化数据（无符号 8b）：</p>
+<div class="formula">A<sub>z</sub> = [200, 50, 255, 10]，　W<sub>z</sub> = [150, 200, 60, 180]<span class="tag">例 4.1</span></div>
+<p><strong>第一步：直接算（基准答案）。</strong></p>
+<div class="box math">
+<div class="bt">直接点积 Y = Σ A<sub>z</sub>·W<sub>z</sub></div>
+<p>Y = 200×150 + 50×200 + 255×60 + 10×180<br>
+&nbsp;&nbsp;= 30000 + 10000 + 15300 + 1800 = <strong>57100</strong></p>
+</div>
+<p><strong>第二步：映射成有符号（每个数 MSB 取反，即减 128）。</strong></p>
+<div class="box math">
+<div class="bt">A<sub>s</sub> = A<sub>z</sub> − 128，W<sub>s</sub> = W<sub>z</sub> − 128</div>
+<p>A<sub>s</sub> = [72, −78, 127, −118]，　W<sub>s</sub> = [22, 72, −68, 52]</p>
+</div>
+<p><strong>第三步：按式 4.6 分四项计算（这里是零零点、C=128 的特例）。</strong></p>
+<div class="box math">
+<div class="bt">四项分解</div>
+<p>① Σ A<sub>s</sub>W<sub>s</sub> = 72×22 + (−78)×72 + 127×(−68) + (−118)×52<br>
+&nbsp;&nbsp;= 1584 − 5616 − 8636 − 6136 = <strong>−18804</strong></p>
+<p>② C<sub>W</sub>·ΣA<sub>s</sub> = 128 × (72 − 78 + 127 − 118) = 128 × 3 = <strong>384</strong></p>
+<p>③ C<sub>A</sub>·ΣW<sub>s</sub> = 128 × (22 + 72 − 68 + 52) = 128 × 78 = <strong>9984</strong></p>
+<p>④ N·C<sub>A</sub>C<sub>W</sub> = 4 × 128 × 128 = <strong>65536</strong></p>
+<p><strong>合计：−18804 + 384 + 9984 + 65536 = 57100 ✓ 与直接算完全一致！</strong></p>
+</div>
+<p>注意第 ② 项里我们只需要 ΣA<sub>s</sub>（激活和，每周期一次、32 列共享），第 ③ 项只需要 ΣW<sub>s</sub>（权重和，写权重时预存），第 ④ 项是常数——<strong>没有任何一项需要 9bit 乘法</strong>。这就是论文说的 “intrinsic zero-point compute with unsigned-signed mapping within the DCiM dataflow”。</p>
+
+<div class="box idea">
+<div class="bt">🤔 想一想（进阶）</div>
+<p>① 如果 A<sub>z</sub> 本来就有符号（比如已经是 −128~127 的 INT8 对称量化数据），还需要 MSB 取反这一步吗？（提示：看格式控制位怎么设置。）② 式 4.6 的后三项会不会带来额外位宽？ΣA<sub>s</sub> 是 128 个 8b 数求和，需要多少位才不会溢出？（提示：128 × 127 ≈ 2¹⁴，所以累加器至少 15~16 bit——这是所有 MAC 阵列都要处理的“累加器宽度”问题。）③ 为什么论文把 Z<sub>W</sub> 配到激活侧常数 C<sub>A</sub> 里而不是 C<sub>W</sub>？交换配对会影响功耗吗？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>Booth 编码的艺术：乘法怎么做得又小又省电</h2>
+
+<h3 id="sec5-1">5.1 部分积减半：Radix-4 Booth 的原理</h3>
+<p>二进制乘法的基础是“移位相加”：N 位乘数产生 N 个部分积（partial product），全部对齐相加。8b×8b 就有 8 个部分积——加法树又大又费电。<strong>Booth 编码</strong>用一个数学技巧把部分积数量减半：</p>
+<p>把乘数每 <strong>2 位一组</strong>（相邻组重叠 1 位，即每 3 位看一组），每组决定“被乘数 × {−2, −1, 0, +1, +2}”，于是 8b 乘数只需 <strong>4 个部分积</strong>（9b 乘数要 5 个）。例如乘数 Y=42（00101010₂）按 Radix-4 分组：</p>
+<figure>
+  <img src="assets/diagrams/d08_booth_pp.svg" alt="Booth 编码与部分积" style="max-width:900px">
+  <figcaption>图 5.1　Radix-4 Booth 编码规则（上）与 8b×8b 的 4 个部分积（下）。本教程视频 v01 用 85×42 做了逐步动画。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么 Booth 能减半部分积？——“把连续 1 串看成一个整体”</div>
+<p>直觉：2 的幂之和可以“借位”改写。例如乘 7 = 8 − 1，本来要加三个 1 的位（0111），写成“+8 再 −1”只需要两步。Booth 编码的每组 3 位就是在乘数的二进制里寻找这种“借位改写”的机会，把相邻位合并。数学上：<strong>部分积数量 = ⌈乘数位宽/2⌉</strong>，8b→4 个、9b→5 个。</p>
+</div>
+<div class="video-wrap">
+<video id="vid-booth" controls preload="metadata" poster="assets/figs/fig30_9_2_Booth与12T锁存.png">
+  <source src="assets/videos/v01_booth.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · Radix-4 Booth 乘法逐步动画：85 × 42 = 3570 被拆成 4 个错位部分积（−2X, −X, −X, +X）相加。注意每个部分积的“移位×2”来源。</div>
+</div>
+
+<div class="demo">
+<div class="dhead">🧮 仿真 B · 自己挑一个乘法，看 Booth 怎么一步步拆（可交互）</div>
+<canvas id="demoB" width="980" height="360"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">被乘数 X：</label><input id="demoB-x" type="number" min="-127" max="127" value="85" style="width:70px;background:#10233c;color:#dbe6f4;border:1px solid #2c4d73;border-radius:6px;padding:4px 8px">
+  <label class="hint" style="margin:0">乘数 Y：</label><input id="demoB-y" type="number" min="-127" max="127" value="42" style="width:70px;background:#10233c;color:#dbe6f4;border:1px solid #2c4d73;border-radius:6px;padding:4px 8px">
+  <button id="demoB-run">▶ 开始 Booth 编码</button>
+  <button id="demoB-step">单步</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat"></span>
+</div>
+<div class="hint">点击“开始”后逐组显示 Booth 编码表（8b 乘数 → 4 组），再逐步显示 4 个部分积及其错位求和。尝试 Y = 42、−45、127 等值观察 −X/−2X 部分积的出现。</div>
+</div>
+
+<h3 id="sec5-2">5.2 关键决策：编码“静止的权重”，而不是“广播的激活”</h3>
+<p>Radix-4 Booth 要求<strong>乘数之一</strong>先被编码成“选择码”（每组 3 位 → 输出 ±1/±2/0 的选择信号，通常 3 根信号，8b 乘数共 4×3=12 根）。在 DCiM 里，每个乘法有两个输入：广播的激活和静止的权重。<strong>编码谁？</strong>论文给了两种方案的成本分析：</p>
+<table>
+<tr><th>方案</th><th>做法</th><th>优点</th><th>致命缺点</th></tr>
+<tr><td><strong>编码激活</strong><br>（activate-side）</td><td>在外围把 8b 激活编码成 12b 选择码，广播给 32 列</td><td>编码器只做一个，32 列共享，面积摊薄</td><td>广播总线每周期翻转的位数从 8 变成 12（多 50%！），<strong>计算功耗上升</strong>——因为广播总线是每周期都在翻的“热”信号</td></tr>
+<tr><td><strong>编码权重</strong><br>（weight-side，本文）</td><td>把 8b 权重预先编码成 12b 选择码，<strong>存进权重存储器</strong>；计算时直接读选择码</td><td>① 编码发生在<strong>写权重路径</strong>上：权重写入频率远低于计算频率，编码器吞吐要求低 → 面积可缩小 <strong>32×</strong>；② 计算期间编码器完全不工作，零编码功耗；③ 选择码存入锁存器后，每个周期<strong>不动</strong>，不会贡献翻转功耗</td><td>存储位宽从 8b 变 12b → 权重存储面积 +50%（但用高密度锁存 + 双缓冲弥补，见 §6）</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 这里的物理直觉：功耗 ≈ 翻转次数</div>
+<p>CMOS 动态功耗 ∝ 电容 × 电压² × <strong>翻转活动率</strong>。广播总线每周期都在翻（活动率高），而权重存储几乎不动（活动率低）。所以<strong>把“昂贵的编码”从高活动率的广播路径挪到低活动率的存储路径</strong>，就是把功耗从“每周期都付”变成“写一次付一次”。论文数字：权重侧编码相比激活侧编码，<strong>面积只多 7%，计算功耗却低 28%</strong>。</p>
+</div>
+<p>还有一个隐藏收益：激活的 MSB（高位）通常翻转较少（有符号数据高位变化慢），权重侧编码后，进加法树的部分积由激活的低活动率位决定，进一步压低加法树翻转。</p>
+
+<h3 id="sec5-3">5.3 修正 Booth 编码（single/neg/pos）与 S 位预计算</h3>
+<p><strong>（a）修正选择信号。</strong>标准 Radix-4 Booth 选择器用 <strong>single/double/neg</strong> 三根信号（single=1×，double=2×，neg=取负）。本论文改成 <strong>single/neg/pos</strong>：</p>
+<ul>
+<li>用 pos（正）替代 double（2×），把“2×”信息隐含在别的编码里（如把 +2X 编成 pos 与 single 的组合）；</li>
+<li><strong>±0 的编码</strong>：让 neg 与 pos 同时为 0（表示 +0）或同时为 1（表示 −0），选择器对两种 0 输出相同的全零部分积——于是选择器电路里可以省掉“判别 0”的逻辑；</li>
+<li>结果：Booth 选择器面积最多降低 <strong>12%</strong>。</li>
+</ul>
+<p>（b）<strong>S 位（Sign bit）预计算</strong>。部分积可能是负的（−X、−2X）。在二进制补码里，“负部分积”需要一个符号处理：对部分积取反加 1（或加符号修正位）。这个“符号修正”通常要在加法树入口实时生成。论文的招数是：<strong>S 位只由乘数（权重）决定，与激活无关</strong>——所以把每个部分积的 S 位在写权重时就算好、和选择码一起存进权重存储器，计算时直接取用。这样加法树入口不再需要生成 S 位的逻辑，又省一块面积和功耗。</p>
+<figure>
+  <img src="assets/figs/fig30_9_2_Booth与12T锁存.png" alt="论文图 30.9.2">
+  <figcaption>图 5.2　论文原图 Fig. 30.9.2：Radix-4 Booth 编码权重、可中断 12T 多比特锁存存储、静态 2:1 MUX 读取、S 位计算与修正 Booth 编码器。（© IEEE ISSCC 2026，本教程引用仅供教学）</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么“S 位只由权重决定”？提示：部分积 = 操作(±X 或 ±2X)，操作由哪组 3 位决定？X 是谁？② 修正 Booth 把 ±0 的 neg/pos 同时置 1，选择器输出什么？为什么两种 0 能共用输出？③ 如果改成编码激活，S 位还能预计算吗？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>存储与双缓冲：权重“躺”在哪里，以及怎么换</h2>
+
+<h3 id="sec6-1">6.1 可中断 12T 锁存器（Interruptible 12T Latch）</h3>
+<p>权重存储是 DCiM 的“地基”。本文没用定制 SRAM 宏，而是用<strong>标准单元库里的锁存器</strong>实现——这是“全可综合”成立的前提（§2.2）。一个锁存器本质上是<strong>两个交叉耦合的反相器</strong>（互相锁住对方的输出），标准实现约 12 个晶体管（6T SRAM 的一半都不到的关系——SRAM 6T，锁存 12T，锁存更“贵”但完全可综合）。</p>
+<figure>
+  <img src="assets/diagrams/d09_latch_12t.svg" alt="12T 锁存单元" style="max-width:880px">
+  <figcaption>图 6.1　可中断 12T 锁存单元与多比特打包示意。锁存 = 两个交叉耦合反相器；多比特 = 若干位共用一个单元体。</figcaption>
+</figure>
+<p><strong>“可中断”（Interruptible）</strong>是什么意思？意思是写入操作可以由写使能（WE）控制<strong>随时暂停/恢复</strong>：WE 断开时锁存器保持原值不受数据线干扰。这对 DCiM 有两个直接好处：</p>
+<ul>
+<li><strong>低压写入稳健</strong>：400 mV 下写 SRAM 位单元很容易失败（写入裕度不足），但锁存器的写是“显式数据驱动 + 使能控制”的，低压下依然可靠——论文强调 “robust low supply voltage write operation”；</li>
+<li><strong>写入与计算互不干扰</strong>：一组权重写一半停下来去处理别的事，数据不会丢、计算不会错。</li>
+</ul>
+
+<h3 id="sec6-2">6.2 多比特高密度（Multibit / High-Density）与“5 种锁存类型”</h3>
+<p>锁存器比 SRAM 位单元大，论文就想法子“省面积”：</p>
+<ul>
+<li><strong>多比特（Multibit）</strong>：把多个位（论文提到 4b 级别）打包进一个共享单元体（共享电源/地/控制线），位间连线复用，密度大幅提升；</li>
+<li><strong>5 种锁存类型混用</strong>：从单比特到高密度多比特，按“需要的位宽”和“时序约束”选用最省面积的类型；</li>
+<li>综合工具按 <strong>compute-after-write 两周期时序约束</strong>（写入后隔一拍再读）做优化，最终高密度多比特锁存的<strong>插入比例高达 95.5%</strong>；</li>
+<li>净收益：<strong>权重存储面积降低 20%</strong>。</li>
+</ul>
+<div class="box info">
+<div class="bt">🧠 为什么“多比特”能省面积？——把“重复的公共部分”合并</div>
+<p>一个 1b 锁存单元有自己的反相器对、控制电路和布线。如果 4 个位共享同一组控制线、电源网格和一部分驱动电路，就相当于把 4 份“公共开销”合并成 1 份，位均面积明显下降。代价是：多比特单元内的位不能单独随机写（写粒度变粗）——但对“整列权重一起写”的 DCiM 数据流来说完全够用。这就是“高密度多比特”和 DCiM 负载的绝配。</p>
+</div>
+
+<h3 id="sec6-3">6.3 双缓冲（Double Buffering）：计算与更新权重零冲突</h3>
+<p>权重不是永远不变的——推理时切换网络、更新层权重，都需要“换权重”。如果换权重要停算，吞吐就掉。本文用<strong>双缓冲</strong>彻底解决：每个计算列存<strong>两组</strong>权重，一组参与计算，另一组在<strong>后台</strong>被新数据覆盖：</p>
+<figure>
+  <img src="assets/diagrams/d10_double_buffer.svg" alt="双缓冲时间线" style="max-width:900px">
+  <figcaption>图 6.2　双缓冲时间线：权重组 A 计算的同时，组 B 用 32 个周期在后台写完，然后无缝切换。</figcaption>
+</figure>
+<ul>
+<li><strong>写一组权重要 32 个周期</strong>：每周期写 4 个权重的 Booth 选择码（128 权重 ÷ 32 周期 = 4 权重/周期）；</li>
+<li><strong>计算不中断</strong>：计算只在“选中的那一组”上进行，另一组随便写；</li>
+<li><strong>切换即选通</strong>：通过一个<strong>静态 2:1 多路选择器（Static 2:1 MUX）</strong>选当前计算组。关键在于 MUX 只在<strong>每次计算操作开始时读一次</strong>，之后整组权重在锁存里保持稳定——避免了“每个周期都读存储”的巨大读功耗；</li>
+<li>当计算延迟 &gt; 写一组权重延迟时，加速器处于<strong>计算功耗主导</strong>（compute-power bound）状态，写功耗占比可降到 <strong>1%</strong>，能效达到峰值——这正是实测 147~254 TOPS/W 出现的条件。</li>
+</ul>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_9_1_架构组织.png">
+  <source src="assets/videos/v03_double_buffer.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 双缓冲动画：权重组 A 持续计算（橙色脉冲为流入的激活），组 B 在后台写入（进度条 0→100%），32 周期后无缝切换。</div>
+</div>
+<div class="box key">
+<div class="bt">💡 为什么“计算功耗主导”时能效最高？</div>
+<p>能效 = 吞吐 / 总功耗。总功耗 = 计算功耗 + 写功耗 + 漏电。双缓冲把“写功耗”从“阻塞计算的串行过程”里拿出来，和计算重叠（overlap）。当计算时间足够长时，摊到每次计算上的写功耗趋近于零，能效就逼近“纯计算”的上限。<strong>所以双缓冲不只是吞吐优化，更是能效优化。</strong></p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：一个周期内，4096 个 MAC 是怎么“跑”完的</h2>
+
+<h3 id="sec7-1">7.1 架构总览：128 进、32 出、2 组权重</h3>
+<p>把前面所有零件拼起来，就是论文 Fig. 30.9.1 的加速器组织：</p>
+<ul>
+<li><strong>输入侧</strong>：128 个输入通道（128 个激活），每个周期进来一组 128 个 8b 零点量化值；</li>
+<li><strong>转换级</strong>：128 个转换单元做无符号→有符号映射 + 零点偏置合并（§4.2）；</li>
+<li><strong>广播总线</strong>：转换后的 128 个有符号激活广播到全部 32 个计算列；</li>
+<li><strong>计算阵列</strong>：32 个计算列（= 32 个输出通道），每列内部：2 组权重（12T 锁存，双缓冲）→ 静态 2:1 MUX → Booth 选择器 ×128 → 4 个 bank（每 bank 32 路 MAC 的 CSA 树）→ 第 4 级求和 + 零点修正项；</li>
+<li><strong>输出侧</strong>：每列每周期输出 1 个 128 路点积结果，32 列共 32 个输出通道结果。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="系统架构总图" style="max-width:920px">
+  <figcaption>图 7.1　DCiM 加速器整体架构（本教程根据论文 Fig. 30.9.1 文字描述重绘）。每列每周期 128 路 MAC，32 列共 4096 MAC。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧮 吞吐量自洽性验证（重要！学会自己验算论文数字）</div>
+<p>吞吐 = 每周期 MAC 数 × 频率 × 每 MAC 2 次运算<br>
+= 32 列 × 128 路 × 2.62 GHz × 2 ops<br>
+= 4096 × 2.62×10⁹ × 2 ≈ <strong>21.5 × 10¹² ops/s = 21.5 TOPS</strong> ✓ 与论文一致。</p>
+<p>面积效率 = 21.5 TOPS / 0.0856 mm² ≈ <strong>251 ≈ 250 TOPS/mm²</strong> ✓。<br>
+这个“自洽性检验”是读芯片论文的基本功：任何声称的吞吐/能效/面积数字，都能用架构参数推出来对得上。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_1_架构组织.png" alt="论文图 30.9.1">
+  <figcaption>图 7.2　论文原图 Fig. 30.9.1：支持零点量化 8b 无符号/有符号激活与权重的 DCiM 加速器组织。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 4 级流水线：128 路 MAC 怎么分四步走</h3>
+<p>论文在“吞吐与功耗的平衡”下把 128 路 MAC 拆成 <strong>4 级流水线</strong>（图 d07）：</p>
+<figure>
+  <img src="assets/diagrams/d07_compute_column.svg" alt="计算列与流水线" style="max-width:940px">
+  <figcaption>图 7.3　单个计算列内部：双缓冲权重 → 静态 MUX → Booth 选择器 → 4 bank × 32 路 CSA → 第 4 级求和与修正。流水线级次用颜色区分。</figcaption>
+</figure>
+<table>
+<tr><th>级</th><th>做什么</th><th>数据宽度/规模</th><th>位置</th></tr>
+<tr><td><strong>第 1 级</strong></td><td>无符号→有符号转换 + 零点偏置合并（MSB 取反）</td><td>128 个 8b 激活</td><td>外围（32 列共享）</td></tr>
+<tr><td><strong>第 2 级</strong></td><td>Booth 部分积生成；每个 bank 内 32 路 CSA“先跨乘数相加”（同对齐的部分积先并）</td><td>128 乘法 → 512 部分积</td><td>每个计算列内</td></tr>
+<tr><td><strong>第 3 级</strong></td><td>“移位合并”：把每个乘法自己的 4 个错位部分积和合并</td><td>每 bank 得 1 个 32 路点积</td><td>每个计算列内</td></tr>
+<tr><td><strong>第 4 级</strong></td><td>Σ 4 个 bank（凑成 128 路 MAC）+ 三个零点修正项</td><td>1 个点积结果</td><td>每个计算列内</td></tr>
+</table>
+<p>为什么要“先跨乘数、后移位置换”而不是反过来？想象 32 个乘法的部分积：先按<strong>相同对齐位置</strong>把 32 个乘数相加（列方向并），再做 4 个错位的合并（行方向并）——这样 CSA 树的每一层都只处理“对齐好”的数，进位链最短、布线最规整，延迟和面积都更优。这是加法树设计的经典手法。</p>
+<figure>
+  <img src="assets/diagrams/d11_pipeline.svg" alt="4 级流水线" style="max-width:920px">
+  <figcaption>图 7.4　4 级流水线时空图：每周期有一组新数据进入第 1 级，4 个周期后从第 4 级流出——流水线“填满”后每周期都出一个结果。</figcaption>
+</figure>
+
+<div class="demo">
+<div class="dhead">⏱ 演示 E · 4 级流水线时空图（拖动周期滑块看数据组移动）</div>
+<canvas id="demoE" width="980" height="300"></canvas>
+<div class="dbar">
+  <input id="demoE-slider" type="range" min="0" max="9" value="0" style="flex:1;accent-color:#0f7cb6">
+  <button id="demoE-play" class="on">▶ 自动播放</button>
+  <button id="demoE-reset">重置</button>
+  <span class="stat" id="demoE-stat">周期 1 · 数据组 A 进入第 1 级</span>
+</div>
+<div class="hint">5 组数据（A–E）依次进入流水线。观察：第 4 个周期开始每组都流出 1 个结果（吞吐=1 结果/周期），而单组延迟始终是 4 周期。这就是“延迟”和“吞吐”的区别。</div>
+</div>
+<div class="box info">
+<div class="bt">🧠 流水线填满后：延迟 4 周期，吞吐 1 结果/周期</div>
+<p>单看一组数据，从进入到输出要 4 个周期（延迟 latency = 4）；但流水线一旦填满，<strong>每个周期都有一组新的结果从第 4 级流出</strong>（吞吐 throughput = 1/周期）。对推理加速器来说，吞吐远比延迟重要。论文的 4 级选择是“吞吐 × 功耗”的平衡：级数太少则单级组合逻辑太长、频率上不去；级数太多则寄存器开销和流水线功耗上升。</p>
+</div>
+
+<h3 id="sec7-3">7.3 交互演示 D：亲手“跑”一列的数据流</h3>
+<div class="demo">
+<div class="dhead">⚙ 演示 D · 一个计算列的数据流仿真（可交互）</div>
+<canvas id="demoD" width="980" height="380"></canvas>
+<div class="dbar">
+  <button id="demoD-play" class="on">▶ 自动运行</button>
+  <button id="demoD-step">单步（1 周期）</button>
+  <button id="demoD-reset">重置</button>
+  <span class="stat" id="demoD-stat">周期 0 / 等待开始</span>
+</div>
+<div class="hint">绿色块=激活（128 个），紫色块=权重（128 个，双缓冲两组），蓝块=部分积/CSA 树，橙色块=输出。观察：激活进入第 1 级转换 → 广播 → 4 个 bank 并行算 → 第 4 级求和出结果；同时注意第二组权重在后台被写入（进度条）。</div>
+</div>
+
+<h3 id="sec7-4">7.4 视频演示：完整数据流流水线</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_9_3_零点量化数学.png">
+  <source src="assets/videos/v02_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · DCiM 数据流流水线工作流程：128 个激活 → 第 1 级转换 → 广播到 32 个计算列 → 每列 4 bank 并行 MAC → 第 4 级求和与修正 → 输出。循环 14 个周期，观察每周期 4096 MAC 的持续吞吐。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么第 2、3 级要各占一个流水级而不是合并？提示：128 个乘法 × 4 部分积 = 512 个部分积的加法树深度。② 如果输入通道扩到 256（8 个 bank），第 4 级会变成什么样？面积和延迟各增加多少？③ 双缓冲的 32 周期写入和 4 级流水线的启动延迟（4 周期）有什么关系？谁才是系统“启动”时的瓶颈？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>面积、功耗与实测：把“纸面设计”变成“芯片成绩单”</h2>
+
+<h3 id="sec8-1">8.1 面积/功耗分解：钱都花在哪了？</h3>
+<p>论文 Fig. 30.9.4 给出了面积与功耗的详细分解，这是理解“设计取舍”的关键证据：</p>
+<figure>
+  <img src="assets/charts/c01_area_breakdown.png" alt="面积分解" style="max-width:860px">
+  <figcaption>图 8.1　面积分解：Booth 选择器 + 加法树占 74%（计算逻辑是面积的绝对主体）；存储锁存 + 读 MUX 占 21%；编码器等外围只占 2%。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_power_breakdown.png" alt="功耗分解" style="max-width:940px">
+  <figcaption>图 8.2　功耗分解：写功耗里“写驱动 + 译码器”占 56%（但它面积只占 3%！）；计算功耗里 Booth 选择器 + 加法树占 98%。双缓冲后写功耗可降到 1%。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 这张分解表教会我们什么？</div>
+<ul>
+<li><strong>面积 ≠ 功耗</strong>：写驱动/译码器面积只占 3%，却吃掉 56% 的写功耗——因为写操作要驱动整列的大电容（锁存写入线、译码树）。这正是论文把写路径功耗“藏进后台”（双缓冲）的原因；</li>
+<li><strong>计算逻辑既是面积大头也是功耗大头</strong>（74% 面积 / 98% 计算功耗）——所以任何能减少部分积数量/宽度的技巧（§4、§5）都能同时撬动面积和功耗两块收益；</li>
+<li><strong>Booth 编码器只占 2% 面积</strong>——因为它“只写一次”（在写权重路径上），32 列共享，面积被充分摊薄。这是 §5.2 决策的直接证据。</li>
+</ul>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_4_面积功耗分解.png" alt="论文图 30.9.4">
+  <figcaption>图 8.3　论文原图 Fig. 30.9.4：面积/功耗分解与权重存储面积节省（95.5% 高密度多比特插入 → 20% 存储面积下降）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-2">8.2 测量结果：从 1.1 V 到 400 mV</h3>
+<p>论文在 Intel 18A 上流片并实测，关键数字如下（全部为 25°C 实测）：</p>
+<table>
+<tr><th>电源电压</th><th>频率</th><th>吞吐</th><th>功耗</th><th>能效</th><th>备注</th></tr>
+<tr><td class="num"><strong>1.1 V（峰值）</strong></td><td class="num">2.62 GHz</td><td class="num">21.5 TOPS</td><td class="num">1.23 W</td><td class="num">~17.5 TOPS/W</td><td>峰值面积效率 <strong>250 TOPS/mm²</strong></td></tr>
+<tr><td class="num"><strong>400 mV（低压）</strong></td><td class="num">显著降频</td><td class="num">~0.89 TOPS</td><td class="num">6.1 mW</td><td class="num"><strong>147 TOPS/W</strong></td><td>25% 输入活动率 → 峰值能效</td></tr>
+<tr><td class="num">400 mV</td><td class="num">同左</td><td class="num">~0.89 TOPS</td><td class="num">3.5 mW</td><td class="num"><strong>254 TOPS/W</strong></td><td>10% 输入活动率 → 能效扩展</td></tr>
+</table>
+<figure>
+  <img src="assets/charts/c04_measurements.png" alt="测量结果" style="max-width:960px">
+  <figcaption>图 8.4　实测趋势：能效随输入活动率下降而上升（左）；频率/功耗随电压缩放（右）。注：10% 与 25% 活动率为论文实测点，其余为示意趋势。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_9_5_测量结果.png" alt="论文图 30.9.5">
+  <figcaption>图 8.5　论文原图 Fig. 30.9.5：Intel 18A 上的频率、功耗与能效实测曲线。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 怎么理解“低压能效高”这个反直觉现象？</div>
+<p>CMOS 动态功耗 ∝ C·V²·f。把电压从 1.1 V 降到 400 mV，功耗按 V² 暴跌（(0.4/1.1)² ≈ 0.13），而频率只按 ~线性下降。所以“能效 = 吞吐/功耗”在低压下急剧上升。代价是吞吐变低——所以 <strong>1.1 V 用来冲峰值吞吐，400 mV 用来冲峰值能效</strong>，这是 DVFS（动态电压频率缩放）在 DCiM 上的应用。注意“活动率”也影响功耗：数据翻转越少，动态功耗越低，能效越高（10% 活动率 → 254 TOPS/W）。</p>
+</div>
+
+<h3 id="sec8-3">8.3 与近期工作的对比</h3>
+<p>论文 Fig. 30.9.6 把本工作与近年数字 CiM 做了对比，并声称在面积效率与能效上取得 best-in-class。以下是论文引用/可比的代表性工作（注意：不同工作位宽与归一化方式不同，直接对比要小心——这本身就是很好的研究素养提醒）：</p>
+<figure>
+  <img src="assets/charts/c03_compare.png" alt="对比散点图" style="max-width:840px">
+  <figcaption>图 8.6　能效 vs 面积效率散点对比（本教程重绘；数据点取自论文引用文献标题/正文中的明确数字，仅纳入位宽可比的 INT8/INT12 工作，位宽不同或按 bit 归一化者未入图——见下表）。</figcaption>
+</figure>
+<table>
+<tr><th>工作</th><th>工艺</th><th>精度</th><th>能效</th><th>面积效率</th><th>特点</th></tr>
+<tr><td><strong>本论文</strong></td><td class="num">Intel 18A</td><td class="num">INT8×INT8</td><td class="num"><strong>147 TOPS/W</strong></td><td class="num"><strong>250 TOPS/mm²</strong></td><td>全可综合、零点量化、双缓冲</td></tr>
+<tr><td>Mori 等 [5], VLSI'25</td><td class="num">3nm</td><td class="num">INT8 / FP16</td><td class="num">125 TOPS/W</td><td class="num">90 TOPS/mm²</td><td>DCiM 编译器、多权重更新/周期</td></tr>
+<tr><td>Fujiwara 等 [4], ISSCC'24</td><td class="num">3nm</td><td class="num">INT12×INT12</td><td class="num">32.5 TOPS/W</td><td class="num">55 TOPS/mm²</td><td>并行 MAC 架构、foundry 6T SRAM 位单元</td></tr>
+<tr><td>Desoli 等 [3], ISSCC'23</td><td class="num">FD-SOI 18nm</td><td class="num">≤4b</td><td class="num">40–310 TOPS/W</td><td class="num">—</td><td>多 tile 全数字 CiM</td></tr>
+<tr><td>Mori 等 [2], ISSCC'23</td><td class="num">4nm</td><td class="num">位宽可配</td><td class="num">6163 TOPS/W/b*</td><td class="num">4790 TOPS/mm²/b*</td><td>按 bit 归一化的指标（*直接与 8b 工作不可比）</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig30_9_6_对比表.png" alt="论文图 30.9.6">
+  <figcaption>图 8.7　论文原图 Fig. 30.9.6：性能/面积/功耗汇总与近期工作对比。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比表的研究素养：先问“怎么归一化的？”</div>
+<p>① 有些论文按“每 bit 归一化”报指标（如 6163 TOPS/W/b），位宽越低指标越好看——和 8b 工作比之前必须先换算；② 能效强烈依赖电压与活动率条件（本文 147 是 400 mV/25% 活动率），不同条件下测的数字不能直接比；③ 工艺代差（18A vs 3nm vs 28nm）也会造成不公平对比。这些“坑”恰恰是审稿人最爱问的问题，也是你自己写论文时要交代清楚的。</p>
+</div>
+
+<h3 id="sec8-4">8.4 工艺背景：Intel 18A 是什么？</h3>
+<p>本论文在 <strong>Intel 18A</strong> 上流片。18A 是 Intel 先进节点（对标台积电 2nm 级别），两个标志性技术：</p>
+<ul>
+<li><strong>RibbonFET（GAA 全环绕栅极）</strong>：用纳米带（nanoribbon）四面环绕的栅极替代 FinFET 的三面鳍式栅极，沟道控制更强、漏电更低——这是低压运行（400 mV）能成立的关键工艺支撑；</li>
+<li><strong>PowerVia（背面供电）</strong>：电源从晶圆背面接入，正面信号布线资源不再被电源线挤占，单元密度和布线质量提升。</li>
+</ul>
+<div class="box info">
+<div class="bt">🧠 工艺与架构的“互相成就”</div>
+<p>可综合设计（§2.2）让 DCiM 能快速跟上工艺换代；而 GAA/背面供电这类先进工艺让“低压数字逻辑”（§2.1）成为现实。两者结合，才有了 400 mV 下 147 TOPS/W 的成绩。做 CIM 研究时，<strong>工艺选择和架构选择从来不是独立的</strong>——这是论文最后一张图（Fig. 30.9.7，芯片照片）想传达的完整故事。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_7_芯片照片与总结.png" alt="论文图 30.9.7">
+  <figcaption>图 8.8　论文原图 Fig. 30.9.7：封装后的 Intel 18A 测试芯片照片、裸片尺寸与性能汇总表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>自测 · 未来方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 思考题与自测（12 题）</h3>
+<p>下面的题按难度递增排列，覆盖全文核心概念。先自己做，再点“查看答案”。</p>
+
+<div class="quiz">
+<div class="qh">Q1 · 基础概念</div>
+<div class="qb"><div class="q">CiM（存内计算）解决的核心问题是什么？</div>
+<label><input type="radio" name="q1" value="a"> 计算速度不够快</label>
+<label><input type="radio" name="q1" value="b"> 数据搬运（访存）的能耗与带宽开销太大</label>
+<label><input type="radio" name="q1" value="c"> 存储容量不够大</label>
+<label><input type="radio" name="q1" value="d"> 编译器优化不足</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。CiM 把计算嵌入存储，避免“读权重→算→写回”的反复搬运，直击冯·诺依曼瓶颈（存储墙/带宽墙）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q2 · 数字 vs 模拟</div>
+<div class="qb"><div class="q">为什么数字 CiM 能做到“确定性精度（deterministic accuracy）”，而模拟 CiM 很难？</div>
+<label><input type="radio" name="q2" value="a"> 数字电路更快</label>
+<label><input type="radio" name="q2" value="b"> 数字电路用布尔逻辑逐位精确计算，结果与电压/工艺波动无关；模拟的电流/电荷求和是模拟量，受噪声、失调、ADC 量化误差影响</label>
+<label><input type="radio" name="q2" value="c"> 数字电路面积更小</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。这正是数字路线能低压运行（400 mV）的前提：只要时序满足，逻辑结果与 PVT 无关。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q3 · 可综合</div>
+<div class="qb"><div class="q">“全可综合”最关键的技术前提是什么？</div>
+<label><input type="radio" name="q3" value="a"> 使用最快的工艺节点</label>
+<label><input type="radio" name="q3" value="b"> 连存储都用标准单元（12T 锁存器）实现，整个加速器不含定制 IP</label>
+<label><input type="radio" name="q3" value="c"> 使用 SRAM 宏做权重存储</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。SRAM 宏是定制 IP 无法综合；本文用标准锁存单元拼出权重存储，才让“存储也可综合”。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q4 · 零点量化</div>
+<div class="qb"><div class="q">对称量化在什么情况下会浪费一半的整数码字？零点量化如何解决？</div>
+<label><input type="radio" name="q4" value="a"> 数据是正态分布时；用更大的尺度</label>
+<label><input type="radio" name="q4" value="b"> 数据偏态（如全为正）时，对称量化把负数区间也划进去；零点量化让零点 z 落在任意位置，256 个码字全部贴住实际区间</label>
+<label><input type="radio" name="q4" value="c"> 数据范围很大时；用 16bit</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。零点量化牺牲“零点必须对应 0”的便利，换取偏态数据上的分辨率（见 §3.2）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q5 · 9b 问题</div>
+<div class="qb"><div class="q">为什么支持零点量化会让硬件“被迫”做 9b×9b 乘法？</div>
+<label><input type="radio" name="q5" value="a"> 因为数据精度要求更高</label>
+<label><input type="radio" name="q5" value="b"> 因为零点量化值是 0~255 的无符号 8b，若在每个乘法内部减零点，结果范围（如 [−z, 255−z]）可能超出 8b 有符号范围，需要 9b 有符号表示</label>
+<label><input type="radio" name="q5" value="c"> 因为硬件需要做浮点运算</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。9b 有符号乘法生成 5 个部分积（每个 10b 宽），比 8b×8b 的 4 个部分积（9b 宽）贵得多。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q6 · 映射技巧</div>
+<div class="qb"><div class="q">把 8b 无符号数变成 8b 有符号数（减 128）的硬件实现是什么？为什么？</div>
+<label><input type="radio" name="q6" value="a"> 加一个减法器</label>
+<label><input type="radio" name="q6" value="b"> 最高位（MSB）取反即可，因为 8b 无符号数的第 7 位权重正好是 128，翻转等价于 ±128 平移</label>
+<label><input type="radio" name="q6" value="c"> 右移一位</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。每个激活只需一个按格式控制的 XOR 门——“免费的”映射（§4.2）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q7 · 修正项白嫖</div>
+<div class="qb"><div class="q">零点展开的三个修正项（②C<sub>W</sub>ΣA<sub>s</sub> ③C<sub>A</sub>ΣW<sub>s</sub> ④N·C<sub>A</sub>C<sub>W</sub>）分别靠什么数据流特性变便宜？</div>
+<label><input type="radio" name="q7" value="a"> 随机数生成</label>
+<label><input type="radio" name="q7" value="b"> ②靠激活广播共享（每周期算一次、32 列共用）；③靠权重静止（写权重时预存 ΣW<sub>s</sub>）；④是常数</label>
+<label><input type="radio" name="q7" value="c"> 靠提高时钟频率</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。这就是“算法-架构协同设计”的精髓：同样的数学，换数据流就便宜了（§4.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q8 · Booth 决策</div>
+<div class="qb"><div class="q">论文为什么选择编码“静止的权重”而不是“广播的激活”？</div>
+<label><input type="radio" name="q8" value="a"> 因为权重更重要</label>
+<label><input type="radio" name="q8" value="b"> 编码激活会让广播总线每周期翻转位数从 8 涨到 12，抬高计算功耗；编码权重则把编码器挪到写入路径（吞吐要求低 → 面积小 32×），计算期间零编码功耗</label>
+<label><input type="radio" name="q8" value="c"> 因为激活是负数</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。功耗 ∝ 翻转活动率；权重侧编码把“贵的事”放到低活动率的存储侧（§5.2，收益：面积 +7%、计算功耗 −28%）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q9 · S 位</div>
+<div class="qb"><div class="q">为什么 Booth 的 S 位（部分积符号修正位）可以预计算并存入权重存储器？</div>
+<label><input type="radio" name="q9" value="a"> 因为 S 位只由乘数（权重）的编码决定，与激活无关</label>
+<label><input type="radio" name="q9" value="b"> 因为 S 位永远为 0</label>
+<label><input type="radio" name="q9" value="c"> 因为 S 位是随机数</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>a</strong>。部分积取负与否由 Booth 选择码决定，选择码来自权重——所以写权重时就能把 S 位算好存好（§5.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q10 · 双缓冲</div>
+<div class="qb"><div class="q">双缓冲为什么同时提升“吞吐”和“能效”？</div>
+<label><input type="radio" name="q10" value="a"> 只提升吞吐</label>
+<label><input type="radio" name="q10" value="b"> 权重更新与计算重叠：计算不因换权重而停顿（吞吐）；写功耗摊薄到可忽略（能效），达到计算功耗主导状态</label>
+<label><input type="radio" name="q10" value="c"> 只提升能效</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。论文里“写功耗占比降到 1%”就是双缓冲能效收益的直接证据（§6.3）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q11 · 吞吐验算</div>
+<div class="qb"><div class="q">已知 32 输出通道、128 输入通道、2.62 GHz、INT8（1 MAC = 2 ops），验证 21.5 TOPS 并推导面积效率（0.0856 mm²）。</div>
+<label><input type="radio" name="q11" value="a"> 32×128×2.62G×2 = 21.5T；21.5T/0.0856 ≈ 250 TOPS/mm²</label>
+<label><input type="radio" name="q11" value="b"> 128×32×2.62G = 10.7T；面积效率无法计算</label>
+<label><input type="radio" name="q11" value="c"> 21.5 TOPS 是估算值，与架构无关</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>a</strong>。这是读芯片论文的基本功：用架构参数复算论文指标（§7.1）。</div></div>
+</div>
+
+<div class="quiz">
+<div class="qh">Q12 · 综合应用</div>
+<div class="qb"><div class="q">如果要做一个“INT4 版本”的同类 DCiM，哪些设计点需要重新考虑？（多选思考题）</div>
+<label><input type="radio" name="q12" value="a"> 无需改动</label>
+<label><input type="radio" name="q12" value="b"> Booth 组数减少（部分积更少）、12b 选择码位宽变窄、存储密度提升、累加器宽度、零点映射的位宽裁剪</label>
+<label><input type="radio" name="q12" value="c"> 只能改用模拟 CiM</label>
+<button onclick="reveal(this)">查看答案</button><div class="ans"><strong>b</strong>。位宽是全局参数：Booth 编码、选择码存储、部分积树、累加器都要重新权衡——这正是很多 DCiM 论文做“位宽可配置”的原因（见参考资料 [2][5]）。</div></div>
+</div>
+
+<h3 id="sec9-2">9.2 未来研究方向（从这篇论文还能往哪走？）</h3>
+<p>作为初学者，读完一篇论文后最该训练的能力就是“找下一步”。基于本文，至少可以展开这些方向：</p>
+<ol>
+<li><strong>位宽可配置化</strong>：本文固定 INT8。把 DCiM 做成 1/2/4/8b 可配置（如 Mori 等的工作），用低比特处理“无关紧要”层、高比特处理敏感层，能在精度-能效之间自适应——这是当下 DCiM 的主战场；</li>
+<li><strong>稀疏性利用</strong>：权重/激活有很多 0，Booth 编码后“×0”的部分积可以跳过。把稀疏检测（如激活零检测）嵌入第 1~2 级流水线，跳过零 MAC，能再拿 2~4× 能效（论文 [3] 的方向）；</li>
+<li><strong>浮点/混合精度支持</strong>：INT8 是下限，LLM 常用 FP16/BF16/块浮点（MXFP 等）。可综合数字框架天然适合扩展浮点（对齐、指数处理），本论文集里 06、19 号论文就是浮点方向；</li>
+<li><strong>训练（Training）支持</strong>：本文只做推理。数字 CiM 的确定性精度其实有利于训练/微调（可复现梯度），但要解决权重频繁更新（写带宽）与反向传播的数据流——本论文集里 03、17 号论文在做浮点训练/微调；</li>
+<li><strong>更大规模与 3D 集成</strong>：单宏 0.0856 mm² 只是“积木”。把它 tile 化、互联成多宏系统（本论文集 08 号论文是 3D DRAM+logic 路线），并研究数据在 tile 间的调度；</li>
+<li><strong>编译器与软件栈</strong>：论文提到“编译器”（[5] 是 DCiM 编译器）。把量化方案（零点选择）、权重编码（Booth 选择码生成）、双缓冲调度封装成编译工具链，让用户从 PyTorch 模型直接得到可运行的 DCiM 配置——这决定了 DCiM 能否被产业采用；</li>
+<li><strong>更激进的能效工程</strong>：近阈值/亚阈值运行（往 300 mV 以下走）、时钟门控与电源门控细化、活动率感知的动态电压调节（把“活动率 → 能效”曲线变成运行时策略）；</li>
+<li><strong>可靠性研究</strong>：低压下时序裕量收窄，DCiM 的“确定性”在 PVT 极端角落还成立吗？如何做在线监控与自适应频率/电压？这是从论文走向产品的必答题。</li>
+</ol>
+
+<h3 id="sec9-3">9.3 术语表</h3>
+<dl class="glossary">
+<dt>CiM / Compute-in-Memory（存内计算）</dt><dd>把计算嵌入存储阵列的架构，消除权重搬运开销。</dd>
+<dt>DCiM / Digital CiM</dt><dd>用数字逻辑做 MAC 的 CiM，精度确定、可综合、可低压运行。</dd>
+<dt>MAC（Multiply-Accumulate）</dt><dd>乘加运算 a×w+acc，神经网络的基本运算单元；1 MAC 计 2 次运算（OPS）。</dd>
+<dt>TOPS / TOPS/W / TOPS/mm²</dt><dd>每秒万亿次运算 / 能效（每瓦每秒万亿次运算）/ 面积效率（每平方毫米每秒万亿次运算）。</dd>
+<dt>Zero-Point Quantization（零点量化）</dt><dd>非对称线性量化 r = s(q−z)，用零点 z 贴合偏态数据分布。</dd>
+<dt>Unsigned-to-Signed Mapping</dt><dd>无符号 8b 减 128（MSB 取反）映射为有符号 8b 的技巧。</dd>
+<dt>Zero-Point Expansion（零点扩展）</dt><dd>把 Σ(A<sub>s</sub>+C<sub>A</sub>)(W<sub>s</sub>+C<sub>W</sub>) 展开为 8b×8b 主项 + 三个修正项，修正项利用数据流特性廉价实现。</dd>
+<dt>Radix-4 Booth Encoding</dt><dd>每 3 位一组把乘数编码为 ±1/±2/0 选择码，部分积数量减半（8b→4 个，9b→5 个）。</dd>
+<dt>Partial Product（部分积）</dt><dd>乘法分解出的中间乘积，错位相加得到最终积。</dd>
+<dt>CSA / Carry-Save Adder（进位保存加法器）</dt><dd>三输入两输出（和+进位）的加法器，可并行叠加多个部分积，延迟与输入个数近似无关。</dd>
+<dt>Booth Selector</dt><dd>根据选择码从激活生成部分积的组合逻辑；本文用修正 single/neg/pos 编码，选择器面积 −12%。</dd>
+<dt>S-bit（符号修正位）</dt><dd>负部分积的补码修正位，本文预计算并随权重存储。</dd>
+<dt>12T Latch（12 管锁存器）</dt><dd>标准单元库锁存器，两个交叉耦合反相器；本文用它实现“可综合的”权重存储。</dd>
+<dt>Multibit Latch（多比特锁存）</dt><dd>多位共享单元体的高密度锁存，本文 95.5% 插入率省 20% 存储面积。</dd>
+<dt>Double Buffering（双缓冲）</dt><dd>两组权重轮换：一组计算、一组后台写入，消除更新停顿。</dd>
+<dt>Static 2:1 MUX（静态二选一）</dt><dd>选择当前计算权重组的选择器，只在计算开始时读一次，省读功耗。</dd>
+<dt>Adder Tree（加法树）</dt><dd>把 N 个数并行相加的树状结构；本文 32 路 CSA 树 + 移位合并。</dd>
+<dt>Pipeline Stage（流水线级）</dt><dd>级间寄存器隔开的组合逻辑段；本文 4 级：转换 / 部分积+CSA / 移位合并 / bank 求和+修正。</dd>
+<dt>DVFS（动态电压频率缩放）</dt><dd>按负载调整电压/频率：1.1 V 冲吞吐、400 mV 冲能效。</dd>
+<dt>Input Activity（输入活动率）</dt><dd>输入数据翻转的比例，决定动态功耗；25%→147 TOPS/W、10%→254 TOPS/W。</dd>
+<dt>Intel 18A / RibbonFET / PowerVia</dt><dd>Intel 先进节点（GAA 全环绕栅极 + 背面供电），支撑低压鲁棒运行。</dd>
+<dt>Deterministic Accuracy（确定性精度）</dt><dd>同样的输入永远得到同样的输出，与 PVT 无关——数字 CiM 的核心卖点。</dd>
+</dl>
+
+<h3 id="sec9-4">9.4 参考资料</h3>
+<ol class="refs">
+<li>A. Agarwal, S. K. Hsu, M. A. Anders, A. Raha, D. A. Mathaikutty, R. Krishnamurthy, “A 147TOPS/W, 250TOPS/mm², Fully Synthesizable, Digital Compute-in-Memory Accelerator Supporting INT8×INT8 with Zero-Point Quantization in Intel 18A Technology,” <em>ISSCC 2026</em>, Paper 30.9. DOI: 10.1109/ISSCC49663.2026.11409207</li>
+<li>H. Mori et al., “A 4nm 6163-TOPS/W/b 4790-TOPS/mm²/b SRAM Based Digital-Computing-in-Memory Macro Supporting Bit-Width Flexibility and Simultaneous MAC and Weight Update,” <em>ISSCC 2023</em>, pp. 132-133.</li>
+<li>G. Desoli et al., “A 40-310TOPS/W SRAM-Based All-Digital Up to 4b In-Memory Computing Multi-Tiled NN Accelerator in FD-SOI 18nm for Deep-Learning Edge Applications,” <em>ISSCC 2023</em>, pp. 260-261.</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm² and 3.78Mb/mm² Fully-Digital Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC Architecture and Foundry 6T-SRAM Bit Cell,” <em>ISSCC 2024</em>, pp. 572-574.</li>
+<li>H. Mori et al., “A 3nm 125TOPS/W-29TFLOPS/W, 90TOPS/mm²-17TFLOPS/mm² SRAM-Based INT8 and FP16 Digital-CIM Compiler with Multi-Weight Update/Cycle,” <em>IEEE Symp. VLSI Circuits</em>, 2025.</li>
+<li>K. Fischer et al., “Intel 18A Platform Technology Featuring RibbonFET (GAA) and PowerVia for Advanced High-Performance Computing,” <em>IEEE Symp. VLSI Circuits</em>, 2025.</li>
+<li>Intel Foundry, “Intel 18A Process Node — Platform Brief,” <a href="https://www.intel.com/content/www/us/en/foundry/library/intel-18a-platform-brief.html" target="_blank" rel="noopener">intel.com</a>（工艺背景）</li>
+<li>Google AI Edge, “LiteRT 8-bit Quantization Specification,” <a href="https://developers.google.com/edge/litert/conversion/tensorflow/quantization/quantization_spec" target="_blank" rel="noopener">developers.google.com</a>（零点量化公式背景）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.9.1–30.9.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有“实测数字”均来自论文原文，教程中的趋势示意（灰色标注）不构成论文结论。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 11 张（assets/diagrams/）· 数据图 4 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 5 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   DCiM 教学教程 · 交互脚本
+   包含：进度条/侧栏高亮、测验揭示、5 个 Canvas 仿真
+   （A 量化映射 · B Booth 分步 · C 部分积对比 · D 数据流 · E 流水线时空图）
+   ============================================================ */
+"use strict";
+
+/* ---------- 通用工具 ---------- */
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  return { c, ctx, w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align, font) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px " + (font || "'Microsoft YaHei','PingFang SC',sans-serif");
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#0f7cb6", green: "#2fae7e", orange: "#e8a33d",
+  red: "#e2694f", purple: "#9b6fd6", gray: "#7f93ad", white: "#e8f0fa"
+};
+
+/* ---------- 进度条 + 侧栏滚动高亮 ---------- */
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ---------- 测验揭示 ---------- */
+function reveal(btn) {
+  const ans = btn.nextElementSibling;
+  if (ans) ans.classList.add("show");
+}
+
+/* ============================================================
+   演示 A · 对称 vs 零点量化误差对比
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 330);
+  if (!D) return;
+  const { ctx } = D;
+  let data = { min: -0.5, max: 6.0 };      // 真实数据范围（偏态）
+  let play = true, t = 0, auto = true;
+
+  function mse(mode) {
+    let s, z, e = 0, n = 0;
+    for (let i = 0; i < 400; i++) {
+      const r = data.min + Math.random() * (data.max - data.min);
+      if (mode === "sym") { s = Math.max(Math.abs(data.min), Math.abs(data.max)) / 127; z = 0; }
+      else { s = (data.max - data.min) / 255; z = Math.round(-data.min / s); }
+      let q = Math.round(r / s) + z; q = Math.max(0, Math.min(255, q));
+      e += (r - s * (q - z)) ** 2; n++;
+    }
+    return Math.sqrt(e / n);
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const left = 40, right = w - 40, top = 60, bot = 250, span = 260;
+    const rmin = data.min, rmax = data.max;
+
+    // 两条数轴
+    const modes = [
+      { name: "对称量化（symmetric）", col: PAL.red },
+      { name: "零点量化（asymmetric）", col: PAL.green }
+    ];
+    modes.forEach((m, idx) => {
+      const y = top + idx * 95;
+      ctx.strokeStyle = PAL.gray; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+      txt(ctx, m.name + "   r → q → r̂", left, y - 18, 14, m.col, "left");
+      const sSym = Math.max(Math.abs(rmin), Math.abs(rmax)) / 127;
+      const sAsym = (rmax - rmin) / 255;
+      const zAsym = Math.round(-rmin / sAsym);
+      // 采样点
+      const N = 60;
+      for (let i = 0; i <= N; i++) {
+        const r = rmin + (rmax - rmin) * i / N;
+        let q, s, z;
+        if (idx === 0) { s = sSym; z = 0; } else { s = sAsym; z = zAsym; }
+        q = Math.round(r / s) + z; q = Math.max(0, Math.min(255, q));
+        const rhat = s * (q - z);
+        const x = left + (r - rmin) / span * (right - left) * (span / (rmax - rmin) || 1);
+        const xr = left + ((r - rmin) / (rmax - rmin || 1)) * (right - left);
+        const xh = left + ((rhat - rmin) / (rmax - rmin || 1)) * (right - left);
+        ctx.fillStyle = m.col;
+        ctx.beginPath(); ctx.arc(xr, y, 2.4, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "rgba(226,105,79,0.85)";
+        ctx.strokeStyle = "rgba(226,105,79,0.5)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(xr, y - 6); ctx.lineTo(xh, y - 16); ctx.stroke();
+        ctx.beginPath(); ctx.arc(xh, y - 18, 2.2, 0, 6.28); ctx.fillStyle = PAL.orange; ctx.fill();
+      }
+      const rm = (rmin + rmax) / 2;
+      ctx.fillStyle = PAL.orange; ctx.beginPath();
+      ctx.arc(left + ((rm - rmin) / (rmax - rmin || 1)) * (right - left), y - 18, 2.5, 0, 6.28); ctx.fill();
+      txt(ctx, "真实值 r（绿底点）", right - 10, y - 32, 12, PAL.green, "right");
+      txt(ctx, "量化-反量化 r̂（橙点）", right - 10, y - 18, 12, PAL.orange, "right");
+      // 浪费区间高亮（对称时）
+      if (idx === 0 && data.min > 0) {
+        ctx.fillStyle = "rgba(226,105,79,0.12)";
+        ctx.fillRect(left, y - 4, right - left, 8);
+        txt(ctx, "← 这一段全被浪费（没有负数数据）→", (left + right) / 2, y + 16, 12, PAL.red, "center");
+      }
+    });
+    // 底部统计
+    const eSym = mse("sym"), eAsym = mse("asym");
+    txt(ctx, "对称量化 RMSE ≈ " + eSym.toFixed(3) + "　　vs　　零点量化 RMSE ≈ " + eAsym.toFixed(3),
+      w / 2, 288, 16, eAsym < eSym ? PAL.green : PAL.red, "center");
+    txt(ctx, "（RMSE = 均方根误差，越小越好；随机采样所以每次略有不同）", w / 2, 312, 12, PAL.gray, "center");
+  }
+
+  function tick() {
+    if (auto) {
+      t += 0.02;
+      data.min = -0.5 + Math.sin(t * 1.3) * 1.2;
+      data.max = 2.5 + Math.abs(Math.sin(t * 0.7)) * 5.5;
+      if (data.min > 0.3) data.min = 0.05;
+    }
+    draw();
+  }
+  setInterval(tick, 50);
+
+  const btnPlay = document.getElementById("demoA-play");
+  const btnShuf = document.getElementById("demoA-shuffle");
+  const stat = document.getElementById("demoA-stat");
+  if (btnPlay) btnPlay.onclick = function () {
+    auto = !auto;
+    this.classList.toggle("on", auto);
+    if (auto) { stat.textContent = "自动演示中：数据范围随波形变化"; }
+    else { stat.textContent = "已暂停（可拖动范围滑块？当前为固定范围演示）"; }
+  };
+  if (btnShuf) btnShuf.onclick = function () {
+    data.min = -Math.random() * 2;
+    data.max = Math.random() * 6 + 0.5;
+    if (stat) stat.textContent = "随机分布：min=" + data.min.toFixed(2) + " max=" + data.max.toFixed(2);
+  };
+})();
+
+/* ============================================================
+   演示 B · Booth 编码分步
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 360);
+  if (!D) return;
+  const { ctx } = D;
+  let X = 85, Y = 42;
+  let step = 0;            // 0=未开始, 1..4=编码组, 5=部分积, 6=求和
+  let groups = [];
+  let pp = [];
+
+  function toTwos(v, bits) { // v -> 补码字符串
+    let x = v < 0 ? (1 << bits) + v : v;
+    let s = x.toString(2);
+    while (s.length < bits) s = "0" + s;
+    return s;
+  }
+  function boothGroups(y) {
+    const bits = [];
+    for (let i = 0; i < 8; i++) bits.push((y >> i) & 1); // LSB first
+    const res = [];
+    const table = {
+      "000": 0, "001": 1, "010": 1, "011": 2,
+      "100": -2, "101": -1, "110": -1, "111": 0
+    };
+    let prev = 0;
+    for (let i = 0; i < 4; i++) {
+      const b0 = bits[2 * i], b1 = bits[2 * i + 1] || 0, bm = prev;
+      const key = "" + b1 + b0 + bm;
+      const op = table[key];
+      const sign = op < 0 ? "-" : "+";
+      const mag = Math.abs(op);
+      res.push({ key, op, label: (mag === 2 ? "2X" : mag === 1 ? "X" : "0") + (op === 0 ? "" : ""), shift: 2 * i });
+      prev = bits[2 * i + 1] || 0;
+    }
+    return res;
+  }
+
+  function compute() {
+    groups = boothGroups(Y);
+    pp = groups.map(g => ({
+      val: g.op * X,
+      shift: g.shift,
+      width: 9
+    }));
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, `Booth 编码乘法：X = ${X}（被乘数） × Y = ${Y}（乘数，8b 补码 ${toTwos(Y, 8)}）`, 30, 26, 16, PAL.white, "left");
+
+    if (step === 0) {
+      txt(ctx, "Y 按 Radix-4 每 2 位一组、重叠 1 位 → 4 组 → 4 个部分积", 30, 70, 14, PAL.gray);
+      txt(ctx, "点击“▶ 开始 Booth 编码”逐组演示", 30, 100, 14, PAL.orange);
+      return;
+    }
+    // 编码表
+    const ty = 62, tx = 30, cw = 210, ch = 36;
+    for (let i = 0; i < 4; i++) {
+      const g = groups[i];
+      const active = step === i + 1;
+      ctx.fillStyle = active ? "#1d3a5c" : PAL.panel;
+      ctx.strokeStyle = active ? PAL.orange : PAL.line;
+      ctx.lineWidth = active ? 2.5 : 1.5;
+      rrect(ctx, tx + i * (cw + 14), ty, cw, ch, 8); ctx.fill(); ctx.stroke();
+      const bitStr = "组" + (i + 1) + ": " + g.key + " → " + (g.op === 0 ? "0" : (g.op > 0 ? "+" : "") + g.op) + "X";
+      txt(ctx, bitStr, tx + i * (cw + 14) + 8, ty + ch / 2, 13, active ? PAL.orange : PAL.white, "left");
+    }
+    // 部分积区
+    const py = 130, pw = 150, ph = 30;
+    if (step >= 5) {
+      txt(ctx, "生成的 4 个部分积（每个 9b 宽，按移位错开）：", 30, py - 8, 14, PAL.white);
+      pp.forEach((p, i) => {
+        const active = step === 5 && i === 0 ? false : true;
+        const x = 30 + i * (pw + 10);
+        ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1.5;
+        rrect(ctx, x, py, pw, ph, 6); ctx.fill(); ctx.stroke();
+        const v = p.val * (2 ** p.shift);
+        txt(ctx, `PP${i} = ${p.val}X × 2^${p.shift} = ${v}`, x + 8, py + ph / 2, 12.5, PAL.white, "left");
+      });
+    }
+    // 求和区
+    if (step >= 6) {
+      let acc = 0;
+      const sy = 210;
+      ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(30, sy - 6); ctx.lineTo(30 + 640, sy - 6); ctx.stroke();
+      pp.forEach((p, i) => {
+        const v = p.val * (2 ** p.shift);
+        acc += v;
+        txt(ctx, `${i === 0 ? "" : "+ "}${v}`, 30 + i * 150, sy + 16, 14, PAL.white, "left");
+      });
+      txt(ctx, "= " + acc + "　（" + X + " × " + Y + " = " + X * Y + "　" + (acc === X * Y ? "✓ 一致" : "✗ 不一致！") + "）",
+        30 + 4 * 150 + 10, sy + 16, 16, acc === X * Y ? PAL.green : PAL.red, "left");
+    }
+    if (step < 6) {
+      txt(ctx, "下一步 →", 30, 320, 13, PAL.orange);
+    }
+  }
+
+  const btnRun = document.getElementById("demoB-run");
+  const btnStep = document.getElementById("demoB-step");
+  const btnReset = document.getElementById("demoB-reset");
+  const inX = document.getElementById("demoB-x");
+  const inY = document.getElementById("demoB-y");
+  const stat = document.getElementById("demoB-stat");
+
+  function readInputs() {
+    const x = parseInt(inX.value, 10), y = parseInt(inY.value, 10);
+    if (!isNaN(x) && x >= -127 && x <= 127) X = x;
+    if (!isNaN(y) && y >= -127 && y <= 127) Y = y;
+    compute();
+  }
+  if (btnRun) btnRun.onclick = function () {
+    readInputs(); step = 1; compute(); draw();
+    if (stat) stat.textContent = `开始：X=${X}，Y=${Y}（${toTwos(Y, 8)}₂）`;
+  };
+  if (btnStep) btnStep.onclick = function () {
+    if (step === 0) { readInputs(); step = 1; }
+    else if (step < 6) step++;
+    draw();
+    if (stat) stat.textContent = step <= 4 ? `正在演示第 ${step} 组 Booth 编码` : step === 5 ? "正在生成部分积" : "求和完成";
+  };
+  if (btnReset) btnReset.onclick = function () {
+    step = 0; compute(); draw();
+    if (stat) stat.textContent = "已重置";
+  };
+  compute(); draw();
+})();
+
+/* ============================================================
+   演示 C · 8b vs 9b 部分积加法树
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let mode8 = true;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const nPP = mode8 ? 4 : 5;
+    const wid = mode8 ? 9 : 10;
+    const title = mode8 ? "8b×8b 有符号：4 个部分积（9b 宽）" : "9b×9b 有符号：5 个部分积（10b 宽）";
+    txt(ctx, title, 30, 26, 17, mode8 ? PAL.green : PAL.red, "left");
+
+    // 部分积条
+    const y0 = 60, ph = 26, gap = 12, px = 40;
+    for (let i = 0; i < nPP; i++) {
+      const y = y0 + i * (ph + gap);
+      const shift = i * 2;
+      ctx.fillStyle = i === nPP - 1 && !mode8 ? "rgba(226,105,79,0.25)" : PAL.panel;
+      ctx.strokeStyle = mode8 ? PAL.blue : (i === nPP - 1 ? PAL.red : PAL.purple);
+      ctx.lineWidth = 1.5;
+      rrect(ctx, px + shift * 4, y, wid * 11 + 10, ph, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, `PP${i}`, px + shift * 4 + 6, y + ph / 2, 12, PAL.white, "left");
+      // 位格子
+      for (let b = 0; b < wid; b++) {
+        ctx.fillStyle = "rgba(15,124,182,0.35)";
+        ctx.fillRect(px + shift * 4 + 30 + b * 11, y + 5, 9, ph - 10);
+      }
+    }
+    // 加法树级
+    const treeY = y0 + nPP * (ph + gap) + 6;
+    txt(ctx, "CSA 加法树（按移位对齐合并）：", 40, treeY + 12, 14, PAL.white);
+    const levels = mode8 ? [4, 2, 1] : [5, 3, 2, 1];
+    const cellW = 40, cellH = 24;
+    let lx = 40;
+    levels.forEach((cnt, li) => {
+      for (let k = 0; k < cnt; k++) {
+        const x = lx + k * (cellW + 8);
+        ctx.fillStyle = li === levels.length - 1 ? "#3a5c3a" : "#20344d";
+        ctx.strokeStyle = PAL.green;
+        rrect(ctx, x, treeY + 24 + li * (cellH + 10), cellW, cellH, 5); ctx.fill(); ctx.stroke();
+        if (li === levels.length - 1) txt(ctx, "积", x + cellW / 2, treeY + 24 + li * (cellH + 10) + cellH / 2, 12, PAL.white, "center");
+      }
+      lx += cnt * (cellW + 8) + 18;
+    });
+    const sumW = mode8 ? 4 * 9 : 5 * 10;
+    txt(ctx, "9b×9b 需要 5 个部分积 → 加法树多 1 层、总位宽多 " + (sumW - 36) + "b",
+      40, treeY + 24 + levels.length * (cellH + 10) + 12, 13, mode8 ? PAL.gray : PAL.red, "left");
+    if (stat) stat.textContent = mode8
+      ? "加法树 3 级 · 部分积 4 个 · 每部分积 9b"
+      : "加法树 4 级 · 部分积 5 个 · 每部分积 10b（多 1 棵树的成本！）";
+  }
+
+  const b8 = document.getElementById("demoC-switch");
+  const b9 = document.getElementById("demoC-switch9");
+  if (b8) b8.onclick = function () { mode8 = true; b8.classList.add("on"); b9.classList.remove("on"); draw(); };
+  if (b9) b9.onclick = function () { mode8 = false; b9.classList.add("on"); b8.classList.remove("on"); draw(); };
+  draw();
+})();
+
+/* ============================================================
+   演示 D · 数据流仿真（一个计算列）
+   ============================================================ */
+(function () {
+  const D = cvs("demoD", 980, 380);
+  if (!D) return;
+  const { ctx } = D;
+  const NACT = 128, NWT = 128;
+  let cycle = 0, running = false, timer = null;
+  const stat = document.getElementById("demoD-stat");
+  const s1 = document.getElementById("demoD-play");
+  const s2 = document.getElementById("demoD-step");
+  const s3 = document.getElementById("demoD-reset");
+
+  // 状态：数据组在流水线中的位置 (0=输入,1..4=各级,5=输出)
+  let wave = null; // { pos, act }
+  let weightWrite = 0; // 0..32 后台写入进度（第二个权重组）
+
+  function stepOnce() {
+    cycle++;
+    if (!wave) wave = { pos: 0 };
+    else if (wave.pos < 5) wave.pos++;
+    else wave = { pos: 0 };
+    weightWrite = (weightWrite + 32 / 32) % 33;
+    if (weightWrite > 32) weightWrite = 0;
+    if (stat) stat.textContent = `周期 ${cycle} · 数据组位于流水线第 ${wave.pos + 1} 级${wave.pos >= 4 ? "（输出）" : ""}`;
+    draw();
+  }
+  function auto() {
+    if (!running) return;
+    stepOnce();
+    timer = setTimeout(auto, 650);
+  }
+  if (s1) s1.onclick = function () {
+    running = !running;
+    this.classList.toggle("on", running);
+    this.textContent = running ? "⏸ 暂停" : "▶ 自动运行";
+    if (running) { clearTimeout(timer); auto(); }
+    else clearTimeout(timer);
+  };
+  if (s2) s2.onclick = function () { if (!running) stepOnce(); };
+  if (s3) s3.onclick = function () { running = false; s1.textContent = "▶ 自动运行"; s1.classList.add("on"); clearTimeout(timer); cycle = 0; wave = null; weightWrite = 0; if (stat) stat.textContent = "周期 0 / 等待开始"; draw(); };
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+
+    // 输入（128 个激活条）
+    const x0 = 24, y0 = 70, bw = 6, bh = 4, cols = 32;
+    txt(ctx, "128 个激活（8b）", x0, 44, 13, PAL.green, "left");
+    for (let i = 0; i < 128; i++) {
+      const c = i % cols, r = (i / cols) | 0;
+      const lit = wave && wave.pos <= 1;
+      ctx.fillStyle = lit ? "rgba(47,174,126," + (0.5 + 0.5 * ((i + cycle) % 5) / 4) + ")" : "rgba(47,174,126,0.18)";
+      ctx.fillRect(x0 + c * (bw + 3), y0 + r * (bh + 3), bw, bh);
+    }
+
+    // 第 1 级
+    const s1x = 250, s1y = 40, s1w = 130, s1h = 52;
+    ctx.fillStyle = wave && wave.pos === 1 ? "#1d3a5c" : PAL.panel;
+    ctx.strokeStyle = wave && wave.pos === 1 ? PAL.orange : PAL.blue; ctx.lineWidth = 2;
+    rrect(ctx, s1x, s1y, s1w, s1h, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "第 1 级", s1x + 8, s1y + 18, 13, PAL.white);
+    txt(ctx, "转换 ×128", s1x + 8, s1y + 38, 11, PAL.gray);
+
+    // 广播总线
+    ctx.strokeStyle = "rgba(15,124,182,0.7)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(s1x + s1w, s1y + 26); ctx.lineTo(w - 24, s1y + 26); ctx.stroke();
+    txt(ctx, "广播 128 × 8b 有符号激活 → 32 个计算列", w / 2 + 100, s1y + 14, 11, PAL.gray, "center");
+
+    // 4 个 bank（列示意）
+    const bankX = [380, 540, 700, 860], bankY = 120, bankW = 110, bankH = 120;
+    for (let b = 0; b < 4; b++) {
+      const bx = bankX[b];
+      ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+      rrect(ctx, bx, bankY, bankW, bankH, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, `Bank ${b}`, bx + 8, bankY + 16, 12.5, PAL.white);
+      txt(ctx, "32 路 CSA", bx + 8, bankY + 36, 11, PAL.gray);
+      // 部分积堆
+      const active = wave && (wave.pos === 2 || wave.pos === 3);
+      for (let k = 0; k < 4; k++) {
+        ctx.fillStyle = active ? "rgba(155,111,214,0.75)" : "rgba(155,111,214,0.25)";
+        ctx.fillRect(bx + 10, bankY + 48 + k * 16, bankW - 20, 11);
+      }
+      // bank 输出
+      ctx.fillStyle = wave && wave.pos === 3 ? PAL.orange : "rgba(232,163,61,0.2)";
+      ctx.fillRect(bx + 10, bankY + 108, bankW - 20, 8);
+    }
+    txt(ctx, "第 2~3 级：部分积生成 → 32 路 CSA（跨乘数）→ 移位合并", bankX[0], bankY - 14, 13, PAL.purple, "left");
+
+    // 权重存储（双缓冲）
+    const wy = 270, wx = 380;
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.green; ctx.lineWidth = 1.5;
+    rrect(ctx, wx, wy, 300, 64, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "权重组 A（计算中）", wx + 10, wy + 18, 12.5, PAL.white);
+    ctx.fillStyle = "rgba(47,174,126,0.35)";
+    for (let i = 0; i < 32; i++) ctx.fillRect(wx + 10 + i * 8.5, wy + 28, 6, 24);
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 1.5;
+    rrect(ctx, wx + 320, wy, 300, 64, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "权重组 B（后台写入中）", wx + 330, wy + 18, 12.5, PAL.white);
+    ctx.fillStyle = "rgba(232,163,61,0.35)";
+    const prog = Math.min(32, weightWrite);
+    for (let i = 0; i < prog; i++) ctx.fillRect(wx + 330 + i * 8.5, wy + 28, 6, 24);
+
+    // 第 4 级与输出
+    const f4x = 380, f4y = 350;
+    ctx.fillStyle = wave && wave.pos === 4 ? "#4a3a1e" : PAL.panel;
+    ctx.strokeStyle = wave && wave.pos === 4 ? PAL.orange : PAL.line; ctx.lineWidth = 2;
+    rrect(ctx, f4x, f4y, 300, 26, 6); ctx.fill(); ctx.stroke();
+    txt(ctx, "第 4 级：Σ 4 bank + 零点修正项 → 输出通道结果", f4x + 10, f4y + 13, 12, PAL.white);
+    txt(ctx, `周期 ${cycle}`, w - 80, 24, 14, PAL.orange, "right");
+  }
+  draw();
+})();
+
+/* ============================================================
+   演示 E · 流水线时空图
+   ============================================================ */
+(function () {
+  const D = cvs("demoE", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  const names = ["A", "B", "C", "D", "E"];
+  const colors = [PAL.blue, PAL.green, PAL.orange, PAL.purple, PAL.red];
+  let cycle = 0, playing = false, timer = null;
+  const stat = document.getElementById("demoE-stat");
+  const slider = document.getElementById("demoE-slider");
+  const btnPlay = document.getElementById("demoE-play");
+  const btnReset = document.getElementById("demoE-reset");
+
+  function posOf(name) { // 数据组 name 在周期 cycle 时位于哪一级 (0..4)，-1 表示还没进，5 表示已出
+    const k = names.indexOf(name);
+    const entered = cycle - k;   // 第 cycle 周期时已运行了几级
+    if (entered < 1) return -1;
+    if (entered >= 5) return 5;
+    return entered - 1;
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const sx = 60, sw = 200, gap = 12, y0 = 70, sh = 64;
+    const stageNames = ["第 1 级 转换", "第 2 级 部分积+CSA", "第 3 级 移位合并", "第 4 级 求和+修正"];
+    for (let s = 0; s < 4; s++) {
+      ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.line; ctx.lineWidth = 1.5;
+      rrect(ctx, sx, y0 + s * (sh + 14), sw, sh, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, stageNames[s], sx + 10, y0 + s * (sh + 14) + 16, 12.5, PAL.white);
+    }
+    txt(ctx, "← 时间", w - 40, y0 + 4 * (sh + 14) + 14, 12, PAL.gray, "right");
+    // 数据组
+    names.forEach((nm, k) => {
+      const p = posOf(nm);
+      if (p >= 0 && p < 4) {
+        const x = sx + sw + 20 + k * 130;
+        const y = y0 + p * (sh + 14) + 10;
+        ctx.fillStyle = colors[k];
+        rrect(ctx, x, y, 120, sh - 20, 8); ctx.fill();
+        txt(ctx, "数据 " + nm, x + 60, y + (sh - 20) / 2, 14, "#0a1119", "center", "'Consolas',monospace");
+      }
+      if (p === 4) {
+        const y = y0 + 4 * (sh + 14) + 2;
+        ctx.fillStyle = colors[k];
+        rrect(ctx, sx + sw + 20 + k * 130, y, 120, 30, 8); ctx.fill();
+        txt(ctx, "数据 " + nm + " 输出 ✓", sx + sw + 20 + k * 130 + 60, y + 15, 12, "#0a1119", "center");
+      }
+    });
+    txt(ctx, "周期 " + (cycle + 1), 60, 28, 15, PAL.orange, "left");
+    if (stat) {
+      const outCnt = names.filter(n => posOf(n) === 4).length;
+      stat.textContent = `周期 ${cycle + 1} · 已输出 ${outCnt} 组 · 单组延迟 4 周期`;
+    }
+  }
+
+  function setCycle(c) {
+    cycle = Math.max(0, Math.min(9, c));
+    if (slider) slider.value = cycle;
+    draw();
+  }
+  if (slider) slider.oninput = function () { setCycle(parseInt(this.value, 10)); };
+  if (btnPlay) btnPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 自动播放";
+    if (playing) {
+      clearInterval(timer);
+      timer = setInterval(function () {
+        if (cycle >= 9) { playing = false; btnPlay.textContent = "▶ 自动播放"; clearInterval(timer); return; }
+        setCycle(cycle + 1);
+      }, 700);
+    } else clearInterval(timer);
+  };
+  if (btnReset) btnReset.onclick = function () { playing = false; if (btnPlay) { btnPlay.textContent = "▶ 自动播放"; btnPlay.classList.add("on"); } clearInterval(timer); setCycle(0); };
+  draw();
+})();
+
+</script>
+</body>
+</html>

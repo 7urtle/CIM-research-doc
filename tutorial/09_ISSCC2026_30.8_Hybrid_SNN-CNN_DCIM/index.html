@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：混合 SNN-CNN 全数字 SRAM 存内计算宏（ISSCC 2026 30.8）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2026 30.8 混合 SNN-CNN 全数字 SRAM-CIM 宏的神经元模型、跨模型双模式计算单元、数据映射优化与实测分析。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">混合 SNN-CNN 存内计算零基础精讲</div>
+    <div class="t2">ISSCC 2026 · Session 30 · Paper 30.8</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：SNN 与 CNN</a>
+  <a class="sub" href="#sec1-1">1.1 两类网络各有什么优劣</a>
+  <a class="sub" href="#sec1-2">1.2 混合模型为什么香</a>
+  <a class="sec" href="#sec2">02 · 为什么需要专用 CIM 硬件</a>
+  <a class="sub" href="#sec2-1">2.1 混合模型的两大挑战</a>
+  <a class="sub" href="#sec2-2">2.2 数字 vs 模拟 CIM</a>
+  <a class="sec" href="#sec3">03 · SNN 神经元模型基础</a>
+  <a class="sub" href="#sec3-1">3.1 膜电位与发放</a>
+  <a class="sub" href="#sec3-2">3.2 IF / LIF / IQIF</a>
+  <a class="sub" href="#sec3-3">3.3 交互演示：膜电位仿真</a>
+  <a class="sub" href="#sec3-4">3.4 视频演示：神经元动画</a>
+  <a class="sec" href="#sec4">04 · 创新①：CFD-SC-RC 与 CMDM-LCC</a>
+  <a class="sub" href="#sec4-1">4.1 问题：两套电路 vs 一套电路</a>
+  <a class="sub" href="#sec4-2">4.2 CMDM-LCC 双模式结构</a>
+  <a class="sub" href="#sec4-3">4.3 INT4/INT8 双模权重映射</a>
+  <a class="sub" href="#sec4-4">4.4 交互演示：模式切换</a>
+  <a class="sec" href="#sec5">05 · 创新②：DM-MPDBU</a>
+  <a class="sub" href="#sec5-1">5.1 为什么神经元单元要“数字”</a>
+  <a class="sub" href="#sec5-2">5.2 三种模型一个硬件</a>
+  <a class="sec" href="#sec6">06 · 创新③：PS-WR-ODM 数据映射</a>
+  <a class="sub" href="#sec6-1">6.1 两个极端策略的代价</a>
+  <a class="sub" href="#sec6-2">6.2 块内权重复用</a>
+  <a class="sub" href="#sec6-3">6.3 交互演示：三种映射对比</a>
+  <a class="sub" href="#sec6-4">6.4 视频演示：映射时序</a>
+  <a class="sec" href="#sec7">07 · 系统架构与数据流</a>
+  <a class="sub" href="#sec7-1">7.1 1Mb 宏架构总览</a>
+  <a class="sub" href="#sec7-2">7.2 SNN/CNN 两条数据流</a>
+  <a class="sub" href="#sec7-3">7.3 视频演示：双模式数据流</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sub" href="#sec8-1">8.1 两个模式的能效</a>
+  <a class="sub" href="#sec8-2">8.2 FoM 与收益</a>
+  <a class="sub" href="#sec8-3">8.3 与近期工作对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">混合 SNN-CNN 全数字 SRAM 存内计算零基础精讲：一个宏，装下两种神经网络
+<span class="en">A 16nm, 1Mb, 1-to-8b-Configurable 444.21 TOPS/W Fully Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing（ISSCC 2026 · Paper 30.8）</span></h1>
+<div class="meta">论文作者：Yao-Kai Yeh*, Jian-Wei Su* 等（*共同一作）· 台湾清华大学 + 台湾工研院（ITRI）
+&nbsp;|&nbsp; 发表：2026 IEEE ISSCC，Session 30（存内计算），论文 30.8
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>神经网络有两种主流形态：<strong>CNN</strong>（卷积网络，精度高但费电）和 <strong>SNN</strong>（脉冲网络，事件驱动、超省电但精度略低）。真实边缘应用往往需要<strong>混合 SNN-CNN 模型</strong>——部分层用 SNN、部分层用 CNN。传统硬件要么做两套计算电路（面积翻倍），要么只支持一种。</p>
+<p>这篇来自清华+工研院的工作，在 <strong>16nm FinFET</strong> 工艺上造了一个 <strong>1Mb 全数字 SRAM 存内计算（SRAM-DCIM）宏</strong>，用<strong>一套共享的 MAC 电路</strong>同时支持 SNN 和 CNN，并支持 <strong>1-to-8b 可配置精度</strong>：SNN 模式实测 <strong>444.21 TOPS/W</strong>（1b 输入 × 8b 权重 × 14b 输出），CNN 模式 <strong>62.84 TOPS/W</strong>（8b×8b×22b）。这被认为是<strong>首个硅验证的、支持多比特混合 SNN-CNN 的纯数字 SRAM-CIM 宏</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>SNN 的输入是“1 还是 0”：</strong>SNN 的输入/输出是脉冲（spike），本质上就是 1bit。没有脉冲 = 没有计算 = 不耗动态功耗。所以 SNN 模式能效高得惊人（444 TOPS/W）——不是电路更快，而是<strong>大部分时间在“偷懒”</strong>。</li>
+<li><strong>膜电位（Membrane Potential, MP）是 SNN 的“记忆”：</strong>每个神经元内部有一个累积器（膜电位），输入脉冲不断往里面加，加到阈值就“发放”（输出一个脉冲）并清零。这个“累积-比较-发放”就是 MPDB（膜电位动力学）单元干的事。</li>
+<li><strong>混合模型 = 两种数据流：</strong>SNN 层输出脉冲（1b），CNN 层输出特征值（8b）。硬件必须能在这两种“流量”之间切换，而且最好共用同一套乘法器——这就是本文 CMDM-LCC 单元的使命。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“SNNs have demonstrated superior energy efficiency in event-driven applications… while CNNs provide high accuracy… Hybrid SNN-CNN models have shown promise in balancing accuracy and compute energy”</td>
+<td>SNN 省电（事件驱动），CNN 准确（图像/语音识别）。混合模型在两者之间取平衡——这是本论文的应用动机。</td></tr>
+<tr><td class="num">“designing SRAM-DCIM macros supporting hybrid SNN-CNN introduces two key challenges: (1) extra hardware overhead for supporting both SNN and CNN… (2) area-energy trade-off between PSUM storage and weight update”</td>
+<td>两大挑战：① 同时支持两种网络 = 两套电路 = 面积开销大；② 数据怎么映射：PSUM（部分和）存得少就得频繁更新权重，权重复用得多 PSUM 就得存很多。</td></tr>
+<tr><td class="num">“a compact fully-digital SNN-CNN reconfigurable computing (CFD-SC-RC) architecture that shares SNN-CNN MAC circuit”</td>
+<td>创新①：共享 MAC 电路的可重构架构（CFD-SC-RC），一套电路跑两种模式。</td></tr>
+<tr><td class="num">“a PSUM storage–weight reuse optimized data mapping (PS-WR-ODM) scheme”</td>
+<td>创新②：PSUM 存储-权重复用折中的数据映射方案（PS-WR-ODM）。</td></tr>
+<tr><td class="num">“444.21 TOPS/W with a 1bIN-8bW-14bOUT configuration in SNN mode, and 62.84 TOPS/W with an 8bIN-8bW-22bOUT configuration in CNN mode”</td>
+<td>实测：SNN 模式 444.21 TOPS/W、CNN 模式 62.84 TOPS/W（16nm）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>CFD-SC-RC 架构</strong>：跨模型共享 SNN-CNN MAC 电路，宏面积比“两套电路”方案节省 <strong>33%</strong>，能效提升 <strong>2.31×</strong>（相对前作混合方案 [4]）；</li>
+<li><strong>CMDM-LCC 单元</strong>：单个本地计算单元内集成两个 MUX 乘法器 + INT8 翻转缩减器（TR）+ 移位相加（SaA），支持 SNN 位宽输入（BW-IN）与 CNN 字宽输入（WW-IN）双模式，以及 <strong>INT4/INT8 双模权重映射</strong>；</li>
+<li><strong>DM-MPDBU 单元</strong>：数字多膜电位动力学单元，一套硬件支持 <strong>IF / LIF / IQIF</strong> 三种神经元模型（前作只支持 1 种），且不受工艺波动影响；</li>
+<li><strong>PS-WR-ODM 数据映射</strong>：把时间步分组、块内权重复用，FoM1（能效/面积/延迟）比两种极端映射提升 <strong>&gt;1.22×</strong>，综合 FoM2 提升 <strong>5.48×</strong>；</li>
+<li><strong>首个硅验证</strong>：16nm 流片，SNN 444.21 / CNN 62.84 TOPS/W，FoM3 最高提升 <strong>8.2×</strong>，1.3 ns 计算延迟（0.8V）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。已经懂 CNN 的：从 §3（神经元模型）开始读，本文最精彩的是 §4（电路共享）和 §6（数据映射折中）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：SNN 与 CNN，两种网络两种哲学</h2>
+
+<h3 id="sec1-1">1.1 两类网络各有什么优劣</h3>
+<p><strong>CNN（卷积神经网络）</strong>是目前最成熟、精度最高的视觉/语音模型（ResNet、MobileNet 等）。它的计算方式是<strong>稠密</strong>的：每一层的每个输出都要对所有输入做乘法累加（MAC），哪怕输入是 0 也要算一遍。精度高，但每个周期都在“全功率”运转，能效不理想。</p>
+<p><strong>SNN（脉冲神经网络）</strong>模仿生物神经元：输入输出都是<strong>离散脉冲（spike，0/1）</strong>，神经元内部有一个<strong>膜电位</strong>累积器，攒到阈值才“发放”一个脉冲。它有两个诱人的特性：</p>
+<ul>
+<li><strong>事件驱动</strong>：没有脉冲进来 = 不做计算 = 动态功耗为零。实际事件数据（事件相机、音频事件）非常稀疏，SNN 的“平均活动率”极低 → 能效极高；</li>
+<li><strong>时序记忆</strong>：膜电位天然跨时间累积，适合时序/事件流任务（这正是“时间步 timestep”概念的来源，§6 会反复用到）。</li>
+</ul>
+<p>代价是：SNN 训练难、峰值精度通常低于 CNN。</p>
+<figure>
+  <img src="assets/diagrams/d01_snn_vs_cnn.svg" alt="SNN vs CNN" style="max-width:880px">
+  <figcaption>图 1.1　SNN（稀疏脉冲、事件驱动）vs CNN（稠密乘法、高精度）。一个省电、一个准。</figcaption>
+</figure>
+
+<h3 id="sec1-2">1.2 混合 SNN-CNN 模型：鱼与熊掌兼得</h3>
+<p>既然各有优劣，自然想到“<strong>混合</strong>”：模型前几层用 SNN 处理事件流（省电），后几层用 CNN 做精确分类（提精度），中间做一个“脉冲→值”转换。已有研究（如 Spiking-YOLO 等）证明这种混合模型在精度与能耗之间取得良好平衡，适合边缘推理。</p>
+<figure>
+  <img src="assets/diagrams/d08_hybrid_model.svg" alt="混合 SNN-CNN 模型" style="max-width:900px">
+  <figcaption>图 1.2　混合模型示意：SNN 层（脉冲）→ 脉冲-值转换 → CNN 层（特征）→ 输出。每层可独立选择模式与精度。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 关键矛盾：混合模型对硬件提出“双重人格”要求</div>
+<p>一个加速器要同时会两种“武功”：SNN 的<strong>位宽乘法</strong>（1b 输入 × 8b 权重）和 CNN 的<strong>字宽乘法</strong>（8b 输入 × 8b 权重），还要在层与层之间<strong>随时切换</strong>，并且能效都不能差。做两套电路最省事，但面积翻倍；做一套电路就要发明“双模式共享”的技巧——这正是本论文第一个创新的出发点（§4）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>为什么混合 SNN-CNN 需要专用 CIM 硬件</h2>
+
+<h3 id="sec2-1">2.1 论文点名的两大挑战</h3>
+<p>论文 Fig. 30.8.1 用一张图总结了设计混合 SNN-CNN SRAM-CIM 宏的两大挑战（这也是全文的“问题定义”）：</p>
+<div class="box warn">
+<div class="bt">⚠️ 挑战 1：双模式硬件开销 + 数字域计算能耗</div>
+<p>支持 SNN 需要“位宽乘法 + 神经元动力学单元（MPDB）”，支持 CNN 需要“字宽乘法 + 加法树”。如果各做各的：<strong>面积直接翻倍</strong>。更糟的是，如果只做模拟 CIM，膜电位累积这类“模拟运算”会被工艺波动污染（见 §5.1）；而全数字虽然精度确定，但数字 MAC 本身也要消耗能量——所以既要共享电路（省面积），也要把数字计算做得省电（省能耗）。</p>
+</div>
+<div class="box warn">
+<div class="bt">⚠️ 挑战 2：PSUM 存储与权重更新的面积-能耗权衡</div>
+<p>SNN 有“时间步（timestep）”维度：同一个神经元要在 N 个时间步上不断累积膜电位。数据映射时有两个极端：</p>
+<ul>
+<li><strong>时间步优先（TS-first）</strong>：一个时间步内把所有输入算完 → 中间结果（PSUM）很快被消费，<strong>PSUM 存储小</strong>，但每换一个时间步都要重新加载权重 → <strong>权重更新能耗高、延迟长</strong>；</li>
+<li><strong>权重复用优先</strong>：同一个输入在所有时间步上算 → 权重只读一次、复用 N 次 → <strong>权重更新能耗低</strong>，但不同时间步的部分和要一直存着 → <strong>PSUM 缓冲巨大</strong>。</li>
+</ul>
+<p>怎么在这两个极端之间找平衡，就是 §6 的创新③。</p>
+</div>
+
+<h3 id="sec2-2">2.2 数字 CIM 还是模拟 CIM？——沿用“确定性”路线</h3>
+<p>本论文选择 <strong>SRAM 数字 CIM（SRAM-DCIM）</strong>，理由与 10 号论文一脉相承：</p>
+<table>
+<tr><th>维度</th><th>SRAM 模拟 CIM（SRAM-ACIM）</th><th>SRAM 数字 CIM（SRAM-DCIM，本文）</th></tr>
+<tr><td>MAC 精度</td><td>电流/电荷求和 + ADC，有量化与噪声误差</td><td>逐位精确，无 ADC</td></tr>
+<tr><td>神经元膜电位（MPDB）</td><td>模拟积分受工艺波动（PVT）影响，发放时刻不可复现</td><td>数字积分 + 比较器，确定可复现</td></tr>
+<tr><td>工艺缩放 / 低压</td><td>模拟精度随电压恶化</td><td>数字逻辑可低压运行</td></tr>
+<tr><td>灵活性</td><td>模式切换复杂</td><td>模式=配置位，天然灵活</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 数字路线对“混合模型”特别重要</div>
+<p>混合模型要求硬件在 SNN/CNN 两种模式间切换。在数字实现里，“模式”只是一个配置寄存器：乘法器是位宽还是字宽、MPDB 用 IF 还是 LIF、精度是 INT4 还是 INT8，全部由配置位决定——这是模拟电路很难做到的“即插即用”。论文摘要那句 “provides high tolerance to process variation” 说的就是数字 MPDB 的确定性。</p>
+</div>
+<p>论文原文引用的对比对象：模拟方案如 [8]（ΔΣ CIM，22nm，21.38 TOPS/W），数字方案如 [7]（INT12×INT12，3nm）。本文主打的是“<strong>数字 + 双模式 + 多比特</strong>”的组合，是第一个把这三者一起做到硅验证的工作。</p>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>SNN 神经元模型基础：膜电位、阈值与发放</h2>
+
+<h3 id="sec3-1">3.1 膜电位：神经元的“记忆水桶”</h3>
+<p>理解本文的 DM-MPDBU（多膜电位动力学单元）之前，必须先理解 SNN 神经元的抽象模型。一个神经元每步做三件事：</p>
+<ol>
+<li><strong>积分（Integrate）</strong>：把这一步收到的输入脉冲加权求和，累加进“膜电位” MP[t]（Membrane Potential）；</li>
+<li><strong>判断（Fire?）</strong>：MP[t] 是否 ≥ 阈值 θ？是则输出一个脉冲（spike=1），并把 MP 清零（reset）；</li>
+<li><strong>动力学（Dynamics）</strong>：不同模型在这个“累积过程”里加入不同的修正（泄漏、非线性项）——这正是 IF/LIF/IQIF 的区别。</li>
+</ol>
+<div class="formula">MP[t] = MP[t−1] + Σ<sub>i</sub> w<sub>i</sub>·spike<sub>i</sub>[t]　　→　若 MP[t] ≥ θ：输出 1，MP[t] ← 0<span class="tag">式 3.1</span></div>
+
+<h3 id="sec3-2">3.2 三种神经元模型：IF / LIF / IQIF</h3>
+<table>
+<tr><th>模型</th><th>核心差异</th><th>适用场景</th></tr>
+<tr><td><strong>IF</strong>（Integrate-and-Fire）</td><td>最简单的“纯积分”：只加不减，撞阈值就发放清零</td><td>简单脉冲生成，省硬件</td></tr>
+<tr><td><strong>LIF</strong>（Leaky IF）</td><td>每一步先“泄漏”一点（MP 减去泄漏量）再积分：没有输入时 MP 缓慢衰减</td><td>滤除时间噪声（防伪脉冲触发）</td></tr>
+<tr><td><strong>IQIF</strong>（Integer Quadratic IF）</td><td>积分时叠加一个“整数二次项”IQ，让 MP 轨迹非线性（靠近阈值加速/减速）</td><td>精度要求更高的任务</td></tr>
+</table>
+<figure>
+  <img src="assets/diagrams/d02_neuron_models.svg" alt="神经元模型" style="max-width:900px">
+  <figcaption>图 3.1　IF / LIF / IQIF 的膜电位轨迹示意。橙色竖条为输入脉冲；曲线撞到红色阈值线就“发放清零”。</figcaption>
+</figure>
+<p>论文中 DM-MPDBU 实现的 IQIF 具体公式（全部是整数运算，硬件友好）：</p>
+<div class="formula">若 MP[t] &lt; p<sub>deth</sub>：　IQ = (α×rest − MP[t]) &gt;&gt; 3<br>否则：　IQ = (β×(MP[t] − thresh)) &gt;&gt; 3<span class="tag">式 3.2</span></div>
+<p>其中 p<sub>deth</sub>（de-threshold，去阈值）、rest（静息电位）、thresh（阈值）、α、β 都是可配置参数；“&gt;&gt;3”是整数右移 3 位 = 除以 8，避免了小数运算——这就是“Integer”（整数）二字的由来。当 MP 较低时（&lt; p<sub>deth</sub>），IQ 让 MP 缓慢爬升；MP 较高时，IQ 让 MP 更快逼近阈值——形成非线性加速。</p>
+<div class="box key">
+<div class="bt">🧠 为什么“多模型支持”有价值？</div>
+<p>不同 SNN 模型用不同神经元动力学：简单任务 IF 就够，噪声环境要 LIF，精度敏感任务要 IQIF。如果硬件只支持一种（前作 [4] 就是），模型设计师就被绑死了。DM-MPDBU 用一套数字电路 + 配置位同时支持三种 → “通用 SNN 硬件”的底气。</p>
+</div>
+
+<h3 id="sec3-3">3.3 交互演示 A：亲手调神经元参数，看膜电位怎么涨</h3>
+<div class="demo">
+<div class="dhead">🧠 演示 A · 膜电位仿真（IF / LIF / IQIF 可切换，参数可调）</div>
+<canvas id="demoA" width="980" height="360"></canvas>
+<div class="dbar">
+  <button id="demoA-if" class="on">IF</button>
+  <button id="demoA-lif">LIF</button>
+  <button id="demoA-iqif">IQIF</button>
+  <label class="hint" style="margin:0">阈值：</label><input id="demoA-th" type="range" min="4" max="16" value="8" style="flex:1;accent-color:#0f7cb6">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">IF 模式 · 播放中</span>
+</div>
+<div class="hint">橙色竖条 = 输入脉冲（1b spike）；曲线 = 膜电位。切到 LIF 观察“无输入时膜电位回落”，切到 IQIF 观察阈值附近的非线性加速。拖动阈值看发放频率变化。</div>
+</div>
+
+<h3 id="sec3-4">3.4 视频演示：三种神经元的膜电位动画</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_3_CMDM-LCC与MPDBU.png">
+  <source src="assets/videos/v01_neuron.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 神经元模型动画：先逐个演示 IF/LIF/IQIF 的膜电位轨迹，再三模并排对比同一输入脉冲序列下的差异（LIF 的泄漏、IQIF 的非线性）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：CFD-SC-RC 架构与 CMDM-LCC 双模式计算单元</h2>
+
+<h3 id="sec4-1">4.1 问题：两套电路 vs 一套电路</h3>
+<p>SNN 的 MAC 是“1b 输入 × 8b 权重”的<strong>位宽乘法（bit-wise, BW）</strong>，CNN 的 MAC 是“8b 输入 × 8b 权重”的<strong>字宽乘法（word-wise, WW）</strong>。二者数据通路不同。最直接的做法是各做一套乘法器 + 各自的累加逻辑——但面积翻倍，边缘芯片承担不起。</p>
+<p>本论文的 <strong>CFD-SC-RC</strong>（Compact Fully-Digital SNN-CNN Reconfigurable Computing，紧凑型全数字 SNN-CNN 可重构计算）架构，核心思想是：<strong>让同一套 MAC 硬件在两种模式下工作</strong>。实现这个“双重人格”的关键零件，是每个可重构推理块（RIB）里的 <strong>CMDM-LCC</strong>（Cross-Model Dual-Mode Local Computing Cell，跨模型双模式本地计算单元）。</p>
+<figure>
+  <img src="assets/diagrams/d03_cmdm_lcc.svg" alt="CMDM-LCC 结构" style="max-width:900px">
+  <figcaption>图 4.1　CMDM-LCC 结构：两个 MUX 乘法器 + INT8 翻转缩减器（TR）+ 移位相加（SaA），输出 8 个部分 MAC（pMAC0–7）。SNN 模式 pMAC 直通加法树；CNN 模式先经 SaA 做字宽累积。</figcaption>
+</figure>
+
+<h3 id="sec4-2">4.2 CMDM-LCC 的双模式结构</h3>
+<p>每个 CMDM-LCC 包含：</p>
+<ul>
+<li><strong>两个基于 MUX 的乘法器（MUL0/MUL1）</strong>：MUX 乘法器 = 用选择器阵列实现的乘法，比全加器阵列更紧凑，适合位宽可变的场景。同一对 MUL 在 SNN 模式下做“1b×8b 位宽乘法”，在 CNN 模式下做“8b×8b 字宽乘法”；</li>
+<li><strong>INT8 翻转缩减器（Toggle Reducer, TR）</strong>：INT8 模式下消除冗余的信号翻转（见 4.3），降低动态功耗；</li>
+<li><strong>移位相加（Shift-and-Add, SaA）</strong>：CNN 模式下把 8b 输入按位/按字拆分的部分积做字宽累积（WW-accumulation）；SNN 模式不需要，pMAC 直接进加法树。</li>
+</ul>
+<p>每个 CMDM-LCC 每周期输出 <strong>pMAC0–7</strong> 共 8 个部分 MAC。数据流走向（图 4.1 底部）：</p>
+<div class="formula">SNN 模式：pMAC0–7 → 加法树（直接累加，无字宽）<br>CNN 模式：pMAC0–7 → SaA（字宽累积）→ 加法树<span class="tag">式 4.1</span></div>
+
+<h3 id="sec4-3">4.3 INT4/INT8 双模权重映射：4 个槽的两种玩法</h3>
+<p>每个 CMDM-LCC 有 4 个权重输入槽 W0–W3（来自 SRAM 阵列）。这 4 个槽怎么用，取决于精度模式：</p>
+<figure>
+  <img src="assets/diagrams/d04_int4_int8.svg" alt="INT4/INT8 双模映射" style="max-width:900px">
+  <figcaption>图 4.2　同一组 4 槽权重：INT4 模式 = 4 个独立 4b MAC；INT8 模式 = W0+W2 拼成 8b 权重 A、W1+W3 拼成 8b 权重 B（2 个 8b MAC）。</figcaption>
+</figure>
+<ul>
+<li><strong>INT4 模式</strong>（TR 关闭）：W0–W1 映射为两个 4b 权重 A[3:0]、B[3:0]，W2–W3 映射为 C[3:0]、D[3:0] → 每周期 <strong>4 个独立的 4b×4b MAC</strong>。适合精度不敏感的层（更省）；</li>
+<li><strong>INT8 模式</strong>（TR 开启）：W0–W1 是 A[7:0]、B[7:0] 的<strong>低 4 位</strong>，W2–W3 是它们的<strong>高 4 位</strong> → 每周期 <strong>2 个 8b×8b MAC</strong>（两个 MUL 各做一个）。适合精度敏感层（更准）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 INT8 翻转缩减器（TR）为什么能省电？</div>
+<p>INT8 模式下，8b 权重被拆成“低 4 位 + 高 4 位”存在两个槽里。计算时要把两半拼起来，拼接过程会产生大量<strong>冗余的信号翻转</strong>（比如低半部分的位在两次使用之间反复跳变）。TR 的作用就是在数据进入 MUX 乘法器之前，把这种“注定要被丢弃/合并”的翻转消掉——CMOS 动态功耗 ∝ 翻转次数，消掉冗余翻转就直接省功耗。</p>
+</div>
+<p>这种“<strong>逐层自适应精度选择</strong>”是论文卖点之一：模型的不同层可以分别标注 INT4 或 INT8，硬件按层配置，不需要重编译、不需要改电路。</p>
+
+<h3 id="sec4-4">4.4 交互演示 B：同一个 4 槽，INT4 和 INT8 两种玩法</h3>
+<div class="demo">
+<div class="dhead">🔀 演示 B · INT4/INT8 双模权重映射（可切换）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-i4" class="on">INT4 模式（4 个 4b MAC）</button>
+  <button id="demoB-i8">INT8 模式（2 个 8b MAC）</button>
+  <span class="stat" id="demoB-stat">INT4：W0–W3 = A/B/C/D 四个独立 4b 权重</span>
+</div>
+<div class="hint">观察同一组 W0–W3 槽在两种模式下的含义变化。INT8 下 W0 与 W2 拼成 A 的高低位——乘法器要组合两个部分积（TR 就是处理这个拼接翻转的）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：DM-MPDBU —— 数字“多膜电位动力学”单元</h2>
+
+<h3 id="sec5-1">5.1 为什么神经元单元必须是“数字”的</h3>
+<p>SNN 的最后一环是<strong>膜电位动力学（MPDB, Membrane Potential Dynamics Behavior）</strong>：把加法树算出的“输入总和”累积进膜电位、比较阈值、决定是否发放。这个功能模拟电路也能做（用电容积分、比较器判阈值），但有一个致命问题：</p>
+<div class="box warn">
+<div class="bt">⚠️ 模拟 MPDB 的工艺波动问题</div>
+<p>电容充电速率、比较器失调都随工艺角（PVT）漂移。同一批芯片、同一个模型、同样的输入，A 芯片的神经元在“第 3 个时间步”发放，B 芯片可能在“第 5 个时间步”才发放——<strong>SNN 的时序行为完全不可复现</strong>。对于要部署到成千上万台设备上的推理系统，这是不能接受的。</p>
+</div>
+<p>本论文的 <strong>DM-MPDBU</strong>（Digital Multi-Membrane-Potential-Dynamics-Behavior Unit）用纯数字实现：累加器 + 比较器 + 移位器（&gt;&gt;3）完成全部动力学 → 逐位确定、可复现、可低压。这也再次呼应“数字 CiM 的确定性精度”这一主线。</p>
+<figure>
+  <img src="assets/diagrams/d09_mpdbu.svg" alt="DM-MPDBU 结构" style="max-width:880px">
+  <figcaption>图 5.1　DM-MPDBU：加法树输出 → 模式选择（IF/LIF/IQIF）→ 膜电位积分/比较/发放 → 输出。一个硬件三种神经元。</figcaption>
+</figure>
+
+<h3 id="sec5-2">5.2 三种模型，一套硬件：可配置的动力学</h3>
+<p>前作 [4] 的数字混合方案只支持<strong>一种</strong> MPDB 函数，模型设计被锁死。DM-MPDBU 把三种动力学做成“配置位切换”：</p>
+<table>
+<tr><th>模式</th><th>每步运算</th><th>硬件开销</th></tr>
+<tr><td><strong>IF</strong></td><td>MP ← MP + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>累加器 + 比较器（最简）</td></tr>
+<tr><td><strong>LIF</strong></td><td>MP ← max(0, MP − leak) + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>IF + 减法器</td></tr>
+<tr><td><strong>IQIF</strong></td><td>按式 3.2 计算 IQ（移位+乘加），MP ← MP + IQ + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>IF + 移位器 + 小乘法</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 为什么 IF/LIF/IQIF 能“共用一个单元”？</div>
+<p>三种动力学本质都是 <strong>MP ← 修正(MP) + 输入</strong>，区别只在“修正函数”是 0（IF）、常数泄漏（LIF）、还是分段线性/二次（IQIF）。数字实现里，这些修正只是多几个可选的加法/移位路径——用多路选择器按配置位选通即可。这是“数字可重构”最典型的好处。</p>
+</div>
+<p>论文强调，DM-MPDBU 让本宏支持“<strong>通用边缘 SNN 操作</strong>”：IF 负责简单发放、LIF 负责时间噪声滤波、IQIF 负责高精度非线性积分。配合 §4 的 CMDM-LCC，一个 bank 就能按层配置“CNN-INT8 / CNN-INT4 / SNN-IF / SNN-LIF / SNN-IQIF”五种组合。</p>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 如果膜电位累积不设上限会怎样？（提示：MP 位宽要够，否则溢出——论文用 14b/22b 输出累加器就是干这个的。）② LIF 的泄漏量是固定常数还是可配置参数？③ IQIF 的 “&gt;&gt;3” 为什么能代替除以 8？整数右移对负数成立吗？（提示：算术右移 vs 逻辑右移。）</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：PS-WR-ODM —— PSUM 存储与权重复用的数据映射折中</h2>
+
+<h3 id="sec6-1">6.1 先搞懂 SNN 的“时间步”维度和两个极端</h3>
+<p>SNN 的处理对象是“一段时间的脉冲流”。网络把时间切成一个个<strong>时间步（timestep, TS）</strong>：每个 TS 输入一批脉冲，神经元膜电位跨 TS 累积。所以数据有三个维度要遍历：<strong>输入神经元（IN0…INK）、时间步（TS0…TSN）、权重</strong>。先访问谁，直接决定两类开销：</p>
+<figure>
+  <img src="assets/diagrams/d05_pswr_odm.svg" alt="三种数据映射" style="max-width:920px">
+  <figcaption>图 6.1　三种数据映射策略：TS-first（左）权重反复加载；复用-first（右）PSUM 缓冲爆炸；PS-WR-ODM（下）块内折中。</figcaption>
+</figure>
+<table>
+<tr><th>策略</th><th>遍历顺序</th><th>权重更新能耗</th><th>PSUM 存储</th><th>延迟</th></tr>
+<tr><td><strong>TS-first</strong>（传统）</td><td>一个 TS 内扫完所有 IN → 下一个 TS</td><td>高（每 TS 重载权重）</td><td>小（PSUM 立刻被消费）</td><td>长（权重加载串行）</td></tr>
+<tr><td><strong>复用-first</strong>（前作 [10]）</td><td>一个 IN 跨所有 TS 算完 → 下一个 IN</td><td>低（权重只读一次）</td><td><strong>巨大</strong>（跨 TS 的部分和全要存）</td><td>短（吞吐高）</td></tr>
+<tr><td><strong>PS-WR-ODM</strong>（本文）</td><td>TS 分组（如 2 个一组），<strong>块内</strong>复用</td><td>中低</td><td>中（只有块大小那么多）</td><td>短</td></tr>
+</table>
+
+<h3 id="sec6-2">6.2 块内权重复用：把“折中”做成参数</h3>
+<p>PS-WR-ODM（PSUM Storage–Weight Reuse Optimized Data Mapping，PSUM 存储-权重复用优化数据映射）的做法：</p>
+<ol>
+<li>把 N 个时间步分成若干<strong>块（block）</strong>，块大小是<strong>用户可定义的参数</strong>（例如相邻 2 个 TS 一组，也可以更大）；</li>
+<li><strong>块内</strong>采用“权重复用”顺序：同一输入 IN 在块内各 TS 上访问，权重只读一次被块内复用；</li>
+<li><strong>块间</strong>重新加载权重，进入下一个块。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么这是“最优折中”？</div>
+<p>把参数列出来就看清楚了：</p>
+<ul>
+<li>块大小 = 1（每个 TS 单独一块）→ 退化成 TS-first（PSUM 最小、权重能耗最大）；</li>
+<li>块大小 = N（所有 TS 一块）→ 退化成复用-first（权重能耗最小、PSUM 最大）；</li>
+<li>块大小 = B（折中）→ 权重能耗降到 ~1/B，而 PSUM 缓冲只增加 B 份——<strong>用可控的 PSUM 开销换取权重更新能耗的大幅下降</strong>。</li>
+</ul>
+<p>论文用 FoM1 = 能效 /（面积 × 延迟）衡量：PS-WR-ODM 比两个极端都好 <strong>&gt;1.22×</strong>。</p>
+</div>
+
+<h3 id="sec6-3">6.3 交互演示 C：三个方案的代价对比</h3>
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 数据映射三方案对比（PSUM vs 权重更新能耗）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">方案对比：权重更新能耗 vs PSUM 存储</span>
+</div>
+<div class="hint">三条柱代表三个方案：红色柱越高 = 权重更新能耗越大；蓝色柱越高 = PSUM 缓冲占用越大。观察 PS-WR-ODM（绿色）如何同时压住两边。</div>
+</div>
+
+<h3 id="sec6-4">6.4 视频演示：三种映射的时序对比</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_4_数据映射.png">
+  <source src="assets/videos/v03_mapping.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 三种数据映射策略动画：TS-first 权重反复加载（红色能耗条持续上涨），复用-first PSUM 缓冲巨大（蓝色条顶满），PS-WR-ODM 块内复用两边都低。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 块大小是不是越大越好？提示：PSUM 缓冲的“边际收益递减”。② 这个映射优化对 CNN 模式还成立吗？（提示：CNN 没有时间步维度，TS 维度退化为 1。）③ “用户可定义块大小”意味着硬件要提供什么？（提示：一个可编程的调度寄存器，决定一次复用跨越几个 TS。）</p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：1Mb 宏怎么把两种模型跑起来</h2>
+
+<h3 id="sec7-1">7.1 1Mb 宏架构总览</h3>
+<p>整个宏 = <strong>16 个 64kb bank</strong>（共 1Mb），每个 bank 内部结构完全一样：</p>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　1Mb 宏架构：16 bank × 64kb；每 bank = 控制/I-O/调度/字线驱动 + 32 个可重构推理块（RIB）+ 加法树 + DM-MPDBU。每个 RIB = 2kb SRAM + 权重驻留单元（WSC）+ 8 个 CMDM-LCC + SaA。</figcaption>
+</figure>
+<ul>
+<li><strong>RIB（可重构推理块）</strong>：每个 RIB 内有 <strong>2kb SRAM 阵列</strong>（存权重）+ <strong>权重驻留单元 WSC</strong>（Weight Stationary Cell，让权重“躺”着不动）+ <strong>8 个 CMDM-LCC</strong>（§4 的双模式计算单元）+ <strong>SaA</strong>；</li>
+<li><strong>32 个 RIB</strong>：每个 RIB 的 8 个 CMDM-LCC × 每单元 4 个权重槽 = 32 个权重槽 → 每周期 32 路 MAC；</li>
+<li><strong>加法树</strong>：把 32 路 MAC 的部分和相加；</li>
+<li><strong>DM-MPDBU</strong>：bank 级共享的神经元动力学单元（§5），处理 SNN 模式；</li>
+<li><strong>控制块 / I-O 块 / IN-W 调度器 / 字线驱动器</strong>：输入输出、模式配置、数据映射调度（§6）的“大脑”。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_8_2_宏架构与CFD-SC-RC.png" alt="论文图 30.8.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.8.2：1Mb CFD-SC-RC SRAM-DCIM 宏结构与操作。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 SNN / CNN 两条数据流</h3>
+<p>同一套硬件，两条数据流，由“模式配置”切换（详见 §4.2 的式 4.1）：</p>
+<figure>
+  <img src="assets/diagrams/d07_dataflow.svg" alt="双模式数据流" style="max-width:920px">
+  <figcaption>图 7.3　SNN 模式：1b 脉冲 × 8b 权重 → pMAC 直通加法树 → DM-MPDBU 发放脉冲；CNN 模式：8b×8b → pMAC 先经 SaA 字宽累积 → 加法树 → 直出特征（无神经元）。</figcaption>
+</figure>
+<ul>
+<li><strong>SNN 数据流</strong>：脉冲输入（1b）→ CMDM-LCC 位宽乘法 → pMAC0–7 直通 → 加法树（32 路）→ DM-MPDBU 膜电位积分 → 输出脉冲到下一层。每个时间步的脉冲在膜电位里“滚雪球”；</li>
+<li><strong>CNN 数据流</strong>：8b 特征输入 → CMDM-LCC 字宽乘法（TR 开启）→ pMAC 经 SaA 做字宽累积 → 加法树 → 直接输出 8b 特征（激活函数在外部）。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 两个模式怎么“共线”而不打架？</div>
+<p>关键在 CMDM-LCC 内部的<strong>两个 MUX 乘法器</strong>：SNN 的 1b×8b 只是 CNN 的 8b×8b 的一个特例（输入只有 1 位有效）。MUX 乘法器天然支持“位宽可变”，加上 SaA 可旁路（SNN 模式不启用），两条数据流就能在<strong>同一组物理电路</strong>上分时复用。模式切换 = 改配置寄存器，零面积开销。这就是“可重构计算（RC）”的含义。</p>
+</div>
+
+<h3 id="sec7-3">7.3 视频演示：双模式数据流</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_1_动机与挑战.png">
+  <source src="assets/videos/v02_modes.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · SNN/CNN 双模式数据流动画：SNN 模式下稀疏脉冲流入、SaA 旁路、DM-MPDBU 发放；CNN 模式下稠密 8b 数据流、SaA 启用、跳过神经元直出特征。两种模式共用同一组 CMDM-LCC。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 16 个 bank 之间如何分工？提示：可以按输出通道划分，也可以按层划分——这是软件调度的事，宏只提供 bank 级并行。② 为什么每个 RIB 只要 2kb SRAM？权重驻留单元（WSC）意味着什么？（提示：一次推理中权重尽量不出阵列 → 省数据搬移。）③ 如果 CNN 层之间要跑“残差连接”，宏需要额外支持什么？</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：16nm 芯片的成绩单</h2>
+
+<h3 id="sec8-1">8.1 两个模式的能效</h3>
+<p>16nm FinFET 流片，两种模式的实测能效：</p>
+<figure>
+  <img src="assets/charts/c01_modes.png" alt="双模式能效" style="max-width:860px">
+  <figcaption>图 8.1　SNN 模式 444.21 TOPS/W（1bIN-8bW-14bOUT）vs CNN 模式 62.84 TOPS/W（8bIN-8bW-22bOUT）。SNN 输入稀疏，能效高 7 倍。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么 SNN 模式能效高这么多？</div>
+<p>动态功耗 ∝ 翻转活动率。CNN 模式每个周期都是“满血”的 8b×8b 稠密计算；SNN 模式输入是 1b 脉冲，且大部分时间步大部分神经元<strong>没有脉冲</strong>——输入为 0 时乘法器几乎不翻转、加法树大部分为空转。444 vs 62.84 的差距，本质就是“稀疏事件驱动”的红利。（这也解释了为什么标题强调“1-to-8b 可配置”：位宽越低越省，但要能按需切回高精度。）</p>
+</div>
+
+<h3 id="sec8-2">8.2 FoM 收益：三把尺子量设计</h3>
+<p>论文用了三个 Figure of Merit（FoM）从不同角度量化收益：</p>
+<figure>
+  <img src="assets/charts/c02_fom.png" alt="FoM 收益" style="max-width:860px">
+  <figcaption>图 8.2　FoM1（能效/面积/延迟）&gt;1.22×；FoM2（精度×能效/面积/延迟）5.48×；FoM3（输入精度×权重精度×能效）最高 8.2×。（仿真/实测数据来自论文 Fig. 30.8.5/30.8.6）</figcaption>
+</figure>
+<table>
+<tr><th>指标</th><th>定义</th><th>相对什么提升</th><th>数值</th></tr>
+<tr><td>FoM1</td><td>能效 /（面积 × 延迟）</td><td>PS-WR-ODM vs TS-first 与复用-first</td><td class="num">&gt;1.22×</td></tr>
+<tr><td>FoM2</td><td>精度 × 能效 /（面积 × 延迟）</td><td>三项技术组合 vs 基线 [4][10]</td><td class="num">5.48×</td></tr>
+<tr><td>FoM3</td><td>输入精度 × 权重精度 × 能效</td><td>本宏 vs 近期工作</td><td class="num">最高 8.2×</td></tr>
+</table>
+<p>另外：CFD-SC-RC（电路共享）单独贡献 <strong>面积 −33%、能效 2.31×</strong>（相对前作混合方案 [4]），见下图：</p>
+<figure>
+  <img src="assets/charts/c03_area_energy.png" alt="面积与能效收益" style="max-width:860px">
+  <figcaption>图 8.3　CFD-SC-RC 硬件共享的收益：面积降到 0.67×（−33%），能效 2.31×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_8_5_仿真性能.png" alt="论文图 30.8.5">
+  <figcaption>图 8.4　论文原图 Fig. 30.8.5：各项方案的仿真性能（面积/能效/FoM 对比）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-3">8.3 实测细节与对比</h3>
+<ul>
+<li><strong>计算延迟</strong>：Shmoo 图确认 <strong>1.3 ns</strong>（0.8V，8bIN-8bW-22bOUT 配置）——一个 MAC 周期不到 1.3 ns，16nm 数字路径足够快；</li>
+<li><strong>工艺</strong>：16nm FinFET CMOS（台积电代工路线，作者来自清华+工研院）；</li>
+<li><strong>对比对象</strong>：模拟 SNN-CIM 如 [11]（时域计算 701.7 TOPS/W）虽然能效指标更高，但本文是<strong>数字 + 混合模式 + 多比特</strong>；[12]（NeuC-CIM 1.3pJ/SOP）是电荷域模拟方案，同样有精度可复现问题；本文的定位是“数字确定性与混合灵活性”的组合。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_8_6_测量结果.png" alt="论文图 30.8.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.8.6：测量结果（Shmoo 图）与能效-位宽坐标图（位置图）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_8_7_芯片照片.png" alt="论文图 30.8.7">
+  <figcaption>图 8.6　论文原图 Fig. 30.8.7：16nm 裸片显微照片与性能汇总表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 能效数字强烈依赖“精度配置”：444 TOPS/W 是 1b 输入，62.84 是 8b 输入，直接比较不同位宽的 TOPS/W 没有意义（这也是论文专门定义 FoM3 = IN精度×W精度×能效 的原因——把位宽“折进”指标里）；② SNN 的“能效”还依赖输入脉冲稀疏度，不同数据集不可直接比；③ 模拟方案能效可能更高，但精度可复现性、工艺可移植性是它们的天花板——要综合看，不能只看一个数。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<p>读完这篇论文，往哪些方向还能继续做？以下是几个有研究价值的方向：</p>
+<ol>
+<li><strong>在线学习与本地适配</strong>：本文是纯推理宏。SNN 的时序特性天然适合 online learning（如 STDP 类规则）。在 CMDM-LCC 里加入“权重就地更新”路径，让宏能边推理边学——但要注意权重更新会破坏 WSC 的“驻留”假设，需要与 PS-WR-ODM 联合设计；</li>
+<li><strong>更丰富的神经元模型</strong>：IF/LIF/IQIF 之外，还有自适应阈值、双指数突触、随机神经元等模型。把 DM-MPDBU 做成“可编程动力学”单元（小处理器/查表），或增加模型库，能覆盖更多 SNN 算法；</li>
+<li><strong>端到端混合模型编译栈</strong>：论文支持“逐层自适应精度/模式选择”，但没有给出自动化的编译器。做一个从 PyTorch 混合模型 → 层标注（SNN/CNN、INT4/INT8、神经元类型）→ 宏配置的编译工具链，是软件-硬件协同的价值洼地；</li>
+<li><strong>稀疏性与事件驱动的深度融合</strong>：SNN 的稀疏红利目前主要靠“输入为 0 自然省电”。如果加法树能显式跳过零 MAC（activation/weight sparsity skip），能效还能再翻几倍——但需要硬件检测电路，要与 CMDM-LCC 的 MUX 乘法器协同设计；</li>
+<li><strong>多 bank 调度与动态电压频率缩放</strong>：16 个 bank 之间如何分配层/通道？能否按 bank 负载做 DVFS？SNN 事件突发时如何调度？这些系统级问题论文没有展开，是很好的补充方向；</li>
+<li><strong>扩展到更大的混合模型（CNN+SNN+Transformer）</strong>：边缘 LLM 时代，混合模型可能还包括注意力层。CMDM-LCC 的“双模式”能否扩展到“三模式”？数据映射的折中思想能否推广到“token × 时间步”的二维遍历？</li>
+<li><strong>工艺升级与密度提升</strong>：16nm → 更先进节点，SRAM 密度和频率都能提升；同时保持“数字可综合”特性，快速移植。也可以探索把宏和 RISC-V 内核做进同一个 SoC，形成完整的边缘 AI 芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>SNN（Spiking Neural Network，脉冲神经网络）</dt><dd>输入输出为离散脉冲（0/1），神经元膜电位累积到阈值发放；事件驱动、极省电。</dd>
+<dt>CNN（Convolutional Neural Network）</dt><dd>卷积神经网络，稠密乘法累加，精度高。</dd>
+<dt>Hybrid SNN-CNN Model</dt><dd>混合模型：部分层 SNN、部分层 CNN，在精度与能耗间平衡。</dd>
+<dt>Membrane Potential（膜电位, MP）</dt><dd>神经元的累积器，输入脉冲不断累加，撞阈值则发放清零。</dd>
+<dt>MPDB（Membrane Potential Dynamics Behavior）</dt><dd>膜电位动力学行为（积分、泄漏、比较阈值、发放）。</dd>
+<dt>DM-MPDBU</dt><dd>本文的数字多膜电位动力学单元，一套硬件支持 IF/LIF/IQIF 三种模型。</dd>
+<dt>IF / LIF / IQIF</dt><dd>积分发放 / 泄漏积分发放 / 整数二次积分发放——三种神经元动力学模型。</dd>
+<dt>Timestep（时间步, TS）</dt><dd>SNN 把时间切成离散步，每步输入一批脉冲。</dd>
+<dt>BW-IN / WW-IN</dt><dd>位宽输入（1b 脉冲）乘法 / 字宽输入（8b 值）乘法。</dd>
+<dt>CMDM-LCC（Cross-Model Dual-Mode Local Computing Cell）</dt><dd>本文的跨模型双模式本地计算单元：两个 MUX 乘法器 + TR + SaA，SNN/CNN 共用。</dd>
+<dt>TR（Toggle Reducer，翻转缩减器）</dt><dd>INT8 模式下消除冗余信号翻转的电路，降低动态功耗。</dd>
+<dt>SaA（Shift-and-Add，移位相加）</dt><dd>CNN 模式下做字宽累积（8b 输入的部分积按位组合）。</dd>
+<dt>RIB（Reconfigurable Inference Block）</dt><dd>可重构推理块：2kb SRAM + WSC + 8 个 CMDM-LCC + SaA。</dd>
+<dt>WSC（Weight Stationary Cell）</dt><dd>权重驻留单元：让权重留在 SRAM 阵列内，减少搬移。</dd>
+<dt>CFD-SC-RC</dt><dd>本文架构：紧凑全数字 SNN-CNN 可重构计算，共享 MAC 电路。</dd>
+<dt>PSUM（Partial Sum，部分和）</dt><dd>MAC 累加的中间结果，需要缓冲存储。</dd>
+<dt>PS-WR-ODM</dt><dd>本文数据映射：PSUM 存储-权重复用优化，按块（block）折中两个极端。</dd>
+<dt>TS-first / Reuse-first</dt><dd>时间步优先（PSUM 小、权重能耗高）/ 权重复用优先（PSUM 大、权重能耗低）。</dd>
+<dt>FoM（Figure of Merit）</dt><dd>综合指标。本文：FoM1=能效/(面积×延迟)，FoM2=精度×能效/(面积×延迟)，FoM3=输入精度×权重精度×能效。</dd>
+<dt>SRAM-DCIM / SRAM-ACIM</dt><dd>SRAM 数字存内计算 / SRAM 模拟存内计算。</dd>
+<dt>Shmoo 图</dt><dd>扫描电压-频率（或其他参数对）的功能通过/失败图，用于测量最大工作频率。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y.-K. Yeh, J.-W. Su, et al., “A 16nm, 1Mb, 1-to-8b-Configurable 444.21 TOPS/W Fully Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing,” <em>ISSCC 2026</em>, Paper 30.8. DOI: 10.1109/ISSCC49663.2026.11409250</li>
+<li>C. Zha et al., “A Reconfigurable Digital Compute-In-Memory Heterogeneous Macro for Differential Frame Convolution and Spiking Neural Network,” <em>ISCAS</em>, 2025. （前作混合方案 [4]）</li>
+<li>S. Kim et al., “C-DNN: A 24.5-85.8TOPS/W Complementary-Deep-Neural-Network Processor with Heterogeneous CNN/SNN Core Architecture…,” <em>ISSCC 2023</em>, pp. 334-335.</li>
+<li>S. Kim, S. Park, B. Na, S. Yoon, “Spiking-YOLO: Spiking Neural Network for Energy-efficient Object Detection,” <em>AAAI 2020</em>, vol. 34, no. 7.</li>
+<li>W.-C. Wu et al., “Integer Quadratic Integrate-and-Fire (IQIF): A Neuron Model for Digital Neuromorphic Systems,” <em>AICAS 2021</em>. （IQIF 模型出处 [9]）</li>
+<li>S. Kim et al., “SNPU: An Energy-Efficient Spike Domain Deep-Neural-Network Processor With Two-Step Spike Encoding and Shift-and-Accumulation Unit,” <em>JSSC</em>, vol. 58, no. 10, 2023. （权重复用映射 [10]）</li>
+<li>K. Park et al., “A 701.7 TOPS/W Compute-in-Memory Processor With Time-Domain Computing for Spiking Neural Network,” <em>IEEE TCAS-I</em>, vol. 72, no. 1, 2025. （时域 SNN-CIM 对比 [11]）</li>
+<li>H. Fu et al., “NeuC-CIM: A 1.3pJ/SOP Neuromorphic Charge-Domain Compute-in-Memory Macro for Spiking Neural Network,” <em>IEEE Symp. VLSI Circuits</em>, 2025. （电荷域 SNN-CIM 对比 [12]）</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm² and 3.78Mb/mm² Fully-Digital Compute-in-Memory Macro Supporting INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-573. （数字 CIM 对比 [7]）</li>
+<li>P. Chen et al., “A 22nm Delta-Sigma Computing-In-Memory (ΔΣCIM) SRAM Macro… 21.38TOPS/W for 8b-MAC Edge AI Processing,” <em>ISSCC 2023</em>, pp. 140-141. （模拟 CIM 对比 [8]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.8.1–30.8.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有“实测数字”均来自论文原文；仿真收益数字（FoM1/FoM2、面积/能效相对值）来自论文 Fig. 30.8.5 的描述，教程图表为重新绘制。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   混合 SNN-CNN DCIM 教学教程 · 交互脚本
+   演示 A 膜电位仿真 · 演示 B INT4/INT8 双模 · 演示 C 数据映射对比
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+/* ---------- 进度条 + 侧栏 ---------- */
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 膜电位仿真（IF / LIF / IQIF）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 360);
+  if (!D) return;
+  const { ctx } = D;
+  const NS = 64;
+  let mode = "IF", th = 8, playing = true, step = 0, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  // 生成输入脉冲序列（固定种子效果）
+  const spikes = [];
+  for (let i = 0; i < NS; i++) spikes.push((i * 7) % 11 < 4 ? 1 : 0);
+
+  function stepModel(mode, mp) {
+    if (mode === "IF") {
+      return mp;
+    } else if (mode === "LIF") {
+      return Math.max(0, mp - 1);
+    } else { // IQIF
+      const pdeth = 3, rest = 2, alpha = 3, beta = 2, thresh = th;
+      const iq = mp < pdeth ? ((alpha * rest - mp) >> 3) : ((beta * (mp - thresh)) >> 3);
+      return Math.max(0, mp + iq);
+    }
+  }
+
+  function traj() {
+    let mp = 0; const out = [];
+    for (let s = 0; s < NS; s++) {
+      mp = stepModel(mode, mp) + spikes[s];
+      if (mp >= th) { mp = 0; out.push({ mp: 0, fire: true }); }
+      else out.push({ mp, fire: false });
+    }
+    return out;
+  }
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const col = { IF: PAL.blue, LIF: PAL.purple, IQIF: PAL.green }[mode];
+    txt(ctx, mode + " 模式 · 阈值 = " + th + " · 播放到时间步 " + step, 30, 24, 15, col, "left");
+
+    const x0 = 60, y0 = 60, x1 = w - 40, y1 = 260;
+    ctx.fillStyle = "#0e1826";
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    const thy = y0 + 70;
+    ctx.strokeStyle = PAL.red; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(x0, thy); ctx.lineTo(x1, thy); ctx.stroke(); ctx.setLineDash([]);
+    txt(ctx, "阈值 θ = " + th, x1 - 8, thy - 12, 12, PAL.red, "right");
+
+    const t = traj();
+    // 曲线
+    const pts = [];
+    for (let s = 0; s <= step && s < NS; s++) {
+      const px = x0 + s * (x1 - x0) / (NS - 1);
+      const py = y1 - 12 - t[s].mp * ((y1 - y0 - 80) / (th + 3));
+      pts.push([px, py]);
+    }
+    if (pts.length > 1) {
+      ctx.strokeStyle = col; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.stroke();
+    }
+    // 脉冲条与发放标记
+    for (let s = 0; s <= step && s < NS; s++) {
+      const px = x0 + s * (x1 - x0) / (NS - 1);
+      if (spikes[s]) {
+        ctx.fillStyle = PAL.orange;
+        ctx.fillRect(px - 3, y1 - 10, 6, 8);
+      }
+      if (t[s].fire) {
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(px, y0 + 14, 4, 0, 6.28); ctx.fill();
+      }
+    }
+    txt(ctx, "橙色小条 = 输入脉冲；曲线上的圆点 = 该步发放（清零）", x0, y1 + 20, 12, PAL.gray, "left");
+    txt(ctx, "LIF 注意看：无输入时曲线回落（泄漏）；IQIF 注意看：阈值附近加速", x0, y1 + 42, 12, PAL.gray, "left");
+    txt(ctx, "当前膜电位 MP = " + (step < NS ? t[Math.min(step, NS - 1)].mp : t[NS - 1].mp), x1, y1 + 42, 13, col, "right");
+  }
+
+  function tick() { step = Math.min(NS - 1, step + 1); draw(); }
+
+  const bIf = document.getElementById("demoA-if");
+  const bLif = document.getElementById("demoA-lif");
+  const bIq = document.getElementById("demoA-iqif");
+  const sTh = document.getElementById("demoA-th");
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+
+  function setMode(m) {
+    mode = m; step = 0;
+    [bIf, bLif, bIq].forEach((b, i) => b.classList.toggle("on", ["IF", "LIF", "IQIF"][i] === m));
+    if (stat) stat.textContent = m + " 模式 · " + (playing ? "播放中" : "暂停");
+    draw();
+  }
+  if (bIf) bIf.onclick = () => setMode("IF");
+  if (bLif) bLif.onclick = () => setMode("LIF");
+  if (bIq) bIq.onclick = () => setMode("IQIF");
+  if (sTh) sTh.oninput = function () { th = parseInt(this.value, 10); step = 0; draw(); };
+  if (bPlay) bPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 播放";
+    if (playing) { clearInterval(timer); timer = setInterval(tick, 160); }
+    else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { step = 0; draw(); };
+  if (playing) timer = setInterval(tick, 160);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · INT4/INT8 双模权重映射
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let i8 = false;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const col = i8 ? PAL.blue : PAL.green;
+    txt(ctx, (i8 ? "INT8 模式：2 个 8b MAC（W0+W2 → A，W1+W3 → B）" : "INT4 模式：4 个 4b MAC（W0→A，W1→B，W2→C，W3→D）"),
+      30, 26, 16, col, "left");
+    // 4 槽
+    const x0 = 60, y0 = 70, cw = 170, ch = 60, gap = 24;
+    const slots = ["W0", "W1", "W2", "W3"];
+    const labels = i8
+      ? ["A[3:0]\n(A 低 4 位)", "B[3:0]\n(B 低 4 位)", "A[7:4]\n(A 高 4 位)", "B[7:4]\n(B 高 4 位)"]
+      : ["A[3:0]\n4b 权重", "B[3:0]\n4b 权重", "C[3:0]\n4b 权重", "D[3:0]\n4b 权重"];
+    const pairCol = i8 ? [PAL.blue, PAL.blue, "#0a5f8c", "#0a5f8c"] : [PAL.green, PAL.green, "#2a8f6a", "#2a8f6a"];
+    for (let i = 0; i < 4; i++) {
+      const x = x0 + i * (cw + gap);
+      ctx.fillStyle = "#14263c"; ctx.strokeStyle = pairCol[i]; ctx.lineWidth = 2;
+      rrect(ctx, x, y0, cw, ch, 10); ctx.fill(); ctx.stroke();
+      txt(ctx, slots[i], x + 12, y0 + 20, 14, PAL.white, "left");
+      const ls = labels[i].split("\n");
+      txt(ctx, ls[0], x + 12, y0 + 42, 12, pairCol[i], "left");
+      if (ls[1]) txt(ctx, ls[1], x + 12, y0 + 56 - 8, 10, PAL.gray, "left");
+    }
+    // 乘法器与结果
+    const my = 190;
+    txt(ctx, "MUL0", x0, my + 14, 14, PAL.white);
+    txt(ctx, "MUL1", x0 + cw + gap, my + 14, 14, PAL.white);
+    ctx.strokeStyle = PAL.line; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0 + 30, y0 + ch); ctx.lineTo(x0 + 30, my); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0 + cw + gap + 30, y0 + ch); ctx.lineTo(x0 + cw + gap + 30, my); ctx.stroke();
+    const res = i8 ? "每周期 2 个 8b×8b MAC" : "每周期 4 个 4b×4b MAC";
+    const res2 = i8 ? "（TR 开启：拼接高低位时消除冗余翻转）" : "（TR 关闭：四路独立并行）";
+    txt(ctx, res, x0, my + 44, 16, col);
+    txt(ctx, res2, x0, my + 70, 12, PAL.gray);
+    if (stat) stat.textContent = i8 ? "INT8：W0/W1=低4位，W2/W3=高4位 → 2 个 8b MAC" : "INT4：W0–W3 独立 → 4 个 4b MAC";
+  }
+
+  const b4 = document.getElementById("demoB-i4");
+  const b8 = document.getElementById("demoB-i8");
+  if (b4) b4.onclick = function () { i8 = false; b4.classList.add("on"); b8.classList.remove("on"); draw(); };
+  if (b8) b8.onclick = function () { i8 = true; b8.classList.add("on"); b4.classList.remove("on"); draw(); };
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 数据映射对比（权重更新能耗 vs PSUM 存储）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let t = 0, playing = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  const schemes = [
+    { name: "① TS-first", w: 1.0, p: 0.12, col: PAL.red, note: "权重每 TS 重载 · PSUM 小" },
+    { name: "② 复用-first", w: 0.12, p: 0.95, col: PAL.purple, note: "权重只读一次 · PSUM 巨大" },
+    { name: "③ PS-WR-ODM", w: 0.4, p: 0.4, col: PAL.green, note: "块内复用 · 两边均衡" },
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "数据映射对比：权重更新能耗（红） vs PSUM 存储（蓝），柱越高越差", 30, 26, 15, PAL.white, "left");
+    const bw = 150, gap = 60, x0 = 70, yBase = 250, maxH = 170;
+    schemes.forEach((s, i) => {
+      const x = x0 + i * (bw + gap);
+      // 权重能耗（随时间增长，模拟运行）
+      const wv = s.w * (0.4 + 0.6 * t);
+      // PSUM 柱
+      ctx.fillStyle = "rgba(30,144,220,0.85)";
+      ctx.fillRect(x, yBase - s.p * maxH, bw / 2 - 8, s.p * maxH);
+      ctx.strokeStyle = PAL.blue; ctx.strokeRect(x, yBase - s.p * maxH, bw / 2 - 8, s.p * maxH);
+      // 权重柱
+      ctx.fillStyle = "rgba(230,110,90,0.85)";
+      ctx.fillRect(x + bw / 2 + 8, yBase - wv * maxH, bw / 2 - 8, wv * maxH);
+      ctx.strokeStyle = PAL.red; ctx.strokeRect(x + bw / 2 + 8, yBase - wv * maxH, bw / 2 - 8, wv * maxH);
+      // 标签
+      txt(ctx, s.name, x + bw / 2, yBase + 20, 14, s.col, "center");
+      txt(ctx, s.note, x + bw / 2, yBase + 42, 11, PAL.gray, "center");
+      txt(ctx, "PSUM " + (s.p * 100).toFixed(0) + "%", x + bw / 4 - 4, yBase - s.p * maxH - 10, 11, PAL.blue, "center");
+      txt(ctx, "权重 " + (wv * 100).toFixed(0) + "%", x + bw * 3 / 4 + 4, yBase - wv * maxH - 10, 11, PAL.red, "center");
+    });
+    if (stat) stat.textContent = "PS-WR-ODM：以少量 PSUM 开销（约 40%）换取权重更新能耗大幅下降（约 40%）";
+  }
+
+  function tick() { t = Math.min(1, t + 0.01); draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    playing = !playing;
+    this.classList.toggle("on", playing);
+    this.textContent = playing ? "⏸ 暂停" : "▶ 播放";
+    if (playing) { clearInterval(timer); timer = setInterval(tick, 80); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { t = 0; draw(); };
+  if (playing) timer = setInterval(tick, 80);
+  draw();
+})();
+
+</script>
+</body>
+</html>

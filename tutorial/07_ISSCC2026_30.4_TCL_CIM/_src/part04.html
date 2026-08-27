@@ -1,0 +1,47 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：TCL（Transition-Counting-Line）—— 用“数边沿”代替“数 1”</h2>
+
+<h3 id="sec4-1">4.1 TCL 结构与工作规则</h3>
+<figure>
+  <img src="assets/diagrams/d04_tcl.svg" alt="TCL 结构" style="max-width:940px">
+  <figcaption>图 4.1　TCL = 8 个 MMU（乘-选单元）级联 + 末端计数器 CNT。每个 MMU 由“乘法段”和“多路选择段”组成：MIn 串接、首端接 VDD、末端接 CNT。</figcaption>
+</figure>
+<p>每个 <strong>MMU（Multiply-Multiplex Unit，乘-选单元）</strong>干两件事：</p>
+<ul>
+<li><strong>乘法段</strong>：算位积 P<sub>mn</sub> = X[m] × W[n]（就是个与门）；</li>
+<li><strong>多路选择段</strong>：当 <strong>Ph<sub>k</sub>=1 且 P<sub>mn</sub>=1</strong> 时走 <strong>Path1</strong>：输出 = 输入取反（产生一个跳变沿）；否则走 <strong>Path2</strong>：原样直通。</li>
+</ul>
+<p>所有 MMU 的多路选择段<strong>级联</strong>成一条链：第一个 MMU 的输入 MIn 接 VDD（高电平起点），最后一个 MMU 的输出 MOut 接计数器 CNT。于是：</p>
+<div class="box key">
+<div class="bt">💡 核心机制：跳变次数 = 列和</div>
+<p>一个高电平从链头出发，每经过一个“位积=1”的 MMU 就被取反一次（高→低 或 低→高），经过“位积=0”的 MMU 则原样通过。<strong>最终到达 CNT 的跳变沿个数 = 这一列里 1 的个数 = 列和</strong>。CNT 把 8 个输入位编码成 4b 计数值 → 这就是“8-to-4 无损压缩”。</p>
+</div>
+
+<h3 id="sec4-2">4.2 工作示例与交互仿真</h3>
+<figure>
+  <img src="assets/diagrams/d05_tcl_example.svg" alt="TCL 工作示例" style="max-width:940px">
+  <figcaption>图 4.2　示例：位积 {1,1,0,0,1,0,0,1} → 4 个跳变沿 → CNT = 4 = 列和。相位 Ph0~Ph7 逐位使能 MMU。</figcaption>
+</figure>
+<p>注意相位的作用：10 相发生器（§6）让 <strong>Ph0~Ph7 每个相位只使能一个 MMU</strong>（TCL-9 例：Ph0 使能 MMU0、Ph1 使能 MMU1……）。这样边沿在链上的传播是<strong>串行、分时</strong>的——每个相位恰好推进一格，时间上可预测，CNT 在每个相位结束后采样一次。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_3_TCL与10相发生器.png">
+  <source src="assets/videos/v01_tcl.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · TCL 转移计数动画：边沿沿 MMU 链传播，遇到 1 取反、遇到 0 直通；CNT 数沿得到列和。注意“0 的 MMU 完全不翻转”。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · TCL 位列求和仿真（8 位输入，看边沿传播与计数）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <button id="demoA-sparse">换一组稀疏输入</button>
+  <span class="stat" id="demoA-stat">列和 = 数到的跳变沿个数</span>
+</div>
+<div class="hint">橙色方块=位积 1（会使边沿取反），灰色=0（直通）。观察 CNT 计数与“非零位数”一致。切换稀疏输入看“0 多 → 翻转少 → 省电”。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_4_3_TCL与10相发生器.png" alt="论文图 30.4.3">
+  <figcaption>图 4.3　论文原图 Fig. 30.4.3：TCL 与 10 相发生器的电路结构与工作流程。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>

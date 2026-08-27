@@ -1,0 +1,56 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：这颗 3D 芯片的成绩单</h2>
+
+<h3 id="sec8-1">8.1 带宽 · 能量 · 延迟</h3>
+<figure>
+  <img src="assets/charts/c01_bandwidth.png" alt="带宽密度对比" style="max-width:860px">
+  <figcaption>图 8.1　带宽密度 12.77 GB/s/mm² = HBM3E 的 1.22×、GDDR6 的 8.63×（HBM3E/GDDR6 为按倍数换算的参考值）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_energy.png" alt="每比特能量对比" style="max-width:860px">
+  <figcaption>图 8.2　每比特访问能量 0.67 pJ/b = GDDR6 的 9%、HBM3E 的 28%（越低越好）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_latency.png" alt="访问延迟对比" style="max-width:920px">
+  <figcaption>图 8.3　访存延迟：连续访问 3.21/3.24 ns（−90%/−93% vs 折算 1.2GHz 的 LPDDR4），随机访问 45.12/50.01 ns（−37%/−44%）。</figcaption>
+</figure>
+<ul>
+<li><strong>DRAM 本身质量</strong>：526 Mbps @ 1.2V 正常工作；96ms@98°C 保持测试，全晶圆失效率 &lt;0.05%；3D 集成只额外引入 0.58% 失效率 → 工艺成熟度可信；</li>
+<li><strong>频率</strong>：逻辑层 28nm CMOS，1.2 GHz。</li>
+</ul>
+
+<h3 id="sec8-2">8.2 GEMM 收益与整体对比</h3>
+<figure>
+  <img src="assets/charts/c04_gemm.png" alt="GEMM 执行时间对比" style="max-width:860px">
+  <figcaption>图 8.4　128×128×128 GEMM 执行时间（归一化）：本设计 1 芯片 −86%，8 芯片 DIMM（8GB/128 ACC）−98%（相对 2.1GHz i7-13700F）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_7_6_对比.png" alt="论文图 30.7.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.7.6：与近期 PNM 设计对比——FoM 是前作 3D PNM 的 7.33×、active interposer 方案的 5.13×。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>对比项</th><th>本论文</th><th>前作 3D PNM</th><th>active interposer [7]</th></tr>
+<tr><td>带宽密度</td><td class="num"><strong>12.77 GB/s/mm²</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>存储密度</td><td class="num"><strong>99.4 Mb/mm²</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>每比特能量</td><td class="num"><strong>0.67 pJ/b</strong></td><td class="num">—</td><td class="num">—</td></tr>
+<tr><td>计算频率</td><td class="num"><strong>1.2 GHz</strong>（28nm 逻辑）</td><td class="num">受 DRAM 工艺限制</td><td class="num">—</td></tr>
+<tr><td>接口</td><td class="num"><strong>DDR4 兼容</strong>（可关闭 PNM）</td><td class="num">专用</td><td class="num">专用</td></tr>
+<tr><td>FoM</td><td class="num"><strong>7.33× / 5.13×</strong></td><td class="num">1×</td><td class="num">1×</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 本论文的“组合拳”定位</div>
+<p>对比表最值得注意的一点：<strong>前作把算力做进 DRAM 所以频率上不去；本论文把逻辑单独放 28nm 逻辑片，所以 1.2 GHz 还吃到了带宽密度红利</strong>。“逻辑与 DRAM 工艺解耦 + 3D 高密度互连 + DDR4 兼容”三件事缺一不可：工艺解耦保频率、3D 互连保带宽、DDR4 保部署。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_7_4_测量系统与DRAM结果.png" alt="论文图 30.7.4">
+  <figcaption>图 8.6　论文原图 Fig. 30.7.4：测量系统（主机 FPGA + 两片测试芯片验证可扩展性）与 DRAM 测量结果（Shmoo、保持、3D 良率）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_7_7_芯片照片.png" alt="论文图 30.7.7">
+  <figcaption>图 8.7　论文原图 Fig. 30.7.7：裸片显微照片与设计规格表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 论文的对比对象大多只有“部分指标可比”：带宽密度、存储密度、pJ/b 是不同工作的不同强项，FoM 的权重选择（怎么综合成一个数）是作者定义的，读时要自己判断合不合理；② “相对 i7-13700F 快 86%”这类数字高度依赖 CPU 端代码优化水平（是否 AVX、是否缓存友好），只能作为量级参考；③ 3D 集成成本（良率、散热、测试）论文没有展开，但 0.58% 的额外失效率说明良率不是主要障碍。</p>
+</div>
+</section>

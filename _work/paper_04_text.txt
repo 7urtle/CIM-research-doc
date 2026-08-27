@@ -1,0 +1,148 @@
+===== PAGE 1 =====
+262  •  2025 IEEE International Solid-State Circuits Conference
+ISSCC 2025 / SESSION 14 / COMPUTE-IN-MEMORY / 14.7
+979-8-3315-4101-9/25/$31.00 ©2025 IEEE
+14.7    NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32  
+           Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot  
+           PE and Dual-Direction Searching 
+ 
+An Guo*1, Jingmin Zhang*1, Xingyu Pu1, Yi Yang1, Defa Wu1, Yuchen Tang1,  
+Yuhui Shi1, Yinghai Gao1, Zhichao Liu1, Bo Wang1, Tianzhu Xiong1,  
+Zhaoyang Zhang1, Xi Chen1, Jinwu Chen1, Feiran Liu1, Xing Wang1, Xinning Liu1,  
+Weiwei Shan1, Bo Liu1, Hao Cai1, Xin Si1, Jun Yang1,2 
+ 
+1Southeast University, Nanjing, China 
+2National Center of Technology Innovation for EDA, Nanjing, China 
+ 
+*Equally Credited Authors (ECAs) 
+ 
+Autonomous micro-robots, equipped with AI for urban navigation, are being deployed for 
+various applications, such as package delivery and surveillance. These intelligent machines 
+require efﬁcient path-ﬁnding algorithms to navigate complex city environments effectively. 
+Similarly, other domains like VLSI routing, urban path planning, and wavefront propagation 
+also demand optimal navigation solutions, as illustrated in Fig. 14.7.1. While previous work 
+has typically relied on digital accelerators to address navigation challenges [3-5],  
+mimetic-path CIM architectures, which incorporate SRAM within their processing-element 
+(PE) arrays, have demonstrated superior performance, power efﬁciency, and area utilization 
+(PPA). However, existing mimetic-CIM solutions face several challenges: (1) single-direction 
+searching (SDS) inefﬁciently utilizes half of the available search time; (2) DFF-based 
+temporary storage suffers from poor PPA, while dynamic-logic based alternatives are prone 
+to leakage issues; and (3) limited processing windows can lead to task failures in  
+large-scale maps, but previous attempts to address these issues, such as map direct transfer 
+and splitting, have their own limitations. This paper presents a 28nm 32×32 mimetic-path 
+NeuroPilot CIM macro with (1) dual-direction searching (DDS) to accelerate the path 
+searching; (2) a dynamic-logic pilot PE with an outspread pre-charge (OPC) circuit, 
+achieving a superior PPA while reducing leakage; and (3) a novel 3-step coarse/ﬁne-path 
+(TsCFP) ﬂow enabling efﬁcient navigation of large maps. The proposed chip achieves a 
+search rate of 3670M nodes/s, 213.6μm2 PE area, and a 69.4fJ node energy consumption. 
+ 
+Figure 14.7.2 illustrates the overall structure and operation of the proposed pilot CIM: 
+comprising of a 32×32 pilot PE array, WL and BL drivers, IOs, column and row decoders, 
+an OPC for sequential pre charging, and the main controller. Each pilot PE contains 14 
+SRAM cells and a PE core connected to 8 adjacent PEs. The proposed dual-direction 
+searching (DDS) shows signiﬁcant improvement over single-direction searching (SDS), as 
+shown in an ISSCC-like map example in Fig. 14.7.2. DDS initiates paths, starting at both 
+the START and END nodes, meeting at a junction PE; thereby, achieving a 1.13× lower power 
+consumption and a 2.1× faster processing time for the example map.  It also achieves a 
+1.28× power and 2.0× processing improvements for a 32×32 map without block PEs. The 
+NeuroPilot CIM workﬂow involves map preprocessing, chip controller decision-making for 
+coarse/ﬁne mapping or direct CIM macro processing based on map size. The CIM macro 
+operates in three stages: (1) a memory-write stage, where the map data, including BLOCK 
+(unreachable cells), START and END points, and the trafﬁc-jam level (TJL), are written to 
+the PE SRAM cells; (2) a path-pilot stage, which initiates a path search that runs until 
+convergence, while also storing direction information in PE SRAM cells; and (3) a  
+memory-read stage, where the ﬁnal path is determined by tracing from the junction PE. 
+ 
+Figure 14.7.3 shows a detailed schematic for the pilot PE, featuring 14b SRAM cells with 
+two types of cells: SRAM_F for storing EN, STA, END, and TJL using a 6T cell and  
+inverter-driver, and SRAM_R for direction data using a 6T cell, local reset, and a inverter-
+writer. The PE comprises of 8 direction transmitters and a center core which processes the 
+ﬁrst input signal, IN[2:0], to arrive from adjacent PEs, determines its origin, START or END, 
+and halts further input processing. The three input-signal bits IN[0] – IN[2] represent 
+transmitting signal arrive, signal originates at START, and signal originates at END, 
+respectively. Each transmitter handles its corresponding inputs, transmits the opposite 
+outputs, and stops receiving other inputs. Take N as an example, N transmitter handles 
+inputs from NW, N and NE, transmits S outputs. Redundancy in design, via double dynamic 
+logic and extra input signals, mitigate potential PVT variation errors. The TJL circuit uses a 
+delay tree to simulate path speed. For example, if this node has a trafﬁc jam, then the EMA 
+[2:0] will be 111, which means this node has the slowest speed. When two signals, 
+originating at both START and END are received, the PE generates a junction signal to 
+deactivate the PE and produce row and column signals to mark the junction’s position. The 
+dynamic logic design chooses MOS capacitance rather than MOM capacitance for its high 
+density. 
+Figure 14.7.4 illustrates the proposed macro’s outspread pre-charging (OPC) ﬂow. 
+Leveraging the PE array’s logic propagation delay the OPC selectively pre-charges PEs, 
+starting with the START and END rows and progressively transmits the pre-charging signal 
+to adjacent (up and down) rows. This approach ends the propagation path upon START 
+and END convergence, where the pre-charge signal is slightly faster than PE array signals. 
+The OPC implementation results in signiﬁcant improvements: a 1.49× hold-time reduction, 
+leading to a 1.35× lower dynamic-logic capacity requirement and a 1.32× smaller area. The 
+design incorporates feedback row and column signals, connected separately, which are 
+processed by column and row encoders to determine the converging row and column. 
+These signals pinpoint the junction; the proposed macro reads the corresponding SRAM 
+and IO transmit directional data to the PC for further processing. 
+ 
+Figure 14.7.5 illustrates the proposed 3-step coarse/ﬁne-path (TsCFP) ﬂow that addresses 
+the limitations of previous large map-conversion methods. This approach overcomes the 
+vagueness issues of direct-map transfers and local-optima problems of split-map transfers. 
+The process unfolds in three stages: (1) generation of the smallest clear coarse map by 
+iteratively adjusting the resolution and scoring based on a path-ratio comparison between 
+the original and converted maps; (2) creation of a coarse map’s shortest path by splitting 
+it into 32×32 segments for piloting, via SDS or DDS, with subsequent maps determined by 
+previous END points and the original map’s general direction; and (3) ﬁne-map  
+shortest-path generation by splitting the original map along the shortest coarse path and 
+processing segments sequentially. When applied to an example based on a map of San 
+Francisco the proposed ﬂow achieves a 373.82ns time to solution (TTS), a 512.5pJ energy 
+consumption, and a 1279.8L(unit length) path-length solution. 
+ 
+Figure 14.7.6 presents the measured test-chip results.  The test chip is fabricated using a 
+28nm technology using a 32×32 NeuroPilot CIM macro. Dynamic-logic fading analysis 
+demonstrates that the proposed macro is suitable for tasks up to 360L (84ns), 
+encompassing both real-world scenarios (50-100L) and complex maze-like maps (>100L). 
+The proposed macro occupies a 14.5 × 14.7 = 213.6μm2 PE area, consumes of 69.4fJ/node, 
+and achieves a search rate of 3670M nodes/s. In comparison to prior path-searching  
+work [1-5], this work improves the search-rate / energy-per-node / PE-size FoM by  
+31.49 - 2.148e7×. Figure 14.7.7 shows the die photograph and a design summary table; 
+also shown are short-distance and long-distance search examples. 
+ 
+Acknowledgement: 
+This work was supported in part by the National Science and Technology Major Project 
+under grant 2022ZD0118902; in part by the National Natural Science Foundation of China 
+under grant no. 6506009793, 92264203 and grant 62204036; in part by the Key Research 
+and Development Program of Jiangsu Province under grant BE2023020-1l in part by the 
+Postgraduate Research and Practice Innovation Program of Jiangsu Province under grant 
+KYCX23_0344; and in part by the Fundamental Research Funds for the Central Universities 
+under grant 2242022k60009. The corresponding author is Xin Si (xinsi@seu.edu.cn).
+2025 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-4101-9/25/$31.00 ©2025 IEEE | DOI: 10.1109/ISSCC49661.2025.10904805
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:43 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 14.7.1: Motivation and challenges of mimetic path CIMs.
+Figure 14.7.2: Proposed NeuroPilot CIM structure, dual-direction search (DDS) 
+propagation and NeuroPilot CIM ﬂow.
+Figure 14.7.3: Detailed pilot PE circuit and operational waveforms.
+Figure 14.7.4: Outspread pre-charging, row/column feedback, and trace-back ﬂow.
+Figure 14.7.5: 3-step coarse/ﬁne-path (TsCFP) mapping ﬂow and an example based on 
+a 1024×1024 map of San Francisco.
+Figure 14.7.6: Measurement results and comparison table.
+ISSCC 2025 / February 18, 2025 / 10:55 AM
+263  
+DIGEST OF TECHNICAL PAPERS  •
+14
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:43 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+•  2025 IEEE International Solid-State Circuits Conference
+ISSCC 2025 PAPER CONTINUATIONS AND REFERENCES
+979-8-3315-4101-9/25/$31.00 ©2025 IEEE
+Figure 14.7.7: Die photograph and key-metric summary.
+References: 
+[1] C. Yu et al., “ A Time-Domain Wavefront Computing Accelerator With a 32 × 32 Reconﬁgurable PE Array,” IEEE JSSC, vol. 58, no. 8, pp. 2372-2382, Aug. 2023. 
+[2] L. Everson et al., “ A 40×40 Four-Neighbor Time-Based In-Memory Computing Graph ASIC Chip Featuring Wavefront Expansion and 2D Gradient Control,” ISSCC, pp. 50-52, 
+2019. 
+[3] C. Chung et al., “A 1.5μJ/Task Path-Planning Processor for 2D/3D Autonomous Navigation of Micro Robots,” ISSCC, pp. 324-326, 2020. 
+[4] S. Song et al., “GPPU: A 330.4-µJ/task Neural Path Planning Processor with Hybrid GNN Acceleration for Autonomous 3D Navigation” IEEE VLSI, 2023. 
+[5] Y. Kim et al., “ A 0.55V 1.1mW Artiﬁcial-Intelligence Processor with PVT Compensation for Micro Robots,” ISSCC, pp. 258-260, 2016. 
+[6] L. Everson et al., “A Time-Based Intra-Memory Computing Graph Processor Featuring A* Wavefront Expansion and 2-D Gradient Control,” IEEE JSSC, vol. 56, no. 7, pp. 2281-
+2290, July 2021.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:43 UTC from IEEE Xplore.  Restrictions apply. 

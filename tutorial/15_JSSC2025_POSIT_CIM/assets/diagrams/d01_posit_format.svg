@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">POSIT 数据格式：动态位分配实现「范围-精度」运行时权衡</text>
+
+  <!-- POSIT structure -->
+  <rect x="40" y="84" width="880" height="140" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">POSIT(n, es) 的四个部分：S（符号）R（regime）E（指数）M（尾数）</text>
+  <g font-size="12">
+    <rect x="70" y="130" width="60" height="44" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="100" y="150" text-anchor="middle" fill="#a0402e" font-weight="600">S</text>
+    <text x="100" y="166" text-anchor="middle" fill="#45536b" font-size="10">1位符号</text>
+    <rect x="140" y="130" width="110" height="44" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="195" y="150" text-anchor="middle" fill="#a06510" font-weight="600">R（动态位宽）</text>
+    <text x="195" y="166" text-anchor="middle" fill="#45536b" font-size="10">thermometer 码</text>
+    <rect x="260" y="130" width="70" height="44" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="295" y="150" text-anchor="middle" fill="#1d8a5f" font-weight="600">E</text>
+    <text x="295" y="166" text-anchor="middle" fill="#45536b" font-size="10">es 位指数</text>
+    <rect x="340" y="130" width="130" height="44" rx="6" fill="#f5f0fc" stroke="#6b3fa0"/>
+    <text x="405" y="150" text-anchor="middle" fill="#6b3fa0" font-weight="600">M（动态位宽）</text>
+    <text x="405" y="166" text-anchor="middle" fill="#45536b" font-size="10">m = n−r−es−1</text>
+    <text x="500" y="160" fill="#45536b">值 = (−1)ˢ × (2^es)ᴿ × 2ᴱ × 1.M</text>
+    <text x="60" y="206" fill="#45536b">R 与 M 的位宽动态变化：R 长 → 指数范围大、尾数精度低；R 短 → 尾数精度高。运行时按数据分布自动调整。</text>
+  </g>
+
+  <!-- thermometer -->
+  <rect x="40" y="244" width="430" height="150" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="270" fill="#d08a10" font-size="13.5" font-weight="700">Regime：一元温度计码（自动分段）</text>
+  <g font-size="12">
+    <text x="60" y="298" fill="#45536b">正 regime：“1…10”，十进制 = 连续 1 个数 − 1</text>
+    <g>
+      <rect x="70" y="310" width="24" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="82" y="328" text-anchor="middle" fill="#1d8a5f">1</text>
+      <rect x="96" y="310" width="24" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="108" y="328" text-anchor="middle" fill="#1d8a5f">1</text>
+      <rect x="120" y="310" width="24" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="132" y="328" text-anchor="middle" fill="#1d8a5f">1</text>
+      <rect x="144" y="310" width="24" height="26" fill="#fde8e4" stroke="#e66e5a"/><text x="156" y="328" text-anchor="middle" fill="#a0402e">1</text>
+      <rect x="170" y="310" width="24" height="26" fill="#fde8e4" stroke="#e66e5a"/><text x="182" y="328" text-anchor="middle" fill="#a0402e">0</text>
+      <text x="210" y="328" fill="#45536b">11110 → R=+3（4 个连续 1 减 1）</text>
+    </g>
+    <text x="60" y="366" fill="#45536b">负 regime：“0…01”，十进制 = 连续 0 个数（负值）</text>
+    <g>
+      <rect x="70" y="378" width="24" height="26" fill="#fde8e4" stroke="#e66e5a"/><text x="82" y="396" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="96" y="378" width="24" height="26" fill="#fde8e4" stroke="#e66e5a"/><text x="108" y="396" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="120" y="378" width="24" height="26" fill="#fde8e4" stroke="#e66e5a"/><text x="132" y="396" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="144" y="378" width="24" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="156" y="396" text-anchor="middle" fill="#1d8a5f">0</text>
+      <rect x="170" y="378" width="24" height="26" fill="#d9f0e4" stroke="#1d8a5f"/><text x="182" y="396" text-anchor="middle" fill="#1d8a5f">1</text>
+      <text x="210" y="396" fill="#45536b">00001 → R=−4（3 个连续 0）</text>
+    </g>
+  </g>
+
+  <!-- motivation -->
+  <rect x="490" y="244" width="430" height="150" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="270" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么 POSIT 值得做？—— 低位数 ≈ 高位数精度</text>
+  <g font-size="12">
+    <text x="510" y="298" fill="#45536b">ViT-B 一次训练迭代中：梯度/激活/权重的指数范围各不相同</text>
+    <text x="510" y="320" fill="#45536b">梯度 [−66,−10] · 激活 [−16,4] · 权重 [−16,2]</text>
+    <text x="510" y="342" fill="#45536b">FP8 指数范围仅 [−14,15] → 69.3% 的梯度被表示成 0 → 训练掉精度</text>
+    <text x="510" y="366" fill="#1d8a5f" font-weight="600">POSIT8 动态分配位宽 → 精度 ≈ FP16/BF16</text>
+    <text x="510" y="388" fill="#1d8a5f" font-weight="600">→ 能耗省 6.25×（ResNet18 分类，精度差 &lt;0.4%）</text>
+  </g>
+
+  <!-- bottom -->
+  <rect x="40" y="414" width="880" height="120" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="440" fill="#0e5a8a" font-size="14" font-weight="700">POSIT 的代价：动态特性带来三大硬件挑战</text>
+  <g font-size="12.5">
+    <text x="60" y="470" fill="#e66e5a" font-weight="600">① regime 动态处理能耗 +2.62×</text>
+    <text x="300" y="470" fill="#f0a030" font-weight="600">② CIM 单元欠利用 41.3%</text>
+    <text x="620" y="470" fill="#6b3fa0" font-weight="600">③ 加法树能耗浪费 62.5%</text>
+    <text x="60" y="500" fill="#45536b">（extract+codec 逻辑）</text>
+    <text x="300" y="500" fill="#45536b">（动态位宽尾数 vs 固定结构）</text>
+    <text x="620" y="500" fill="#45536b">（无重叠位时 X+0=X 冗余翻转）</text>
+    <text x="60" y="526" fill="#1d8a5f" font-weight="600">→ 本论文三招：BRPU（shift-OR）、CPCS（双位 MAC）、CASU（OR 累加）</text>
+  </g>
+</svg>

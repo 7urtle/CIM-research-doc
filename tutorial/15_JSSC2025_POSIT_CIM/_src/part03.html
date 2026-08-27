@@ -1,0 +1,51 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>PD-CIM 宏总体架构</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解 PD-CIM 的组成（BRPU、16 CIM 核、16 加法树+CASU、全局 SRAM、编解码器、控制器），以及“regime 存 SRAM、尾数存 CIM”的职责划分和数据流。</p>
+</div>
+
+<h3>3.1 架构组成（论文 Fig.4）</h3>
+<table>
+<tr><th style="width:26%">模块</th><th>职责</th></tr>
+<tr><td><strong>BRPU</strong></td><td>regime 提取与处理（移位-OR，§4）；regime 存全局 SRAM 做数字处理</td></tr>
+<tr><td><strong>16 个 CIM 核</strong></td><td>每核 16 个 CPCS CIM 阵列；每阵列 8×48 子阵列（4b CIM 单元）；存动态位宽尾数做 MAC</td></tr>
+<tr><td><strong>16 个加法树 + CASU</strong></td><td>动态对齐 + OR/加法混合累加（§6）</td></tr>
+<tr><td><strong>28 kB 全局 SRAM</strong></td><td>存 regime / 激活 / 中间结果</td></tr>
+<tr><td><strong>FP→POSIT 编码器 / POSIT→FP 解码器</strong></td><td>与现有 AI 处理器兼容（FP 进出、POSIT 内部算）</td></tr>
+<tr><td><strong>顶层控制器</strong></td><td>调度、模式选择</td></tr>
+</table>
+<p>职责划分沿袭 FP-CIM 的思路：<strong>regime（指数部分）走数字通路（SRAM + 数字逻辑），尾数（有效位）走 CIM 阵列</strong>——因为尾数乘法才是计算密集的部分，适合存内计算。</p>
+
+<figure>
+<img src="assets/figs/fig15_4_总体架构.png" alt="总体架构">
+<figcaption>图 4 · 论文 Fig.4：PD-CIM 总体架构——BRPU + 16 CIM 核（CPCS 阵列）+ 加法树（CASU）+ 全局 SRAM + 编解码器。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_architecture.svg" alt="架构教学图">
+<figcaption>教学图 3 · PD-CIM 架构示意与计算流程。</figcaption>
+</figure>
+
+<h3>3.2 CIM 阵列的三个工作模式</h3>
+<p>CPCS CIM 阵列按存储的尾数位宽有三种模式（§5 详述）：</p>
+<ul>
+<li><strong>3b 模式</strong>：存 3 位尾数 → 有空闲单元存关键位 → 双位 MAC；</li>
+<li><strong>2–4b 关联模式</strong>：4 位尾数 LSB=0 时视为 3 位 → 借 2 位尾数单元的空闲位 → 双位 MAC；</li>
+<li><strong>正常模式</strong>：4 位满尾数 → 标准单位串行计算。</li>
+</ul>
+
+<h3>3.3 数据流</h3>
+<ol>
+<li>主机分析操作数分布 → 选 POSIT 格式（POSIT(16,2)/(16,3)/(8,1)/(8,2)）；</li>
+<li>FP-to-POSIT 编码器把 FP 数据转成所选 POSIT 格式；</li>
+<li>权重加载：regime 存全局 SRAM，尾数存 CIM 阵列；CPCS 同步预计算关键位存空闲单元（只在此阶段工作，开销 1.6%）；</li>
+<li>计算：BRPU 做 shift-OR regime 处理 → CPCS 阵列双位 MAC → CASU 对齐 + OR/加法混合累加；</li>
+<li>POSIT-to-FP 解码器恢复标准 FP 输出。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 POSIT16 怎么来？—— 两个 POSIT8 融合</div>
+<p>PD-CIM 的硬件基础是 POSIT8。POSIT16 通过融合多个 regime 处理单元、CIM 单元和加法单元实现，每个 POSIT16 计算的硬件逻辑约等于 2 个 POSIT8。四种格式（POSIT(16,2)/(16,3)/(8,1)/(8,2)）覆盖典型 AI 应用（ResNet152 推理、GPT-2 训练等）。</p>
+</div>
+</section>

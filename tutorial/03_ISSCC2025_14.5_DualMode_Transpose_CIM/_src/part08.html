@@ -1,0 +1,33 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　能效：FP8 峰值 192.3 TFLOPS/W（0.55V、50% 权重稀疏、近似模式）；其余格式为量级示意。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_accuracy.png" alt="精度" style="max-width:860px">
+  <figcaption>图 8.2　格式精度（示意）：INT8 ≈ BF16 &gt; FP8 &gt; INT4。FP8 精度略低但能效最优——它是“精度 × 能效”的平衡点。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_approx.png" alt="近似收益" style="max-width:920px">
+  <figcaption>图 8.3　近似模式收益：速度 +12%、功耗 −31%；NMED 5.3%（50k 采样，高斯、均值≈0）。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：2.5 ns @ 0.9V（FP8 输入、FP8 权重、BF16 输出）；</li>
+<li><strong>峰值能效</strong>：192.3 TFLOPS/W（FP8，近似模式，0.55V，50% 权重稀疏 + 50% 翻转率）；</li>
+<li><strong>首个四格式统一</strong>：INT4/INT8/FP8/BF16 一个宏全支持（训练+推理）；</li>
+<li><strong>精度</strong>：ResNet-18@CIFAR10、VGG-19@CIFAR100 上 FP8 略低于 INT8/BF16 但显著高于 INT4。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_5_6_测量结果.png" alt="论文图 14.5.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.5.6：对比表、能效电压缩放与 Shmoo 图。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_7_芯片照片.png" alt="论文图 14.5.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.5.7：裸片显微照片与汇总表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 192.3 TFLOPS/W 的测试条件非常“友好”（50% 权重稀疏 + 50% 翻转率 + 近似模式 + 0.55V），和“训练精度最优的精确模式”不是同一个数——应用时先看清模式；② “FP8 能效最优”依赖其 4b 对齐尾数复用 INT4 通路，位宽越低位宽越省，这是结构使然不是魔法；③ 精度对比是在两个特定数据集（CIFAR10/100）上测的，对更大模型/数据集要重新评估。</p>
+</div>
+</section>

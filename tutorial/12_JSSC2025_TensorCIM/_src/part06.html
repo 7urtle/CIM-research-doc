@@ -1,0 +1,22 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>系统架构与 MCM 系统</h2>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="系统架构" style="max-width:940px">
+  <figcaption>图 6.1　TensorCIM 芯粒：8 个 ILA-CIM 核 + 8 个 REGM + EOCI + 256kB 输入/全局缓冲 + SIMD + 控制器；四种芯粒组成 MCM 系统。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_5_总体架构.png" alt="论文图5">
+  <figcaption>图 6.2　论文原图 Fig. 5：TensorCIM 处理器总体架构（三种配置）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<ul>
+<li><strong>8 个 ILA-CIM 核</strong>：每个核配一个 REGM（动态采集管理）；支持输入前瞻/FP 对齐/输出合并；</li>
+<li><strong>EOCI</strong>：负责 SpA 模式的平衡初始化；</li>
+<li><strong>256kB 输入缓冲 + 256kB 全局缓冲 + SIMD 核 + 顶层控制器</strong>；</li>
+<li><strong>三种配置复用同一数据通路</strong>：SpG 模式（CIM 采集）、SpA 初始化（EOCI）、SpA 计算（ILA-CIM）；</li>
+<li><strong>INT8/INT16/FP32 三种精度</strong>：INT 通过旁路指数处理实现（3 个 INT8 权重拼进 FP32 尾数槽）。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig12_20_芯片照片.png" alt="论文图20">
+  <figcaption>图 6.3　论文原图 Fig. 20：TensorCIM 的 MCM 封装、单芯粒封装、芯片显微照片、VF 缩放曲线与规格。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>

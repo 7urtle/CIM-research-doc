@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">性能与安全开销：安全不是免费的（论文 Fig.13 + 表 V）</text>
+
+  <!-- perf -->
+  <rect x="40" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">宏性能（14nm，0.55V/80MHz）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">保护版最高能效 <tspan fill="#1d8a5f" font-weight="700">8.1 TOPS/W</tspan>（0.50 V）</text>
+    <text x="60" y="162" fill="#45536b">频率限制 100 MHz（测试环境同步通信/FPGA 数据输入）</text>
+    <text x="60" y="186" fill="#45536b">吞吐反而更高：Boolean 共享的非完备性要求</text>
+    <text x="60" y="208" fill="#45536b">加法树/累加器流水化 → 流水提升吞吐</text>
+    <text x="60" y="232" fill="#45536b">权重解密延迟 +3.2×，但计算延迟主导 → 整体影响小</text>
+    <text x="60" y="256" fill="#45536b">权重加载不频繁（数据复用）→ 解密功耗也被摊薄</text>
+  </g>
+
+  <!-- overhead -->
+  <rect x="490" y="84" width="430" height="200" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">安全开销（论文 Fig.13）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">位单元+乘法列面积 <tspan fill="#e66e5a" font-weight="700">×5.3</tspan></text>
+    <text x="530" y="158" fill="#45536b">（3 份共享 + 2 个 PUF 反馈切断晶体管）</text>
+    <text x="510" y="184" fill="#45536b">全加器面积 ×14.2 → 加法树 ×15.5</text>
+    <text x="510" y="206" fill="#45536b">加法器+累加器面积效率 −6.4×</text>
+    <text x="510" y="232" fill="#45536b">与文献 [30] 一致（乘法器面积效率 −6.1×、能效 −5.7×）</text>
+    <text x="510" y="262" fill="#e66e5a" font-size="11.5" font-weight="600">安全不能免费，但优化避免了更高开销</text>
+  </g>
+
+  <!-- breakdown -->
+  <rect x="40" y="304" width="880" height="110" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="330" fill="#0e5a8a" font-size="14" font-weight="700">功耗/面积分解（论文 Fig.13）</text>
+  <g font-size="12.5">
+    <text x="60" y="358" fill="#45536b">未保护 vs 保护的功耗与面积占比：乘法/加法树/累加器为主要开销来源</text>
+    <text x="60" y="384" fill="#45536b">ASCON 仅占宏面积 ~16%（可每宏一个实例）· PUF FSM 极小</text>
+    <text x="60" y="410" fill="#45536b">→ 开销集中在计算逻辑的共享化，而非安全外设</text>
+  </g>
+
+  <!-- compare -->
+  <rect x="40" y="434" width="880" height="100" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="460" fill="#6b3fa0" font-size="14" font-weight="700">与先前安全工作对比（表 VI）</text>
+  <g font-size="12">
+    <text x="60" y="486" fill="#45536b">第一个考虑「数字 IMC 安全」的工作；SCA 测试更严格（CPA + TVLA）</text>
+    <text x="60" y="508" fill="#45536b">不限制位精度/NN 精度；运行期零随机比特（仅配置期一次性）；BPA+SCA 超 100 万采样</text>
+  </g>
+</svg>

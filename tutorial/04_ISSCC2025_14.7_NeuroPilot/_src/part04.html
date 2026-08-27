@@ -1,0 +1,37 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：DDS 双向搜索 —— 两端同时出发，中间交汇</h2>
+<figure>
+  <img src="assets/diagrams/d04_dds.svg" alt="DDS" style="max-width:940px">
+  <figcaption>图 4.1　SDS 单向（信号铺满大半个图）vs DDS 双向（两股波前各走一半，中间交汇）。</figcaption>
+</figure>
+<p>单向搜索（SDS）的信号从 START 一路“铺”到 END——波前覆盖的区域几乎是整个地图（最坏情况）。DDS 让 <strong>START 和 END 同时发出波前</strong>：</p>
+<ul>
+<li>两股波前各自以“8 邻接”扩散，在<strong>中间某个 PE 交汇（junction）</strong>；</li>
+<li>交汇 PE 产生 junction 信号：去激活自身、产生行列信号标记交汇位置、并终止 OPC 预充电（§5.2）；</li>
+<li>每个 PE 早已存好“从哪来的方向”→ 从交汇点向两端回溯 → 拼出完整路径。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 DDS 收益</div>
+<p>例图（ISSCC 风格地图）：<strong>时间 −2.1×、功耗 −1.13×</strong>；32×32 无障碍图：<strong>处理 −2.0×、功耗 −1.28×</strong>。直觉：两股波前各自只走“一半距离”，总覆盖面积几乎减半——搜索时间与能耗同时减半。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_7_2_结构与DDS.png">
+  <source src="assets/videos/v02_dds.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · DDS 双向搜索动画：绿波前从 START、红波前从 END 同时出发，橙色区域=交汇。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_7_2_结构与DDS.png" alt="论文图 14.7.2">
+  <figcaption>图 4.2　论文原图 Fig. 14.7.2：NeuroPilot CIM 结构、DDS 传播与工作流。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">⚔ 演示 B · DDS vs SDS 对比（处理时间与功耗）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">SDS 波前要铺满大半个图；DDS 两股波前各走一半</span>
+</div>
+<div class="hint">红色=SDS 的波前覆盖（几乎整图）；绿色/橙色=DDS 两股波前（各半图，橙色交汇）。看 DDS 的“覆盖面积”如何减半。</div>
+</div>
+</section>

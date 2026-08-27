@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">随机计算（SC）基础：用比特流里的“1 的比例”表示数</text>
+
+  <!-- representation -->
+  <rect x="40" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">数 = 比特流中 1 的比例</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">例：A = 01000001（8 位流，2 个 1）→ 表示 2/8</text>
+    <g>
+      <rect x="70" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="88" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="108" y="152" width="36" height="34" fill="#d9f0e4" stroke="#1d8a5f"/><text x="126" y="174" text-anchor="middle" fill="#1d8a5f">1</text>
+      <rect x="146" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="164" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="184" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="202" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="222" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="240" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="260" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="278" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="298" y="152" width="36" height="34" fill="#fde8e4" stroke="#e66e5a"/><text x="316" y="174" text-anchor="middle" fill="#a0402e">0</text>
+      <rect x="336" y="152" width="36" height="34" fill="#d9f0e4" stroke="#1d8a5f"/><text x="354" y="174" text-anchor="middle" fill="#1d8a5f">1</text>
+    </g>
+    <text x="60" y="216" fill="#45536b">每个比特权重相等（1/N）；1 的位置应随机（避免流间相关）</text>
+    <text x="60" y="240" fill="#45536b">有符号：split-unipolar（正流 − 负流，±1 之间）</text>
+    <text x="60" y="270" fill="#1d8a5f" font-size="11.5" font-weight="600">→ 硬件只需极小的 1-bit 逻辑（AND/OR）！</text>
+  </g>
+
+  <!-- building blocks -->
+  <rect x="490" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="14" font-weight="700">基本积木（论文 Fig.2）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b"><tspan fill="#1d8a5f" font-weight="600">乘法 = AND 门</tspan>：Prob(A∩B) = Prob(A)×Prob(B)</text>
+    <g>
+      <rect x="520" y="152" width="70" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="555" y="174" text-anchor="middle" fill="#1d8a5f" font-size="11">流 A</text>
+      <rect x="600" y="152" width="70" height="34" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="635" y="174" text-anchor="middle" fill="#1d8a5f" font-size="11">流 B</text>
+      <rect x="680" y="152" width="80" height="34" rx="6" fill="#fdeeda" stroke="#f0a030"/><text x="720" y="174" text-anchor="middle" fill="#a06510" font-size="11">AND → A×B</text>
+    </g>
+    <text x="510" y="212" fill="#45536b"><tspan fill="#f0a030" font-weight="600">加法 = MUX / OR 门</tspan></text>
+    <text x="530" y="234" fill="#45536b">MUX（控制位随机选输入）= 缩放加法（平均）</text>
+    <text x="530" y="256" fill="#45536b">OR = 近似加法：Prob(A∪B) ≈ Prob(A)+Prob(B)</text>
+    <text x="510" y="280" fill="#45536b"><tspan fill="#6b3fa0" font-weight="600">二值→随机 = SNG</tspan>（LFSR + 比较器/MUX 链）</text>
+  </g>
+
+  <!-- motivation -->
+  <rect x="40" y="314" width="880" height="220" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="340" fill="#0e5a8a" font-size="14" font-weight="700">为什么 SC 适合 CIM？—— SCIM 的动机（论文 Fig.1）</text>
+  <g font-size="12.5">
+    <text x="60" y="370" fill="#45536b">模拟 CIM 的问题：ADC/DAC 又大又费电、晶体管失配限制精度（32~64 行并行只能 3~4 bit）</text>
+    <text x="60" y="396" fill="#45536b">数字 CIM 的问题：加法树每存储位要 ~20 个额外晶体管 → 面积密度下降</text>
+    <text x="60" y="430" fill="#1d8a5f" font-weight="600">SCIM（本论文）：SC 的 1-bit 逻辑（AND/OR）+ CIM 的低搬移</text>
+    <text x="80" y="456" fill="#45536b">① 乘法用 2 个级联 nMOS（AND）→ 单元仅 +4 晶体管；② 累加用 wired-OR（1-bit 逻辑）→ <strong>免 ADC/DAC</strong>；</text>
+    <text x="80" y="482" fill="#45536b">③ OR 累加在逻辑电平输出（1-bit）→ 感放即可，无大 ADC；④ 免 ADC 让加速器可扩展到先进工艺低电源</text>
+    <text x="60" y="516" fill="#45536b">挑战：① SNG 能耗是 SC MAC 的 25× → 需大复用因子；② 流长随精度指数增长（8-bit 需 256 位流）；③ OR 近似累加是非线性 → 训练要建模</text>
+  </g>
+</svg>

@@ -1,0 +1,59 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>SC 基础与 SCIM 处理器架构</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① SC 的数表示与 AND/OR/MUX 的数学；② SCIM 加速器的高层架构（32 宏 + 并行计数器 + 定点域处理）。</p>
+</div>
+
+<h3>2.1 SC 的数学：概率与逻辑门</h3>
+<p>如果流中 1 的位置随机分布，SC 的运算遵循概率规则：</p>
+<ul>
+<li><strong>乘法</strong>：Prob(A∩B) = Prob(A)×Prob(B) → AND 门；</li>
+<li><strong>缩放加法</strong>：MUX 控制位随机选输入 → 平均函数；</li>
+<li><strong>近似加法</strong>：Prob(A∪B) = Prob(A)+Prob(B)−Prob(A∩B) ≈ Prob(A)+Prob(B) → OR 门；</li>
+<li>OR 累加多输入时输出 ≈ 1−e^(−s)（s=精确和）——小输入近线性、大输入饱和。</li>
+</ul>
+<p>OR 加法虽不精确，但先前的 SC 工作（[15][16]）提出训练方法补偿累加和流生成的误差：PRNG（LFSR）对给定输入/流产生<strong>确定性</strong>比特流 → 训练模型可以学习流的模式 → 允许 SNG 间适度共享随机数 → MNIST/CIFAR-10 精度与 8-bit 定点相当。</p>
+
+<figure>
+<img src="assets/diagrams/d01_sc_basics.svg" alt="SC基础教学图">
+<figcaption>教学图 1 · SC 的数表示、基本积木与 SCIM 动机。</figcaption>
+</figure>
+
+<h3>2.2 处理器架构（论文 Fig.3）</h3>
+<p>CNN 处理器由 32 个 SCIM 宏组成，对激活与权重在 SC 域做<strong>位并行</strong>卷积：</p>
+<ol>
+<li>SCIM 宏输出卷积结果（随机域）→ <strong>并行计数器</strong>转二进制（定点域）；</li>
+<li>定点域做 ReLU、最大池化、批归一化；</li>
+<li>层输出存输出 SRAM，供下一层使用。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig18_3_SCIM加速器架构.png" alt="SCIM加速器架构">
+<figcaption>图 3 · 论文 Fig.3：SCIM 加速器架构——32 个宏 + 并行计数器 + 定点域处理。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d02_bitparallel.svg" alt="位并行教学图">
+<figcaption>教学图 2 · Split-unipolar 表示与位并行映射。</figcaption>
+</figure>
+
+<h3>2.3 数表示：split-unipolar</h3>
+<ul>
+<li><strong>Unipolar</strong>：1 的比例 ∈ [0,1]，只表示正数；</li>
+<li><strong>Split-unipolar</strong>：正流 − 负流 → 有符号数 ∈ [−1,1]（负数的幅值编码在负流、正流为 0）；</li>
+<li>激活（ReLU 后非负）→ 只需正流（存储省一半）；权重（有符号）→ 需正负两流；</li>
+<li>MAC 需处理<strong>交叉积</strong>：激活正流 a 分别与 wp、wn 做 AND → 两个 OR 累加 → outp、outn → outp−outn = 点积的 split-unipolar 表示。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_4_split-unipolar表示与位并行映射.png" alt="split-unipolar表示与位并行映射">
+<figcaption>图 4 · 论文 Fig.4：输入与权重的 split-unipolar 表示、位并行处理与到 SCIM 宏的映射。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① SC 用 AND（乘法）、OR/MUX（加法）在概率域计算，确定性 LFSR 流让误差可被训练学习；② 架构：32 宏 SC 域卷积 → 并行计数器转二进制 → 定点域池化/BN/ReLU；③ split-unipolar 表示有符号数，激活只存正流。</p>
+</div>
+</section>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：Compound AI 全数据通路 FP-CIM 宏（ISSCC 2025 14.4）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2025 14.4 复合式 AI 全数据通路浮点 CIM 宏的 MantissaEE 格式、后乘积对齐、累加存内与稀疏加速。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">Compound AI 全数据通路 CIM 零基础精讲</div>
+    <div class="t2">ISSCC 2025 · Session 14 · Paper 14.4</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：Compound AI</a>
+  <a class="sec" href="#sec2">02 · 三大挑战</a>
+  <a class="sec" href="#sec3">03 · MantissaEE 格式</a>
+  <a class="sec" href="#sec4">04 · 创新①：后乘积对齐</a>
+  <a class="sec" href="#sec5">05 · 创新②：全数据路径存内</a>
+  <a class="sub" href="#sec5-1">5.1 AIM 累加存内</a>
+  <a class="sub" href="#sec5-2">5.2 混合格式乘法</a>
+  <a class="sec" href="#sec6">06 · 创新③：NIM + 动态启动器</a>
+  <a class="sec" href="#sec7">07 · 系统架构与数据流</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">Compound AI 全数据通路浮点存内计算零基础精讲：多个小模型，一套全存内硬件
+<span class="en">A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and &lt;2⁻³⁰ Loss for Compound AI（ISSCC 2025 · Paper 14.4）</span></h1>
+<div class="meta">论文作者：Zhiheng Yue*, Xujiang Xiang* 等（*共同一作）· 清华大学（通讯作者：尹首一）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.4
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p><strong>Compound AI（复合式 AI）</strong>是 2024 年 Berkeley 提出的新范式：把多个专精小模型组合起来，精度不输单个巨模型（例：RevCol 融合多个卷积模型，ImageNet 上比 7.2B 巨模型还高 1.64%）。这为边缘部署打开了新路——但传统 FP-CIM 有三块绊脚石：<strong>高斯分布假设失效（精度掉 &gt;5%）、部分和/残差搬移费电（占 26~72%）、稀疏模式不匹配（加速打折扣）</strong>。</p>
+<p>这篇清华尹首一组的论文用一个 <strong>224kb 异质 CIM 宏</strong>（28nm）逐一解决：</p>
+<ol>
+<li><strong>MantissaEE 格式 + 后乘积对齐</strong>：把 FP16 尾数按指数低位“折叠”成 16b MantissaEE（兼容 FP8/INT8），乘法后<strong>再对齐</strong>（误差只在累加时发生一次）→ FP16-MAC 误差 &lt; 2⁻³⁰、SER 60.1 dB；</li>
+<li><strong>全数据路径存内</strong>：MAC（ME-CIM）+ 路由（NIM）+ 累加（AIM）全在内存里完成，部分和/残差<strong>就地累加不搬移</strong>；输入 2C、权重 SM 的混合格式把翻转降到最低（功耗 −6.3%~42.7%）；</li>
+<li><strong>NIM + 动态启动器</strong>：静态 2:4 剪枝 + 动态 Booth 池双管齐下 → 平均加速 <strong>5.30×</strong>，达到稀疏理论上限的 92.6%。</li>
+</ol>
+<p>实测：峰值 <strong>51.6 TFLOPS/W</strong>、2.44 TFLOPS/mm²，复合模型上平均 5.55~12.54 TFLOPS/W。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>Compound AI = 芯片的多模型并行：</strong>每个小模型可以部署在独立计算核上（本宏 16 个核），核间只需少量融合运算——这正好绕开“单个巨模型放不下”的容量问题。</li>
+<li><strong>“后对齐”为什么更准：</strong>传统浮点 CIM 先按指数差“预对齐”再乘，移位误差被注入<strong>每个乘积</strong>（放大 N 次）；本论文先算完乘积再对齐，误差只在<strong>累加那一步</strong>出现一次——误差从 2⁻¹ 降到 2⁻³⁰，差了 10 亿倍。</li>
+<li><strong>“全数据路径在存内”省的是搬移：</strong>部分和/残差累加是 CIM 最容易忽视的功耗大头（26~72%）。把累加也做进内存（AIM），数据不出内存，搬移功耗直接归零。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“The compound-AI combines several specialized small models to achieve matched or even superior accuracy… RevCol fuses multiple convolutional models and surpasses the 7.2B-parameter monolithic LLM by 1.64%”</td>
+<td>Compound AI：多个专精小模型组合，精度不输巨模型（RevCol 例子）。这是“边缘也能跑高精度 AI”的前提。</td></tr>
+<tr><td class="num">“Previous FP CIMs rely on a Gaussian data distribution… compound-AI employs diverse models, with multiple data distributions, leading to an accuracy degradation of more than 5%”</td>
+<td>挑战 1：旧方案假设数据高斯分布（集中在均值附近）；复合模型多种分布 → 高斯假设失效 → 精度掉 5% 以上。</td></tr>
+<tr><td class="num">“partial-sum/residual accumulation requires data movement and accounts for 26-72% power consumption”</td>
+<td>挑战 2：部分和/残差累加的数据搬移占功耗 26~72%（位串行 CIM 更严重）。</td></tr>
+<tr><td class="num">“A heterogeneous-CIM macro… allows post-product alignment to approach &lt; 2⁻³⁰ accuracy loss. The proposed mantissaEE format supports different data precision for lossless computing”</td>
+<td>方案 1：异质 CIM + 后乘积对齐 → 误差 &lt; 2⁻³⁰；MantissaEE 格式兼容多种精度无损计算。</td></tr>
+<tr><td class="num">“The full data path is computed in memory… a hybrid format is explored to achieve peak-energy efficiency”</td>
+<td>方案 2：全数据路径在存内计算（含累加），混合格式追求峰值能效。</td></tr>
+<tr><td class="num">“A network-in-memory (NIM) and a dynamic launcher capture static and dynamic sparsity opportunities, achieving &gt;2.7× performance improvement”</td>
+<td>方案 3：NIM + 动态启动器捕获静态/动态稀疏 → 性能提升 &gt;2.7×。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>异质 CIM + 后乘积对齐</strong>：尾数乘法与指数累加并行，乘积后再对齐 → FP16-MAC 误差 &lt; 2⁻³⁰、SER 60.1 dB（3.14×）、精度损失平均降 11.07×；</li>
+<li><strong>MantissaEE 格式</strong>：16b 统一格式兼容 FP16/FP8/INT8，指数分布折叠、对齐位宽减小；</li>
+<li><strong>全数据路径存内</strong>：AIM 累加存内（INT32 −38.3%、FP32 −15.4% 功耗）；混合 2C×SM 格式翻转 −5.2~47.5%、功耗 −6.3~42.7%；</li>
+<li><strong>NIM + 动态启动器</strong>：静态 2:4（2×）+ 动态 Booth 池（2.65×）= 5.30× 平均加速，达理论上限 92.6%；</li>
+<li><strong>无预充电 10T 位单元</strong>：稀疏数据读 0 不耗电，比 8T 省 1.95×（面积 +1.26×）；</li>
+<li><strong>实测</strong>：51.6 TFLOPS/W、2.44 TFLOPS/mm²，FoM（SER×吞吐/面积/功耗）比前作 FP-CIM 高 &gt;5.72×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“后乘积对齐”和“全数据路径存内”是本文最值得反复咀嚼的两个设计思想。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：Compound AI —— 用“组合”替代“巨型化”</h2>
+<figure>
+  <img src="assets/diagrams/d01_compound_ai.svg" alt="Compound AI" style="max-width:920px">
+  <figcaption>图 1.1　单一巨模型 vs 复合式 AI（多个专精小模型）：后者精度不输、每个都小到能上边缘。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么 Compound AI 是边缘部署的机会？</div>
+<p>模型越大越准，但参数爆炸让边缘芯片装不下、跑不动。Compound AI 反其道而行：<strong>用多个“专精小模型”组合</strong>——每个模型只负责一个子任务（视觉、语言、注意力等），模型间做少量融合。Berkeley 的博客（2024）把这种转变叫“从单一模型到复合 AI 系统”。对芯片设计者来说，这意味着：</p>
+<ul>
+<li>每个小模型都能独立部署（本宏 16 个核正好对应 16 个小模型）；</li>
+<li>核间只需“加法器级”的融合（残差、部分和），通信开销小；</li>
+<li>总精度看组合效果，不依赖单个巨模型。</li>
+</ul>
+</div>
+<p>但复合模型也给 CIM 带来新问题：多个模型 = 多种数据分布、多种稀疏模式、频繁的残差/部分和流动——这正是论文三大挑战的由来（§2）。</p>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>传统 FP-CIM 加速 Compound AI 的三大挑战</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① 高斯分布假设失效（精度）；② 部分和/残差搬移（功耗）；③ 稀疏模式不匹配（性能）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_4_1_挑战.png" alt="论文图 14.4.1">
+  <figcaption>图 2.2　论文原图 Fig. 14.4.1：在传统 FP-CIM 上部署复合模型的挑战（精度/功耗/性能三维）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 精度：分布假设</td><td>高斯假设 → 对齐损失在复合模型多种分布下放大（&gt;5% 掉点）</td><td>MantissaEE + 后乘积对齐 → 误差 &lt;2⁻³⁰</td></tr>
+<tr><td>② 功耗：数据搬移</td><td>部分和/残差累加搬移占 26~72% 功耗</td><td>全数据路径存内（AIM 就地累加）</td></tr>
+<tr><td>③ 性能：稀疏模式</td><td>各模型稀疏模式不同，实际加速 &lt; 理论</td><td>NIM（静态 2:4）+ 动态启动器（动态 Booth 池）</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>MantissaEE 格式：把指数“折叠”进尾数，一格式三精度</h2>
+<figure>
+  <img src="assets/diagrams/d03_mantissae.svg" alt="MantissaEE" style="max-width:940px">
+  <figcaption>图 3.1　FP16（1+5+10）→ 16b MantissaEE：尾数按指数低 2 位（E[1:0]）移位后拼接，兼容 FP8/INT8。</figcaption>
+</figure>
+<p>浮点 CIM 做乘法的难点在于“对齐需要知道指数差”。MantissaEE 的思路：<strong>把指数的低位直接“折进”尾数的移位里</strong>，形成一个统一宽度的表示：</p>
+<div class="formula">MantissaEE = 尾数右移 E[1:0] 位后再拼接（16b）<span class="tag">式 3.1</span></div>
+<ul>
+<li><strong>兼容三种精度</strong>：FP16 的尾数移位后得到 16b MantissaEE；FP8（E4M3）和 INT8 可以直接映射到同一宽度 → 一个 ME-CIM 阵列服务三种格式；</li>
+<li><strong>指数分布折叠</strong>：对齐所需的有效指数宽度变小（低位已经进了尾数），后续对齐移位量减小；</li>
+<li><strong>同排存储</strong>：MantissaEE 与指数存在 ME-CIM 同一行，并行做乘/加；阵列里集成 XOR/AND（Booth 乘法 + 全加器所需的逻辑），按精度激活外围移位器/部分全加器完成剩余逻辑。</li>
+</ul>
+<div class="demo">
+<div class="dhead">🔬 演示 A · MantissaEE 转换（拖动指数低位看尾数怎么移位）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <label class="hint" style="margin:0">指数低 2 位 E[1:0]：</label><input id="demoA-e" type="range" min="0" max="3" value="2" style="flex:1;accent-color:#6b3fa0">
+  <span class="stat" id="demoA-stat">E[1:0]=2 → 尾数右移 2 位后拼成 MantissaEE</span>
+</div>
+<div class="hint">E[1:0] 越大，尾数移位越多（对齐量被“预折叠”进尾数）。这样乘法后只需对“剩余指数差”做小量对齐。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：后乘积对齐 —— 把误差从 2⁻¹ 压到 2⁻³⁰</h2>
+<figure>
+  <img src="assets/diagrams/d04_post_align.svg" alt="后乘积对齐" style="max-width:940px">
+  <figcaption>图 4.1　传统“预对齐”（先移尾数再乘，误差注入每个乘积）vs 本文“后乘积对齐”（先乘后对齐，误差只在累加时发生一次）。</figcaption>
+</figure>
+<p>传统浮点 CIM 的处理顺序是：<strong>指数对齐 → 尾数相乘 → 累加</strong>。对齐时的移位会“截断”尾数——这个误差被注入到<strong>每一个</strong>乘积里，N 个乘积就放大 N 次。当数据分布很广（Compound AI 的多模型场景），指数差很大，对齐损失尤其严重。</p>
+<p>本文把顺序改成：<strong>尾数并行相乘 + 指数并行累加 → CIM 出部分积 → 后乘积对齐 → 累加</strong>：</p>
+<ul>
+<li>尾数乘法在 CIM 里并行做（不涉及对齐，无截断）；</li>
+<li>指数加法器算出每个乘积的指数和；</li>
+<li>CIM 生成部分积后，才按指数差<strong>后对齐</strong>——误差只在这一步出现一次；</li>
+<li>MantissaEE 让对齐移位量变小 + 乘积位宽更宽 → 截断损失进一步下降。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 精度账</div>
+<p>证明概念（proof-of-concept）：FP16-MAC 最大误差率 <strong>&lt; 2⁻³⁰</strong>（前作 FP 宏是 2⁻¹，差约 10 亿倍）。实测 SER（信号误差比）= <strong>60.1 dB</strong>（3.14× 于传统 FP-CIM）；应用在 ResNet/MobileNet/注意力等复合模型上，<strong>精度损失平均降低 11.07×</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_3_后乘积对齐.png">
+  <source src="assets/videos/v01_post_align.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 后乘积对齐流程动画：尾数并行乘 → 指数累加 → 乘积后才对齐累加（误差只出现一次）。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_4_3_后乘积对齐.png" alt="论文图 14.4.3">
+  <figcaption>图 4.2　论文原图 Fig. 14.4.3：后 CIM 对齐计算流程、误差率证明与对应异质 CIM 宏设计。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🧮 演示 B · 预对齐 vs 后对齐：误差差在哪里</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">预对齐：截断误差进入每个乘积；后对齐：只进一次</span>
+</div>
+<div class="hint">红色=预对齐（每个乘积都带截断误差，累加后误差被放大）；绿色=后对齐（乘积无损，只有最终累加时对齐一次）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：全数据路径存内 —— 累加也做进内存</h2>
+
+<h3 id="sec5-1">5.1 AIM（累加存内）：部分和/残差就地累加</h3>
+<figure>
+  <img src="assets/diagrams/d05_aim.svg" alt="AIM" style="max-width:940px">
+  <figcaption>图 5.1　AIM：6T 单元 + 解耦读/累加，CIM 部分和与存储值在伪行内做 AND/NOR + 部分全加并写回——数据不出内存。</figcaption>
+</figure>
+<p>传统 CIM 只做 MAC，部分和/残差要搬回累加器（占 26~72% 功耗）。本文的 <strong>AIM（Accumulate-In-Memory）</strong>把累加也搬进存储：</p>
+<ul>
+<li><strong>6T 单元 + N1/N2/N3</strong>：读与累加路径解耦；CWL+CIMEN 激活时，存储值（1）+ 输入（1）→ CBL 拉高（AND 操作），CBLB 对称做 NOR；</li>
+<li><strong>部分全加器</strong>：复用 AND/NOR 结果简化加法器；求和写回单元 → 就地完成累加；</li>
+<li><strong>INT/FP 双模</strong>：XOR 区分；FP 模式多一步“指数比较对齐”（FP32 时 FA 输出用于对齐/累加/舍入）。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 功耗账</div>
+<p>vs 全数字方案：<strong>INT32 省 38.3%、FP32 省 15.4%</strong> 功耗；部署在混合模型上，系统功耗 <strong>INT 模式 −22.1%、FP 模式 −9.7%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_4_累加存内与混合格式.png">
+  <source src="assets/videos/v02_aim.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · AIM 累加动画：部分和从 CIM 送到 AIM，与存储值就地相加写回——数据不出内存。</div>
+</div>
+
+<h3 id="sec5-2">5.2 混合格式乘法：输入 2C + 权重 SM</h3>
+<figure>
+  <img src="assets/diagrams/d06_hybrid_format.svg" alt="混合格式" style="max-width:920px">
+  <figcaption>图 5.2　三种格式组合：2C(IN)×2C(W) 翻转最多；SM×SM 不适配 CIM；2C(IN)×SM(W)（本文）翻转最少且无“加 1 补偿”。</figcaption>
+</figure>
+<p>乘法的数据格式组合直接影响翻转功耗：输入是每周期广播的“热”数据 → 用 <strong>2 的补码（2C）</strong>适配 CIM 广播结构；权重是驻留的“冷”数据 → 用<strong>符号-数值（SM）</strong>让负权重保持位稀疏。这个组合既免去 SM×SM 对 CIM 的不适配，又避免了 2C×2C 的“加 1 补偿”逻辑——<strong>翻转活动 −5.2%~47.5%、功耗 −6.3%~42.7%</strong>。</p>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：NIM + 动态启动器 —— 静态与动态稀疏双管齐下</h2>
+<figure>
+  <img src="assets/diagrams/d07_sparsity.svg" alt="稀疏加速" style="max-width:940px">
+  <figcaption>图 6.1　静态稀疏（2:4 剪枝 + NIM 路由）与动态稀疏（Booth 池 + 动态启动器）的组合。</figcaption>
+</figure>
+<p><strong>静态稀疏（权重剪枝、注意力掩码）</strong>：用业界最通用的 <strong>2:4 压缩</strong>（4 个权重保留 2 个），保持跨模型兼容。NIM（网络存内）按匹配权重从 4 个单元中选 2 个输入元素，并<strong>排除两条“不可能路径”</strong>降低网络复杂度；读出的数据再 Booth 编码做权重乘法。</p>
+<p><strong>动态稀疏（激活/编码项的随机稀疏）</strong>：每个编码项有 4 个字段——<strong>ID</strong>（选择匹配权重）、<strong>sign</strong>（SM 符号翻转）、<strong>valid</strong>（有效掩码）、<strong>SF</strong>（移位偏移）。valid 的分布是随机的（动态稀疏）。两个机制处理：</p>
+<ul>
+<li><strong>BPLS（Booth 池-道共享）</strong>：8/4 个并行输入 × 4/8 个编码项构成 Booth 池，把非零项<strong>重排</strong>到空闲道 → 消除“稀疏导致的空道”，逼近理想加速；</li>
+<li><strong>动态启动器</strong>：收集有效 Booth 池字段，<strong>并行前导 1 检测器</strong>逐个找出有效项，只对有效项做选择性 Booth 编码乘法（ID 选权重、XOR 翻符号、AND 掩码、SF 提供移位）。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 加速账</div>
+<p>静态 2× + 动态 2.65× = <strong>平均 5.30× 加速</strong>（>2.7× 于前作），达到稀疏理论上限（1/稀疏度）的 <strong>92.6%</strong>——“实际与理论加速的差距”被基本抹平。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_4_5_稀疏加速.png">
+  <source src="assets/videos/v03_sparsity.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 稀疏加速动画：静态 2:4 选路 + 动态 Booth 池重排 + 前导 1 启动器。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_4_5_稀疏加速.png" alt="论文图 14.4.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.4.5：静态/动态稀疏感知加速、NIM、稀疏感知单元与动态启动器设计。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 2:4 静态稀疏路由（NIM 选择）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">4 个权重选 2 个有效（2:4）</span>
+</div>
+<div class="hint">每 4 个权重保留 2 个（黄色=有效）。NIM 只路由有效项到计算路径，并排除两条“不可能路径”简化网络。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：16 个核部署 16 个模型</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　异质 CIM 宏：16 个核（每个部署一个专精小模型），每核 = 8 个 CIM-set + 核间加法器 + 0.5kb AIM；CIM-set = 1.375kb ME-CIM（4 并行 FP16 / 8 并行 FP8）+ 0.25kb NIM + 动态启动器。</figcaption>
+</figure>
+<ul>
+<li><strong>16 个异质 CIM 核</strong>：每个核部署一个 Compound AI 小模型；核间通过核间加法器做融合（残差/组合）；</li>
+<li><strong>CIM-set</strong>：1.375kb ME-CIM（尾数-指数存内计算）执行 4 个并行 FP16 或 8 个并行 FP8 MAC；0.25kb NIM + 动态启动器做稀疏感知加速；</li>
+<li><strong>AIM（0.5kb）</strong>：部分和与残差的就地累加；</li>
+<li><strong>全数据路径存内</strong>：MAC → 路由 → 累加都在内存内部完成，只有最终结果出内存。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_4_2_架构与特性.png" alt="论文图 14.4.2">
+  <figcaption>图 7.2　论文原图 Fig. 14.4.2：异质宏整体架构与三大特性（精度/能效/速度）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 “无预充电 10T 位单元”——最后的拼图</div>
+<p>稀疏加速让读出的数据流“很多 0”。传统 SRAM 读前要<strong>预充电</strong>（每个周期都花电）；本文的 10T 单元用反相器替代预充电，<strong>RBL 不变（读 0）就不耗电</strong>——和稀疏数据天然匹配。比 8T 双端口省 1.95× 功耗（面积仅 +1.26×），是本宏 51.6 TFLOPS/W 峰值能效的重要来源（图 d09）。</p>
+</div>
+<figure>
+  <img src="assets/diagrams/d09_presfree_cell.svg" alt="无预充电单元" style="max-width:920px">
+  <figcaption>图 7.3　8T 预充电单元 vs 本文 10T 无预充电单元：读 0（RBL 不动）零功耗。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 8.1　能效：峰值 51.6 TFLOPS/W（含稀疏+无预充电单元）、基础 16.2 TFLOPS/W、复合模型部署平均 5.55~12.54 TFLOPS/W（图中为范围中值示意）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_ser.png" alt="SER" style="max-width:860px">
+  <figcaption>图 8.2　SER 60.1 dB = 前作 3.14×；FP16-MAC 最大误差 &lt; 2⁻³⁰（前作 2⁻¹）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_sparsity.png" alt="稀疏加速" style="max-width:860px">
+  <figcaption>图 8.3　稀疏加速：静态 2× + 动态 2.65× = 5.30×，达理论上限（1/稀疏度）的 92.6%。</figcaption>
+</figure>
+<ul>
+<li><strong>工艺/面积</strong>：28nm，2.67 mm²，224kb 异质宏；</li>
+<li><strong>能效</strong>：峰值 51.6 TFLOPS/W、2.44 TFLOPS/mm²；复合模型平均 5.55~12.54 TFLOPS/W；</li>
+<li><strong>精度</strong>：SER 60.1 dB、误差率 &lt;0.6%（所有测试模型平均）；</li>
+<li><strong>FoM</strong>（SER × 系统吞吐/面积/功耗）：比前作 FP-CIM 高 <strong>&gt;5.72×</strong>。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_4_6_测量结果.png" alt="论文图 14.4.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.4.6：代表性模型测量结果、Shmoo 图与前作对比表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_4_7_芯片照片.png" alt="论文图 14.4.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.4.7：裸片显微照片与硬件规格表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 51.6 TFLOPS/W 依赖“稀疏数据 + 无预充电单元”的组合条件，和 16.2 TFLOPS/W 的基础值差异巨大——读论文先弄清“哪个数字在什么条件下测得”；② 2⁻³⁰ 是“证明概念”下的误差上界，实际 SER 60.1 dB 是 64×64 采样的平均值；③ Compound AI 的“5.55~12.54 TFLOPS/W”跨模型范围说明复合模型的负载差异很大，性能报告要看分布而不是只看峰值。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>Compound AI 的系统化编译与调度</strong>：16 个核怎么分配模型、核间融合怎么调度、动态精度怎么选——做一个“Compound AI → 多核 CIM”的自动编译器（模型划分、位宽分配、稀疏映射），是软件-硬件协同的下一个大问题；</li>
+<li><strong>后乘积对齐的通用化</strong>：本文针对 FP16/FP8。把后乘积对齐推广到 BF16/MXFP/FP32、以及“块浮点”场景；MantissaEE 的“指数折叠”能否扩展成更一般的格式族？</li>
+<li><strong>更多“存内算子”</strong>：AIM 把累加做进了内存。下一步：把归一化、激活、甚至 softmax 都“存内化”，让“全数据路径在存内”名副其实——但每个算子存内化的面积/精度代价要仔细权衡；</li>
+<li><strong>动态稀疏的在线检测</strong>：动态启动器目前靠“valid 字段”标记。能否在 CIM 内部实时检测激活稀疏（零检测）并动态跳过？配合 10T 无预充电单元，能效还能再翻；</li>
+<li><strong>大模型局部性利用</strong>：LLM 的注意力有“局部性”（相邻 token 相关性高）。把 Compound AI 的思想和 LLM 推理结合：不同 token/头分给不同核，核间只做必要的融合——这是边缘 LLM 的潜在路线；</li>
+<li><strong>工艺与 3D 集成</strong>：28nm → 先进节点；AIM/NIM 这类“存内逻辑”可以配合 3D 堆叠（08 号论文路线），把“存内数据路径”扩展到多层。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>Compound AI（复合式 AI）</dt><dd>多个专精小模型组合的系统，精度可匹敌巨模型。</dd>
+<dt>MantissaEE</dt><dd>本文格式：FP16 尾数按指数低 2 位折叠成 16b，兼容 FP8/INT8。</dd>
+<dt>后乘积对齐（Post-Product Alignment）</dt><dd>先乘后对齐；误差只在累加时出现一次（&lt;2⁻³⁰）。</dd>
+<dt>预对齐（Pre-Alignment）</dt><dd>传统先对齐再乘；移位误差注入每个乘积。</dd>
+<dt>SER（Signal-to-Error Ratio）</dt><dd>信号误差比 = 10log10(信号/误差)，本宏 60.1 dB。</dd>
+<dt>AIM（Accumulate-In-Memory）</dt><dd>累加存内：部分和/残差就地累加，数据不出内存。</dd>
+<dt>伪行（Pseudo-Row）</dt><dd>AIM 中执行 AND/NOR + 部分全加的行结构。</dd>
+<dt>ME-CIM（Mantissa-Exponent CIM）</dt><dd>尾数-指数存内计算单元（1.375kb）。</dd>
+<dt>混合格式（Hybrid Format）</dt><dd>输入 2C + 权重 SM：翻转最少、无加 1 补偿。</dd>
+<dt>NIM（Network-In-Memory）</dt><dd>网络存内：2:4 稀疏路由（静态）。</dd>
+<dt>动态启动器（Dynamic Launcher）</dt><dd>收集有效 Booth 池字段、前导 1 检测、选择性乘法（动态稀疏）。</dd>
+<dt>BPLS（Booth Pool-Lane Sharing）</dt><dd>Booth 池-道共享：把非零项重排到空闲道。</dd>
+<dt>2:4 压缩</dt><dd>4 个权重保留 2 个的静态剪枝（GPU 通用格式）。</dd>
+<dt>无预充电位单元（10T）</dt><dd>用反相器替代预充电；读 0 不耗电（省 1.95×）。</dd>
+<dt>异质 CIM 核</dt><dd>每核部署一个专精模型，核间加法器融合。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Z. Yue, X. Xiang, et al., “A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and &lt;2⁻³⁰ Loss for Compound AI,” <em>ISSCC 2025</em>, Paper 14.4. DOI: 10.1109/ISSCC49661.2025.10904702</li>
+<li>M. Zaharia et al., “The shift from models to compound AI systems,” <em>Berkeley AI Research Blog</em>, 2024.（Compound AI 概念 [2]）</li>
+<li>Y. Cai et al., “Reversible Column Networks,” <em>ICLR 2023</em>.（RevCol [3]）</li>
+<li>J. Yue et al., “STICKER-IM: A 65nm CIM NN Processor Using Block-Wise Sparsity Optimization…,” <em>IEEE JSSC</em>, vol. 57, no. 8, 2022.（[11]）</li>
+<li>F. Tu et al., “ReDCIM: Reconfigurable Digital CIM Processor with Unified FP/INT Pipeline…,” <em>IEEE JSSC</em>, vol. 58, no. 1, 2023.（[12]）</li>
+<li>J. Choquette et al., “The A100 Datacenter GPU and Ampere Architecture,” <em>ISSCC 2021</em>, pp. 48-50.（2:4 稀疏 [26]）</li>
+<li>H. Noguchi et al., “Which is the best dual-port SRAM in 45-nm… 8T, 10T single end, and 10T differential,” <em>ICICDT 2008</em>.（10T 单元 [27]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.4.1–14.4.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（51.6 TFLOPS/W、60.1 dB、5.30× 等）均来自论文原文；对比图中的换算值已注明依据。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   Compound AI CIM 教学教程 · 交互脚本
+   演示 A MantissaEE · 演示 B 预对齐 vs 后对齐 · 演示 C 2:4 稀疏
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · MantissaEE 转换
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let e = 2;
+  const mantissa = "1101101010"; // 10b 尾数（示例）
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "MantissaEE 转换：尾数按 E[1:0] 右移后拼成 16b（示例尾数 " + mantissa + "）", 30, 24, 15, PAL.white, "left");
+    // 原始尾数
+    txt(ctx, "尾数 M（10b）", 60, 60, 13, PAL.green);
+    for (let k = 0; k < 10; k++) {
+      const x = 220 + k * 30;
+      ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 1.5;
+      rrect(ctx, x, 48, 26, 26, 5); ctx.fill(); ctx.stroke();
+      txt(ctx, mantissa[k], x + 13, 61, 12, PAL.white, "center");
+    }
+    // 移位后
+    txt(ctx, "右移 E[1:0]=" + e + " 位后", 60, 110, 13, PAL.orange);
+    for (let k = 0; k < 10; k++) {
+      const x = 220 + k * 30;
+      const has = k + e < 10;
+      const ch = has ? mantissa[k + e] : "0";
+      ctx.fillStyle = has ? "#3c2e1a" : "#1c2638";
+      ctx.strokeStyle = has ? PAL.orange : PAL.line; ctx.lineWidth = 1.5;
+      rrect(ctx, x, 98, 26, 26, 5); ctx.fill(); ctx.stroke();
+      txt(ctx, ch, x + 13, 111, 12, PAL.white, "center");
+    }
+    // MantissaEE
+    txt(ctx, "MantissaEE（16b）", 60, 160, 13, PAL.purple);
+    for (let k = 0; k < 16; k++) {
+      const x = 220 + k * 30;
+      const shifted = k + e < 10;
+      const ch = shifted ? mantissa[k + e] : "0";
+      ctx.fillStyle = shifted ? "#2a2440" : "#141c2a";
+      ctx.strokeStyle = PAL.purple; ctx.lineWidth = 1.5;
+      rrect(ctx, x, 148, 26, 26, 5); ctx.fill(); ctx.stroke();
+      txt(ctx, ch, x + 13, 161, 11, PAL.white, "center");
+    }
+    txt(ctx, "→ 对齐所需的指数位宽变小（低位已折进尾数）→ 后续对齐移位量小、截断损失小", 60, 210, 13, PAL.gray, "left");
+    txt(ctx, "同一 16b 宽度兼容 FP16 / FP8（E4M3）/ INT8", 60, 238, 13, PAL.blue, "left");
+    if (stat) stat.textContent = "E[1:0]=" + e + " → 尾数右移 " + e + " 位，空位补 0";
+  }
+
+  const sE = document.getElementById("demoA-e");
+  if (sE) sE.oninput = function () { e = parseInt(this.value, 10); draw(); };
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 预对齐 vs 后对齐
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "误差累积对比：预对齐（红）vs 后乘积对齐（绿）", 30, 24, 15, PAL.white, "left");
+    const n = Math.min(cyc, 12);
+    // 预对齐：每个乘积都带误差
+    ctx.fillStyle = "#2a1e1e"; ctx.strokeStyle = PAL.red; ctx.lineWidth = 2;
+    rrect(ctx, 60, 60, 420, 120, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "预对齐：误差注入每个乘积", 80, 82, 14, PAL.red);
+    let preErr = 0;
+    for (let k = 0; k < n; k++) {
+      preErr += 1; // 每个乘积都累积一份误差
+      const x = 80 + k * 30;
+      ctx.fillStyle = "rgba(230,110,90,0.5)";
+      ctx.fillRect(x, 105, 22, 22);
+    }
+    txt(ctx, "总误差 ≈ " + preErr + " × 单次截断误差（放大 N 倍）", 80, 152, 12.5, PAL.red);
+    // 后对齐：误差只出现一次
+    ctx.fillStyle = "#1e2e26"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, 500, 60, 420, 120, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "后乘积对齐：误差只出现一次", 520, 82, 14, PAL.green);
+    for (let k = 0; k < n; k++) {
+      const x = 520 + k * 30;
+      ctx.fillStyle = "rgba(60,190,140,0.5)";
+      ctx.fillRect(x, 105, 22, 22);
+    }
+    txt(ctx, "总误差 ≈ 1 × 单次对齐误差（不放大）", 520, 152, 12.5, PAL.green);
+    txt(ctx, "对比：FP16-MAC 最大误差 < 2⁻³⁰（前作 2⁻¹）· SER 60.1 dB（3.14×）", 60, 220, 14, PAL.orange, "left");
+    txt(ctx, "复合模型上精度损失平均降低 11.07×", 60, 248, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "已处理 " + n + " 个乘积：预对齐误差 ×" + n + "，后对齐误差 ×1";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 600);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 2:4 稀疏路由
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  const groups = [
+    [1, 0, 1, 0], [0, 1, 1, 0], [1, 1, 0, 0], [0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1]
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "NIM 静态 2:4 稀疏路由：4 个权重选 2 个有效", 30, 24, 15, PAL.white, "left");
+    const g = groups[cyc % groups.length];
+    // 4 个权重
+    for (let k = 0; k < 4; k++) {
+      const x = 90 + k * 120;
+      const valid = g[k] === 1;
+      ctx.fillStyle = valid ? "#3c2a1a" : "#141c2a";
+      ctx.strokeStyle = valid ? PAL.orange : PAL.line; ctx.lineWidth = 2;
+      rrect(ctx, x, 70, 100, 60, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, "W" + k + "=" + g[k], x + 50, 92, 13, valid ? PAL.orange : PAL.gray, "center");
+      txt(ctx, valid ? "有效 → 路由" : "剪枝跳过", x + 50, 114, 11, valid ? PAL.green : PAL.gray, "center");
+    }
+    // 路由结果
+    ctx.strokeStyle = PAL.green; ctx.lineWidth = 2.5;
+    let routed = [];
+    g.forEach((v, i) => { if (v) routed.push(i); });
+    routed.forEach((i, k) => {
+      const x = 90 + i * 120;
+      ctx.beginPath(); ctx.moveTo(x + 50, 130); ctx.lineTo(200 + k * 150, 190); ctx.stroke();
+    });
+    ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, 200, 190, 250, 60, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "有效项 " + routed.map(r => "W" + r).join(" + ") + " → Booth 编码乘法", 325, 220, 12, PAL.green, "center");
+    // 排除路径
+    txt(ctx, "排除 2 条不可能路径 → 网络复杂度降低", 560, 220, 12, PAL.gray, "left");
+    txt(ctx, "静态稀疏 ≈ 2× 加速（配合动态启动器共 5.30×，达理论上限 92.6%）", 60, 272, 13, PAL.orange, "left");
+    if (stat) stat.textContent = "组 " + (cyc % groups.length + 1) + "：有效项 " + routed.map(r => "W" + r).join(" + ");
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1100); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1100);
+  draw();
+})();
+
+</script>
+</body>
+</html>

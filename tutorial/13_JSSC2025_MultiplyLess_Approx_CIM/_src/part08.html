@@ -1,0 +1,107 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>NN 部署流程与芯片实测</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 完整的软件工具链（训练 → 截断 → 共享尺度量化 → 正则化 → 上片）；② 逐层映射方法；③ 芯片实测数据（电压/频率/能效/位宽缩放、能量面积分解、两个基准模型精度）。</p>
+</div>
+
+<h3>8.1 NN 模型部署流程（论文 Fig.18(a)）</h3>
+<p>这是一条<strong>自定义的离线训练后量化（post-training quantization, PTQ）</strong>工具链，完全适配芯片架构：</p>
+<ol>
+<li><strong>PyTorch 训练</strong>：先按标准流程训练一个浮点 multiply-less 预训练模型（用 L1 距离替代卷积）；</li>
+<li><strong>权重截断</strong>：负权重 clamp 到 [0, w<sub>max</sub>]，截掉部分并入 WSUM（§4.3）；</li>
+<li><strong>共享尺度量化</strong>：与 CNN 各算各的缩放因子不同，multiply-less 模型做<strong>比较</strong>要求激活和权重<strong>使用同一个缩放因子</strong>。好在 &gt;95% 的权重和激活都落在 2⁻⁵ ~ 2³ 范围内 → 一个共享缩放因子即可完成 8-bit 量化；</li>
+<li><strong>激活正则化</strong>：把每个激活「1」的个数限制到 ≤5（低比特截断），适配改进比较器的容错（§7.5）；</li>
+<li><strong>部署上片</strong>：量化后的模型部署到测试芯片。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么强调“免重训练”？</div>
+<p>这条链路全部是<strong>训练后处理</strong>（PTQ），不需要重训练。对边缘 AI 应用，模型往往已经在云端训好、要快速部署到端侧——免重训练意味着部署成本极低。这是实用性卖点。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_18_部署流程与映射.png" alt="部署流程与映射">
+<figcaption>图 15 · 论文 Fig.18：(a) NN 模型部署流程（离线训练后量化工具链）；(b) 逐层 NN 映射方法。</figcaption>
+</figure>
+
+<h3>8.2 逐层映射（论文 Fig.18(b)）</h3>
+<p>芯片阵列较小，采用<strong>逐层（layer-by-layer）</strong>映射：</p>
+<ul>
+<li>16 列 = 16 个输出通道；每列存 128 个不同输入通道的权重；</li>
+<li>推理时 128 个输入并行送入，与 16 列权重同时计算；</li>
+<li>8 个时钟周期的比较+累加后，得到 16 个部分和（Psum）。</li>
+</ul>
+
+<h3>8.3 芯片实测：工艺与基础指标</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 0.028 mm²</td></tr>
+<tr><td>电压 / 频率范围</td><td>0.54 – 0.9 V / 20 – 240 MHz</td></tr>
+<tr><td>8-bit 峰值算力</td><td>0.122 TOPS @0.9V / 240MHz（一次比较+累加计 2 OPs，8 位需 8 周期）</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>102 TOPS/W</strong> @0.54V / 20MHz / 10% 输入稀疏 / 50% 权重稀疏</td></tr>
+<tr><td>面积效率</td><td>4.4 TOPS/mm²（8-bit）</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig13_14_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 16 · 论文 Fig.14：(a) 芯片显微照片与测试结果汇总；(b) 测试平台（SODIMM 适配板 + FPGA 桥 + 电流表测能效）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig13_15_电压频率缩放.png" alt="电压频率缩放">
+<figcaption>图 17 · 论文 Fig.15：(a) 电压-频率缩放；(b) 8-bit 能效的电压缩放（不同输入稀疏度）；(c) 能效的位宽缩放。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_能效_电压缩放.png" alt="能效电压缩放图">
+<figcaption>数据图 2 · 8-bit 能效 vs 电压（示意）：102 TOPS/W 峰值 @0.54V（依据论文 Fig.15(b)）。</figcaption>
+</figure>
+
+<h3>8.4 位宽缩放：线性扩展的证据</h3>
+<p>论文 Fig.15(c) 显示 0.9 V 下能效随位宽（不同输入稀疏度）的变化——<strong>高位宽段呈线性提升</strong>。这正是 §2.2 目标（线性扩展，突破二次成本）的实验证明：multiply-less 数字 CIM 把位宽从 2 升到 8，能效近似线性增长（数据图 c01 的绿线对应此结论）。</p>
+
+<h3>8.5 能量与面积分解（论文 Fig.16）</h3>
+<table>
+<tr><th>模块</th><th>能量占比（0.9V, 50% 稀疏）</th><th>面积占比</th></tr>
+<tr><td>L1 计算单元（MinSEL+MinACCU+ActACCU+ABS-ASM）</td><td><strong>40%</strong></td><td><strong>59%</strong></td></tr>
+<tr><td>SRAM bank / MinSEL / ActACCU</td><td colspan="2">三者面积几乎相同 → 数字电路开销被有效压缩</td></tr>
+</table>
+<p>面积分解的看点：SRAM、MinSEL、ActACCU 三块面积几乎相等，说明<strong>数字逻辑的开销没有“喧宾夺主”</strong>——预计算方案真的把数字部分压薄了。</p>
+
+<figure>
+<img src="assets/figs/fig13_16_能量面积分解.png" alt="能量面积分解">
+<figcaption>图 18 · 论文 Fig.16：测试芯片的能量与面积分解——L1 计算单元占能耗 40%、面积 59%。</figcaption>
+</figure>
+
+<h3>8.6 NN 基准验证（论文表 II）</h3>
+<table>
+<tr><th>模型 / 数据集</th><th>位宽</th><th>能效</th><th>吞吐</th><th>精度</th></tr>
+<tr><td><strong>ResNet-20 风格 multiply-less / CIFAR-10</strong></td><td>8-bit</td><td>2.14 µJ/图</td><td>3019.5 图/s</td><td><strong>91.71%</strong></td></tr>
+<tr><td><strong>ResNet-50 风格 multiply-less / ImageNet</strong></td><td>8-bit</td><td>220.04 µJ/图</td><td>28.21 图/s</td><td><strong>74.8%</strong></td></tr>
+</table>
+<ul>
+<li>与 32-bit 浮点模型相比，<strong>近似+量化带来的精度损失 &lt;0.1%</strong>；</li>
+<li>ImageNet 74.8% vs [19] 的 74.5%：本工作通过正则化更少的激活（0.9% vs 15%）取得更高精度；</li>
+<li>ResNet-20 上仅 0.9% 激活被正则化 → 正则化损失被压到极小。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d08_deployment.svg" alt="部署流程教学图">
+<figcaption>教学图 8 · 部署流程五步 + 逐层映射 + 关键实测数据。</figcaption>
+</figure>
+
+<h3>8.7 与 SOTA 对比（论文表 III）</h3>
+<table>
+<tr><th>工作</th><th>工艺</th><th>能效（TOPS/W）</th><th>面积效率</th><th>验证</th></tr>
+<tr><td><strong>本工作</strong></td><td>28nm</td><td><strong>102</strong></td><td><strong>4.4 TOPS/mm²</strong></td><td>CIFAR-10 + ImageNet</td></tr>
+<tr><td>近似数字 CIM [15]（DIMC）</td><td>28nm</td><td>15.5</td><td>2.6 TOPS/mm²</td><td>CIFAR-10</td></tr>
+<tr><td>[19] 前作（ISSCC'23）</td><td>28nm</td><td>38–102</td><td>—</td><td>CIFAR-10</td></tr>
+</table>
+<p>结论：本工作 vs 近似数字 CIM [15]：能效 <strong>6.58×</strong>、面积效率 <strong>1.7×</strong> 提升，且首次提供 ImageNet 验证；是<strong>首个支持 L1 距离计算的 CIM 宏</strong>，也是<strong>首个 8-bit 能效超 100 TOPS/W 并通过 ImageNet 验证</strong>的设计。</p>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 与 SOTA 对比、三大创新点回顾与未来方向。</figcaption>
+</figure>
+</section>

@@ -1,0 +1,37 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新②：EOCI —— 等操作 CIM 初始化</h2>
+<figure>
+  <img src="assets/diagrams/d04_eoci.svg" alt="EOCI" style="max-width:940px">
+  <figcaption>图 4.1　EOCI 两步：① 有效操作识别（GT/WT 非零 ID 求交）；② 平衡分配（任意子阵列、操作数相等）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_12_EOCI初始化示例.png" alt="论文图12">
+  <figcaption>图 4.2　论文原图 Fig. 12：等操作 CIM 初始化示例（有效操作识别与平衡分配）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>稀疏张量乘法里，只有 <strong>GT 非零列 ∩ WT 非零行</strong> 的位置才有有效 MAC。EOCI 做两件事：</p>
+<ol>
+<li><strong>有效操作识别</strong>：并行比较器找两个非零 ID 序列的交集；不相交的 ID 直接弹出（避免无谓比较）；</li>
+<li><strong>平衡分配</strong>：每个相交 ID 触发一次分配，按“GT 列非零数 × WT 行非零数”算操作数；WT 行可以放到<strong>任意子阵列</strong>（不按索引序）→ 把重的行和轻的行搭配，让每个子阵列的 MAC 数相等（Core0: Row{0,10,4,13}、Core1: Row{7,15,9,16}）。</li>
+</ol>
+<p><strong>CIM 自适应 WT 映射</strong>：有效 WT 比 CIM 大 → 切成小 tile 逐块映射（每 tile 每行非零数 = SRAM 行权重数）；纵向遍历整块 WT，剩余非零再开新轮 → 任意稀疏模式都能保持“同一 WT 行在同一 SRAM 行”，利用率不因行间非零数差异而掉。</p>
+<div class="box key">
+<div class="bt">📊 EOCI 收益</div>
+<p>宏内利用率从 <strong>17.6%</strong>（基线）提升到 <strong>95.4%</strong>（与 ILA 联合）；单独 ILA 是 33.2%；联合总加速 <strong>5.28×</strong>。EOCI 面积开销仅 <strong>1.96%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_12_EOCI初始化示例.png">
+  <source src="assets/videos/v02_eoci.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · EOCI 初始化动画：相交识别 → 按有效 MAC 数平衡分配 WT/GT。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · 有效操作识别（GT ∩ WT 非零 ID）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">相交 {0,4,7} → 有效 MAC 识别 → 平衡分配</span>
+</div>
+<div class="hint">橙色=GT 非零列与 WT 非零行的交集（只有这些位置有有效 MAC）；不相交的直接跳过。再按操作数把 WT 行平衡分配到各子阵列（Core0/1 的 MAC 数相同）。</div>
+</div>
+</section>

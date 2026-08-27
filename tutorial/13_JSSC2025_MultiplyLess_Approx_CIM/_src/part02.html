@@ -1,0 +1,61 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>近似数字 CIM 的三大挑战：本论文的切入点</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解论文要解决的三件事：① 电路级近似的误差怎么伤精度；② 乘法二次成本怎么卡效率；③ 位级稀疏性为什么“看得见吃不着”。读完应能复述论文 Fig.2 的三张子图。</p>
+</div>
+
+<h3>2.1 挑战一：电路级近似的计算误差</h3>
+<p>上一节提到，业界已经有人尝试用<strong>近似加法树</strong>来省数字逻辑面积。论文 Fig.2(a) 画了两种做法：</p>
+<ul>
+<li><strong>纯 OR 近似</strong>：把加法树的多级加法器直接换成 OR 门；</li>
+<li><strong>交错 OR/AND 近似</strong>：OR 与 AND 门交错替换。</li>
+</ul>
+<p>图 2(a) 里 S1、S2、S3 分别表示“用单级 / 双级 / 三级逻辑门”替代对应级数的加法器。例如 S2 表示用一个<strong>四输入逻辑门</strong>替代两级加法器来完成四输入的求和。直觉上：4 个数相加，精确结果需要真正的进位加法树，而一个 4 输入 OR 门只能回答“有没有任何一位是 1”——所以这种替代必然引入误差。</p>
+<div class="box warn">
+<div class="bt">⚠️ 电路级近似的问题：效率上去了，精度下来了</div>
+<p>OR/AND 近似能把晶体管数减少 56%，但代价是 CIFAR-10 上 3.5% 的精度损失（论文引 [15] DIMC 的数据）。更麻烦的是，这种误差是<strong>逐位随机注入</strong>的，网络没有机会“适应”它。作者的判断是：<strong>电路级近似是一条“效率-精度”互相伤害的路</strong>。</p>
+</div>
+<p>本论文的应对：不做电路级近似，而是做<strong>算法级近似</strong>——把乘加运算本身换成“L1 距离”，让误差来源从“电路瞎算”变成“算法近似”，而算法近似是<strong>可以在训练时被网络吸收的</strong>（AdderNet 系列工作已经证明）。这是“算法-电路协同”的第一层含义。</p>
+
+<h3>2.2 挑战二：乘法随位宽二次膨胀</h3>
+<p>这一节在 §1.3 已经详细讲过，这里从“挑战”的角度再强调一点：论文 Fig.2(b) 画了<strong>面积-周期积</strong>（一个衡量面积效率的指标）随位宽的变化，无论位并行还是位串行都二次增长。关键句子：</p>
+<div class="box key">
+<div class="bt">💡 “The quadratic-growth multiplication cost limits further area efficiency improvements for digital CIM.”</div>
+<p>翻译：乘法成本的二次增长，限制了数字 CIM 面积效率的进一步提升。作者对此的解法是——<strong>用 multiply-less 的矩阵-向量运算实现 NN 推理，保证面积/能耗随位宽线性扩展</strong>（Fig.2(b) 中的绿线，见教学图 1 与数据图 c01）。</p>
+</div>
+
+<h3>2.3 挑战三：位级稀疏性未被利用</h3>
+<p>稀疏性分几个粒度：</p>
+<table>
+<tr><th>粒度</th><th>例子</th><th>问题</th></tr>
+<tr><td>块/数据级（coarse）</td><td>连续几个零权重、整块零激活 [21][24]</td><td>需要专门的稀疏训练 + 额外硬件</td></tr>
+<tr><td><strong>位级（fine, bit-level）</strong></td><td>每个权重比特的 0/1 分布</td><td><strong>天然存在但此前没人利用</strong></td></tr>
+</table>
+<p>论文 Fig.2(c) 的核心观察：一个<strong>普通 CNN 层（不做稀疏训练）</strong>的权重比特统计，分布<strong>严重偏向 0</strong>——即大部分比特是 0。这种非结构化的位级稀疏：</p>
+<ul>
+<li>不需要稀疏训练就能获得（白捡的）；</li>
+<li>粒度极细（每个比特），比块级稀疏更“密”；</li>
+<li>但之前数字 CIM 因为存储布局是“整行整列”的结构化排布，<strong>没法利用</strong>这种位级稀疏。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 作者的思路</div>
+<p>既然位级稀疏“看得见吃不着”，那就<strong>专门设计电路和数据流去“吃”它</strong>：① 位串行数据流让每个比特都能被单独处理；② 比较器一旦分出大小就提前停止读权重位（跳过连续 0 的预充/读取）；③ 预计算把负权重截断为 0，让权重比特里的 0 更多（§4 详述）。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_2_三大挑战.png" alt="三大挑战">
+<figcaption>图 2 · 论文 Fig.2：近似数字 CIM 的三大挑战。(a) 电路级近似的误差；(b) 高位宽下乘法导致的收益退化；(c) 位级稀疏性利用不足。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d02_challenges.svg" alt="三大挑战对策">
+<figcaption>教学图 2 · 三大挑战与本论文的对策：算法级近似（L1）、线性扩展、位级稀疏利用。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>三大挑战对应三大对策：① 电路近似伤精度 → 改做<strong>算法级近似</strong>；② 乘法二次成本 → <strong>免乘法</strong>算法线性扩展；③ 位级稀疏浪费 → 位串行 + <strong>提前停止</strong>专门吃稀疏。三者环环相扣，共同指向“multiply-less 近似 CIM”这个整体方案。</p>
+</div>
+</section>

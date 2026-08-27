@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="490" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">创新②：混合 Winograd（F2+F4 按层选）微架构与数据流</text>
+
+  <!-- 混合策略 -->
+  <rect x="40" y="80" width="440" height="180" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">混合策略：训练时决定每层用 F2 还是 F4</text>
+  <g font-size="11.5">
+    <text x="60" y="140" fill="#45536b">• 精度敏感层用 F2（无损）或空间域（不用 Winograd）；</text>
+    <text x="60" y="164" fill="#45536b">• 不敏感层用 F4（省 4× 乘法）；</text>
+    <text x="60" y="188" fill="#45536b">• 训练过程确定每层的 Winograd 级别（Table III）。</text>
+    <text x="60" y="222" fill="#1d8a5f" font-weight="600">ResNet34：2.59× 加速，精度损失仅 0.6%</text>
+    <text x="60" y="244" fill="#45536b">（对比：单 F2 = 1.92× 无损；单 F4 = 3.32× 但掉 9.1%）</text>
+  </g>
+
+  <!-- 通用化 -->
+  <rect x="500" y="80" width="420" height="180" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">支持不同核大小与步长</text>
+  <g font-size="11.5">
+    <text x="520" y="140" fill="#45536b">• <strong>核分解</strong>：&gt;3×3 的核拆成多个 3×3 核（如 7×7 → 若干 3×3）；</text>
+    <text x="520" y="166" fill="#45536b">• <strong>激活分段</strong>：stride=2 时把激活和核按颜色分区，</text>
+    <text x="520" y="190" fill="#45536b">　每区各自做 stride=1 的 3×3 卷积（都可用 Winograd）；</text>
+    <text x="520" y="224" fill="#45536b">• 核分解离线做；激活分段在片上输入缓冲里做。</text>
+  </g>
+
+  <!-- 数据流 -->
+  <rect x="40" y="286" width="880" height="180" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="314" fill="#6b3fa0" font-size="13.5" font-weight="700">PCO 映射（像素/通道序）+ 三变换单元数据流（Fig. 10）</text>
+  <g font-size="11">
+    <text x="60" y="344" fill="#45536b">• Winograd 域卷积 = 逐元素乘加（EWMM）：同一输出通道、不同输入通道的结果相加（COM 通道序，宏内）；</text>
+    <text x="60" y="368" fill="#45536b">• 不同像素并行（POM 像素序，宏间）→ 并行度可扩展；</text>
+    <rect x="60" y="384" width="150" height="30" rx="6" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="135" y="404" text-anchor="middle" fill="#0e5a8a">Bᵀ()B 输入变换</text>
+    <path d="M210,399 H240" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="245" y="384" width="150" height="30" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="320" y="404" text-anchor="middle" fill="#1d8a5f">G()Gᵀ 权重变换</text>
+    <path d="M395,399 H425" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="430" y="384" width="150" height="30" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="505" y="404" text-anchor="middle" fill="#6b3fa0">CiM 核 EWMM</text>
+    <path d="M580,399 H610" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="615" y="384" width="150" height="30" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="690" y="404" text-anchor="middle" fill="#c25e2e">Aᵀ()A 输出变换</text>
+    <path d="M765,399 H795" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="800" y="384" width="100" height="30" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="850" y="404" text-anchor="middle" fill="#1d8a5f">SIMD 量化</text>
+    <text x="60" y="440" fill="#45536b">变换后位宽变化 → SIMD 量化回 8b 再进 CiM 核；权重变换后存回权重 SRAM（省容量）。</text>
+    <text x="60" y="460" fill="#45536b">F2/F4 变换电路面积（功耗）：0.91%（5.33%）/ 10.76%（15.97%）——定制硬连线模块。</text>
+  </g>
+</svg>

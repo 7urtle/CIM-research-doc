@@ -1,0 +1,65 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：数据格式与硬件的协同设计</h3>
+<p>把整篇论文串成一句话：<strong>FP-CIM 精度高但格式贵 → 换成动态位宽的 POSIT（POSIT8≈FP16）→ 再用三招（BRPU/CPCS/CASU）治住动态特性的三大副作用</strong>。逻辑链：</p>
+<ol>
+<li><strong>动机</strong>：FP32/16/BF16 存储与 MAC 功耗大；FP8 覆盖不了梯度（69.3% 变 0）（§1）；</li>
+<li><strong>数据格式</strong>：POSIT 动态位分配（S/R/E/M），R 是温度计码，POSIT8 ≈ FP16 精度、省 6.25× 能耗（§1）；</li>
+<li><strong>三大挑战</strong>：regime 处理 +2.62× · 单元欠利用 41.3% · 加法树浪费 62.5%（§2）；</li>
+<li><strong>三招对策</strong>：BRPU（shift-OR，省 40.3% regime 能耗）（§4）· CPCS（空闲单元存关键位，利用率 +63%）（§5）· CASU（OR 替代加法 + 循环调度，省 56.9% 加法树）（§6）；</li>
+<li><strong>闭环验证</strong>：83.23 TFLOPS/W @ POSIT(8,1) · ViT-B 省能 2.36×、加速 3.51× · 精度损失 &lt;0.2%（§8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 数据格式视角独特——“换一种数”比“把电路做快”更根本；② 三个创新的“问题-对策”对应极其工整（动态特性 → 针对性电路）；③ 每个技巧都抓住 POSIT 的数学特性（温度计码个数、动态位宽空闲、短尾数低重叠）；④ 83.23 TFLOPS/W + ViT-B 验证，数据扎实；⑤ 适配性讨论（FP16/经典 POSIT 处理器）扩大了工作价值。</li>
+<li><strong>弱/局限</strong>：① POSIT 生态不成熟（无标准工具链、模型都是 FP 训练后转换）；② 83.23 TFLOPS/W 是宏级峰值，系统级（含 SRAM/总线）会打折；③ 仅验证 8/16 位，POSIT32 未涉及；④ 与 MXFP（第 6 篇）这类共享指数格式相比，regime 的额外逻辑仍是开销；⑤ 多宏系统只做了仿真（15.3×），未流片验证。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>POSIT 生态建设</strong>：训练时直接用 POSIT（而非 FP 训练后转换）能进一步释放精度潜力；配套编译器/量化工具链是落地关键；</li>
+<li><strong>更高位宽与混合格式</strong>：POSIT32 / 混合精度（不同层用不同 POSIT 配置，甚至 POSIT+MXFP 混用，按层自适应）；</li>
+<li><strong>在线训练增强</strong>：梯度范围大是 POSIT 的强项，可探索“训练全程 POSIT16/8”免 FP 回退；</li>
+<li><strong>与 MXFP / 其他动态格式对比融合</strong>：MXFP（第 6 篇）用共享指数 + 固定尾数，POSIT 用动态 regime——两者在不同分布下的优劣值得系统对比，甚至设计混合格式；</li>
+<li><strong>多宏系统流片</strong>：16-PD-CIM 张量并行已仿真 15.3×，可做完整 SoC（主机 + 互联 + 存储层次）流片验证；</li>
+<li><strong>算法-硬件联合搜索</strong>：用 NAS/自动化搜索找“每层最优 POSIT 配置 + 硬件模式组合”，最大化精度-能效帕累托前沿。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>POSIT(n, es)</td><td>n 位、es 位指数的 POSIT 数据格式；值 = (−1)ˢ(2^es)ᴿ2ᴱ(1.M)。</td></tr>
+<tr><td>Regime（R）</td><td>POSIT 的动态位宽指数部分，温度计码（连续 0/1）。</td></tr>
+<tr><td>温度计码（Thermometer Code）</td><td>用连续 1（或 0）的个数表示数值，如 11110、00001。</td></tr>
+<tr><td>es（exponent size）</td><td>POSIT 指数域的固定位宽；es 大 → 指数范围宽、尾数少。</td></tr>
+<tr><td>BRPU</td><td>双向 regime 处理单元：shift-OR 替代 codec+加法+编码。</td></tr>
+<tr><td>CPCS</td><td>关键位预计算并存储：空闲 CIM 单元存预计算关键位 → 双位 MAC。</td></tr>
+<tr><td>关键位 S[1]</td><td>双位 MAC 中晶体管消耗最大的位，预计算存储省运行时开销。</td></tr>
+<tr><td>双位 MAC</td><td>每周期完成 W×A[n] + W×A[n+2] 两个 MAC。</td></tr>
+<tr><td>2–4b 关联</td><td>4 位尾数（LSB=0）借 2 位尾数单元的空闲位实现双位 MAC。</td></tr>
+<tr><td>3b 优先分区</td><td>POSIT16 长尾数切 3 位段（留 1 空闲位）→ 全段可双位 MAC。</td></tr>
+<tr><td>CASU</td><td>循环交替调度单元：无重叠位用 OR 替代加法。</td></tr>
+<tr><td>无重叠位（No Overlap）</td><td>对齐后两个数的占位不重叠 → X+0=X，加法等价于 OR。</td></tr>
+<tr><td>提前检测</td><td>检查重叠位是否全为 1；非全 1 时仍可用 OR（单重叠位概率 3/4）。</td></tr>
+<tr><td>循环交替调度</td><td>循环移位位串行计算顺序，制造无重叠（(n−1) OR + 1 加法）。</td></tr>
+<tr><td>TFLOPS/W</td><td>每瓦每秒万亿次浮点运算；本论文每周期 1 乘 1 加计 2 OPs。</td></tr>
+<tr><td>ViT-B</td><td>Vision Transformer Base：视觉 Transformer 基准模型。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：Y. Wang et al., “An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications,” IEEE JSSC, vol. 60, no. 8, pp. 2981–2993, Aug. 2025. DOI: 10.1109/JSSC.2025.3532654</li>
+<li>[15] SOTA FP-CIM 宏（ViT-B ImageNet 对比基线，本文能效超 2.36×、加速 3.51×）。</li>
+<li>[16] / [17] 其他 FP-CIM 对比对象（能效超 2.6× / 2.46×）。</li>
+<li>[27]–[33] POSIT 数据格式原始文献（J. Gustafson 的 POSIT 提案及后续工作）。</li>
+<li>[22] 本团队前期 POSIT-CIM 会议论文（ISSCC/CICC 短文）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 POSIT 原始论文（Gustafson, "Beating Floating Point at its Own Game"）理解格式数学；② 与本系列第 6 篇（MXFP-CIM）对比两种“省位宽”路线：MXFP 共享指数（静态）vs POSIT 动态 regime；③ 动手：写个小 Python 脚本把 FP16 转 POSIT8（实现温度计码编码/解码），统计真实模型数据的 regime/尾数位宽分布，验证 61.9%/28.4% 这些数字；④ 用 Verilog 实现一个 4 位 CIM 单元的双位 MAC 和关键位预计算，对比单位串行的晶体管数。</p>
+</div>
+</section>

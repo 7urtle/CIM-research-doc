@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">近似数字 CIM 的三大挑战（本论文的切入点）</text>
+
+  <!-- 挑战1 -->
+  <rect x="40" y="84" width="290" height="210" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">挑战① 电路级近似的误差</text>
+  <g font-size="12">
+    <text x="60" y="136" fill="#45536b">用 OR / OR-AND 门替换</text>
+    <text x="60" y="156" fill="#45536b">加法树多级累加（S1/S2/S3）</text>
+    <rect x="60" y="168" width="230" height="34" rx="6" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="175" y="190" text-anchor="middle" fill="#a0402e">4 输入逻辑门 ≈ 2 级加法器</text>
+    <text x="60" y="226" fill="#45536b">→ 能效↑ 但 NN 精度↓</text>
+    <text x="60" y="248" fill="#45536b">（[15] CIFAR-10 掉 3.5%）</text>
+    <text x="60" y="276" fill="#e66e5a" font-weight="600">→ 本工作改走算法级近似</text>
+  </g>
+
+  <!-- 挑战2 -->
+  <rect x="345" y="84" width="290" height="210" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="365" y="110" fill="#d08a10" font-size="13.5" font-weight="700">挑战② 乘法的二次成本</text>
+  <g font-size="12">
+    <text x="365" y="136" fill="#45536b">数字 CIM 位宽扩展 →</text>
+    <text x="365" y="156" fill="#45536b">乘法器/周期数二次膨胀</text>
+    <g>
+      <line x1="370" y1="182" x2="610" y2="182" stroke="#d08a10" stroke-width="2"/>
+      <line x1="370" y1="182" x2="570" y2="118" stroke="#e66e5a" stroke-width="2"/>
+      <text x="500" y="108" fill="#e66e5a" font-size="11">位并行：面积∝位宽²</text>
+      <text x="500" y="198" fill="#d08a10" font-size="11">位串行：周期∝位宽²</text>
+      <text x="372" y="206" fill="#45536b" font-size="10">位宽→</text>
+      <text x="345" y="240" fill="#45536b">位串行 CIM 把乘法简化成 NOR 门，</text>
+      <text x="345" y="260" fill="#45536b">但计算周期大增</text>
+      <text x="345" y="280" fill="#d08a10" font-weight="600">→ 本工作：乘法全免（线性扩展）</text>
+    </g>
+  </g>
+
+  <!-- 挑战3 -->
+  <rect x="650" y="84" width="270" height="210" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="670" y="110" fill="#6b3fa0" font-size="13.5" font-weight="700">挑战③ 位级稀疏性未利用</text>
+  <g font-size="12">
+    <text x="670" y="136" fill="#45536b">权重的比特分布极不均匀</text>
+    <text x="670" y="156" fill="#45536b">（大量 0，少数 1）</text>
+    <g>
+      <rect x="670" y="168" width="14" height="30" fill="#b8d0e8"/>
+      <rect x="688" y="168" width="14" height="8" fill="#b8d0e8"/>
+      <rect x="706" y="168" width="14" height="22" fill="#b8d0e8"/>
+      <rect x="724" y="168" width="14" height="30" fill="#b8d0e8"/>
+      <rect x="742" y="168" width="14" height="5" fill="#b8d0e8"/>
+      <text x="700" y="222" text-anchor="middle" fill="#45536b" font-size="11">0 占多数</text>
+    </g>
+    <text x="670" y="246" fill="#45536b">块/数据级稀疏需额外稀疏训练</text>
+    <text x="670" y="266" fill="#45536b">+ 额外硬件</text>
+    <text x="670" y="280" fill="#6b3fa0" font-weight="600">→ 本工作：位串行 + 提前停止</text>
+  </g>
+
+  <!-- 底部总结 -->
+  <rect x="40" y="316" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="344" fill="#0e5a8a" font-size="14" font-weight="700">本论文的对策（算法-电路协同近似）</text>
+  <g font-size="12.5">
+    <text x="60" y="374" fill="#1d8a5f" font-weight="600">① 算法级：multiply-less NN（AdderNet 思想）</text>
+    <text x="80" y="396" fill="#45536b">用 L1 距离 |x−w| 替代点积 x·w，彻底去掉乘法器</text>
+    <text x="60" y="424" fill="#1d8a5f" font-weight="600">② 架构级：预计算分解 |x−w| = x + w − 2·min(x,w)</text>
+    <text x="80" y="446" fill="#45536b">Σw 编译期算好（WSUM），Σx 激活累加器共享，只剩「最小选择」</text>
+    <text x="60" y="474" fill="#1d8a5f" font-weight="600">③ 电路级：动态逻辑位串行比较器 + 提前停止</text>
+    <text x="80" y="496" fill="#45536b">比静态逻辑比较器面积 −1.7×、功耗 −4.1×；权重位稀疏 → 读端口省电</text>
+  </g>
+</svg>

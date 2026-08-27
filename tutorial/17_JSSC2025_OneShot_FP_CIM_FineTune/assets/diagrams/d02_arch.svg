@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">One-Shot FP CIM 引擎总体架构（论文 Fig.3）</text>
+
+  <!-- ManAU -->
+  <rect x="40" y="84" width="200" height="140" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="140" y="110" fill="#0e5a8a" font-size="13.5" font-weight="700">ManAU</text>
+  <text x="60" y="136" fill="#45536b" font-size="11.5">尾数对齐单元</text>
+  <text x="60" y="156" fill="#45536b" font-size="11.5">用权重最大指数对齐输入</text>
+  <text x="60" y="176" fill="#45536b" font-size="11.5">（省掉 XE_max 选择）</text>
+  <text x="60" y="206" fill="#0e5a8a" font-size="11" font-weight="600">0.018 mm²</text>
+
+  <!-- CIM core -->
+  <rect x="260" y="84" width="440" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="480" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">CIM Core（INT 尾数计算，1 周期）</text>
+  <g font-size="11">
+    <rect x="280" y="126" width="130" height="52" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="345" y="146" text-anchor="middle" fill="#1d8a5f">输入驱动</text>
+    <text x="345" y="164" text-anchor="middle" fill="#45536b" font-size="10">InADD（Σxi）</text>
+    <text x="430" y="145" fill="#45536b">128 输入加法树</text>
+    <text x="430" y="165" fill="#45536b">共享摊薄成本</text>
+    <rect x="280" y="192" width="400" height="42" rx="8" fill="#eef4fa" stroke="#0e5a8a"/>
+    <text x="480" y="210" text-anchor="middle" fill="#0e5a8a">16 列子阵列（16-kb NN 权重）</text>
+    <text x="480" y="226" text-anchor="middle" fill="#45536b" font-size="10">每列：128×8-bit 6T SRAM + 15-bit WSUM</text>
+    <rect x="280" y="244" width="400" height="42" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="480" y="262" text-anchor="middle" fill="#a06510">128 个并行最小选择器（ParMS）+ 累加装配单元（ACC-ASU）</text>
+    <text x="480" y="278" text-anchor="middle" fill="#45536b" font-size="10">Σxi + Σwi − 2Σmin(xi,wi) → L1 距离</text>
+    <text x="280" y="296" fill="#1d8a5f" font-size="10.5" font-weight="600">支持 FP 与 INT 两种模式，都只需 1 周期</text>
+  </g>
+
+  <!-- ITFU -->
+  <rect x="720" y="84" width="200" height="140" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="820" y="110" fill="#d08a10" font-size="13.5" font-weight="700">ITFU</text>
+  <text x="740" y="136" fill="#45536b" font-size="11.5">INT→FP 转换单元</text>
+  <text x="740" y="156" fill="#45536b" font-size="11.5">16 位整数 → UBF16 格式</text>
+  <text x="740" y="176" fill="#45536b" font-size="11.5">（UBF16 简化归一化）</text>
+  <text x="740" y="206" fill="#d08a10" font-size="11" font-weight="600">0.003 mm²</text>
+
+  <!-- ODFC -->
+  <rect x="260" y="324" width="440" height="120" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="480" y="350" fill="#6b3fa0" font-size="13.5" font-weight="700">ODFC（片上微调核心）</text>
+  <g font-size="11.5">
+    <text x="280" y="376" fill="#45536b">轻量训练硬件：128 轮顺序更新 128×16 权重（每轮 16 个）</text>
+    <text x="280" y="398" fill="#45536b">四相：权重读 → 权重更新 → 梯度计算 → 权重写</text>
+    <text x="280" y="420" fill="#45536b">时分复用 BF16 乘法器/加法树 → 面积再省 10%</text>
+    <text x="280" y="442" fill="#6b3fa0" font-size="11" font-weight="600">0.037 mm² · 180 MHz · 2.88 GOPS</text>
+  </g>
+
+  <!-- flow -->
+  <rect x="40" y="324" width="200" height="120" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="140" y="350" fill="#0e5a8a" font-size="13" font-weight="700">计算流程</text>
+  <g font-size="11.5">
+    <text x="60" y="376" fill="#45536b">FP 模式：ManAU 对齐 →</text>
+    <text x="60" y="396" fill="#45536b">CIM core 尾数计算 →</text>
+    <text x="60" y="416" fill="#45536b">ITFU 转回 FP →</text>
+    <text x="60" y="436" fill="#45536b">流水线 1 周期/级</text>
+  </g>
+
+  <!-- bottom -->
+  <rect x="40" y="464" width="880" height="70" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="490" fill="#0e5a8a" font-size="13.5" font-weight="700">multiply-less NN（L1 距离）</text>
+  <text x="60" y="516" fill="#45536b">Σ|xi−wi| = Σxi + Σwi − 2Σmin(xi,wi)：Σxi 由 InADD 共享、Σwi 预存 WSUM、只有 Σmin 实时算 → 乘法消失、位并行 1 周期完成</text>
+</svg>

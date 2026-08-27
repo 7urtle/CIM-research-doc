@@ -1,0 +1,1219 @@
+===== PAGE 1 =====
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+695
+A Multiply-Less Approximate SRAM
+Compute-In-Memory Macro for
+Neural-Network Inference
+Haikang Diao , Graduate Student Member, IEEE, Yifan He, Graduate Student Member, IEEE, Xuan Li,
+Chen Tang , Graduate Student Member, IEEE, Wenbin Jia, Jinshan Yue , Member, IEEE,
+Haoyang Luo , Graduate Student Member, IEEE, Jiahao Song , Member, IEEE,
+Xueqing Li , Senior Member, IEEE, Huazhong Yang , Hongyang Jia , Member, IEEE,
+Yongpan Liu , Senior Member, IEEE, Yuan Wang , Member, IEEE, and Xiyuan Tang , Senior Member, IEEE
+Abstract— Compute-in-memory (CIM) is promising in reduc-
+ing data movement energy and providing large bandwidth for
+matrix-vector multiplies (MVMs). However, existing work still
+faces various challenges, such as the digital logic overhead
+caused by the multiply-add operations (OPs) and structural
+sparsity. This article presents a 2-to-8-b scalable approximate
+digital SRAM-based CIM macro co-designed with a multiply-less
+neural network (NN) approach. It incorporates dynamic-logic-
+based approximate circuits for the logic area and energy saving
+by eliminating multiplications. A prototype is fabricated in
+28-nm CMOS technology and achieves peak multiply-accumulate
+(MAC)-level energy efficiency of 102 TOPS/W for 8-b operations.
+The NN model deployment flow is used to demonstrate CIFAR-10
+and ImageNet classification with ResNet-20 and ResNet-50 style
+multiply-less models, respectively, achieving the accuracy of
+91.74% and 74.8% with 8-bit weights and activations.
+Index Terms— Compute-in-memory (CIM), dynamic logic,
+multiply-less approximate, neural network (NN) inference.
+I. INTRODUCTION
+A
+RTIFICIAL intelligence based on neural network (NN)
+has enabled various emerging applications, ranging from
+the edge to cloud computing, such as computer vision,
+Manuscript received 19 December 2023; revised 4 June 2024; accepted
+17 July 2024. Date of publication 5 August 2024; date of current version
+30 January 2025. This article was approved by Associate Editor Jie Gu. This
+work was supported in part by the Beijing Natural Science Foundation under
+Grant L244051, in part by the Beijing Major Science and Technology Project
+under Grant Z241100004224004, in part by the National Natural Science
+Foundation of China under Grant 62304009, and in part by the 111 Project
+under Grant B18001. (Corresponding author: Xiyuan Tang.)
+Haikang Diao, Haoyang Luo, and Xiyuan Tang are with the Institute
+for Artificial Intelligence and the School of Integrated Circuits, Peking
+University, Beijing 100871, China (e-mail: diaohaikang@stu.pku.edu.cn;
+xitang@pku.edu.cn).
+Yifan
+He,
+Chen
+Tang,
+Wenbin
+Jia,
+Xueqing
+Li,
+Huazhong
+Yang,
+Hongyang Jia, and Yongpan Liu are with the Department of Electronic
+Engineering, Tsinghua University, Beijing 100084, China.
+Xuan Li is with the Department of Electronic Engineering, Tsinghua
+University, Beijing 100084, China, and also with Wiener Technology, Beijing
+100080, China.
+Jinshan Yue is with the Institute of Microelectronics of the Chinese
+Academy of Sciences, Beijing 100029, China.
+Jiahao Song is with the Institute for Neural Computation (INC), University
+of California at San Diego, La Jolla, CA 92093 USA.
+Yuan Wang is with the School of Integrated Circuits, Peking University,
+Beijing 100871, China.
+Color versions of one or more figures in this article are available at
+https://doi.org/10.1109/JSSC.2024.3433417.
+Digital Object Identifier 10.1109/JSSC.2024.3433417
+Fig. 1.
+Difference between Von Neumann architecture and CIM.
+language processing, and molecular discovery for scientific
+applications [1], [2], [3], [4]. A key attribute of those appli-
+cations is that they heavily rely on computation with huge
+data, such as high-dimensional matrices and tensors. Thus,
+the efficiency and performance of the NN inference, which is
+dominated by matrix-vector multiplies (MVMs), are limited by
+the memory access and I/O bandwidth [5]. However, due to
+the high-dimensionality computation in MVMs, Von Neumann
+architecture-based computing platforms are not well adapted to
+NN inference. A new hardware solution needs to be proposed
+to advance modern AI development.
+As shown in Fig. 1, computing-in-memory addresses this
+limitation by incorporating the processing unit into mem-
+ory cells to perform basic operations (OPs) locally [6],
+[7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17],
+[18], [19], [20], [21], [22], [23], [24], [25], [26]. Thus, the
+MVMs can be finished efficiently due to reduced weight
+movement. Moreover, multiple rows can be activated simul-
+taneously in parallel based on the input vector to provide
+large bandwidth. Analog compute-in-memory (CIM) imple-
+ment multiply-accumulate (MAC) in current [6], [7], [8], [9],
+[27] and charge domains [10], [11], [12], [13]. They are
+distinguished by circuit structures that perform multiplication
+and dimension reduction operations. The current-domain CIM
+relies on the summation of modulated currents through the
+bit-cell transistors. Although achieving high density, it suf-
+fers from nonidealities like transistors PVT variations. The
+charge-domain CIM realizes multiplication by the precharg-
+ing of capacitors and accumulation by charge redistribution.
+However, both solutions require ADCs for circuit readout,
+0018-9200 © 2024 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+696
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+significantly increasing the power and area consumption, espe-
+cially with higher bit-widths.
+Digital CIM is proposed recently [14], [15], [16], [17],
+[18], [19], [20], [21], [22]. It performs multiplication and
+dimension reduction by digital logic, offering exceeding
+robustness and easier architectural integration. The first work
+to present digital CIM, as detailed in [16], adopts hybrid
+adders to support full-precision MAC operations and enhance
+efficiency. After that, the 12-T SRAM design is implemented
+in 5-nm technology with the support of simultaneous write
+and CIM operations [17]. Then, the dynamic logic is
+introduced for various types of bit-wise operations with
+reduced circuit area [20]. However, the multipliers and adder
+trees adopted in digital CIM consume a significant area and
+energy, limiting their performance.
+To
+reduce
+digital
+circuit
+costs,
+recent
+works
+have
+started to incorporate approximate computation. For example,
+an approximate digital CIM macro that uses OR/AND digital
+logic circuits to replace multiple levels of adders in the
+adder tree is proposed in [15]. It reduces the transistor count
+of digital circuits by 56%. Nevertheless, this approximation
+results in a 3.5% accuracy loss on the Cifar-10 dataset, limiting
+its usage in advanced applications. As a result, the current
+approximate digital CIM design improves area and energy
+efficiency at the cost of accuracy.
+In addition to using approximations to reduce the compu-
+tation cost in digital CIM, the block- and data-level sparsity
+is also exploited to reduce the number of computations for
+further energy efficiency boost [21], [22]. However, it requires
+extra sparse training, together with additional hardware, to pro-
+cess this coarse-gain sparse information.
+This work proposes an approximate digital CIM macro
+co-designed with a multiply-less NN approach, incorporat-
+ing an architecture design dedicated to multiply-less NN,
+an L1-distance computing scheme, and dynamic-logic-based
+approximate circuits for multiply-less NN inference. Com-
+pared to prior designs, this work employs co-optimization from
+the algorithm to the circuit level, reducing the approximation
+loss for NN inference. The primary contributions of this work
+are listed as follows.
+1) This work proposed an efficient architecture for a
+multiply-less NN that approximates dot products with
+L1-distance of vectors to save area and energy consump-
+tion caused by multiplication.
+2) This work proposed an L1-distance computing scheme
+that reformates bit-parallel absolute-difference operators
+in the L1 compute into bit-serial comparisons and guar-
+antees linear area/energy scaling with bit precision.
+3) This work proposed a dynamic-logic-based compara-
+tor design with early weight-bit-readout stopping that
+exploits unstructured bit statistics. Compared to the
+conventional static logic-based design, the proposed
+dynamic
+design
+further
+reduces
+area
+and
+energy
+consumption.
+In addition, an NN model deployment flow is proposed
+to implement the custom off-line posttraining quantization
+adapted to chip architecture. Multiple representative NN
+benchmarks are demonstrated on the chip, achieving accura-
+cies equivalent to ideal digital computation.
+This article is an extension of [19] with an improved
+dynamic-logic-based comparator design. The improved com-
+parator greatly reduces the comparison error rate and improves
+the accuracy of NN inference. This design was fabricated,
+measured, and compared with [19]. The rest of this article
+is organized as follows. Section II discusses the challenges
+of approximate digital CIM. Section III outlines the effi-
+cient architecture for multiply-less NN algorithms. Section IV
+describes the efficient computing scheme for adder-based
+approximation. Section V presents the efficient comparator
+circuits with dynamic logic. Section VI presents the prototype
+measurements and NN demonstrations. The conclusion is
+drawn in Section VII.
+II. CHALLENGES OF APPROXIMATE DIGITAL CIM
+The first challenge is the computational error introduced
+by circuit-level approximation. Fig. 2(a) shows the two
+circuit-level approximation methods for the adder tree: the
+OR-only approximation and the interleaved OR/AND approxi-
+mation [15]. Both approaches use simple logic gates to replace
+multiple levels of adders in the adder tree. S1, S2, and S3
+denote the approximation of adders with single/double/triple
+stages in adder tree. For example, S2 indicates that a four-input
+logic gate is used instead of a two-stage adder to achieve
+four-input summation. However, the errors introduced by the
+approximate computation degrade the NN accuracy as effi-
+ciency increases. Unlike the previous circuit-level approxima-
+tion, this work incorporates algorithmic-level approximation
+to reduce errors for better NN inference accuracy.
+The second challenge is the quadratic cost of multiplications
+introduced by the expansion of bit-widths in digital CIM with
+input bit-level parallelism. Although bit-serial digital CIMs
+reduce this cost by simplifying multipliers to NOR gates [16],
+it requires greatly increased compute cycles. As shown in
+Fig. 2(b), the area-cycle product, an area efficiency indi-
+cator, increases quadratically with bit-widths, regardless of
+bit-parallel or bit-serial operations. This quadratic-growth mul-
+tiplication cost limits further area efficiency improvements for
+digital CIM. To overcome this limitation, this work imple-
+ments NN inference using multiply-less matrix-vector opera-
+tions, ensuring a linear area/energy scaling with bit-widths.
+The third challenge falls into the insufficient usage of
+bit-level sparsity of NN models. Several works have proposed
+sparsity-aware designs for energy efficiency improvement.
+Their works focus on the block or data level sparsity. In [21]
+and [24], consecutive zeros in the weights or activations can
+be skipped during computation by gating the corresponding
+readout circuits. Compared to the coarse-grained sparsity,
+as shown in Fig. 2(c), the NN model naturally shows higher
+finer-grain sparsity at the bit-level. Specifically, in a typical
+convolutional NN (CNN) layer without sparse-aware training,
+the bit-level statistics show an unbalanced binary distribution
+leaning heavily to zero, which has not been fully exploited in
+previous digital CIMs due to the tight and structural memory
+layout. To leverage the sparsity of the bit-level distribution,
+this work designs specialized circuits and NN deployment
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+DIAO et al.: MULTIPLY-LESS APPROXIMATE SRAM COMPUTE-IN-MEMORY MACRO FOR NN INFERENCE
+697
+Fig. 2.
+Three challenges of approximate digital CIM. (a) Approximation error by circuit-level approximation. (b) Degraded gains due to multiplications at
+high bit-widths. (c) Insufficient use of bit-level sparsity.
+Fig. 3.
+Example for AdderNet kernel: achieves similar output without
+multiplication.
+dataflow for further energy reduction. This design does not
+require specialized sparse training to adapt the dataflow, and
+the versatility is improved.
+III. EFFICIENT ARCHITECTURE FOR MULTIPLY-LESS
+NEURAL NETWORK ALGORITHM
+A. Background of Multiply-Less NN Algorithm
+To mitigate the large area and cycle penalty of multiplication
+in deep learning inference, recent algorithms start to explore
+all addition NN layers. For example, AdderNet replaces tra-
+ditional convolutional kernels with adder-based kernels [28],
+[29], [30], [31], [32], [33]. It uses the L1-distance to replace
+the dot-product between weights and activations
+Y(m, n, t)=−
+d
+X
+i=0
+d
+X
+j=0
+cin
+X
+k=0
+|X(m + i, n + j, k)−W(I, j, k, t)|.
+(1)
+The expressive power of L1-distance operations was quan-
+titatively analyzed. A formula derivation in [34] shows that
+L1-distance has the same approximation capacity as tradi-
+tional CNN. As shown in Fig. 3, both ConvNet kernel and
+AdderNet kernel can detect and strengthen the diagonal edge
+in the input feature map. Fig. 4 shows the similarity between
+AdderNet and CNN kernels. When the weight unit vector is
+fixed and the input unit vector is rotated, the results of the
+dot-product and L1-distance demonstrate similarity. Therefore,
+for NN inference, the CNN kernel can be approximated by
+the AdderNet kernel and the hardware design of AdderNet
+Fig. 4.
+Similarity between ConvNet (MAC) and AdderNet (L1-distance).
+TABLE I
+PERFORMANCE COMPARISON OF CONVNETS AND ADDERNETS
+can benefit from this simple computation. Table I shows the
+inference performance of ConvNets and AdderNets, and the
+effectiveness of AdderNet has been validated on different
+models such as CNN and transformer, and different tasks such
+as image classification and object detection [28], [29], [30],
+[31], [32], showing comparable performance and scalability to
+traditional CNN.
+B. Architecture for Approximate Compute
+The macro architecture for approximate computation is
+shown in Fig. 5, with three features highlighted in different
+colors. It comprises 16 Digital Approximate CIM Arrays for
+L1-distance-based approximate MVMs, an activation buffer
+(ACT buffer) for receiving and sequencing activations to the
+CIM array, an activation accumulator (ActACCU) for 128 acti-
+vation accumulation per cycle, a standard SRAM read/write
+interface controller, and other peripherals for CIM control.
+Each digital approximate CIM array contains 8 (rows) ×
+128 (columns) 8T-SRAM array for NN weights storage,
+natively supporting input vector dimension of 128, and
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+698
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+Fig. 5.
+Overall architecture of multiply-less approximate CIM macro.
+Fig. 6.
+(a) Conventional L1-distance computing scheme. (b) Recalcula-
+tion-based L1-distance computing scheme.
+2-to-8-b precision. The SRAM array is associated with
+an L1 computate unit for comparison-based computation.
+The L1 computate unit contains minimum-value selection
+(MinSEL), absolute-value-assembly unit (ABS-ASM), and
+minimum-value accumulator (MinACCU), using bit-serial
+dataflow to enable linear bit-scaling cost and leverage
+bit-distribution. The MinSEL contains an improved dynamic-
+logic-based approximate bit-serial comparator and minimum-
+value-multiplexer (MinMUX), which are used to implement
+the dynamic-logic comparison.
+IV. COMPUTE SCHEME FOR ADDER-
+BASED APPROXIMATION
+A. Precalcultion-Based L1-Distance Compute Scheme
+The L1-distance computing consists of three steps: sub-
+traction of weights and activations, taking absolute values,
+and accumulation. The conventional L1-distance computing
+scheme is shown in Fig. 6(a), which uses two multibit adders
+and a multiplex to calculate the absolute difference between
+weights and activations [35]. Although the overhead of these
+digital logics is reduced compared to dot-product, the multibit
+adders still limit the area efficiency. Moreover, due to the
+absolute values required before accumulation, a bit-serial
+computing scheme would not be available, making it difficult
+to exploit the sparsity of the bit distribution.
+In this article, we proposed an efficient precalculation-
+based L1-distance compute scheme that is employed in digital
+Fig. 7.
+Weight sparsity gains due to the precomputation.
+approximate CIM Array. It simplifies the conventional abso-
+lute difference computation to a simple minimum selection.
+As shown in Fig. 6(b), the absolute value of the L1-distance
+can be expanded and rewritten as a summation of activations
+and weights, and a minimum selection between activations
+and weights. In the new expression, the summation of weights
+(WSUM), P wi, is stationary and can be precomputed during
+model compilation and stored locally using additional columns
+in each SRAM bank, consuming only 15 additional SRAM
+cells. While the summation of activations, P xi, is handled
+by a dedicated ActACCU succeeding the ACT Buffer, whose
+result is shared across all 16 digital approximate CIM arrays to
+amortize the extra computation costs. Last, only the minimum
+summation, 2 P min(xi, wi), needs to be computed by the
+L1 compute unit. Comparing with the conventional absolute
+difference computation, the proposed design achieves 1.5×
+area reduction by replacing the subtraction and absolute value
+with comparison.
+Another benefit of the precomputation is that it significantly
+improves the effective sparsity of the weight tensor stored
+in the macro. The nonnegative character of the rectified
+linear unit (ReLU)-based activations enables the truncation of
+negative weights to zero in the minimum selection function
+X
+|xi −wi| =
+X
+|xi −clamp(wi, 0, wmax)| +
+X
+|wi|. (2)
+The equivalent calculation is achieved by merging the trun-
+cated weights into the WSUM. Fig. 7 shows the weight
+sparsity gain due to the precomputation. For the ResNet-20
+style multiply-less model on the Cifar-10 dataset, the sparsity
+of the weights is increased by 86× with precomputation
+compared to that of the original model. Higher sparsity can
+effectively reduce the activity factor in the L1 compute unit,
+reducing the power consumption of comparison operations.
+Moreover, as the weights and activations are nonnegative, sign
+bits or complements are not required. Therefore, the bit-widths
+are reduced, and the circuit design is simplified.
+B. Bit-Serial Comparison Scheme
+The circuit-level design and bit-serial computation of L1
+compute unit are shown in Fig. 8. The L1 compute unit sums
+the minimum values and then combines the sum of mini-
+mum values, the sum of weights, and the sum of activations
+(P xi) using an ABS-ASM. The bit-serial dataflow is adopted
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+DIAO et al.: MULTIPLY-LESS APPROXIMATE SRAM COMPUTE-IN-MEMORY MACRO FOR NN INFERENCE
+699
+Fig. 8.
+Circuit-level design and bit-serial computation of L1 compute unit.
+to support different bit-width in the L1 compute unit. The
+activations are serially sent into the macro in the MSB-first
+manner. After the ACT Buffer, the activations will be shared
+between ActACCU and 16 digital approximate CIM arrays.
+The ActACCU shifts and accumulates one bit of activations
+per cycle, and broadcasts the result to different L1 compute
+units. The weight SRAM bank contains a 128 × 8 SRAM bit
+cells subarray and 15 extra SRAM bits for weight sum. The
+RWL decoder selects the weight bit in the MSB-first manner,
+in the same order as the activations input. The corresponding
+weights and activations are sent to the Improved Comparator
+for the comparison result.
+The output of the comparison results controls the precharg-
+ing of the SRAM read port for early stopping. Thus, it reduces
+the power consumption of the SRAM reading. More details
+will be provided in Section IV-C. Moreover, the comparison
+results also control the transmission gate in MinMUX to select
+the minimum of the weights and activations. Fig. 8 shows
+the circuit-level details of the MinMUX. The OUT and OUT
+nodes represent the result of the bit-serial comparison. Initially,
+OUT is precharged to VDD, and OUT is discharged to VSS.
+MinMUX passes the weight bit until the comparison result is
+determined. If the minimum value is the weight, then OUT and
+OUT are fixed, and MinMUX will keep passing the weight bit
+until all bits are compared. In contrast, if the minimum value
+is activation, OUT is discharged to VSS and OUT is charged
+to VDD, and the MinMUX will keep passing the activation
+bit.
+The outputs of MinMUX are sent to the MinACCU, which
+shares the same structure as ActACCU, for the summation of
+the minimum values. Both the ActACCU and MinACCU have
+clock-gated output to reduce the output activity. The P wi are
+read out in parallel from the internal nodes of the WSUM
+SRAM bit cells. Finally, the ABS-ASM collects the output
+from the ActACCU (P xi), MinACCU [2 P min(xi, wi)], and
+the WSUM SRAM (P wi) to generate the partial sums.
+Fig. 9.
+Schematic of the specialized local SRAM read port.
+Fig. 10.
+(a) Early weight-readout stopping mechanism. (b) Read port energy
+saving for the early stop.
+C. Sparse-Aware Comparison With Early Stop
+The bit-serial minimal selection scheme gives us opportu-
+nities to benefit from bit-level distribution. Fig. 9 shows the
+circuit-level details for the read port of 8T SRAM, which
+contains a specialized local SRAM read port. When the
+selected weight bit is “0,” the local read bitline will be
+maintained at the precharged voltage. Therefore, when the bit
+distribution of weights contains consecutive “0,” it will reduce
+the power consumption of SRAM reading. As mentioned
+above, by truncating the weights of negative values to zero
+in the precomputation process, the number of “0” in the bit
+distribution of the weights is substantially increased, and the
+power consumption of the SRAM reading is further reduced.
+In addition, once the activation is selected, OUT is charged
+to VDD. The read port stops the repetitive precharging of the
+local read bitline, allowing an early stopping to reduce power
+consumption. As shown in Fig. 10(a), the weight bits, which
+are colored blue, do not need to be precharged and read again.
+In the later cycles, the MinMUX directly outputs the activation
+bits to the MinACCU. As shown in Fig. 10(b), with the special
+design of the read port, the power consumption of the circuit
+can be reduced by 1.8×.
+V. ENERGY EFFICIENT COMPARATOR DESIGN
+A. Improved Dynamic-Logic-Based Bit-Serial Comparator
+As shown in Fig. 11(a), the improved dynamic-logic-based
+approximate bit-serial comparator (Improved Comparator) for
+bit-serial comparison is proposed to improve the energy
+efficiency. C1 and C2 are parasitic capacitors under nodes
+between N4, N6, and N8. The output nodes OUT and OUTB
+are precharged to VDD by RESETB at the initial state. If the
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+700
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+Fig. 11.
+(a) Schematic of the improved comparator. (b) State transition table
+for improved comparator. (c) Waveform for comparison operation.
+activation and weight bits are equal in the current cycle, the
+OUT and OUTB hold the charge and pass the equal state to
+the next cycle. Once the comparison is asserted, one node is
+discharged to VSS, and the other is pinned to the VDD level
+through P3 or P4. Specifically, OUT will be discharged to
+VSS when the weight is smaller, and conversely, OUTB will
+be discharged when the activation is smaller. Compared to the
+original comparator design in [19], the improved comparator
+in this article only exchanges the positions of ACT and WB,
+but significantly reduces the comparison error rate. This will
+be analyzed in detail in Section V-B. Fig. 11(b) summarizes
+the state transition truth table for the improved comparator.
+Fig. 11(c) presents an example of the comparison operation.
+First, RESETB is set to VSS to precharge OUT and OUTB
+nodes. After that, RESETB is set to VDD until all bits are
+compared. Second, activations and weights are serially sent to
+the improved comparator for dynamic comparisons. Note that
+each time the RBL is precharged to read the weights stored in
+the SRAM, the RBL voltage is changed, affecting the W and
+WB in the improved comparator. Therefore, during this phase,
+SAEN needs to be discharged to VSS to prevent the voltage
+change of the RBL from incorrect comparison results. Finally,
+when the comparison asserted (ACT < W) in the second bit of
+the weight and activation, OUT connects to VDD, and OUTB
+connects to VSS. After that, the voltages of OUTB and OUT
+will remain constant until all the bits have been compared.
+As a comparison, a bit-serial static-logic-based comparator
+is designed by the digital flow design (Verilog coding in
+VS Code, digital synthesis by Design Compiler, and digital
+backend by Innovus), and its area and power consumption
+are postlayout simulated using virtuoso. As shown in Fig. 12,
+compared to the conventional static-logic-based comparator,
+the improved comparator reduces the area and power by 1.7×
+and 4.1×, respectively.
+Fig. 12.
+Area and energy comparison between the static-logic-based
+comparator and the dynamic-logic-based comparator.
+Fig. 13.
+Comparison errors for the comparator in [19] and improved
+comparator.
+B. Error Analysis for Dynamic Comparator
+As discussed, the proposed improved comparator can reduce
+the potential accuracy loss caused by the original comparator
+design [19]. To fully understand this mechanism, the error
+source of the comparator in [19] is first analyzed. The original
+design suffers from the charge-sharing problem, especially
+when the activation and weight bits are both “1” for multiple
+cycles. Fig. 13 shows an example of comparison errors. First,
+the OUT and OUTB nodes are precharged to VDD by setting
+RESETB to VSS. For the first bit, ACT and W are both
+“1,” and ACTB and WB are both “0.” Thus, N7 and N8 are
+turned on, and N5 and N6 are turned off. When the first-bit
+comparison is performed, SAEN is charged to VDD. Since
+both N4 and N6 are turned on, parasitic capacitors C1 and
+C2 are performed charge-sharing with OUT, resulting in a
+large voltage drop at OUT. After that, when reading the second
+bit of the weights, the RBL is precharged to VDD and SAEN
+is discharged to VSS, causing N8 to be turned on and N4 to
+be turned off. This results in the C1 and C2 nodes being
+discharged to VSS. Notice that when it performs the second-
+bit comparison, C1 and C2 are performed charge sharing
+with OUT again, resulting in a continuous voltage drop at
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+DIAO et al.: MULTIPLY-LESS APPROXIMATE SRAM COMPUTE-IN-MEMORY MACRO FOR NN INFERENCE
+701
+Fig. 14.
+(a) Chip micrograph. (b) Test platform.
+OUT. According to the simulation, after three consecutive
+comparisons, a comparison error occurs.
+This article proposed an improved comparator to reduce
+the voltage drop at OUT by exchanging the positions of
+ACT and WB. Specifically, when the first-bit comparison is
+performed, N4 is turned on, and N6 is turned off, and only
+C1 is performed charge-sharing with OUT, resulting in less
+voltage drop at OUT. As shown in Fig. 13, the error does not
+occur until after six consecutive comparisons. Thus, compared
+with [19], the comparator proposed in this work can reduce
+the voltage drop due to charge sharing, which in turn largely
+reduces the comparison error rate.
+To summarize, the comparison may be contaminated when
+the number of high ACT-W pairs exceeds a threshold. This
+approximation error can be avoided by regularizing the max-
+imum number of “1”s in activations during NN inference,
+with lower bits truncated. The proposed improved comparator
+relaxes the activation regulation compared to the original
+design in [19], thus improving the application accuracy, which
+will be explained in detail in Section VI-A.
+VI. MEASUREMENT RESULTS
+A. Chip Micrograph and Summary
+Fig. 14(a) presents the die photograph and summarizes
+the chip measurement results. Same as in [19], this chip is
+Fig. 15.
+(a) Voltage–frequency scaling. (b) Voltage scaling of 8-bit energy
+efficiency. (c) Bit scaling of energy efficiency.
+fabricated in 28-nm CMOS technology the CIM macro with an
+area of 0.028 mm2. Fig. 14(b) demonstrates the test platform
+for the fabricated chip. The test chip is wire bonded to a
+SODIMM-profile adapter board and connected to the host PC
+for verification and measurements through an FPGA bridge.
+A customized compiler on the PC side generates instructions
+and data for chip configuration and execution. A current meter
+is inserted between the power supply and the test board for
+energy measurements.
+As shown in Fig. 15(a), the voltage scaling of the chip is
+measured from 0.54 to 0.9 V. The operating frequency ranges
+from 20 to 240 MHz. The peak performance for 8-bit computa-
+tion reaches 0.122 TOPS at 0.9 V, running at 240 MHz. Note
+that the calculation of throughput is different from the dot-
+product-based NN chips. In our multiply-less NN chip, a pair
+of comparisons and accumulation of one activation and one
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+702
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+Fig. 16.
+Energy and area breakdown of test-chip.
+Fig. 17. Error rate from improved comparator and original comparator design
+in [19].
+weight is counted as two OPs. Since the bit-serial comparison
+scheme is adopted, it takes eight clock cycles to complete
+the two OPs. Fig. 15(b) presents the voltage scaling of 8-bit
+computation energy efficiency with different input sparsity.
+The highest energy efficiency is 102 TOPS/W at 0.54 V,
+20 MHz, 10% input sparsity, and 50% weight sparsity, which
+is the same as in [19]. The bit scaling of energy efficiency at
+0.9 V with different input sparsity is shown in Fig. 15(c). The
+linear bit scaling at higher bit-widths for energy efficiency
+demonstrates that the multiply-less digital CIM macro can
+overcome limitations imposed by the quadratic computational
+cost in the conventional MAC digital CIM macro.
+Fig. 16 shows the energy breakdown of the entire macro
+at 0.9 V, including the control and clock buffer with 50%
+input and weight sparsity. The power breakdown shows that
+the L1 compute unit, which contains MinSEL, MinACCU,
+ActACCU, and ABS-ASM, consumes 40% overall energy. The
+area breakdown shows the L1 compute unit consumes 59%
+area. The area consumption of the SRAM banks, MinSEL,
+and ActACCU are almost identical, indicating that the area
+overhead of digital circuits is effectively reduced.
+As mentioned, the charge-sharing problem, caused by the
+high ACT-W pairs, leads to comparison errors in the dynamic
+logic. We tested the comparator extensively and repeated
+them on different chips, the results of which are shown
+in Fig. 17. When the voltage is 0.54 V, the comparison
+error starts from six high ACT-W values. When the voltage
+Fig. 18.
+(a) NN model deployment flow. (b) NN mapping method.
+TABLE II
+NN DEMONSTRATIONS
+exceeds 0.65 V, there is no comparison error. In contrast,
+the comparison error in [19] starts from two high ACT-W
+values and has a much higher error rate than this work.
+It firmly confirms that the proposed comparator in this article
+significantly improves the comparison accuracy. To alleviate
+this approximation error, we regularize the maximum number
+of “1”s in activations to 5 with lower bits truncated. The
+regularization is performed during NN inference with the help
+of potential element-wise digital peripherals. For example, the
+original activation is 63 (binary code: 00111111); after regu-
+larization, it becomes 62 (binary code: 00111110). Compared
+to regularizing the maximum number of “1”s to 3 in [19],
+this work reduces the number of activations that need to be
+regularized, thus reducing the regularization loss. For example,
+compared to [19] where 15% of the activations need to be
+regularized for ResNet-20 model, this work requires only
+0.9% of the activations to be regularized, thus enabling higher
+accuracy inference.
+B. Evaluation on Multiply-Less Neural Network
+1) NN Model Deployment Flow: The macro architecture
+is co-designed with software mapping algorithms. To better
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+DIAO et al.: MULTIPLY-LESS APPROXIMATE SRAM COMPUTE-IN-MEMORY MACRO FOR NN INFERENCE
+703
+TABLE III
+COMPARISON WITH STATE-OF-THE-ART WORKS
+outline the model deployment flow, Fig. 18(a) shows the
+custom off-line posttraining quantization toolchain for NN
+models used in this work. First, a floating-point multiply-
+less pretrained model is obtained using the standard training
+flow by PyTorch. Second, the negative weights are clamped
+to [0, wmax] and merged to the WSUM, as mentioned in
+Section IV-A. Third, unlike the separate scaling factor for
+CNN, the multiply-less model requires the same scaling fac-
+tors for activations and weights to perform the comparison.
+Meanwhile, more than 95% of weights and activations are in
+the range of 2−5–23 [35]. Therefore, a shared scaling factor
+for activations and weights quantization method is proposed
+to achieve the 8-bit quantization. Then, the activations are
+regularized with the maximum number of “1”s to 5, with lower
+bits truncated, to meet the needs of the improved comparator.
+Finally, the generated quantized model is deployed to the
+test chip for evaluation. Notably, this flow uses posttraining
+quantization without complex model retraining, which benefits
+various edge AI applications.
+Given the relatively small size of the chip array, a layer-
+by-layer NN mapping method is adopted. During each layer’s
+computation, as shown in Fig. 18(b), the 16 columns store
+the weights of 16 output channels, with each column storing
+the 128 weights of different input channels. During inference
+computation, 128 inputs are fed into the digital CIM macro and
+computed in parallel with the weights from the 16 columns.
+After eight clock cycles of comparison and accumulation,
+16 Psum results are obtained.
+2) NN Performance: Using this model deployment flow,
+several multiply-less models have been demonstrated on the
+prototype. Two models are presented as examples, including
+a ResNet-20 style multiply-less model for the CIFAR-10
+dataset and a ResNet-50 style multiply-less model for the Ima-
+geNet dataset. In these models, the convolution multiplication
+is replaced by the L1-distance computation. As mentioned,
+we need to regularize the maximum number of “1”s in
+activations to 5 with lower bits truncated. Table II summarizes
+the results of these two benchmarks. The 8-bit ResNet-20
+style multiply-less model for CIFAR-10 dataset achieves
+an energy efficiency of 2.14 µJ/image, and throughput of
+3019.5 images/s, with a testing accuracy of 91.71%. The
+8-bit ResNet-50 style multiply-less model for the ImageNet
+dataset achieves an energy efficiency of 220.04 µJ/image,
+and throughput of 28.21 images/s, with a testing accuracy of
+74.8%. Compared to the 32-bit floating-point model, the loss
+of accuracy due to approximation and quantization is less than
+0.1%, demonstrating the effectiveness of algorithm-to-circuit
+co-approximation. Compared to the 74.5% accuracy for the
+ImageNet dataset in [19], this work achieves higher accuracy
+by regularizing fewer activation values.
+C. Comparison With State-of-the-Art Works
+Table III compares this work with other state-of-the-art CIM
+macros. The peak area efficiency and energy efficiency are
+measured for 8-bit weights and activations. Compared with
+other CIM demonstrations, this work is the first CIM macro
+that supports the L1-distance computation to approximate the
+multiply-add operation. Meanwhile, this work achieves the
+highest area efficiency and energy efficiency compared to
+other works fabricated with similar technologies. Compared
+with state-of-the-art approximate digital CIM [15], this work
+achieves 6.58× energy efficiency and 1.7× area efficiency
+improvement while providing ImageNet validation. Compared
+to previous works, this work is the first design to achieve
+over 100-TOPS/W energy efficiency for 8-bit operation with
+ImageNet dataset validation.
+VII. CONCLUSION
+Digital CIM incorporates the processing unit into mem-
+ory cells to reduce data movement energy and provide
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+704
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+high bandwidth. However, bit-widths expansion introduces
+the
+quadratic
+cost
+due
+to
+multiplication,
+which
+limits
+further improvement for digital CIM. To address these
+challenges, an efficient compute scheme is proposed to
+approximate the multiply-add operations, thus guarantee-
+ing linear area/energy scaling with bit-widths. This article
+demonstrates a prototype digital CIM macro in 28-nm
+CMOS based on a multiply-less NN and dynamic-logic-
+based approximate circuits. The macro achieves 102-TOPS/W
+peak energy efficiency and 4.4-TOPS/mm2 peak area effi-
+ciency for 8-bit operations. Using the model deployment
+flow, several NN benchmarks are demonstrated. With the
+activation regularization and posttraining quantization tech-
+niques for approximation, the multiply-less models with 8-/8-b
+weights/activations show accuracy equivalent to floating-point
+counterparts. The fusion of digital CIM and approximation
+compute scheme provides new insights for algorithm-to-
+circuit co-design, with high energy efficiency for edge AI
+applications.
+REFERENCES
+[1] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “ImageNet classification
+with deep convolutional neural networks,” Commun. ACM, vol. 60, no. 2,
+pp. 84–90, Jun. 2012.
+[2] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for
+image recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2016, pp. 770–778.
+[3] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You only look
+once: Unified, real-time object detection,” in Proc. IEEE Conf. Comput.
+Vis. Pattern Recognit. (CVPR), Jun. 2016, pp. 779–788.
+[4] A. Vaswani et al., “Attention is all you need,” in Proc. NIPS, 2017,
+pp. 6000–6010.
+[5] M. Horowitz, “1.1 Computing’s energy problem (and what we can
+do about it),” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig.
+Tech. Papers, Feb. 2014, pp. 10–14.
+[6] J. Zhang, Z. Wang, and N. Verma, “In-memory computation of
+a
+machine-learning
+classifier
+in
+a
+standard
+6T
+SRAM
+array,”
+IEEE
+J.
+Solid-State
+Circuits,
+vol.
+52,
+no.
+4,
+pp. 915–924,
+Apr. 2017.
+[7] M. Kang, S. K. Gonugondla, A. Patil, and N. R. Shanbhag, “A
+multi-functional in-memory inference processor using a standard 6T
+SRAM array,” IEEE J. Solid-State Circuits, vol. 53, no. 2, pp. 642–655,
+Feb. 2018, doi: 10.1109/JSSC.2017.2782087.
+[8] W.-S. Khwa et al., “A 65nm 4Kb algorithm-dependent computing-in-
+memory SRAM unit-macro with 2.3ns and 55.8TOPS/W fully parallel
+product-sum operation for binary DNN edge processors,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2018,
+pp. 496–498.
+[9] X.
+Si
+et
+al.,
+“24.5
+A
+twin-8T
+SRAM
+computation-in-memory
+macro for multiple-bit CNN-based machine learning,” in IEEE Int.
+Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, Feb. 2019,
+pp. 396–398.
+[10] H. Valavi, P. J. Ramadge, E. Nestler, and N. Verma, “A 64-tile 2.4-Mb
+in-memory-computing CNN accelerator employing charge-domain com-
+pute,” IEEE J. Solid-State Circuits, vol. 54, no. 6, pp. 1789–1799,
+Jun. 2019.
+[11] Z. Jiang, S. Yin, J.-S. Seo, and M. Seok, “C3SRAM: An in-memory-
+computing SRAM macro based on robust capacitive coupling computing
+mechanism,” IEEE J. Solid-State Circuits, vol. 55, no. 7, pp. 1888–1897,
+Jul. 2020.
+[12] H. Jia et al., “Scalable and programmable neural network inference
+accelerator based on in-memory computing,” IEEE J. Solid-State Cir-
+cuits, vol. 57, no. 1, pp. 198–211, Jan. 2022.
+[13] H. Wang, R. Liu, R. Dorrance, D. Dasalukunte, D. Lake, and B. Carlton,
+“A charge domain SRAM compute-in-memory macro with C-2C ladder-
+based 8-bit MAC unit in 22-nm FinFET process for edge inference,”
+IEEE J. Solid-State Circuits, vol. 58, no. 4, pp. 1037–1050, Apr. 2023,
+doi: 10.1109/JSSC.2022.3232601.
+[14] H. Kim, T. Yoo, T. T. Kim, and B. Kim, “Colonnade: A reconfig-
+urable SRAM-based digital bit-serial compute-in-memory macro for
+processing neural networks,” IEEE J. Solid-State Circuits, vol. 56, no. 7,
+pp. 2221–2233, Jul. 2021.
+[15] D. Wang, C. T. Lin, G. K. Chen, P. Knag, R. K. Krishnamurthy,
+and M. Seok, “DIMC: 2219TOPS/W 2569F2/b digital in-memory com-
+puting macro in 28nm based on approximate arithmetic hardware,”
+in Proc. IEEE Int. Solid-State Circuits Conf. (ISSCC), Sep. 2022,
+pp. 266–268.
+[16] Y.-D. Chih et al., “16.4 An 89TOPS/W and 16.3TOPS/mm2 all-digital
+SRAM-based full-precision compute-in memory macro in 22nm for
+machine-learning edge applications,” in Proc. IEEE Int. Solid- State
+Circuits Conf. (ISSCC), vol. 64, Feb. 2021, pp. 252–254.
+[17] H. Fujiwara et al., “A 5-nm 254-TOPS/W 221-TOPS/mm2 fully-digital
+computing-in-memory macro supporting wide-range dynamic-voltage-
+frequency scaling and simultaneous MAC and write operations,” in Proc.
+IEEE Int. Solid-State Circuits Conf., Feb. 2022, pp. 1–3.
+[18] H. Mori et al., “A 4nm 6163-TOPS/W/b 4790-TOPS/mm2/b SRAM
+based digital-computing-in-memory macro supporting bit-width flexi-
+bility and simultaneous MAC and weight update,” in Proc. IEEE Int.
+Solid-State Circuits Conf. (ISSCC), Feb. 2023, pp. 132–134.
+[19] Y. He et al., “7.3 A 28nm 38-to-102-TOPS/W 8b multiply-less approx-
+imate digital SRAM compute-in-memory macro for neural-network
+inference,” in Proc. IEEE Int. Solid- State Circuits Conf. (ISSCC),
+Feb. 2023, pp. 130–132.
+[20] B. Yan et al., “A 1.041-Mb/mm2 27.38-TOPS/W signed-INT8 dynamic-
+logic-based ADC-less SRAM compute-in-memory macro in 28nm with
+reconfigurable bitwise operation for AI and embedded applications,” in
+Proc. IEEE Int. Solid-State Circuits Conf. (ISSCC), vol. 65, Feb. 2022,
+pp. 188–190.
+[21] J. Yue et al., “A 28nm 16.9–300TOPS/W computing-in-memory proces-
+sor supporting floating-point NN inference/training with intensive-CIM
+sparse-digital architecture,” in Proc. IEEE Int. Solid-State Circuits Conf.,
+Oct. 2023, pp. 1–3.
+[22] S. Liu et al., “16.2 A 28nm 53.8TOPS/W 8b sparse transformer accel-
+erator with in-memory butterfly zero skipper for unstructured-pruned
+NN and CIM-based local-attention-reusable engine,” in Proc. IEEE Int.
+Solid- State Circuits Conf. (ISSCC), Feb. 2023, pp. 250–252.
+[23] H. Diao et al., “A 28nm 128TFLOPS/W computing-in-memory engine
+supporting one-shot floating-point NN inference and on-device fine-
+tuning for edge AI,” in Proc. IEEE Custom Integr. Circuits Conf. (CICC),
+Apr. 2024, pp. 1–2.
+[24] J. Yue et al., “STICKER-IM: A 65 nm computing-in-memory NN
+processor using block-wise sparsity optimization and inter/intra-macro
+data reuse,” IEEE J. Solid-State Circuits, vol. 57, no. 8, pp. 2560–2573,
+Aug. 2022.
+[25] J.-W. Su et al., “16.3 A 28nm 384kb 6T-SRAM computation-in-memory
+macro with 8b precision for AI edge chips,” in IEEE Int. Solid-
+State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 64, Feb. 2021,
+pp. 250–252.
+[26] P.-C. Wu et al., “A 28nm 1Mb time-domain computing-in-memory 6T-
+SRAM macro with a 6.6ns latency, 1241GOPS and 37.01TOPS/W for
+8b-MAC operations for edge-AI devices,” in Proc. IEEE Int. Solid- State
+Circuits Conf. (ISSCC), vol. 65, Feb. 2022, pp. 1–3.
+[27] J.
+Song
+et
+al.,
+“A
+4-bit
+calibration-free
+computing-in-memory
+macro with 3T1C current-programed dynamic-cascode Multi-Level-Cell
+eDRAM,” IEEE J. Solid-State Circuits, vol. 59, no. 3, pp. 842–854,
+Mar. 2024.
+[28] H. Chen et al., “AdderNet: Do we really need multiplications in deep
+learning?” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2020, pp. 1465–1474.
+[29] H. Shu, J. Wang, H. Chen, L. Li, Y. Yang, and Y. Wang, “Adder
+attention for vision transformer,” in Proc. Adv. Neural Inf. Process.
+Systems(NIPS), vol. 34, Sep. 2021, pp. 19899–19909.
+[30] X. Chen, C. Xu, M. Dong, C. Xu, and Y. Wang, “An empirical study
+of adder neural networks for object detection,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 34, 2021, pp. 6894–6905.
+[31] D.
+Song,
+Y.
+Wang,
+H.
+Chen,
+C.
+Xu,
+C.
+Xu,
+and
+D.
+Tao,
+“AdderSR: Towards energy efficient image super-resolution,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2021,
+pp. 15643–15652.
+[32] B. Li, Y. Xin, C. Li, Y. Bao, F. Meng, and Y. Liang, “AdderIC:
+Towards low computation cost image compression,” in Proc. IEEE
+Int. Conf. Acoust., Speech Signal Process. (ICASSP), May 2022,
+pp. 2030–2034.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+DIAO et al.: MULTIPLY-LESS APPROXIMATE SRAM COMPUTE-IN-MEMORY MACRO FOR NN INFERENCE
+705
+[33] Y. Nie, K. Han, H. Diao, C. Liu, E. Wu, and Y. Wang, “Redistribu-
+tion of weights and activations for AdderNet quantization,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2022,
+pp. 22739–22751.
+[34] H. Chen, Y. Wang, C. Xu, C. Xu, C. Xu, and T. Zhang, “Universal adder
+neural networks,” 2021, arXiv:2105.14202.
+[35] Y. Wang et al., “Addernet and its minimalist hardware design for energy-
+efficient artificial intelligence,” 2021, arXiv:2101.10015.
+Haikang Diao (Graduate Student Member, IEEE)
+received the B.Eng. degree in electronic engineering
+and the M.S. degree in circuits and systems from
+Fudan University, Shanghai, China, in 2019 and
+2022, respectively. He is currently pursuing the
+Ph.D. degree with the School of Integrated Circuits,
+Peking University, Beijing, China.
+His
+research
+interests
+include
+computing-in-
+memory, model compression, and acceleration.
+Yifan
+He
+(Graduate
+Student
+Member,
+IEEE)
+received the B.S. degree from the Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2019, where he is currently
+pursuing the Ph.D. degree.
+His
+doctoral
+research
+includes
+emerging
+nonvolatile memories and in-memory computing
+designs with a focus on digital circuit technology
+for superior efficiency and compute density.
+Mr. He was a recipient of the 2023–2024 IEEE
+Solid-State Circuits Society (SSCS) Predoctoral
+Achievement Award.
+Xuan Li received the B.Eng. degree from the Uni-
+versity of Electronic Science and Technology of
+China (UESTC), Chengdu, China, in 2015. He is
+currently pursuing the Ph.D. degree with Tsinghua
+University, Beijing, China.
+He
+is
+also
+the
+Founder
+of
+Wiener
+Tech-
+nology,
+Beijing.
+His
+research
+interests
+include
+energy-efficient data converter design, mixed-signal
+and analog signal processing system, and emerging
+sensing technology.
+Chen Tang (Graduate Student Member, IEEE)
+received the B.S. degree from the Department
+of Electronic Engineering, Tsinghua University,
+Beijing, China, in 2020, where he is currently pur-
+suing the Ph.D. degree.
+His research interests include neural network com-
+pression and machine-learning accelerator.
+Wenbin Jia received the B.S. degree from the
+Department of Electronic Engineering, Tsinghua
+University, Beijing, China, in 2022, where he is
+currently pursuing the Ph.D. degree.
+His
+research
+interests
+include
+computing-in-
+memory
+circuit
+design
+and
+hardware/software
+co-design for AI applications.
+Jinshan Yue (Member, IEEE) received the B.S. and
+Ph.D. degrees from the Department of Electronic
+Engineering, Tsinghua University, Beijing, China, in
+2016 and 2021, respectively.
+He is currently a Post-Doctoral Researcher and an
+Assistant Researcher with the Institute of Micro-
+electronics of the Chinese Academy of Sciences,
+Beijing.
+His
+current
+research
+interests
+include
+energy-efficient
+neural
+network
+processor,
+non-
+volatile memory, and computing-in-memory system.
+Dr. Yue served as a TPC Member for IEEE
+A-SSCC2023 and ICCAD2023.
+Haoyang Luo (Graduate Student Member, IEEE)
+received the B.S. degree from the School of Informa-
+tion and Electronics, Beijing Institute of Technology,
+Beijing, China, in 2021.
+He is currently working toward the Ph.D. degree
+with
+the
+school
+of
+integrated
+circuits,
+Peking
+University, Beijing. His research interests include
+computing-in-memory, computing architecture, and
+hardware security.
+Jiahao Song (Member, IEEE) received the B.Sc.
+degree (Hons.) from the University of Electronic Sci-
+ence and Technology of China (UESTC), Chengdu,
+China, in 2017, and the Ph.D. degree from Peking
+University, Beijing, China, in 2022.
+He was a Post-Doctoral Researcher with Peking
+University, from 2022 to 2024. He is currently
+a Post-Doctoral Researcher with the University
+of California at San Diego, La Jolla, CA, USA.
+His research interests include memories, comput-
+ing in-memory, and low-power mixed-signal circuits
+design.
+Xueqing Li (Senior Member, IEEE) received the
+B.S. and Ph.D. degrees from the Department of Elec-
+tronic Engineering, Tsinghua University, Beijing,
+China, in 2007 and 2013, respectively.
+He is currently an Associate Professor with the
+Department of Electronic Engineering, Tsinghua
+University. He has over 130 publications and
+holds 30 Chinese and U.S. patents. His research
+interests include mixed-signal circuit design, emerg-
+ing memory, and memory-oriented computing explo-
+ration for AI acceleration.
+Dr. Li is a Senior Member of CCF China. He received a few best
+paper awards, such as HPCA’15, ASP-DAC’17, and 2016 IEEE TMSCS,
+several teaching and thesis awards, and 2019 National Early-Career Award.
+He also serves on TPC in a few conferences, such as DAC, ICCAD,
+ASP-DAC, ISCAS, AICAS, GLSVLSI, ISVLSI, NVMSA, and COINS. He is
+an Associate Editor of the IEEE TRANSACTIONS ON VERY LARGE SCALE
+INTEGRATION (TVLSI) SYSTEMS and IEEE TRANSACTIONS ON EMERG-
+ING TOPICS IN COMPUTING (TETC) and a Guest Editor of a few journal
+issues, such as International Journal of Circuit Theory and Applications and
+Flexible and Printed Electronics.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 12 =====
+706
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 2, FEBRUARY 2025
+Huazhong Yang received the B.S. degree in micro-
+electronics and the M.S. and Ph.D. degrees in
+electronic engineering from Tsinghua University,
+Beijing, China, in 1989, 1993, and 1998, respec-
+tively.
+In 1993, he joined the Department of Electronic
+Engineering, Tsinghua University, where he has
+been a Full Professor since 1998. He has been in
+charge of several projects, including projects spon-
+sored by the National Science and Technology Major
+Project, the 863 Program, NSFC, and several inter-
+national research projects. He has authored or co-authored over 500 technical
+articles and seven books, and holds over 180 granted Chinese patents. His
+research interests include wireless sensor networks, data converters, energy-
+harvesting circuits, nonvolatile processors, and brain-inspired computing.
+Prof. Yang received the Distinguished Young Researcher by NSFC in 2000,
+the Cheung Kong Scholar by the Chinese Ministry of Education (CME) in
+2012, the Science and Technology Award First Prize by the China Highway
+and Transportation Society in 2016, the Technological Invention Award First
+Prize by CME in 2019, the Gold Prize of iNEA 2019, and several best paper
+awards, including ISVLSI 2012, FPGA 2017, NVMSA 2017, and ASP-DAC
+2019. He has served as the Chair for the Northern China ACM SIGDA Chapter
+Science in 2014, the General Co-Chair for ASP-DAC 2020, a Navigating
+Committee Member for AsianHOST’18, and a TPC Member for ASP-DAC
+2005, APCCAS 2006, ICCCAS 2007, ASQED 2009, and ICGCS 2010.
+Hongyang
+Jia
+(Member,
+IEEE)
+received
+the
+B.E. degree from Tsinghua University, Beijing,
+China, in 2014, and the M.A. and Ph.D. degrees
+from Princeton University, Princeton, NJ, USA, in
+2016 and 2021, respectively.
+From
+2021
+to
+2022,
+he
+was
+a
+Research
+Post-Doctorate with NVIDIA, Santa Clara, CA,
+USA. Since August 2022, he has been with the
+Department of Electronic Engineering, Tsinghua
+University, where he is currently an Assistant Pro-
+fessor. His research focuses on advanced computing
+technologies and systems, rethinking how emerging computing fabrics can be
+integrated with architectures and algorithms to enhance system efficiency and
+performance. His primary research interests include approximate computing,
+mixed-signal computing, in-memory computing, energy-efficient circuits, and
+architectures for robotic computing and security applications.
+Prof. Jia received the 2017 Outstanding Student Designer Award from
+ADI Inc., and the 2022 Bede Liu Best Dissertation Award in Electrical
+and Computer Engineering from Princeton ECE. He serves on the technical
+program committees for the IEEE/ACM ICCAD Conference.
+Yongpan Liu (Senior Member, IEEE) received the
+B.S., M.S., and Ph.D. degrees from Tsinghua Uni-
+versity, Beijing, China, in 1999, 2002, and 2007,
+respectively.
+He is currently a tenured Full Professor with
+the Department of Electronic Engineering, Tsinghua
+University.
+Dr.
+Liu
+is
+a
+Program
+Committee
+Member
+of
+ISSCC,
+ASSCC,
+and
+DAC.
+He
+received
+under 40 Young Innovators Award DAC 2017,
+Best Paper/Poster Award from ASPDAC 2021 and
+2017, Micro Top Pick 2016, HPCA 2015, and Design Contest Awards of
+ISLPED in 2012, 2013, and 2019. He served as the General Secretary for
+ASPDAC 2021 and the Technical Program Chair for NVMSA 2019. He was
+an Associate Editor of the IEEE TRANSACTIONS ON COMPUTER-AIDED
+DESIGN OF INTEGRATED CIRCUITS AND SYSTEMS, IEEE TRANSACTIONS
+ON CIRCUITS AND SYSTEM II: EXPRESS BRIEFS, and IET Cyber-Physical
+Systems: Theory and Applications. He also served as an A-SSCC2020 Tutorial
+Speaker and an IEEE CASS Distinguished Lecturer 2021.
+Yuan Wang (Member, IEEE) received the Ph.D.
+degree in microelectronics from Peking University,
+Beijing, China, in 2006.
+He is currently a Full Professor with the School
+of Integrated Circuits, Peking University. He has
+authored or co-authored more than 100 techni-
+cal articles and conference contributions, including
+more than 30 articles published in IEEE TRANS-
+ACTIONS and journals. He has been granted over
+70 patents. His current research interests include
+CMOS memory circuits, neuromorphic computing,
+in-memory computing, and spiking neural networks.
+Xiyuan Tang (Senior Member, IEEE) received the
+B.Sc. degree (Hons.) from the School of Microelec-
+tronics, Shanghai Jiao Tong University, Shanghai,
+China, in 2012, and the M.S. and Ph.D. degrees in
+electrical engineering from The University of Texas
+at Austin, Austin, TX, USA, in 2014 and 2019,
+respectively.
+He was a Design Engineer with Silicon Lab-
+oratories,
+Austin,
+from
+2014
+to
+2017,
+where
+he
+was
+involved
+in
+the
+RF
+receiver
+design.
+From 2019 to 2021, he was a Post-Doctoral
+Researcher with The University of Texas at Austin. He is currently an
+Assistant Professor with Peking University, Beijing, China. His research
+interests include digitally assisted data converters, low-power mixed-signal
+circuits, and analog data processing.
+Dr. Tang was a recipient of the IEEE Solid-State Circuits Society Rising
+Stars in 2020, Best Paper Award at Silicon Labs Tech Symposium in 2016,
+National Scholarship in 2011, and Shanghai Scholarship in 2010. He serves
+on the Technical Program Committees (TPC) of ISSCC. He also serves as an
+Associate Editor for IEEE SOLID-STATE CIRCUITS LETTERS.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:02:35 UTC from IEEE Xplore.  Restrictions apply. 

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">CiM 的吞吐瓶颈：计算周期数决定一切</text>
+
+  <!-- 问题 -->
+  <rect x="40" y="90" width="440" height="250" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="118" fill="#c25e2e" font-size="14" font-weight="700">CiM 吞吐 = f(频率, MAC 数, 计算周期数)</text>
+  <g font-size="12">
+    <text x="60" y="150" fill="#45536b">• 数字 CiM 一个 MAC 结果要<strong>多个周期</strong>拼出来：</text>
+    <text x="60" y="174" fill="#45536b">　位串行 8 周期（INT8）· Radix4 4 周期 · 本文 2 周期</text>
+    <text x="60" y="206" fill="#45536b">• 频率和 MAC 数固定后，吞吐完全由周期数决定；</text>
+    <text x="60" y="228" fill="#45536b">• 传统数字流水线每个周期出一个结果 → CiM 吞吐</text>
+    <text x="60" y="250" fill="#45536b">　天然差几倍 → CiM 被限制在低功耗场景</text>
+    <text x="60" y="286" fill="#c25e2e" font-weight="600">→ 核心矛盾：减少周期数 vs 保持高能效</text>
+    <text x="60" y="308" fill="#45536b">（多算几位 = 每周期翻转更多 = 功耗上升）</text>
+  </g>
+
+  <!-- 演进 -->
+  <rect x="520" y="90" width="400" height="250" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="540" y="118" fill="#0e5a8a" font-size="14" font-weight="700">减少计算周期的已有尝试（Fig. 3）</text>
+  <g font-size="11.5">
+    <rect x="540" y="134" width="360" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="720" y="152" text-anchor="middle" fill="#c25e2e">阈值判断跳过输入位 [20]</text>
+    <text x="720" y="170" text-anchor="middle" fill="#45536b">减周期但有精度损失</text>
+    <rect x="540" y="188" width="360" height="44" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="720" y="206" text-anchor="middle" fill="#0e5a8a">复制加法树 [9]</text>
+    <text x="720" y="224" text-anchor="middle" fill="#45536b">减周期但每周期翻转更多（能效没提升）</text>
+    <rect x="540" y="242" width="360" height="44" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="720" y="260" text-anchor="middle" fill="#6b3fa0">Booth 编码 [15]（Radix4）</text>
+    <text x="720" y="278" text-anchor="middle" fill="#45536b">INT8 仍需 4 周期</text>
+    <text x="540" y="312" fill="#0e5a8a" font-weight="600">→ 本文：Radix16 + LUT → 2 周期且低翻转</text>
+  </g>
+
+  <rect x="40" y="364" width="880" height="82" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="392" fill="#0e5a8a" font-size="13.5" font-weight="700">三个层级的挑战（论文 Fig. 2）</text>
+  <text x="60" y="418" fill="#45536b" font-size="12.5">① 电路级：减少宏的计算周期；② 微架构级：通用 Winograd 优化（支持各种卷积配置且不掉精度）；</text>
+  <text x="60" y="438" fill="#45536b" font-size="12.5">③ 数据级：灵活跳过稀疏计算（省功耗、提吞吐）。</text>
+</svg>

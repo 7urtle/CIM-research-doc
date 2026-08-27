@@ -1,0 +1,78 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：给 IMC 穿上“安全外衣”</h3>
+<p>把整篇论文串成一句话：<strong>IMC 的功耗泄露数据、总线泄露模型 → 用 Boolean 共享让功耗与数据无关（XNOR 原生安全免随机比特）→ 用 ASCON 把片外权重锁成密文 → 用 PUF 在芯片里“长”出密钥</strong>。逻辑链：</p>
+<ol>
+<li><strong>威胁</strong>：SCA（功耗/EM 泄露输入隐私）、BPA（总线窃听泄露模型 IP）（§1）；</li>
+<li><strong>基础</strong>：Boolean 共享（3 份、正确性/非完备性/均匀性），但 IMC 不能要运行期随机比特（§2）；</li>
+<li><strong>创新① 计算安全</strong>：XNOR 线性乘法（6 门+0 随机比特）+ SV/BV 换算保持多位精度 + CSA 加法树（免半加器）+ 复用式随机 0 共享（§3–4）；</li>
+<li><strong>创新② 模型安全</strong>：ASCON 轻量密码（NIST 冠军、AND 最少）片上解密，TI 实现仅 4 个一次性随机比特（§5）；</li>
+<li><strong>创新③ 密钥安全</strong>：SRAM PUF（反馈切断）复用 IMC 单元，TMV 抗噪 + 差分 FSM 抗攻击（§6）；</li>
+<li><strong>闭环验证</strong>：CPA/DPA 超 100 万采样安全、8.1 TOPS/W、NN 精度零影响（§7–8）。</li>
+</ol>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 三大贡献闭环、可扩展性与未来方向。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 选题稀缺——CIM 安全是空白领域，本文是第一篇数字 IMC 安全；② 约束明确（零随机比特）且全篇每个设计都服从它，逻辑自洽；③ 数学功底扎实（SV/BV 校正因子证明、均匀性分析）；④ 测试严格（CPA+TVLA、高 SNR 平台、100 万采样）；⑤ PUF 复用 IMC 电路是聪明的面积优化。</li>
+<li><strong>弱/局限</strong>：① 8.1 TOPS/W 远低于无安全 IMC（安全开销巨大：加法树 ×15.5）；② 只演示小宏（8 列×128 行），商用规模靠推断；③ 一阶安全假设（攻击者限一阶）；④ 未覆盖故障注入/软件侧信道等攻击面（作者声明了范围外）；⑤ PUF 的 BCH 纠错需片外支持。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>降低安全开销</strong>：刻画攻击者真实能力 → 找“安全等级-共享开销”最优权衡点（并行宏多时可放宽）；与近似计算（[7]）结合进一步省能耗；</li>
+<li><strong>更高阶安全</strong>：更多共享 + 更复杂的共享函数 → 二阶/三阶安全（当前一阶）；</li>
+<li><strong>覆盖更多攻击面</strong>：与 RowHammer 防护、故障注入检测、软件/微架构侧信道防护联合（论文明确留作平行工作）；</li>
+<li><strong>PUF 增强</strong>：暗比特掩蔽（减少 TMV/BCH 开销）、烧灼硬化、随机性提取最大化每比特熵、对称布局减小系统偏差；</li>
+<li><strong>大规模集成</strong>：多宏系统级验证（安全协处理器合并、ASCON-128a 或每宏实例、密钥管理策略）；</li>
+<li><strong>隐私计算扩展</strong>：把安全 IMC 与联邦学习/同态加密外包推理结合——安全硬件是隐私计算栈的关键底座。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>SCA（Side-Channel Attack）</td><td>侧信道攻击：利用功耗/电磁等物理泄露重建数据。</td></tr>
+<tr><td>BPA（Bus-Probing Attack）</td><td>总线探测攻击：窃听片外存储器与芯片间的总线获取模型。</td></tr>
+<tr><td>Boolean 共享（掩码）</td><td>把每个比特拆成 n 份（XOR 恢复），单份看似随机。</td></tr>
+<tr><td>TI（Threshold Implementation）</td><td>阈值实现：满足正确性/非完备性/均匀性的布尔共享。</td></tr>
+<tr><td>非完备性（Non-Completeness）</td><td>每个子函数只用输入份的严格子集，子电路碰不到完整秘密。</td></tr>
+<tr><td>均匀性（Uniformity）</td><td>共享表示分布均匀，无数据相关偏差可被利用。</td></tr>
+<tr><td>近似均匀性</td><td>本文放宽的均匀性：只要求计算性（非数学性）安全。</td></tr>
+<tr><td>XNOR 乘法</td><td>用线性 XNOR 门做 ±1 乘法，共享后原生安全、免随机比特。</td></tr>
+<tr><td>SV / BV</td><td>有符号值（±1 加权和，只取奇数）/ 二进制值（计算表示）。</td></tr>
+<tr><td>校正因子</td><td>把 XNOR-MAC 原始输出换算成真实 MAC 值的常数项（可预计算）。</td></tr>
+<tr><td>CSA（Carry-Save Adder）</td><td>进位保存加法：进位不立即传播，3 操作数合并免半加器。</td></tr>
+<tr><td>ASCON</td><td>NIST 轻量密码竞赛冠军，用于片上模型解密。</td></tr>
+<tr><td>Changing of the Guards</td><td>Daemen 提出的 Keccak/ASCON 置换 remask 方法（仅需 4 个一次性随机比特）。</td></tr>
+<tr><td>PUF（Physically Unclonable Function）</td><td>物理不可克隆函数：制造失配生成芯片唯一密钥。</td></tr>
+<tr><td>反馈切断</td><td>切断 SRAM 反相器反馈 → 暴露制造失配 → 读出 PUF 位。</td></tr>
+<tr><td>TMV（Temporal Majority Voting）</td><td>时间多数投票：多次评估取多数，抗噪声。</td></tr>
+<tr><td>CPA（Correlation Power Analysis）</td><td>相关功耗分析：对密钥猜测算与功耗的相关性。</td></tr>
+<tr><td>DPA / TVLA</td><td>差分功耗分析 / 测试向量泄漏评估（Welch t-test）。</td></tr>
+<tr><td>Chip Whisperer</td><td>侧信道攻击/防御研究平台（高 SNR 测量）。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算，能效单位。</td></tr>
+</table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：M. Ashok et al., “Digital In-Memory Compute for Machine Learning Applications With Input and Model Security,” IEEE JSSC, vol. 60, no. 9, pp. 3390–3400, Sep. 2025. DOI: 10.1109/JSSC.2025.3534753</li>
+<li>[5] 基线数字 IMC 架构（位串行 1–8 bit 激活、4 的倍数权重精度、8 列×128 行 4-bit 权重、XNOR 乘法门 + 加法树 + 累加器）。</li>
+<li>[30] Maji et al.：阈值实现（TI）的传统加速器 SCA 保护（移位乘法、幂次权重限制、需恒定随机比特）。</li>
+<li>[31] Fang et al.：经验性 SCA 保护（时间/空间洗牌 + DAC 功耗补偿）。</li>
+<li>[58] ASCON：NIST 轻量密码竞赛冠军。</li>
+<li>[53] Daemen：Keccak/ASCON 置换的 "Changing of the Guards" remask 方法。</li>
+<li>[71] SCA 安全 SRAM 位单元（反馈切断晶体管，本论文复用作 PUF）。</li>
+<li>[7] 高位激活 + 二值权重的 XNOR 表示法（本论文 SV/BV 方法的来源）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 TI 原始论文（Nikova et al.）理解阈值实现的数学；② 读 ASCON 规范与 "Changing of the Guards" 论文；③ 动手：用 Python 实现 3 份 Boolean 共享的 AND/XNOR 门，统计共享输出的均匀性（复现 CV 的概念）；④ 用 Chip Whisperer 开源平台跑一次 CPA 攻击实验，直观感受“功耗=数据影子”；⑤ 与本系列第 9 篇（混合 SNN-CNN）对比：那条路防“算法泄露”，这条路防“物理泄露”——两种安全观。</p>
+</div>
+</section>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">TCL（转移计数行）：用“数边沿”代替“数 1 的个数”</text>
+
+  <!-- 核心思想 -->
+  <rect x="40" y="80" width="880" height="120" rx="12" fill="#eef7fd" stroke="#b8d9ee"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">核心洞察：数“这一列有几个 1”，不一定要用加法器</text>
+  <text x="60" y="134" fill="#45536b" font-size="12.5">把一列的 8 个位积串成一条链，让<strong>一个“边沿（0→1 或 1→0 跳变）”沿着链传播</strong>：</text>
+  <text x="60" y="158" fill="#45536b" font-size="12.5">每个为 1 的位积让边沿“取反一次” → 边沿最终产生 <strong>列和 × 1 个跳变沿</strong>，计数器数沿 = 列和！</text>
+  <text x="60" y="182" fill="#1d8a5f" font-size="12.5" font-weight="600">→ “1 的个数”被编码成“跳变次数” → 无损、且位积为 0 时完全静止（稀疏自适应）</text>
+
+  <!-- TCL 结构 -->
+  <text x="250" y="230" text-anchor="middle" fill="#123a57" font-size="14" font-weight="700">TCL = 8 个 MMU（乘-选单元）级联 + 末端计数器（CNT）</text>
+  <rect x="40" y="244" width="880" height="200" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <!-- MMU 链 -->
+    <rect x="70" y="280" width="90" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="115" y="306" text-anchor="middle" fill="#0e5a8a" font-size="12" font-weight="600">MMU0</text>
+    <text x="115" y="326" text-anchor="middle" fill="#45536b" font-size="10">乘+选</text>
+    <text x="115" y="342" text-anchor="middle" fill="#6b7a93" font-size="9.5">P07</text>
+    <rect x="180" y="280" width="90" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="225" y="306" text-anchor="middle" fill="#0e5a8a" font-size="12" font-weight="600">MMU1</text>
+    <text x="225" y="326" text-anchor="middle" fill="#45536b" font-size="10">P17</text>
+    <rect x="290" y="280" width="90" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="335" y="306" text-anchor="middle" fill="#0e5a8a" font-size="12" font-weight="600">MMU2</text>
+    <text x="335" y="326" text-anchor="middle" fill="#45536b" font-size="10">P27</text>
+    <text x="390" y="318" text-anchor="middle" fill="#9aa8bd" font-size="14">……</text>
+    <rect x="410" y="280" width="90" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="455" y="306" text-anchor="middle" fill="#0e5a8a" font-size="12" font-weight="600">MMU7</text>
+    <text x="455" y="326" text-anchor="middle" fill="#45536b" font-size="10">P77</text>
+    <rect x="560" y="280" width="120" height="70" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="620" y="306" text-anchor="middle" fill="#c25e2e" font-size="12.5" font-weight="600">CNT 计数器</text>
+    <text x="620" y="326" text-anchor="middle" fill="#45536b" font-size="10">数边沿 → 4b 列和</text>
+    <!-- 级联 -->
+    <path d="M160,315 H180" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M270,315 H290" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M380,315 H410" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M500,315 H560" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="115" y="250" text-anchor="middle" fill="#c25e2e" font-size="11">MIn=VDD（起点）</text>
+    <text x="620" y="375" text-anchor="middle" fill="#c25e2e" font-size="11">MOut → CNT（终点）</text>
+  </g>
+
+  <!-- 底部原理 -->
+  <rect x="40" y="404" width="880" height="76" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="432" fill="#1d8a5f" font-size="13" font-weight="700">工作规则：当 Ph<sub>k</sub>=1 且 P<sub>mn</sub>=1 时，MMU 走 Path1（输出 = 输入取反 → 产生跳变沿）</text>
+  <text x="60" y="456" fill="#45536b" font-size="12.5">否则走 Path2（原样直通）。于是“1 的个数 = 跳变次数”，CNT 数沿即得列和 —— 8 位积 → 4b 和 = 无损 8-to-4 压缩。</text>
+  <text x="60" y="474" fill="#45536b" font-size="12.5">位积为 0 的 MMU 完全不翻转（稀疏自适应），这是本方案省电的物理来源。</text>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">芯片实测：65nm 系统 + 14nm 宏（论文 Fig.14–18）</text>
+
+  <!-- spec -->
+  <rect x="40" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">65nm 加速器芯片</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">面积 9.36 mm² · 32 SCIM 核（4×8）</text>
+    <text x="60" y="162" fill="#45536b">260-kB 存储 + 520-kB MAC · 密度 130 kB/mm²</text>
+    <text x="60" y="186" fill="#45536b">标称电压 1 V · 最大 5 MHz（供电结构限制）</text>
+    <text x="60" y="210" fill="#45536b">0.7 V 全功能 3.2 MHz</text>
+    <text x="60" y="240" fill="#1d8a5f" font-weight="600">峰值系统能效 7.96 TOPS/W @0.7V</text>
+    <text x="60" y="264" fill="#45536b">（全利用卷积层测试）· 宏级 20 TOPS/W（带池化）</text>
+    <text x="60" y="288" fill="#45536b">面积分解：位单元主导；感放 2% · SNG 15% · 行累加 6.25%</text>
+  </g>
+
+  <!-- 14nm -->
+  <rect x="490" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="14" font-weight="700">14nm 宏测试芯片</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">16 个 SCIM 宏（32×32 阵列）· 130 MHz</text>
+    <text x="510" y="162" fill="#45536b">每行 32 长点积 → 2 个随机输出位（outp/outn）</text>
+    <text x="510" y="186" fill="#45536b">16 宏 → 32 随机位 ≈ 5-bit 精度</text>
+    <text x="510" y="210" fill="#45536b">密度 860 kB/mm²</text>
+    <text x="510" y="240" fill="#1d8a5f" font-weight="600">宏能效 258 TOPS/W（5-bit）</text>
+    <text x="510" y="264" fill="#45536b">折算 8-bit：35 TOPS/W</text>
+    <text x="510" y="288" fill="#1d8a5f" font-weight="600">带平均池化跳算：140 TOPS/W（8-bit）</text>
+  </g>
+
+  <!-- benchmarks -->
+  <rect x="40" y="334" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">工作负载（表 I）与能耗分解（Fig.18）</text>
+  <g font-size="12.5">
+    <text x="60" y="390" fill="#45536b">MNIST LeNet-5：99.1%（1000 测试图）· 峰值宏利用率仅 5.1%（小滤波器）→ 系统能效 0.35 TOPS/W</text>
+    <text x="60" y="416" fill="#45536b">CIFAR-10 TinyConv-4：INT8 训练 78% · SC 训练 75% · 片上测试 73.5%；第二层利用率 31.3% → 峰值 2.2 TOPS/W</text>
+    <text x="60" y="450" fill="#45536b">能耗分解：SCIM 核 49% · 时钟通信 26% · 控制器/缓冲 15% · 输出传输+权重加载 11% · 计数器/定点 2%</text>
+    <text x="60" y="486" fill="#1d8a5f" font-weight="600">vs 其他工作（表 III）：520-kB 片内 MAC 远超多数（除 [7]）；全片参数驻留 → 能耗测量含全部成分（无片外搬移）</text>
+    <text x="60" y="512" fill="#45536b">SCIM 单元仅 +4 晶体管 vs 数字 CIM ~20 → 密度优势：130（65nm）/860（14nm）kB/mm²</text>
+  </g>
+</svg>

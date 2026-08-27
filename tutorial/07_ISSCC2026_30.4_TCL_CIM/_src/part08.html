@@ -1,0 +1,37 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　实测能效：INT8 106.85 TOPS/W、BF16 77.68 TFLOPS/W（条件：90% 输入稀疏、10% 翻转率、50% 权重稀疏）。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：4.1 ns @ 0.9V（BF16 输入/权重，FP32 输出）；</li>
+<li><strong>面积效率</strong>：1.24 TFLOPS/mm²（BF16，0.55V/0.9V）；</li>
+<li><strong>工艺</strong>：28nm CMOS，32kb 宏；</li>
+<li><strong>精度</strong>：BF16 模式 ViT-B @ImageNetV2 81.05%、ResNet50 @ImageNetV2 81.19%。</li>
+</ul>
+<figure>
+  <img src="assets/charts/c02_fom.png" alt="FoM 提升" style="max-width:860px">
+  <figcaption>图 8.2　FoM1（精度×TOPS/W×TOPS/mm²）提升 1.25–2.88×；FoM2（TFLOPS/W×TFLOPS/mm²）提升 2.20–19.9×（对比前作有符号 CIM [2,3,6,7]）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_tcl_fom.png" alt="MAC cell FoM" style="max-width:920px">
+  <figcaption>图 8.3　8b 位并行 MAC 单元的 FoM（能效/晶体管数）对比：TCL 以最少晶体管实现位列加法，FoM 提升 1.66–1.87×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_5_仿真性能.png" alt="论文图 30.4.5">
+  <figcaption>图 8.4　论文原图 Fig. 30.4.5：MAC 单元仿真性能与实测能效（不同翻转率/稀疏度）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_6_测量结果.png" alt="论文图 30.4.6">
+  <figcaption>图 8.5　论文原图 Fig. 30.4.6：测量结果与前作对比表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_4_7_芯片照片.png" alt="论文图 30.4.7">
+  <figcaption>图 8.6　论文原图 Fig. 30.4.7：裸片显微照片与性能汇总。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 能效数字是在“90% 输入稀疏 + 10% 翻转率 + 50% 权重稀疏”的<strong>理想活动率</strong>下测的——稀疏数据本来就不耗电，这个条件对 TCL 这类“稀疏自适应”电路特别有利，对比时先看条件；② FoM2 提升 2.20–19.9× 跨度极大，说明对比对象跨度也大（不同位宽、不同架构），不是单一相对值；③ 81% 的 ViT-B/ResNet50 精度是“该宏在 BF16 模式能跑出的精度”，用于证明精度无损，不代表网络极限精度。</p>
+</div>
+</section>

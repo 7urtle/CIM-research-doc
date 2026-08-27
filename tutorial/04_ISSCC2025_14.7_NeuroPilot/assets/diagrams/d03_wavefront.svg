@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">波前传播（Wavefront Propagation）：搜索像水波一样扩散</text>
+
+  <!-- 网格 -->
+  <rect x="60" y="90" width="520" height="360" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="80" y="118" fill="#0e5a8a" font-size="13.5" font-weight="700">地图 → PE 阵列（波前扩散）</text>
+  <g font-size="10">
+    <g transform="translate(80,132)">
+      <g stroke="#9aa8bd" stroke-width="0.8">
+        <rect x="2" y="2" width="42" height="42" fill="#eef7fd"/><rect x="46" y="2" width="42" height="42" fill="#eef7fd"/><rect x="90" y="2" width="42" height="42" fill="#eef7fd"/><rect x="134" y="2" width="42" height="42" fill="#eef7fd"/>
+        <rect x="2" y="46" width="42" height="42" fill="#eef7fd"/><rect x="46" y="46" width="42" height="42" fill="#eef7fd"/><rect x="90" y="46" width="42" height="42" fill="#fdf3e7"/><rect x="134" y="46" width="42" height="42" fill="#eef7fd"/>
+        <rect x="2" y="90" width="42" height="42" fill="#eef7fd"/><rect x="46" y="90" width="42" height="42" fill="#eef7fd"/><rect x="90" y="90" width="42" height="42" fill="#eef7fd"/><rect x="134" y="90" width="42" height="42" fill="#eef7fd"/>
+        <rect x="2" y="134" width="42" height="42" fill="#eef7fd"/><rect x="46" y="134" width="42" height="42" fill="#eef7fd"/><rect x="90" y="134" width="42" height="42" fill="#eef7fd"/><rect x="134" y="134" width="42" height="42" fill="#eef7fd"/>
+      </g>
+      <circle cx="23" cy="23" r="8" fill="#1d8a5f"/>
+      <text x="23" y="27" text-anchor="middle" fill="#fff" font-size="8">S</text>
+      <circle cx="155" cy="155" r="8" fill="#c25e2e"/>
+      <text x="155" y="159" text-anchor="middle" fill="#fff" font-size="8">E</text>
+      <rect x="88" y="44" width="46" height="46" fill="#45536b"/>
+      <text x="111" y="70" text-anchor="middle" fill="#fff" font-size="8">障碍</text>
+      <!-- 波前环 -->
+      <circle cx="23" cy="23" r="26" fill="none" stroke="#0e5a8a" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <circle cx="23" cy="23" r="52" fill="none" stroke="#0e5a8a" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <circle cx="23" cy="23" r="78" fill="none" stroke="#0e5a8a" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="180" y="40" fill="#0e5a8a">波前逐层扩散</text>
+    </g>
+  </g>
+
+  <!-- 与 MAC-CIM 对比 -->
+  <rect x="620" y="90" width="300" height="360" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="770" y="118" text-anchor="middle" fill="#6b3fa0" font-size="13.5" font-weight="700">路径 CIM vs MAC-CIM</text>
+  <g font-size="11.5">
+    <text x="640" y="150" fill="#45536b">MAC-CIM（前几篇）：</text>
+    <text x="640" y="174" fill="#45536b">• 存权重，算 Σ(a×w)</text>
+    <text x="640" y="196" fill="#45536b">• 输出是“数值”</text>
+    <text x="640" y="228" fill="#6b3fa0" font-weight="600">路径 CIM（本文）：</text>
+    <text x="640" y="252" fill="#45536b">• 存地图（障碍/起点/终点/拥堵）</text>
+    <text x="640" y="274" fill="#45536b">• “算”的是信号的<strong>传播与选路</strong></text>
+    <text x="640" y="296" fill="#45536b">• 输出是“路径方向”</text>
+    <text x="640" y="330" fill="#45536b">信号从 START 出发，按 8 邻接</text>
+    <text x="640" y="352" fill="#45536b">扩散（NW/N/NE/W/E/SW/S/SE），</text>
+    <text x="640" y="374" fill="#45536b">遇到障碍绕行，直到到达 END；</text>
+    <text x="640" y="396" fill="#45536b">每个 PE 记住“从哪来的方向”</text>
+    <text x="640" y="418" fill="#45536b">→ 回溯即可还原整条路径</text>
+    <text x="640" y="448" fill="#1d8a5f" font-weight="600">→ 并行度 = 地图大小（32×32 个 PE 同时“看”）</text>
+  </g>
+</svg>

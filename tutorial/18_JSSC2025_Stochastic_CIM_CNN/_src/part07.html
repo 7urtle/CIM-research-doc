@@ -1,0 +1,76 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>微架构设计与训练建模</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 近内存部分二进制累加怎么提高精度；② IRS 数据流与乒乓 FIFO；③ 并行计数器与定点域处理；④ OR 累加怎么在训练中建模。</p>
+</div>
+
+<h3>7.1 近内存部分二进制累加（论文 Fig.10）</h3>
+<p>把大 SC 点积拆成小段、用<strong>定点加法器</strong>相加 → 提高精度：</p>
+<ul>
+<li>部分二进制累加器块有 32 行（匹配宏高度）+ 二进制积分器；</li>
+<li>MUX 每 8 个相邻行选一组（支持行驻留数据流）；</li>
+<li>两个 MUX 分别选 8 行的 outp（正）与 outn（负）；</li>
+<li>split-unipolar 解码：outp − outn（2-bit 减）→ 定点累加电路。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_10_近内存部分二进制累加.png" alt="近内存部分二进制累加">
+<figcaption>图 10 · 论文 Fig.10：近内存部分二进制累加电路。</figcaption>
+</figure>
+
+<h3>7.2 输入-行驻留（IRS）数据流（论文 Fig.11）</h3>
+<p>激活随机流存内存 → 用<strong>IRS 数据流</strong>最大化输入复用：</p>
+<ul>
+<li>只压平激活张量的<strong>深度通道维</strong>（不压平空间维）→ 行可在卷积滑动中复用；每激活行存 SCIM 宏一行（32 行）；</li>
+<li>滤波器同样压平为 2-D 映射；卷积<strong>优先 Y 方向滑动</strong>（宏行间乘法并行）、X 方向串行；</li>
+<li>权重行逐周期施加 → <strong>乒乓 FIFO</strong>：一个 FIFO 供 32 宏、另一个从 SRAM 加载下一核 → 隐藏 SRAM 访问延迟；</li>
+<li>行 MUX 把感放输出移给下一行累加器 → <strong>对角累加</strong>；行 MUX 每 7 行一组 → 支持 3×3、5×5、7×7 核；</li>
+<li>FSM 控制三个递归循环：行滑动（优先）→ 列滑动 → 输出通道；宏宽 &gt; 核宽时列滑动先行（省权重读取）；宏宽 ≤ 核宽时输出通道先行（省激活重载）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_11_卷积数据流与乒乓FIFO.png" alt="卷积数据流与乒乓FIFO">
+<figcaption>图 11 · 论文 Fig.11：卷积数据流与乒乓 FIFO 权重寄存器。</figcaption>
+</figure>
+
+<h3>7.3 随机→二进制转换与定点域（论文 Fig.12）</h3>
+<ul>
+<li><strong>并行计数器</strong>：每个 SCIM 宏产生 32 个 4-bit 部分输出；32 个宏中同一卷积结果的输出 → 一个并行计数器 → 32 个数相加 → 9-bit；二叉树 + 两段流水（第 3 加法级后插流水寄存器）；</li>
+<li><strong>定点域</strong>（流水化）：平均池化（2×2，跳算缩放输出 + 移位寄存器 4 值相加；可旁路）→ BN 缩放 + 减偏置 → ReLU 截负 → 存激活 SRAM。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_12_随机转二进制并行计数器.png" alt="随机转二进制并行计数器">
+<figcaption>图 12 · 论文 Fig.12：随机→二进制的并行计数器与定点域处理。</figcaption>
+</figure>
+
+<h3>7.4 OR 累加与训练建模（论文 Fig.13）</h3>
+<p>两类随机误差来源：① OR 非线性累加；② SNG 随机流表示。训练对策：</p>
+<ul>
+<li><strong>OR 建模为激活函数</strong>：OR 输出 ≈ 1−e^(−s)（s=精确和）——把它当作精确累加后的非线性激活函数（[15] 思路）→ 反向传播可算梯度；</li>
+<li><strong>精确流模拟</strong>：训练时用真实 LFSR 序列与 SNG、AND 乘法建模 → 误差进入训练；乘法输出转浮点精确相加（[13]）；</li>
+<li>PRNG 确定性流 → 模型可学流模式 → 允许 SNG 间适度共享随机数。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_13_OR累加与训练建模.png" alt="OR累加与训练建模">
+<figcaption>图 13 · 论文 Fig.13：OR 累加输出 vs 精确和，以及训练中的 OR 累加建模。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_microarch.svg" alt="微架构教学图">
+<figcaption>教学图 6 · 部分累加、IRS 数据流与并行计数器。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_training.svg" alt="训练建模教学图">
+<figcaption>教学图 7 · OR 非线性与训练建模。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 部分二进制累加把大 SC 点积拆小、定点相加 → 精度↑；② IRS 数据流 + 乒乓 FIFO + 对角累加支持高效卷积；③ 并行计数器 + 定点域池化/BN/ReLU；④ 训练时把 OR 建模为 1−e^(−s) 激活 + 精确流模拟 → 精度 ≈ INT8。</p>
+</div>
+</section>

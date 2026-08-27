@@ -1,0 +1,55 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更低位宽的浮点（FP8/MXFP）</strong>：BF16 之后，业界在推 8 位浮点（FP8、MXFP6/MXFP8）——尾数更少、对齐更简单。把本文的串行对齐 + N2CMAC 迁移到 FP8，能效还有翻倍空间（本论文集 06 号论文就是这个方向）；</li>
+<li><strong>训练支持</strong>：本文是推理宏。训练需要 FP32 累加、梯度计算与权重更新——CIM 里做训练要解决“权重频繁更新”与“反向传播数据流”，本文的广播结构是很好的起点（本论文集 03、17 号论文在尝试）；</li>
+<li><strong>混合精度调度</strong>：BF16A/BF16B/INT8 三种模式已有，但没有自动调度器。做一个“按层精度自动选择”的编译器（精度敏感层用 BF16A、不敏感层用 INT8），是软硬协同的下一步；</li>
+<li><strong>串行对齐的通用化</strong>：本文的 SDT+LC 方案针对 BF16。能否推广到 FP16/FP32/块浮点（block FP，一组数共享指数）？块浮点能让“对齐”变成“块级对齐”，可能是串行对齐的天然延伸；</li>
+<li><strong>与 Transformer 专用优化结合</strong>：ViT/Transformer 有 softmax、layernorm、Attention 等非 GEMM 算子，CIM 宏之外需要配套的数字外围；把本文的 FP-CIM 和这些算子协同设计成完整 Transformer 加速器；</li>
+<li><strong>稀疏性深度利用</strong>：本文的符号-数值格式提升了“位级稀疏性”，但如果加法树能显式跳过零输入（激活/权重稀疏跳过），能效还能再上台阶——需要稀疏检测电路与 N2CMAC 的协同；</li>
+<li><strong>工艺升级与面积微缩</strong>：28nm → 更先进节点，桶形移位器的面积优势会更明显；同时保持“广播+串行”架构的完整性。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>FP-CIM（Floating-Point Compute-in-Memory）</dt><dd>支持浮点乘累加的存内计算。</dd>
+<dt>BF16（bfloat16）</dt><dd>16 位浮点：1 符号 + 8 指数 + 7 尾数，与 FP32 同指数范围。</dd>
+<dt>指数对齐（Exponent Alignment）</dt><dd>浮点加法前，把较小指数数的尾数右移，使两数指数一致。</dd>
+<dt>桶形移位器（Barrel Shifter）</dt><dd>一次可移任意位数的移位电路，面积大；并行对齐方案依赖它。</dd>
+<dt>GIN（Global Input）</dt><dd>本文的全局输入 = 8b 并行指数（EIN）+ 2b 串行尾数（MIN）。</dd>
+<dt>TS-A（Triple-Stacked Array，三重堆叠阵列）</dt><dd>本文的基本计算块：ESICU + 16×256 6T SRAM + N2CMACU，每块算 1 个输出通道。</dd>
+<dt>ESICU（Embedded Serial-Input Converting Unit）</dt><dd>嵌入式串行输入转换单元：ASG + 16 个 LC。</dd>
+<dt>ASG（Align-Signal Generator）</dt><dd>对齐信号生成器：EA（指数加法器）+ MVF（最大值查找）+ SDT（移位目标跟踪）+ EC（比较器）。</dd>
+<dt>SDT（Shift-Destination Tracker）</dt><dd>从最大指数和开始每周期 −1 的倒计时器，统一对齐节奏。</dd>
+<dt>LC（Lightweight Converter）</dt><dd>轻量转换器：ARRC（寄存器链）+ SAC（自对齐控制器）+ OSIU（输出选择/取反）。</dd>
+<dt>2b 串行对齐</dt><dd>每周期只移 2 位的对齐方式，用时间换面积。</dd>
+<dt>2C（Two's Complement，二进制补码）</dt><dd>有符号数表示法，负数 = 取反 + 1。</dd>
+<dt>符号-数值（Sign-Magnitude）</dt><dd>符号位 + 数值位分开存储的格式，负权重只翻符号位。</dd>
+<dt>N2CMAC（Non-Two's-Complement MAC）</dt><dd>非二进制补码 MAC：有符号 MAC = 无符号 MAC + 符号补偿。</dd>
+<dt>DMU（Digital Multiply Unit）</dt><dd>数字乘法单元，乘 |MW| 并累加。</dd>
+<dt>CA&Q（Calibrated Accumulator and Quantizer）</dt><dd>校准累加器与量化器：多周期累加 + 符号补偿 + 量化输出。</dd>
+<dt>BF16A / BF16B</dt><dd>两种浮点模式：对齐尾数保留 10b / 8b，输出 23b / 21b。</dd>
+<dt>SCR（Storage-Compute Ratio）</dt><dd>存储-计算比；INT8 模式下列选择当译码器提高它。</dd>
+<dt>TFLOPS/W 与 TOPS/W</dt><dd>浮点能效（1 MAC = 2 FLOPs）与整数能效（1 MAC = 2 OPS）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>X. Wang, T. Jiao, et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC for CNNs and Transformers,” <em>ISSCC 2025</em>, Paper 14.3. DOI: 10.1109/ISSCC49661.2025.10904738</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-Computing-Unit and Double-Bit 6T-SRAM Computing-in-Memory Macro for Floating-Point CNNs,” <em>ISSCC 2023</em>, pp. 128-130.（前作 [1]）</li>
+<li>W.-S. Khwa et al., “A 16nm 96Kb Integer/Floating-Point Dual-Mode-Gain-Cell-Computing-in-Memory Macro Achieving 73.3-163.3TOPS/W and 33.2-91.2TFLOPS/W for AI-Edge Devices,” <em>ISSCC 2024</em>, pp. 568-570.（前作 [2]）</li>
+<li>P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-Compute Macro with 16.2-70.2TFLOPS/W…,” <em>ISSCC 2023</em>, pp. 126-128.（前作 [3]）</li>
+<li>Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based Floating-Point SRAM CIM Macro with Logarithm Bit-Width Residual ADC,” <em>ISSCC 2024</em>, pp. 576-578.（前作 [4]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 254-256.（前作 [5]）</li>
+<li>J. Saikia et al., “FP-IMC: A 28nm All-Digital Configurable Floating-Point In-Memory Computing Macro,” <em>ESSCIRC</em>, 2023.（并行对齐对比 [6]）</li>
+<li>Y. Wang et al., “A 28nm 83.23TFLOPS/W POSIT-Based Compute-in-Memory Macro for High-Accuracy AI Applications,” <em>ISSCC 2024</em>, pp. 566-568.（POSIT CIM [7]，本论文集 15 号有详细版）</li>
+<li>H. Fujiwara et al., “A 3nm 32.5TOPS/W, 55.0TOPS/mm²… INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-574.（数字 CIM [8]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.3.1–14.3.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（62.84 TFLOPS/W、90.15 TOPS/W、36.23%、1.83× 等）均来自论文原文。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

@@ -1,0 +1,86 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>芯片实测与对比</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 65nm 系统与 14nm 宏的规格和能效；② 两个工作负载的精度与宏利用率问题；③ 能耗/面积分解。</p>
+</div>
+
+<h3>8.1 65nm 加速器芯片（论文 Fig.14/15）</h3>
+<table>
+<tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>65nm / 9.36 mm²</td></tr>
+<tr><td>SCIM 核</td><td>32 个（4×8 阵列）· 260-kB 存储 + 520-kB MAC · 130 kB/mm²</td></tr>
+<tr><td>电压 / 频率</td><td>标称 1V，最大 5 MHz（片上供电结构限制）· 0.7V 全功能 3.2 MHz</td></tr>
+<tr><td><strong>峰值系统能效</strong></td><td><strong>7.96 TOPS/W</strong> @0.7V（全利用卷积层）</td></tr>
+<tr><td><strong>宏级能效</strong></td><td>20 TOPS/W（带平均池化）</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig18_14_芯片显微照片.png" alt="芯片显微照片">
+<figcaption>图 14 · 论文 Fig.14：65nm 与 14nm 芯片显微照片。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig18_15_时钟频率电压.png" alt="时钟频率电压">
+<figcaption>图 15 · 论文 Fig.15：65nm 芯片时钟频率 vs 电压。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_电压能效.png" alt="电压能效图">
+<figcaption>数据图 3 · 65nm 加速器能效 vs 电压（依据论文 Fig.17）。</figcaption>
+</figure>
+
+<h3>8.2 面积与能耗分解（论文 Fig.16/18）</h3>
+<ul>
+<li><strong>面积</strong>：SCIM 核由位单元主导；感放仅 2%、SNG 15%、行累加器 6.25%；输入/权重 SRAM 与 SCIM 核面积相当；</li>
+<li><strong>能耗</strong>：SCIM 核 49%、时钟通信 26%、控制器/缓冲 15%、输出传输+权重加载 11%、并行计数器/定点 2%。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_16_面积分解.png" alt="面积分解">
+<figcaption>图 16 · 论文 Fig.16：SCIM 核与整芯片面积分解。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig18_18_能耗分解.png" alt="能耗分解">
+<figcaption>图 17 · 论文 Fig.18：加速器能耗分解。</figcaption>
+</figure>
+
+<h3>8.3 工作负载（表 I）</h3>
+<table>
+<tr><th>模型</th><th>精度</th><th>宏利用率</th><th>峰值能效</th></tr>
+<tr><td>MNIST LeNet-5</td><td><strong>99.1%</strong>（1000 测试图）</td><td>仅 5.1%（小滤波器）</td><td>0.35 TOPS/W</td></tr>
+<tr><td>CIFAR-10 TinyConv-4</td><td><strong>73.5%</strong>（片上测试；INT8 训练 78%、SC 训练 75%）</td><td>31.3%（第 2 层）</td><td>2.2 TOPS/W</td></tr>
+</table>
+<p>宏利用率低（小滤波器/片内存限制）显著拉低系统能效——全利用卷积层测试才到 7.96 TOPS/W。</p>
+
+<h3>8.4 14nm 宏测试芯片（表 II）</h3>
+<ul>
+<li>16 个 SCIM 宏（32×32 阵列）、130 MHz；每行 32 长点积 → 2 个随机输出位；16 宏 → 32 随机位 ≈ 5-bit 精度；</li>
+<li>密度 860 kB/mm²；<strong>宏能效 258 TOPS/W（5-bit）</strong> → 折算 8-bit <strong>35 TOPS/W</strong> → 带平均池化跳算 <strong>140 TOPS/W</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_17_能效电压.png" alt="能效电压">
+<figcaption>图 18 · 论文 Fig.17：能效 vs 电压（65nm）。</figcaption>
+</figure>
+
+<h3>8.5 与 SOTA 对比（表 III）</h3>
+<ul>
+<li>520-kB 片内 MAC 远超多数工作（除 [7]）；全片参数驻留 → 能耗测量含全部成分（无片外搬移）；</li>
+<li>MAC 密度优于模拟/数字 CIM：130 kB/mm²（65nm）、860 kB/mm²（14nm）；</li>
+<li>SCIM 单元 +4 晶体管 vs 数字 CIM ~20 → 密度优势的直接来源；</li>
+<li>能效口径：8-bit MAC 运算，报告系统与宏两级能效（含/不含平均池化）。</li>
+</ul>
+
+<figure>
+<img src="assets/charts/c02_能效优势.png" alt="能效优势图">
+<figcaption>数据图 2 · SCIM 相对其他 CIM 的能效优势（依据论文 Fig.9）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_results.svg" alt="实测教学图">
+<figcaption>教学图 8 · 两芯片规格、工作负载与能耗分解。</figcaption>
+</figure>
+</section>

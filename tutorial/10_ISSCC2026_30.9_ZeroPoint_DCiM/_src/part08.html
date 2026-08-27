@@ -1,0 +1,85 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>面积、功耗与实测：把“纸面设计”变成“芯片成绩单”</h2>
+
+<h3 id="sec8-1">8.1 面积/功耗分解：钱都花在哪了？</h3>
+<p>论文 Fig. 30.9.4 给出了面积与功耗的详细分解，这是理解“设计取舍”的关键证据：</p>
+<figure>
+  <img src="assets/charts/c01_area_breakdown.png" alt="面积分解" style="max-width:860px">
+  <figcaption>图 8.1　面积分解：Booth 选择器 + 加法树占 74%（计算逻辑是面积的绝对主体）；存储锁存 + 读 MUX 占 21%；编码器等外围只占 2%。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_power_breakdown.png" alt="功耗分解" style="max-width:940px">
+  <figcaption>图 8.2　功耗分解：写功耗里“写驱动 + 译码器”占 56%（但它面积只占 3%！）；计算功耗里 Booth 选择器 + 加法树占 98%。双缓冲后写功耗可降到 1%。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 这张分解表教会我们什么？</div>
+<ul>
+<li><strong>面积 ≠ 功耗</strong>：写驱动/译码器面积只占 3%，却吃掉 56% 的写功耗——因为写操作要驱动整列的大电容（锁存写入线、译码树）。这正是论文把写路径功耗“藏进后台”（双缓冲）的原因；</li>
+<li><strong>计算逻辑既是面积大头也是功耗大头</strong>（74% 面积 / 98% 计算功耗）——所以任何能减少部分积数量/宽度的技巧（§4、§5）都能同时撬动面积和功耗两块收益；</li>
+<li><strong>Booth 编码器只占 2% 面积</strong>——因为它“只写一次”（在写权重路径上），32 列共享，面积被充分摊薄。这是 §5.2 决策的直接证据。</li>
+</ul>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_4_面积功耗分解.png" alt="论文图 30.9.4">
+  <figcaption>图 8.3　论文原图 Fig. 30.9.4：面积/功耗分解与权重存储面积节省（95.5% 高密度多比特插入 → 20% 存储面积下降）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec8-2">8.2 测量结果：从 1.1 V 到 400 mV</h3>
+<p>论文在 Intel 18A 上流片并实测，关键数字如下（全部为 25°C 实测）：</p>
+<table>
+<tr><th>电源电压</th><th>频率</th><th>吞吐</th><th>功耗</th><th>能效</th><th>备注</th></tr>
+<tr><td class="num"><strong>1.1 V（峰值）</strong></td><td class="num">2.62 GHz</td><td class="num">21.5 TOPS</td><td class="num">1.23 W</td><td class="num">~17.5 TOPS/W</td><td>峰值面积效率 <strong>250 TOPS/mm²</strong></td></tr>
+<tr><td class="num"><strong>400 mV（低压）</strong></td><td class="num">显著降频</td><td class="num">~0.89 TOPS</td><td class="num">6.1 mW</td><td class="num"><strong>147 TOPS/W</strong></td><td>25% 输入活动率 → 峰值能效</td></tr>
+<tr><td class="num">400 mV</td><td class="num">同左</td><td class="num">~0.89 TOPS</td><td class="num">3.5 mW</td><td class="num"><strong>254 TOPS/W</strong></td><td>10% 输入活动率 → 能效扩展</td></tr>
+</table>
+<figure>
+  <img src="assets/charts/c04_measurements.png" alt="测量结果" style="max-width:960px">
+  <figcaption>图 8.4　实测趋势：能效随输入活动率下降而上升（左）；频率/功耗随电压缩放（右）。注：10% 与 25% 活动率为论文实测点，其余为示意趋势。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_9_5_测量结果.png" alt="论文图 30.9.5">
+  <figcaption>图 8.5　论文原图 Fig. 30.9.5：Intel 18A 上的频率、功耗与能效实测曲线。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 怎么理解“低压能效高”这个反直觉现象？</div>
+<p>CMOS 动态功耗 ∝ C·V²·f。把电压从 1.1 V 降到 400 mV，功耗按 V² 暴跌（(0.4/1.1)² ≈ 0.13），而频率只按 ~线性下降。所以“能效 = 吞吐/功耗”在低压下急剧上升。代价是吞吐变低——所以 <strong>1.1 V 用来冲峰值吞吐，400 mV 用来冲峰值能效</strong>，这是 DVFS（动态电压频率缩放）在 DCiM 上的应用。注意“活动率”也影响功耗：数据翻转越少，动态功耗越低，能效越高（10% 活动率 → 254 TOPS/W）。</p>
+</div>
+
+<h3 id="sec8-3">8.3 与近期工作的对比</h3>
+<p>论文 Fig. 30.9.6 把本工作与近年数字 CiM 做了对比，并声称在面积效率与能效上取得 best-in-class。以下是论文引用/可比的代表性工作（注意：不同工作位宽与归一化方式不同，直接对比要小心——这本身就是很好的研究素养提醒）：</p>
+<figure>
+  <img src="assets/charts/c03_compare.png" alt="对比散点图" style="max-width:840px">
+  <figcaption>图 8.6　能效 vs 面积效率散点对比（本教程重绘；数据点取自论文引用文献标题/正文中的明确数字，仅纳入位宽可比的 INT8/INT12 工作，位宽不同或按 bit 归一化者未入图——见下表）。</figcaption>
+</figure>
+<table>
+<tr><th>工作</th><th>工艺</th><th>精度</th><th>能效</th><th>面积效率</th><th>特点</th></tr>
+<tr><td><strong>本论文</strong></td><td class="num">Intel 18A</td><td class="num">INT8×INT8</td><td class="num"><strong>147 TOPS/W</strong></td><td class="num"><strong>250 TOPS/mm²</strong></td><td>全可综合、零点量化、双缓冲</td></tr>
+<tr><td>Mori 等 [5], VLSI'25</td><td class="num">3nm</td><td class="num">INT8 / FP16</td><td class="num">125 TOPS/W</td><td class="num">90 TOPS/mm²</td><td>DCiM 编译器、多权重更新/周期</td></tr>
+<tr><td>Fujiwara 等 [4], ISSCC'24</td><td class="num">3nm</td><td class="num">INT12×INT12</td><td class="num">32.5 TOPS/W</td><td class="num">55 TOPS/mm²</td><td>并行 MAC 架构、foundry 6T SRAM 位单元</td></tr>
+<tr><td>Desoli 等 [3], ISSCC'23</td><td class="num">FD-SOI 18nm</td><td class="num">≤4b</td><td class="num">40–310 TOPS/W</td><td class="num">—</td><td>多 tile 全数字 CiM</td></tr>
+<tr><td>Mori 等 [2], ISSCC'23</td><td class="num">4nm</td><td class="num">位宽可配</td><td class="num">6163 TOPS/W/b*</td><td class="num">4790 TOPS/mm²/b*</td><td>按 bit 归一化的指标（*直接与 8b 工作不可比）</td></tr>
+</table>
+<figure>
+  <img src="assets/figs/fig30_9_6_对比表.png" alt="论文图 30.9.6">
+  <figcaption>图 8.7　论文原图 Fig. 30.9.6：性能/面积/功耗汇总与近期工作对比。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比表的研究素养：先问“怎么归一化的？”</div>
+<p>① 有些论文按“每 bit 归一化”报指标（如 6163 TOPS/W/b），位宽越低指标越好看——和 8b 工作比之前必须先换算；② 能效强烈依赖电压与活动率条件（本文 147 是 400 mV/25% 活动率），不同条件下测的数字不能直接比；③ 工艺代差（18A vs 3nm vs 28nm）也会造成不公平对比。这些“坑”恰恰是审稿人最爱问的问题，也是你自己写论文时要交代清楚的。</p>
+</div>
+
+<h3 id="sec8-4">8.4 工艺背景：Intel 18A 是什么？</h3>
+<p>本论文在 <strong>Intel 18A</strong> 上流片。18A 是 Intel 先进节点（对标台积电 2nm 级别），两个标志性技术：</p>
+<ul>
+<li><strong>RibbonFET（GAA 全环绕栅极）</strong>：用纳米带（nanoribbon）四面环绕的栅极替代 FinFET 的三面鳍式栅极，沟道控制更强、漏电更低——这是低压运行（400 mV）能成立的关键工艺支撑；</li>
+<li><strong>PowerVia（背面供电）</strong>：电源从晶圆背面接入，正面信号布线资源不再被电源线挤占，单元密度和布线质量提升。</li>
+</ul>
+<div class="box info">
+<div class="bt">🧠 工艺与架构的“互相成就”</div>
+<p>可综合设计（§2.2）让 DCiM 能快速跟上工艺换代；而 GAA/背面供电这类先进工艺让“低压数字逻辑”（§2.1）成为现实。两者结合，才有了 400 mV 下 147 TOPS/W 的成绩。做 CIM 研究时，<strong>工艺选择和架构选择从来不是独立的</strong>——这是论文最后一张图（Fig. 30.9.7，芯片照片）想传达的完整故事。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_9_7_芯片照片与总结.png" alt="论文图 30.9.7">
+  <figcaption>图 8.8　论文原图 Fig. 30.9.7：封装后的 Intel 18A 测试芯片照片、裸片尺寸与性能汇总表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+</section>

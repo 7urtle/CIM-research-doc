@@ -1,0 +1,1145 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：One-Shot FP CIM 引擎（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 北大 one-shot FP CIM 引擎的 multiply-less 一次计算方案、ParMS 并行最小选择器、输入-权重协同对齐与片上微调核心。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress" style="width: 0%;"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">One-Shot FP CIM 引擎零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.9 · 北京大学</div>
+  </div>
+  <a class="sec active" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：预对齐 FP-CIM</a>
+  <a class="sec" href="#sec2">02 · 三大挑战与总体架构</a>
+  <a class="sec" href="#sec3">03 · 创新①：One-Shot 计算</a>
+  <a class="sec" href="#sec4">04 · ParMS 并行最小选择器</a>
+  <a class="sec" href="#sec5">05 · 创新②：协同对齐 + UBF16</a>
+  <a class="sec" href="#sec6">06 · 创新③：ODFC 片上微调</a>
+  <a class="sec" href="#sec7">07 · 部署流程与 NN 演示</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 总结 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">One-Shot 浮点存内计算引擎零基础精讲：一个周期算完浮点
+<span class="en">A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI（IEEE JSSC, vol.60, no.9, 2025）</span></h1>
+<div class="meta">论文作者：Haikang Diao, Haoyang Luo, Jiahao Song, Bocheng Xu, Runsheng Wang, Yuan Wang, Xiyuan Tang（北京大学）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 9, 2025（CICC'24 短文 [19] 的期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>上一篇（第 13 篇）是北大团队的 multiply-less <strong>INT</strong> CIM。这篇把同一思想推进到<strong>浮点（BF16）</strong>并加了<strong>片上微调</strong>。传统 FP-CIM 要四步：选最大指数、对齐输入、INT 尾数 MAC（位串行 8 周期！）、INT→FP 转换——前三步的电路 87.5% 时间闲置。本论文的 <strong>One-Shot CIM 引擎</strong>用三招把 FP 运算压进一个周期：</p>
+<ol>
+<li><strong>One-Shot 计算方案</strong>：用 multiply-less NN（L1 距离）把 INT 尾数 MAC 变成<strong>最小选择</strong> → 运算够简单 → 位并行 1 周期完成（原 8 周期）→ 吞吐提升 <strong>8×</strong>、硬件 100% 利用；定制 <strong>ParMS（8-bit 并行最小选择器）</strong>把最小选择的成本再压低（vs 乘法器面积 −11.5×、能耗 −8.2×）；</li>
+<li><strong>输入-权重协同对齐</strong>：离线无损钳位让权重与输入同分布 → 直接用<strong>权重的最大指数</strong>对齐输入（免掉 127 个比较器的 XE_max 选择）；新的 <strong>UBF16 格式</strong>免符号位、把归一化搜索从 16 位缩到 8 位 → 转换开销大减；</li>
+<li><strong>ODFC（片上微调核心）</strong>：轻量训练硬件（128 轮顺序更新 + 时分复用 + 保损失 FP 加法）→ 边缘环境变化导致精度暴跌（99.1%→13.8%）时，片上微调 10 epochs 恢复到 <strong>84.3%</strong>。</li>
+</ol>
+<p>28nm 实测：<strong>128 TFLOPS/W</strong>、<strong>7.02 TFLOPS/mm²</strong>（BF16），比 SOTA FP-CIM 提升 <strong>4.1× / 3.4×</strong>；CIFAR-10 91.84%、ImageNet 75.00%、COCO 36.8% mAP——与 FP32 基线无精度损失。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“先把运算变简单，再让电路跑得快”：</strong>浮点 MAC 最贵的是尾数乘法（位串行 8 周期）。本论文不硬扛乘法，而是换算法（L1 距离）让乘法变成“找最小值”——找最小值比乘快得多，所以位并行可行，一个周期就能算完。这是“算法-架构-电路”三层协同的典范。</li>
+<li><strong>“指数的活儿能省就省”：</strong>FP 计算要先对齐指数。传统做法每周期都要找输入的最大指数（127 个比较器）。本论文发现：权重是静态的，它的最大指数可以离线算好 → 输入直接对齐到权重指数即可，输入偶尔超过就钳位处理。把“实时做”变成“提前做”。</li>
+<li><strong>“边缘芯片也要会‘再学习’”：</strong>光照/天气变化会让测试样本偏离训练集 → 精度暴跌。真正的边缘 AI 需要能在设备上微调模型。但训练硬件很贵 → ODFC 用“一次只更新 16 个权重、128 轮扫完”的面积换时间，把训练塞进小面积。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tbody><tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“the complex digital circuitry required for integer (INT) mantissa multiply-accumulate (MAC) computation and exponent alignment severely limits the efficiency and throughput of FP CIM”</td>
+<td>FP-CIM 的痛点：INT 尾数 MAC 和指数对齐的数字电路又大又慢。</td></tr>
+<tr><td class="num">“a one-shot compute scheme is proposed to perform FP operation within one cycle”</td>
+<td>创新①：one-shot 计算方案——1 个周期完成 FP 运算。</td></tr>
+<tr><td class="num">“It adopts the multiply-less NN instead of the multiply-based NN to simplify the integer mantissa MAC to minimum selection”</td>
+<td>用 multiply-less NN 把 INT 尾数 MAC 简化为最小选择。</td></tr>
+<tr><td class="num">“an input–weight co-alignment workflow is proposed to eliminate maximum exponent selection and simplify mantissa shifting logic”</td>
+<td>创新②：输入-权重协同对齐——消除最大指数选择、简化尾数移位。</td></tr>
+<tr><td class="num">“a lightweight on-device fine-tuning core (ODFC) is designed to support online weight updates”</td>
+<td>创新③：轻量 ODFC 支持在线权重更新（片上微调）。</td></tr>
+<tr><td class="num">“achieves an energy efficiency of 128 TFLOPS/W and a computational density of 7.02 TFLOPS/mm² at BF16”</td>
+<td>28nm 实测：128 TFLOPS/W、7.02 TFLOPS/mm²（BF16）。</td></tr>
+<tr><td class="num">“representing a 4.1× and 3.4× improvement over previous state-of-the-art works”</td>
+<td>比 SOTA 提升 4.1×（能效）和 3.4×（计算密度）。</td></tr>
+</tbody></table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>One-Shot 计算方案</strong>：multiply-less（L1 距离 → Σ|xi−wi|=Σxi+Σwi−2Σmin）把 INT 尾数 MAC 变成最小选择 → 位并行 1 周期、8× 吞吐、100% 硬件利用率；位并行还利用输入相关性（MSB 翻转少）降功耗；</li>
+<li><strong>ParMS 并行最小选择器</strong>：硬连线、进位前瞻比较树、传输管编码器（14→7 管）、三态反相器门控（加法树 −44%）；vs INT8 乘法器面积 −11.5×、能耗 −8.2×；</li>
+<li><strong>输入-权重协同对齐</strong>：离线无损钳位 [0,Xmax] + 权重 WE_max 预对齐 → 免 XE_max 选择（面积 −22.3%、能耗 −31.7%）；UBF16 格式免符号位、归一化 16→8 位（再省 11.5%/6.5%）；</li>
+<li><strong>ODFC 片上微调</strong>：128 轮顺序更新、时分复用（面积 −10%）、保损失 FP 加法；MNIST-M 精度 13.8%→84.3%；</li>
+<li><strong>完整实测</strong>：128 TFLOPS/W、7.02 TFLOPS/mm²、三任务零精度损失、FoM 比基线 +5×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。建议先读本系列第 13 篇（multiply-less INT CIM）建立 L1 距离直觉，再读本篇看它如何被推到 FP 和训练。读时注意三件事：<strong>one-shot 为什么可行（§3）· 协同对齐怎么省指数逻辑（§5）· 微调硬件怎么把面积压小（§6）</strong>。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：预对齐 FP-CIM 的四步流程</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 为什么边缘 AI 需要浮点而不是 INT8；② 预对齐 FP-CIM 的四步是什么；③ 为什么第 3 步（尾数 MAC）是吞吐瓶颈。</p>
+</div>
+
+<h3>1.1 边缘 AI 为什么要浮点？</h3>
+<p>边缘 AI 任务（目标检测、片上微调）越来越复杂：</p>
+<ul>
+<li>INT8 量化不足以支撑复杂任务 → 需要基于浮点（FP）的更强模型；</li>
+<li>FP 运算（BF16/FP16）在 CIM 里的挑战：尾数乘法 + 指数对齐的数字电路开销巨大。</li>
+</ul>
+<p>早期 FP-CIM 把尾数乘法和指数加法都放进 CIM 阵列（如 FP8 全数字可配置宏 [22]）——但 INT 尾数 MAC 和指数对齐的电路消耗 <strong>98% 的能耗和面积</strong>。</p>
+
+<h3>1.2 预对齐 FP-CIM：把对齐提前做</h3>
+<p>为了省掉阵列内的对齐/移位，预对齐 FP-CIM（[17]–[21]）把输入对齐与 INT 尾数 MAC 交错：</p>
+<ol>
+<li><strong>XE_max 选择</strong>：用多级比较器找输入的最大指数（128 输入需 127 个 8 位比较器）；</li>
+<li><strong>输入对齐</strong>：把输入尾数对齐到 XE_max（供整数尾数 MAC 使用）；</li>
+<li><strong>尾数 MAC</strong>：与权重做整数尾数乘累加；</li>
+<li><strong>INT→FP 转换</strong>：整数结果归一化为 FP 格式（搜最高位 1 + 移位截断）。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_1_预对齐FP-CIM架构.png" alt="预对齐FP-CIM架构">
+<figcaption>图 1 · 论文 Fig.1：预对齐 FP-CIM 的典型架构——四步流水：XE_max 选择、输入对齐、尾数 MAC、INT→FP 转换。</figcaption>
+</figure>
+
+<h3>1.3 问题：第 3 步是吞吐瓶颈</h3>
+<div class="box key">
+<div class="bt">💡 87.5% 的闲置时间</div>
+<p>步骤①②④各 1 周期，但步骤③（INT 尾数 MAC）通常用<strong>位串行</strong>——每周期只送 1 位，BF16 的 INT8 尾数要 <strong>8 周期</strong>。结果：步骤①②④的电路 7/8 时间闲置（利用率仅 12.5%）。Booth 编码（[17]）可减到 4 周期，但要额外编解码电路；位并行则乘法器和加法树占 <strong>96%</strong> 的面积和能耗。</p>
+</div>
+<p>本论文的核心观察：<strong>问题的根源是“乘法”</strong>——如果不用乘法（multiply-less），步骤③就能变得足够简单，位并行才可行，FP 运算就能一个周期完成。</p>
+
+<figure>
+<img src="assets/diagrams/d01_challenges.svg" alt="挑战教学图">
+<figcaption>教学图 1 · 预对齐 FP-CIM 四步流程与三大挑战。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>三大挑战与 One-Shot CIM 引擎总体架构</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 三大挑战的量化（吞吐、转换开销、环境变化）；② 引擎的四大模块（ManAU/CIM core/ITFU/ODFC）与职责。</p>
+</div>
+
+<h3>2.1 三大挑战（论文 Fig.2）</h3>
+<table>
+<tbody><tr><th>挑战</th><th>量化</th><th>对策</th></tr>
+<tr><td><strong>① INT 尾数 MAC 拖慢吞吐</strong></td><td>位串行 8 周期；位并行 96% 面积/能耗</td><td>One-Shot 计算（multiply-less → 最小选择，1 周期）</td></tr>
+<tr><td><strong>② FP/INT 转换开销大</strong></td><td>步骤①需 127 个 8 位比较器；步骤④搜 16 位整数</td><td>输入-权重协同对齐 + UBF16</td></tr>
+<tr><td><strong>③ 环境变化掉精度</strong></td><td>MNIST 99.1% → MNIST-M 13.8%</td><td>ODFC 片上微调</td></tr>
+</tbody></table>
+
+<figure>
+<img src="assets/figs/fig17_2_三大挑战.png" alt="三大挑战">
+<figcaption>图 2 · 论文 Fig.2：先前预对齐 FP-CIM 的三大挑战。</figcaption>
+</figure>
+
+<h3>2.2 引擎架构（论文 Fig.3）</h3>
+<p>引擎由四大模块组成：</p>
+<table>
+<tbody><tr><th style="width:18%">模块</th><th>职责</th></tr>
+<tr><td><strong>ManAU</strong>（尾数对齐单元，0.018 mm²）</td><td>核心级输入-权重协同对齐：直接用权重最大指数对齐输入尾数（免 XE_max 选择）</td></tr>
+<tr><td><strong>CIM Core</strong>（0.084 mm²）</td><td>INT 尾数计算：输入驱动 + InADD（128 输入加法树，Σxi 共享）+ 16 列子阵列（16-kb 权重）+ ParMS + ACC-ASU</td></tr>
+<tr><td><strong>ITFU</strong>（INT→FP 单元，0.003 mm²）</td><td>16 位整数结果 → UBF16 格式</td></tr>
+<tr><td><strong>ODFC</strong>（片上微调核心，0.037 mm²）</td><td>在线权重更新（训练）</td></tr>
+</tbody></table>
+
+<figure>
+<img src="assets/figs/fig17_3_CIM引擎架构.png" alt="CIM引擎架构">
+<figcaption>图 3 · 论文 Fig.3：One-Shot CIM 引擎总体架构（ManAU + CIM core + ITFU + ODFC）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d02_arch.svg" alt="架构教学图">
+<figcaption>教学图 2 · 引擎架构与计算流程。</figcaption>
+</figure>
+
+<h3>2.3 multiply-less 的计算分解</h3>
+<p>引擎支持 FP 与 INT 两种模式（都只需 1 周期）。FP 模式下：ManAU 对齐 → CIM core 尾数计算 → ITFU 转回 FP。核心运算沿袭第 13 篇的 multiply-less 分解（L1 距离）：</p>
+<p class="formula">Σ|xi−wi| = Σxi + Σwi − 2·Σmin(xi,wi)</p>
+<ul>
+<li><strong>Σxi</strong>：InADD（128 输入 8 位加法树），结果在整个 CIM core 共享（摊薄成本）；</li>
+<li><strong>Σwi</strong>：部署前预计算存 WSUM；</li>
+<li><strong>2Σmin</strong>：ParMS + ACC-ASU 实时完成（最轻的运算）。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 设计与第 13 篇的关系</div>
+<p>第 13 篇（multiply-less INT CIM）用位串行动态比较器；本篇把它推到 <strong>BF16 浮点</strong>：尾数变成 8 位 → 用<strong>位并行</strong>的定制 ParMS（静态、进位前瞻）→ 1 周期完成。同时新增协同对齐（指数部分）和 ODFC（训练部分）——是前作的完整升级。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：One-Shot 计算方案——1 周期完成 FP 运算</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 传统 8 周期 vs one-shot 1 周期的流水对比；② 为什么最小选择让位并行可行；③ 位并行利用输入相关性的额外红利。</p>
+</div>
+
+<h3>3.1 周期对比（论文 Fig.4）</h3>
+<p>传统预对齐 FP-CIM 的步骤③用位串行：8 位尾数每周期送 1 位 → 8 周期，步骤①②④的电路闲置 7 个周期。One-Shot 方案：</p>
+<ul>
+<li><strong>最小选择足够简单</strong> → 位并行数据流（8 位同时送）硬件开销可接受；</li>
+<li>输入对齐、尾数计算、INT→FP 转换<strong>各 1 周期</strong> → 流水线化 FP 计算；</li>
+<li>总吞吐提升 <strong>8×</strong>、硬件利用率 100%。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_4_一次计算方案对比.png" alt="一次计算方案对比">
+<figcaption>图 4 · 论文 Fig.4：传统 FP-CIM 计算方案（BF16）与 one-shot 计算方案对比。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_oneshot.svg" alt="oneshot教学图">
+<figcaption>教学图 3 · 8 周期 vs 1 周期，以及位并行的额外红利。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig17_4_一次计算方案对比.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · One-Shot 计算：传统位串行 8 周期 vs 本论文位并行最小选择 1 周期。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · One-Shot 流水（8 周期 vs 1 周期）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">传统位串行：步骤③第 0/8 位 vs One-Shot：3 级流水各 1 周期</span>
+</div>
+<div class="hint">左侧传统：步骤③（尾数 MAC）位串行 8 周期，每周期只算 1 位（红色高亮），①②④电路闲置 87.5%；右侧 One-Shot：3 级流水（输入对齐→最小选择→INT→FP）各 1 周期，8 位并行 → 吞吐 8×、利用率 100%。</div>
+</div>
+
+<figure>
+<img src="assets/charts/c01_one_shot.png" alt="one-shot周期对比图">
+<figcaption>数据图 1 · One-Shot 计算：总周期 11 → 3（依据论文 Fig.4）。</figcaption>
+</figure>
+
+<h3>3.2 位并行利用输入相关性降翻转率</h3>
+<p>位并行计算还能利用 NN 输入的相关性（论文 Fig.7a）：</p>
+<ul>
+<li>相邻输入数据常相似：<strong>MSB 更可能相同</strong>（翻转率低）、LSB 变化多（翻转率高）；</li>
+<li>位并行把 MSB 一起处理 → 平均翻转率低于位串行（位串行从 MSB 到 LSB 逐个算，无法利用相关性）；</li>
+<li>不同数据集/模型验证：输入对齐后的平均翻转率显著降低 → 功耗下降。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_7_翻转率与一次计算评估.png" alt="翻转率与一次计算评估">
+<figcaption>图 5 · 论文 Fig.7：(a) 不同数据集/模型的平均翻转率 (b) one-shot 计算方案的性能评估。</figcaption>
+</figure>
+
+<h3>3.3 性能对比（论文 Fig.7b）</h3>
+<p>与位串行乘法 FP-CIM 基线对比（post-synthesis，28nm/0.9V/180MHz）：</p>
+<ul>
+<li><strong>面积 −2.8× · 能耗 −3.4×</strong>；</li>
+<li>来源：乘法器/加法树被最小选择器替代，位并行减少了周期和闲置。</li>
+</ul>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 最小选择足够简单 → 位并行 1 周期（原 8 周期）→ 吞吐 8×、利用率 100%；② 位并行利用 MSB 相关性降翻转率；③ vs 位串行乘法基线：面积 −2.8×、能耗 −3.4×。但“最小选择”本身仍要抠成本——下一节的 ParMS 就是干这个的。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>ParMS：8-bit 并行最小选择器</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① ParMS 的结构（比较单元 + 8 个选择单元）；② 进位前瞻比较树（G/P 信号、LESS 展开）怎么省晶体管；③ 三态反相器门控为什么省加法树功耗 44%；④ 与乘法器/综合比较器的量化对比。</p>
+</div>
+
+<h3>4.1 结构：比较单元 + 8 个选择单元（论文 Fig.5a）</h3>
+<p>multiply-less 消除了乘法，但 8 位最小选择本身仍有面积/功耗成本。ParMS 定制设计：</p>
+<ul>
+<li><strong>硬连线</strong>：SRAM 的 Q/QB 节点直接连 ParMS → 免预充功耗；</li>
+<li><strong>比较单元</strong>：8 个编码器 + 比较树（进位前瞻设计降组合逻辑延迟）；</li>
+<li><strong>8 个选择单元</strong>：根据比较结果 LESS 输出较小值。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_5_ParMS并行最小选择器.png" alt="ParMS并行最小选择器">
+<figcaption>图 6 · 论文 Fig.5：(a) ParMS 总体架构 (b) 状态转移 (c) 电路细节 (d) 波形。</figcaption>
+</figure>
+
+<h3>4.2 比较单元：G/P 信号与进位前瞻展开</h3>
+<p>编码器把 8 位 XBMA（输入尾数反相）、W、WB 并行转成生成/传播信号：</p>
+<p class="formula">G⟨i⟩ = W⟨i⟩ &amp; XB⟨i⟩，P⟨i⟩ = WB⟨i⟩ | XB⟨i⟩</p>
+<p>比较树输出 LESS：</p>
+<p class="formula">LESS = G⟨7⟩ + Σ G⟨k⟩ &amp; Π P⟨m⟩</p>
+<p>直接实现复杂。论文把式(2)展开成三级嵌套（式4/5）：</p>
+<p class="formula">LESS = G⟨7:4⟩ + P⟨7:4⟩·G⟨3:0⟩</p>
+<ul>
+<li>每级逻辑与 G 信号定义相同 → 三级电路实现；</li>
+<li><strong>相邻级逻辑相反</strong> → 免反相器 → 晶体管数、面积功耗大降。</li>
+</ul>
+<p>选择单元：LESS×XB + LESSB×WB（两个传输门 + 三态反相器）。</p>
+
+<h3>4.3 三态反相器门控（论文 Fig.5d）</h3>
+<ul>
+<li>EN=0/ENB=1：时钟上升沿禁用 ParMS 输出（计算未稳定时不翻转）；</li>
+<li>EN=1/ENB=0：计算稳定后传送输出到加法树；</li>
+<li>→ 加法树动态功耗 <strong>−44%</strong>（消除不必要的翻转）；</li>
+<li>可配延迟生成模型适配不同频率/电压；ParMS 组合延迟低 → OUT 浮空 &lt;1/8 周期 → 电压跌落极小。</li>
+</ul>
+
+<h3>4.4 量化对比（论文 Fig.6）</h3>
+<table>
+<tbody><tr><th>对比对象</th><th>面积</th><th>能耗</th></tr>
+<tr><td>INT8 乘法器</td><td>−11.5×</td><td>−8.2×</td></tr>
+<tr><td>综合流程数字比较器</td><td>−14%</td><td>−4.1×</td></tr>
+<tr><td>[14] 动态逻辑比较器</td><td colspan="2">稀疏度越高省得越多（全静态逻辑利用 NN 稀疏）</td></tr>
+</tbody></table>
+
+<figure>
+<img src="assets/figs/fig17_6_ParMS评估.png" alt="ParMS评估">
+<figcaption>图 7 · 论文 Fig.6：(a) ParMS 面积/能耗对比 (b) 不同输入稀疏度下与动态逻辑比较器 [14] 的能耗对比。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d04_parms.svg" alt="ParMS教学图">
+<figcaption>教学图 4 · ParMS 结构、电路优化与收益。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig17_5_ParMS并行最小选择器.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · ParMS：8-bit 并行最小选择器（进位前瞻比较树 + 传输管编码器）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · ParMS 8-bit 比较（MSB 优先）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">第 1 位分出胜负：W=1 vs X=0 → W&gt;X</span>
+</div>
+<div class="hint">橙色框=当前比较位（MSB 优先）。W 与 X 逐位比较，编码器并行生成 G/P 信号（进位前瞻），比较树算出 LESS 控制选择单元输出较小值。vs INT8 乘法器面积 −11.5×、能耗 −8.2×。</div>
+</div>
+
+<figure>
+<img src="assets/charts/c02_ParMS.png" alt="ParMS收益图">
+<figcaption>数据图 2 · ParMS vs 各类比较/乘法方案（依据论文 Fig.6）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 硬连线 + 进位前瞻比较树（LESS 三级展开免反相器）+ 传输管编码器（14→7 管）把最小选择做薄；② 三态门控省加法树 44%；③ vs 乘法器面积 −11.5×、能耗 −8.2×——one-shot 方案的“发动机”高效运转。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：输入-权重协同对齐与 UBF16 格式</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 离线权重无损钳位为什么能“无损”；② 用权重最大指数对齐输入怎么免掉 XE_max 选择；③ UBF16 怎么简化 INT→FP 归一化。</p>
+</div>
+
+<h3>5.1 离线权重无损钳位（论文 Fig.8）</h3>
+<p>multiply-less NN 里权重范围 &gt; 输入范围（Fig.8a）。因为运算是<strong>最小选择</strong>，结果可以提前判定：</p>
+<ul>
+<li>输入经 ReLU → 非负，钳到 [0, Xmax]（Xmax 由训练集得到的经验值）；</li>
+<li><strong>权重 &lt; 0</strong>：输入非负 → 最小值必是权重 → 无需计算 → 权重直接钳到 0，作为偏置合并（无损）；</li>
+<li><strong>权重 &gt; Xmax</strong>：所有输入 ≤ Xmax → 最小值必是 Xmax → 权重钳到 Xmax（无损）；</li>
+<li>注意：实际推理时输入最大值 Xinfmax 随样本变化，但 95% 的 Xinfmax &lt; Xmax → 精度几乎不受影响；</li>
+<li>钳位还<strong>提高权重稀疏度</strong> → 省能耗。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_8_输入权重范围与无损钳位.png" alt="输入权重范围与无损钳位">
+<figcaption>图 8 · 论文 Fig.8：(a) 输入与权重的范围 (b) 离线权重无损钳位流程。</figcaption>
+</figure>
+
+<h3>5.2 离线权重预对齐（论文 Fig.9）</h3>
+<p>钳位后权重分布与输入对齐 [0,Xmax] → 可以直接用权重对齐输入：</p>
+<ol>
+<li>每个 CIM core 选<strong>权重最大指数 WE_max</strong> 并预存；</li>
+<li>权重尾数按 WE_max 预对齐后存入 CIM core；</li>
+<li>在线：ManAU 直接用 WE_max 对齐输入尾数 → <strong>消除步骤①（XE_max 选择）</strong>；</li>
+<li>边界情况：输入指数 &gt; WE_max → 最小值必是权重 → ManAU 直接置输入尾数为 8′11111111。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_9_离线权重预对齐.png" alt="离线权重预对齐">
+<figcaption>图 9 · 论文 Fig.9：离线权重预对齐示例。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_10_在线输入权重协同对齐.png" alt="在线输入权重协同对齐">
+<figcaption>图 10 · 论文 Fig.10：在线输入-权重协同对齐流水（ManAU → CIM core → ITFU）。</figcaption>
+</figure>
+
+<h3>5.3 UBF16：免符号位的 BF16（论文 Fig.11）</h3>
+<p>传统 BF16 归一化 16 位整数：尾数 MSB 是隐藏位（必须为 1）→ 要搜 16 位找最高位 1 再移位。本论文观察到：钳位后 X、W 都非负 → CIM 输出也非负 → 提出 <strong>UBF16（无符号 BF16）</strong>：</p>
+<ul>
+<li>最高位表示尾数 MSB（不是符号位）；</li>
+<li>尾数 MSB 可以是 0 → 搜索范围从 16 缩到 <strong>8 位</strong>；</li>
+<li>高 8 位找不到 1 → 低 8 位直接存作尾数（MSB 放 UBF16 最高位）；</li>
+<li>与 BF16 混算：UBF16 最高位直接拼 Mantissa⟨6:0⟩ 成 8 位尾数 → 正常 FP 运算（开销极小）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_11_BF16与UBF16格式.png" alt="BF16与UBF16格式">
+<figcaption>图 11 · 论文 Fig.11：(a) BF16 格式与归一化过程 (b) UBF16 格式与归一化过程。</figcaption>
+</figure>
+
+<h3>5.4 量化收益（论文 Fig.12）</h3>
+<table>
+<tbody><tr><th>技术</th><th>面积</th><th>能耗</th></tr>
+<tr><td>免步骤①（无损钳位 + WE_max 对齐）</td><td>−22.3%</td><td>−31.7%</td></tr>
+<tr><td>UBF16（简化步骤④）</td><td>−11.5%</td><td>−6.5%</td></tr>
+</tbody></table>
+
+<figure>
+<img src="assets/figs/fig17_12_协同对齐评估.png" alt="协同对齐评估">
+<figcaption>图 12 · 论文 Fig.12：输入-权重协同对齐工作流的性能评估（基线：128 个 BF16 输入的传统 FP-CIM，28nm/1V/180MHz/10% 稀疏）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_coalign.svg" alt="协同对齐教学图">
+<figcaption>教学图 5 · 无损钳位、WE_max 预对齐与 UBF16 格式。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 最小选择语义允许离线无损钳位（负权重→0、超上限→Xmax）→ 权重与输入同分布；② 权重静态 → WE_max 离线预存 → 输入直接对齐（免 127 个比较器）；③ UBF16 免符号位 → 归一化 16→8 位。合计面积 −33.8%、能耗 −38.2%。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：ODFC——轻量片上微调核心</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么边缘芯片需要片上微调；② 多轮数据流怎么用面积换时间；③ 保损失 FP 加法解决对齐损失；④ 微调恢复精度的实测。</p>
+</div>
+
+<h3>6.1 动机：环境变化让精度暴跌</h3>
+<p>边缘设备经常面对变化的环境（光照、天气）→ 测试样本与训练集差异 → 精度大跌。用 MNIST 训练、MNIST-M 测试模拟背景变化：精度从 <strong>99.1% 暴跌到 13.8%</strong>。先前 FP-CIM 不支持片上微调 → 需要能训练的小面积硬件。</p>
+<div class="box warn">
+<div class="bt">⚠️ 训练硬件为什么难做？</div>
+<p>训练的算法复杂度远高于推理（梯度反向传播、权重更新）→ 电路复杂；但边缘芯片面积受限。关键缓解：<strong>微调只需少量 epochs</strong>（远少于从头训练）→ 可以用“面积换时间”的折中。</p>
+</div>
+
+<h3>6.2 多轮数据流（论文 Fig.13a）</h3>
+<p>ODFC 用 128 轮顺序更新整个 CIM core 的 128×16 权重（每轮只更新 16 个）：</p>
+<ol>
+<li><strong>权重读</strong>：从 CIM core 读出 16 个权重尾数，归一化为 BF16；</li>
+<li><strong>权重更新</strong>：ODFC 计算在 k 个周期内完成（k = 梯度向量长度）；每周期取 1 个 X 和 16 个梯度，更新前层权重；</li>
+<li><strong>梯度计算</strong>：k 周期后算出更新后的权重和偏置；</li>
+<li><strong>权重写</strong>：对齐后写回 CIM core。</li>
+</ol>
+<p>→ 每轮只更新 16 个权重 → <strong>电路面积大幅降低</strong>。</p>
+
+<figure>
+<img src="assets/figs/fig17_13_片上微调轮次数据流.png" alt="片上微调轮次数据流">
+<figcaption>图 13 · 论文 Fig.13：(a) 片上微调的轮次与周期数据流 (b) ODFC 总体架构。</figcaption>
+</figure>
+
+<h3>6.3 硬件优化（论文 Fig.14/15）</h3>
+<ul>
+<li><strong>时分复用</strong>：BF16 乘法器和加法树在不同计算阶段共享 → 面积再省 10%；</li>
+<li><strong>保损失 FP 加法</strong>：多 FP 数累加时，大数加小数 → 小数移位后尾数可能变 0 → 三个数之和为 0（Fig.15a）。解法：把对齐误差<strong>保留</strong>并在下一级加法再处理 → 应用于 16×BF16 加法树（Fig.15b）→ 降低多级求和损失。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_14_微调训练算法.png" alt="微调训练算法">
+<figcaption>图 14 · 论文 Fig.14：multiply-less NN 的训练算法。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_15_保损失FP加法.png" alt="保损失FP加法">
+<figcaption>图 15 · 论文 Fig.15：(a) 保损失 FP 加法 (b) 16×BF16 加法树。</figcaption>
+</figure>
+
+<h3>6.4 ODFC 实测（表 III + Fig.23/24）</h3>
+<ul>
+<li><strong>规格</strong>：0.037 mm² · 180 MHz（与 CIM core 同频）· 16 ops/周期 · <strong>2.88 GOPS</strong> @BF16（0.9V）；</li>
+<li><strong>能效</strong>：面积效率 0.078 TFLOPS/mm²、能效 1.71 TFLOPS/W（post-layout）；</li>
+<li><strong>微调恢复</strong>：MNIST→MNIST-M，ODFC 训练 10 epochs → 精度 <strong>13.8% → 84.3%</strong>；</li>
+<li><strong>层级分析（表 IV）</strong>：6 层 multiply-less NN 微调总延迟 14.3 ms、总能耗 18.1 µJ；训练能效 1.32 TFLOPS/W（低于推理，但微调远少于推理 → 系统级影响可忽略）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_23_ODFC精度恢复.png" alt="ODFC精度恢复">
+<figcaption>图 16 · 论文 Fig.23：ODFC 实现的推理精度恢复（99.1%→13.8%→84.3%）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_24_MNIST-M训练损失与精度.png" alt="MNIST-M训练损失与精度">
+<figcaption>图 17 · 论文 Fig.24：MNIST-M 数据集的训练损失与推理精度逐 epoch 变化。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d06_odfc.svg" alt="ODFC教学图">
+<figcaption>教学图 6 · ODFC 的多轮数据流、硬件优化与精度恢复。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig17_23_ODFC精度恢复.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · ODFC 片上微调：精度暴跌（99.1%→13.8%）→ 微调恢复（→84.3%）曲线动画。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · ODFC 精度恢复</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">ODFC 微调 10 epochs：≈84.3%</span>
+</div>
+<div class="hint">曲线：训练集 99.1% → 环境变化（MNIST-M 测试）暴跌 13.8%（红段）→ ODFC 片上微调 1–10 epochs 恢复到 84.3%（绿段）。下方是 ODFC 的关键硬件特性。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 环境变化 → 精度暴跌 → 需要片上微调；② 128 轮顺序更新（每轮 16 权重）→ 面积换时间；③ 时分复用（−10%）+ 保损失 FP 加法；④ 实测：13.8%→84.3%（10 epochs）、总能耗 18.1 µJ。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>NN 部署流程与基准演示</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 五步部署流程（含重训练补偿）；② 逐层映射方法；③ 三个任务的精度结果（分类/检测）。</p>
+</div>
+
+<h3>7.1 部署流程（论文 Fig.20a）</h3>
+<ol>
+<li><strong>PyTorch 训练</strong>：标准流程得到 FP32 multiply-less 预训练模型；</li>
+<li><strong>截断 BF16</strong>：权重与输入截断到 BF16；</li>
+<li><strong>无损钳位</strong>：权重钳到 [0,Xmax]，负权重并入 WSUM（§5.1）；</li>
+<li><strong>预对齐</strong>：映射到同一 CIM core 的权重找局部最大指数 WE_max 并预对齐；</li>
+<li><strong>重训练补偿</strong>：用 BF16 精度重训模型（输入也按协同对齐流程对齐），再重新钳位/预对齐，直到精度与 FP32 相当才部署。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig17_20_部署流程与重训.png" alt="部署流程与重训">
+<figcaption>图 18 · 论文 Fig.20：(a) NN 模型部署流程 (b) 重训练对推理精度的提升。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么重训练能补偿预对齐损失？</div>
+<p>预对齐把同一 core 的权重尾数对齐到 WE_max，会引入精度损失。用 BF16 精度重训练（ResNet-20 5 epochs、ResNet-50 10 epochs）让网络“适应”这种对齐 → 损失完全补偿。Fig.20b 显示重训练后精度回到基线。Fig.21 佐证：74.3% 的输入尾数、89% 的权重尾数移位 &lt;5 位——重训练后同 core 权重更集中 → 预对齐损失小。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig17_21_尾数移位分布.png" alt="尾数移位分布">
+<figcaption>图 19 · 论文 Fig.21：输入与权重的尾数移位分布。</figcaption>
+</figure>
+
+<h3>7.2 逐层映射（论文 Fig.22）</h3>
+<ul>
+<li>16 列 = 16 个输出通道的权重尾数，每列存 128 个不同输入通道的权重；</li>
+<li>推理时 128 个 BF16 输入并行送入，与 16 列权重同时计算；</li>
+<li>每时钟周期输出 16 个 UBF16 部分和（Psum）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_22_逐层映射.png" alt="逐层映射">
+<figcaption>图 20 · 论文 Fig.22：逐层 NN 映射方法。</figcaption>
+</figure>
+
+<h3>7.3 基准演示（表 II）</h3>
+<table>
+<tbody><tr><th>任务/模型</th><th>精度</th><th>vs FP32 基线</th></tr>
+<tr><td>图像分类 ResNet-20 / CIFAR-10</td><td><strong>91.84%</strong></td><td>无损失</td></tr>
+<tr><td>图像分类 ResNet-50 / ImageNet</td><td><strong>75.00%</strong></td><td>无损失</td></tr>
+<tr><td>目标检测 FCOS / COCO</td><td><strong>36.8% mAP</strong></td><td>仅 −0.2% mAP</td></tr>
+</tbody></table>
+<p>三个任务都与 FP32 基线相当——证明算法-电路协同优化的有效性。</p>
+
+<figure>
+<img src="assets/diagrams/d07_deployment.svg" alt="部署教学图">
+<figcaption>教学图 7 · 部署流程、逐层映射与基准结果。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>芯片实测与 SOTA 对比</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 芯片规格与关键指标；② 面积/能耗分解证明数字逻辑被压薄；③ 与 SOTA 的量化对比。</p>
+</div>
+
+<h3>8.1 芯片规格（论文 Fig.16）</h3>
+<table>
+<tbody><tr><th>指标</th><th>数值</th></tr>
+<tr><td>工艺 / 面积</td><td>28nm CMOS / 1.7×1.1 mm²</td></tr>
+<tr><td>模块面积</td><td>CIM core 0.084 · ManAU 0.018 · ITFU 0.003 · ODFC 0.037 mm²</td></tr>
+<tr><td>电压 / 频率</td><td>0.55–0.9 V / 20–180 MHz（SRAM 读写只在 0.9V，低电压静态保持）</td></tr>
+<tr><td>峰值性能</td><td>737 GOPS @0.9V/180MHz（UBF16）</td></tr>
+<tr><td><strong>峰值能效</strong></td><td><strong>128 TFLOPS/W</strong> @0.55V/20MHz（10% 输入 + 50% 权重稀疏）</td></tr>
+<tr><td><strong>峰值面积效率</strong></td><td><strong>7.02 TFLOPS/mm²</strong> @0.9V/180MHz</td></tr>
+</tbody></table>
+<p>吞吐口径：1 次最小选择+累加计 2 Ops（与点积芯片不同）。</p>
+
+<figure>
+<img src="assets/figs/fig17_16_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 21 · 论文 Fig.16：(a) 芯片显微照片 (b) 测试平台。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig17_17_电压频率缩放.png" alt="电压频率缩放">
+<figcaption>图 22 · 论文 Fig.17：电压-频率缩放。</figcaption>
+</figure>
+
+<h3>8.2 改进分解（论文 Fig.18）</h3>
+<p>FoM = 数据精度 × 面积效率 × 能效。基线：基于 [14] 的 28nm FP multiply-less CIM（位串行动态逻辑比较器）。<strong>本工作 FoM 提升 5×</strong>（post-synthesis 对比，0.9V/180MHz/10% 稀疏）。</p>
+
+<figure>
+<img src="assets/figs/fig17_18_改进分解.png" alt="改进分解">
+<figcaption>图 23 · 论文 Fig.18：改进分解（基线为 [14] 风格的 FP multiply-less CIM）。</figcaption>
+</figure>
+
+<h3>8.3 面积/能耗分解（论文 Fig.19）</h3>
+<ul>
+<li>ManAU + ITFU（FP/INT 转换）：面积仅 <strong>18.1%</strong>、能耗仅 <strong>11.4%</strong>——协同对齐真的把转换开销压薄了；</li>
+<li>单列布局：SRAM、WSUM、ParMS、ACC-ASU；数字逻辑（ParMS+ACC-ASU）只有 SRAM 的 <strong>5.2×</strong>；</li>
+<li>对比：并行乘法 FP-CIM [22] 中乘法器+加法树是 SRAM 的 <strong>49×</strong> → 本论文压薄了 9.4×。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig17_19_能量面积分解.png" alt="能量面积分解">
+<figcaption>图 24 · 论文 Fig.19：(a) 测试芯片能量与面积分解 (b) CIM core 单列布局。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_measurements.svg" alt="实测教学图">
+<figcaption>教学图 8 · 芯片规格、分解与对比。</figcaption>
+</figure>
+
+<h3>8.4 与 SOTA 对比（表 V）</h3>
+<ul>
+<li>同工艺（28nm）下面积/能效最高；</li>
+<li>vs 最新 FP-CIM [21]：能效 <strong>+4.1×</strong>、面积效率 <strong>+3.6×</strong>、FoM <strong>+14.7×</strong>（摘要口径面积效率 +3.4×）；</li>
+<li>vs 位并行乘法 FP-CIM [22]：one-shot 大幅降低数字逻辑面积/能耗；</li>
+<li>vs 仅推理 FP-CIM：ODFC 支持在线更新 → 环境变化时保持高精度（差异化优势）。</li>
+</ul>
+
+<figure>
+<img src="assets/charts/c03_SOTA.png" alt="SOTA对比图">
+<figcaption>数据图 3 · 与 SOTA FP-CIM 的能效/面积效率对比（依据论文表 V）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 全文总结、评价与未来方向。</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：把 FP-CIM 的“乘法”和“对齐”都干掉</h3>
+<p>把整篇论文串成一句话：<strong>FP-CIM 慢在尾数乘法（8 周期）、贵在指数对齐（127 个比较器）、脆在环境变化（精度暴跌）→ 分别用 multiply-less 最小选择（1 周期）、协同对齐（免 XE_max）、ODFC 片上微调（精度恢复）解决</strong>。逻辑链：</p>
+<ol>
+<li><strong>问题</strong>：预对齐 FP-CIM 的尾数 MAC 位串行 8 周期 → 87.5% 闲置；FP/INT 转换贵；环境变化掉精度（§1–2）；</li>
+<li><strong>创新① 吞吐</strong>：multiply-less（L1 距离 → 最小选择）→ 位并行 1 周期 → 8× 吞吐；ParMS 把最小选择做薄（§3–4）；</li>
+<li><strong>创新② 转换</strong>：无损钳位 + WE_max 预对齐（免 127 比较器）+ UBF16（归一化 16→8 位）（§5）；</li>
+<li><strong>创新③ 训练</strong>：ODFC 多轮更新 + 时分复用 + 保损失 FP 加法 → 13.8%→84.3%（§6）；</li>
+<li><strong>闭环</strong>：128 TFLOPS/W、7.02 TFLOPS/mm²、三任务零精度损失（§7–8）。</li>
+</ol>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 首次 FP-CIM one-shot（1 周期 FP 运算）；② 把 multiply-less 从 INT（第 13 篇）系统推到 FP 并补上训练，是前作的完整进化；③ 三招环环相扣、每招都有量化收益；④ 有差异化卖点（片上微调）；⑤ 测试全面（三任务 + 微调恢复 + 层级分析）。</li>
+<li><strong>弱/局限</strong>：① 局限在 L1 距离网络（不能直接加速通用点积模型）；② 128 TFLOPS/W 是峰值（依赖稀疏度）；③ ODFC 训练能效 1.71 TFLOPS/W 远低于推理——训练天生贵；④ 未覆盖 Transformer/注意力；⑤ 微调恢复 84.3% 未回到原始 99.1%（预对齐误差仍在）。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>扩展到 Transformer / 注意力</strong>：multiply-less 的 L1 注意力（Adder Attention）在硬件上如何映射？softmax 的指数运算与最小选择如何结合？</li>
+<li><strong>更高精度</strong>：UBF16 → FP16/FP32 扩展（尾数更长，ParMS 需要更多位、协同对齐更复杂）；</li>
+<li><strong>更强的片上训练</strong>：ODFC 支持更大模型、更复杂优化器（Adam/自适应学习率）、甚至全模型训练；</li>
+<li><strong>与安全结合</strong>（联动第 16 篇）：片上微调 + 权重加密 + 防侧信道——边缘 AI 的安全训练；</li>
+<li><strong>多宏系统级扩展</strong>：单引擎 → 多引擎（tensor 并行 + 训练流水线），配合第 12 篇的 MCM 思路；</li>
+<li><strong>动态稀疏 / 动态位宽</strong>：ParMS 的稀疏感知变体 + 层间位宽自适应，进一步压缩能耗。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tbody><tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>One-Shot 计算</td><td>1 个周期完成 FP 运算（输入对齐+尾数计算+INT→FP 各 1 周期流水）。</td></tr>
+<tr><td>Multiply-Less NN</td><td>免乘法神经网络：用 L1 距离替代点积（第 13 篇基础）。</td></tr>
+<tr><td>L1 距离</td><td>Σ|xi−wi|，分解为 Σxi+Σwi−2Σmin(xi,wi)。</td></tr>
+<tr><td>ParMS</td><td>8-bit 并行最小选择器（比较单元+8 选择单元，进位前瞻）。</td></tr>
+<tr><td>G/P 信号</td><td>进位前瞻的生成/传播信号，用于最小选择的比较树。</td></tr>
+<tr><td>LESS 信号</td><td>比较结果：W 是否小于 X，控制选择单元。</td></tr>
+<tr><td>ManAU</td><td>尾数对齐单元：用权重最大指数对齐输入尾数。</td></tr>
+<tr><td>ITFU</td><td>INT→FP 转换单元：16 位整数 → UBF16。</td></tr>
+<tr><td>UBF16</td><td>无符号 BF16：最高位=尾数 MSB（非符号位），简化归一化。</td></tr>
+<tr><td>WE_max</td><td>权重最大指数（每 CIM core 离线预存，用于对齐输入）。</td></tr>
+<tr><td>XE_max</td><td>输入最大指数（传统步骤①要在线找，本文免除）。</td></tr>
+<tr><td>无损钳位</td><td>负权重→0、超上限→Xmax（最小选择语义下无损）。</td></tr>
+<tr><td>InADD</td><td>128 输入 8 位加法树，计算 Σxi 并共享。</td></tr>
+<tr><td>WSUM</td><td>权重和 Σwi 的预存（SRAM 额外列）。</td></tr>
+<tr><td>ACC-ASU</td><td>累加-装配单元：汇合 Σxi、Σwi、2Σmin。</td></tr>
+<tr><td>ODFC</td><td>片上微调核心：轻量训练硬件（128 轮顺序更新）。</td></tr>
+<tr><td>保损失 FP 加法</td><td>对齐误差保留到下一级加法，降低多级求和损失。</td></tr>
+<tr><td>重训练补偿</td><td>BF16 精度重训模型，补偿预对齐的精度损失。</td></tr>
+<tr><td>FoM</td><td>数据精度 × 面积效率 × 能效（本文改进 5×）。</td></tr>
+<tr><td>TFLOPS/W</td><td>每瓦每秒万亿次浮点运算（1 最小选择+累加计 2 Ops）。</td></tr>
+</tbody></table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：H. Diao et al., “A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI,” IEEE JSSC, vol. 60, no. 9, pp. 3403–3414, Sep. 2025. DOI: 10.1109/JSSC.2024.3522304（CICC'24 短文 [19] 期刊扩展版）</li>
+<li>[14] Y. He et al., “A 28nm 38-to-102-TOPS/W 8b multiply-less approximate digital SRAM compute-in-memory macro for neural-network inference,” ISSCC 2023（本文基线，即本系列第 13 篇前作）</li>
+<li>[25] H. Chen et al., “AdderNet: Do we really need multiplications in deep learning?” CVPR 2020（multiply-less 算法来源）</li>
+<li>[26] H. Chen et al., “Universal adder neural networks,” arXiv（L1 算子表达力证明）</li>
+<li>[21] / [22] 对比的 SOTA FP-CIM（预对齐 / 位并行乘法）</li>
+<li>[19] 本团队 CICC'24 短文（one-shot FP multiply-less 前期版本）</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读本系列第 13 篇（multiply-less INT CIM）理解 L1 距离与最小选择的硬件分解；② 读 AdderNet 原文 [25] 与 Universal Adder NN [26]；③ 动手：用 Python 实现 BF16 → UBF16 转换和 WE_max 预对齐，验证无损钳位对最小选择结果无影响；④ 用 Verilog 实现 8 位 ParMS 的比较树（G/P 展开），对比与综合比较器的面积；⑤ 与本系列第 16 篇（安全 IMC）对照：能效 vs 安全的权衡。</p>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   One-Shot FP CIM 引擎教学教程 · 交互脚本
+   演示 A one-shot 流水 · 演示 B ParMS 比较 · 演示 C ODFC 恢复
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · One-Shot 流水（8 周期 vs 1 周期）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 A · One-Shot 流水：INT 尾数 MAC 从 8 周期 → 1 周期", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 12;
+    // left: conventional pipeline (11 cycles total)
+    txt(ctx, "传统（位串行）：总 11 周期", 160, 54, 13, PAL.red, "center");
+    for (let c = 0; c < 11; c++) {
+      const x = 40 + c * 24;
+      const busy = (c >= 2 && c < 10) ? (c === k ? "#5a2a22" : "#3c2a26") : (c === k ? "#2a4a6a" : "#12202f");
+      ctx.fillStyle = busy; ctx.strokeStyle = (c >= 2 && c < 10) ? PAL.red : PAL.blue; ctx.lineWidth = 1;
+      rrect(ctx, x, 64, 20, 30, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(c + 1), x + 10, 79, 9, PAL.white, "center");
+    }
+    txt(ctx, "步骤③ 8 周期位串行（红框）→ ①②④ 电路闲置 87.5%", 160, 112, 11.5, PAL.red, "center");
+    // mantissa bits being processed one at a time
+    const bit = k >= 2 && k < 10 ? (k - 2) : -1;
+    const mbits = [1, 0, 1, 1, 0, 1, 0, 1];
+    for (let b = 0; b < 8; b++) {
+      const x = 80 + b * 40;
+      ctx.fillStyle = b === bit ? "#5a2a22" : "#12202f";
+      ctx.strokeStyle = b === bit ? PAL.red : PAL.line; ctx.lineWidth = b === bit ? 2 : 1;
+      rrect(ctx, x, 126, 32, 26, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(mbits[b]), x + 16, 139, 12, PAL.white, "center");
+    }
+    txt(ctx, bit >= 0 ? "第 " + (bit + 1) + "/8 位（每周期 1 位）" : "步骤③等待…", 160, 172, 11.5, PAL.red, "center");
+
+    // right: one-shot pipeline (3 stages, 1 cycle each)
+    txt(ctx, "One-Shot：3 级流水各 1 周期", 700, 54, 13, PAL.green, "center");
+    const stages = ["输入对齐\n(ManAU)", "最小选择\n(CIM core)", "INT→FP\n(ITFU)"];
+    for (let s = 0; s < 3; s++) {
+      const x = 500 + s * 150;
+      const active = (k % 3 === s);
+      ctx.fillStyle = active ? "#1e3c2c" : "#12202f";
+      ctx.strokeStyle = PAL.green; ctx.lineWidth = active ? 3 : 1.5;
+      rrect(ctx, x, 64, 130, 46, 8); ctx.fill(); ctx.stroke();
+      const lines = stages[s].split("\n");
+      txt(ctx, lines[0], x + 65, 78, 12.5, active ? PAL.green : PAL.white, "center");
+      txt(ctx, lines[1], x + 65, 96, 10.5, PAL.gray, "center");
+    }
+    // 8 mantissa bits all at once
+    for (let b = 0; b < 8; b++) {
+      const x = 520 + b * 40;
+      ctx.fillStyle = mbits[b] ? "#1e4a76" : "#101c2c";
+      ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1;
+      rrect(ctx, x, 126, 32, 26, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(mbits[b]), x + 16, 139, 12, PAL.white, "center");
+    }
+    txt(ctx, "8 位并行最小选择 → 1 周期完成（吞吐 8×）", 700, 172, 12, PAL.green, "center");
+    txt(ctx, "Σ|xi−wi| = Σxi + Σwi − 2Σmin（最小选择比乘法简单得多）", 700, 202, 11.5, PAL.gray, "center");
+    txt(ctx, "→ 100% 硬件利用率 · 位并行利用 MSB 相关性降翻转率", 700, 228, 11.5, PAL.orange, "center");
+    if (stat) stat.textContent = "传统位串行：步骤③第 " + (bit + 1) + "/8 位 vs One-Shot：3 级流水各 1 周期";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 900); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 900);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · ParMS 8-bit 比较（MSB 优先）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  const Wb = [1, 0, 1, 1, 0, 1, 0, 1]; // W = 0xB5 = 181
+  const Xb = [1, 0, 1, 1, 0, 0, 1, 0]; // X = 0xB2 = 178 -> W > X -> min = X
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 B · ParMS：8-bit 并行最小选择（W vs X，MSB 优先比较）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 9;
+    const step = k; // 0..8
+    const bs = 64, bx = 120, by = 60;
+    txt(ctx, "W", 90, by + 15, 13, PAL.orange, "right");
+    for (let c = 0; c < 8; c++) {
+      const x = bx + c * bs;
+      ctx.fillStyle = "#3c2a1a"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 1;
+      rrect(ctx, x, by, bs - 8, 30, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(Wb[c]), x + (bs - 8) / 2, by + 15, 14, PAL.white, "center");
+    }
+    txt(ctx, "X", 90, by + 45, 13, PAL.blue, "right");
+    for (let c = 0; c < 8; c++) {
+      const x = bx + c * bs;
+      ctx.fillStyle = "#1e3a5c"; ctx.strokeStyle = PAL.blue; ctx.lineWidth = 1;
+      rrect(ctx, x, by + 28, bs - 8, 30, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(Xb[c]), x + (bs - 8) / 2, by + 43, 14, PAL.white, "center");
+    }
+    // highlight current comparison bit (MSB first: index 7-step)
+    let cmpBit = -1;
+    if (step < 8) {
+      cmpBit = 7 - step;
+      const x = bx + cmpBit * bs;
+      ctx.strokeStyle = PAL.orange; ctx.lineWidth = 3;
+      ctx.strokeRect(x - 3, by - 3, bs - 2, 64);
+    }
+    // compute comparison
+    let msg;
+    if (step === 0) {
+      msg = "MSB：W[7]=1 vs X[7]=1 → 相等，继续";
+    } else {
+      // find first differing bit from MSB
+      let diff = -1;
+      for (let i = 7; i >= 0; i--) { if (Wb[i] !== Xb[i]) { diff = i; break; } }
+      if (step > 7 - diff) {
+        msg = "第 " + (8 - diff) + " 位分出胜负：W=" + Wb[diff] + " vs X=" + Xb[diff] + " → W" + (Wb[diff] > Xb[diff] ? ">" : "<") + "X";
+      } else {
+        msg = "比较第 " + (step + 1) + " 位（MSB 起）：W=" + Wb[cmpBit] + " vs X=" + Xb[cmpBit] + (Wb[cmpBit] === Xb[cmpBit] ? " → 相等，继续" : " → 分出胜负！");
+      }
+    }
+    txt(ctx, msg, 60, 128, 13.5, PAL.orange, "left");
+    // result
+    let min = "";
+    for (let i = 0; i < 8; i++) min += (Wb[i] <= Xb[i] ? Wb[i] : Xb[i]).toString();
+    txt(ctx, "min(W,X) = " + min + "（逐位取较小者，由 LESS 信号控制选择单元）", 60, 154, 13, PAL.green, "left");
+    // G/P logic
+    txt(ctx, "编码器并行生成：G⟨i⟩=W⟨i⟩&XB⟨i⟩ · P⟨i⟩=WB⟨i⟩|XB⟨i⟩（XB、WB 为反相）", 60, 184, 11.5, PAL.gray, "left");
+    txt(ctx, "比较树：LESS = G⟨7:4⟩ + P⟨7:4⟩G⟨3:0⟩（三级嵌套，免反相器）", 60, 208, 11.5, PAL.gray, "left");
+    txt(ctx, "vs INT8 乘法器：面积 −11.5× · 能耗 −8.2× ｜ 三态门控 → 加法树 −44%", 60, 240, 12.5, PAL.orange, "left");
+    if (stat) stat.textContent = msg;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1100); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1100);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · ODFC 精度恢复
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 C · ODFC 片上微调：环境变化掉精度 → 微调恢复", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 12;
+    const epoch = k; // 0..11
+    // curve: train 99.1, test 13.8, fine-tune 1..10 -> 84.3
+    const x0 = 90, x1 = 900, y0 = 70, y1 = 220;
+    ctx.strokeStyle = "#1c2c42"; ctx.lineWidth = 1;
+    for (let gx = x0; gx <= x1; gx += 81) { ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke(); }
+    for (let gy = y0; gy <= y1; gy += 30) { ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke(); }
+    function yv(a) { return y1 - (a / 100) * (y1 - y0); }
+    // points
+    const pts = [{ x: x0 + 30, a: 99.1 }, { x: x0 + 130, a: 13.8 }];
+    for (let e = 1; e <= 10; e++) {
+      const acc = 13.8 + (84.3 - 13.8) * (1 - Math.pow(1 - e / 10, 2.2));
+      pts.push({ x: x0 + 130 + e * (x1 - x0 - 160) / 10, a: acc });
+    }
+    for (let j = 1; j < pts.length; j++) {
+      ctx.strokeStyle = j === 1 ? PAL.red : PAL.green; ctx.lineWidth = j === 1 ? 2 : 3;
+      ctx.beginPath();
+      ctx.moveTo(pts[j - 1].x, yv(pts[j - 1].a));
+      ctx.lineTo(pts[j].x, yv(pts[j].a));
+      ctx.stroke();
+    }
+    // current point
+    let cur;
+    if (epoch === 0) cur = pts[0];
+    else if (epoch === 1) cur = pts[1];
+    else cur = pts[Math.min(1 + epoch, pts.length - 1)];
+    ctx.fillStyle = PAL.orange;
+    ctx.beginPath(); ctx.arc(cur.x, yv(cur.a), 6, 0, 7); ctx.fill();
+    // labels
+    txt(ctx, "99.1%", x0 + 30, yv(99.1) - 12, 10, PAL.green, "center");
+    txt(ctx, "13.8%", x0 + 130, yv(13.8) + 14, 10, PAL.red, "center");
+    txt(ctx, "84.3%", x1 - 8, yv(84.3) - 12, 10, PAL.green, "right");
+    txt(ctx, "训练", x0 + 30, y1 + 14, 10, PAL.gray, "center");
+    txt(ctx, "MNIST-M 测试", x0 + 130, y1 + 14, 10, PAL.gray, "center");
+    txt(ctx, "ODFC 微调 epochs →", x1 - 120, y1 + 14, 10, PAL.gray, "center");
+    // current status
+    const status = epoch === 0 ? "训练集：99.1%" : epoch === 1 ? "环境变化（MNIST-M）：13.8%！" : "ODFC 微调 " + (epoch - 1) + " epochs：≈" + (13.8 + (84.3 - 13.8) * (1 - Math.pow(1 - (epoch - 1) / 10, 2.2))).toFixed(1) + "%";
+    txt(ctx, status, 60, 248, 14, epoch === 1 ? PAL.red : PAL.green, "left");
+    // ODFC notes
+    ctx.fillStyle = PAL.panel; ctx.strokeStyle = PAL.purple; ctx.lineWidth = 2;
+    rrect(ctx, 60, 272, 860, 40, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "ODFC：128 轮顺序更新权重（每轮 16 个）· 时分复用（面积 −10%）· 保损失 FP 加法 · 2.88 GOPS @180MHz", 80, 292, 12.5, PAL.white, "left");
+    if (stat) stat.textContent = status;
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1100); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1100);
+  draw();
+})();
+
+</script>
+
+
+</body></html>

@@ -1,0 +1,56 @@
+<section class="chapter" id="sec0">
+<h1 class="title">Multiply-Less 近似 SRAM 存内计算宏零基础精讲：把“乘法”从神经网络里拿掉
+<span class="en">A Multiply-Less Approximate SRAM Compute-In-Memory Macro for Neural-Network Inference（IEEE JSSC, vol.60, no.2, 2025）</span></h1>
+<div class="meta">论文作者：Haikang Diao, Yifan He, Xuan Li, Chen Tang, Wenbin Jia, Jinshan Yue, Haoyang Luo, Jiahao Song, Xueqing Li, Huazhong Yang, Hongyang Jia, Yongpan Liu, Yuan Wang, Xiyuan Tang（北京大学 + 清华大学 + 中科院微电子所 + UCSD）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 2, 2025（ISSCC'23 [19] 的期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>数字 CIM（存内计算）做神经网络推理时，<strong>乘法器 + 加法树</strong>占掉大量面积和能耗，而且乘法成本随位宽<strong>二次膨胀</strong>。本论文（北大唐希源组 + 清华刘勇攀组等）换了一条完全不同的路：<strong>从算法上把乘法“拿掉”</strong>——用 AdderNet 的 L1 距离（曼哈顿距离）替代点积，再配上一整套“从算法到电路”的协同近似设计：</p>
+<ol>
+<li><strong>算法级 multiply-less NN</strong>：用 L1 距离 |x−w| 替代点积 x·w，彻底免掉乘法器；</li>
+<li><strong>预计算 L1 计算方案</strong>：把 |x−w| 分解成 x + w − 2·min(x,w)，Σw 编译期算好、Σx 共享累加、实时只剩“最小选择”→ 面积省 <strong>1.5×</strong>、权重稀疏度提升 <strong>86×</strong>；</li>
+<li><strong>位串行比较 + 动态逻辑改进比较器</strong>：MSB 优先比较，一旦分出大小就<strong>提前停止</strong>读权重位 → 读端口省电 <strong>1.8×</strong>；改进比较器比静态逻辑比较器面积 <strong>−1.7×</strong>、功耗 <strong>−4.1×</strong>。</li>
+</ol>
+<p>28nm 实测：<strong>102 TOPS/W</strong> 峰值能效（8-bit）、<strong>4.4 TOPS/mm²</strong> 面积效率；CIFAR-10 ResNet-20 达 <strong>91.71%</strong>、ImageNet ResNet-50 达 <strong>74.8%</strong>，与 32-bit 浮点相比精度损失 &lt;0.1%。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“免乘法”不是玄学，是数学等价变换：</strong>点积 Σx·w 和 L1 距离 Σ|x−w| 都能衡量“输入与模板的匹配程度”。CNN 卷积核做的是“投影匹配”，AdderNet 做的是“距离匹配”——两者响应形状相似，所以 L1 可以近似替代点积而精度不掉（图 3/4）。</li>
+<li><strong>硬件最怕“乘法”，不怕“比较”：</strong>乘法器面积随位宽平方增长（进位部分积多），而比较器/加法器随位宽线性增长。把乘法换成比较，硬件成本就从 O(n²) 降到 O(n)。这是整篇论文的“省钱逻辑”。</li>
+<li><strong>稀疏性可以“白捡”：</strong>普通网络不做稀疏训练也有天然位级稀疏（权重比特大量为 0）。预计算截断把负权重归零后，0 更多了 → 读位线不用放电 → 白省电。这就是“算法近似换来电路收益”的闭环。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“existing work still faces various challenges, such as the digital logic overhead caused by the multiply-add operations (OPs) and structural sparsity”</td>
+<td>现有数字 CIM 的痛点：乘加运算带来的数字逻辑开销大，且结构性稀疏利用不足。</td></tr>
+<tr><td class="num">“This article presents a 2-to-8-b scalable approximate digital SRAM-based CIM macro co-designed with a multiply-less neural network (NN) approach”</td>
+<td>本论文：2–8 位可扩展的近似数字 SRAM CIM 宏，与“免乘法 NN”算法协同设计。</td></tr>
+<tr><td class="num">“It incorporates dynamic-logic-based approximate circuits for the logic area and energy saving by eliminating multiplications”</td>
+<td>用动态逻辑近似电路省面积省能耗，手段是“消除乘法”。</td></tr>
+<tr><td class="num">“achieves peak multiply-accumulate (MAC)-level energy efficiency of 102 TOPS/W for 8-b operations”</td>
+<td>28nm 实测：8-bit 运算峰值能效 102 TOPS/W。</td></tr>
+<tr><td class="num">“achieving the accuracy of 91.74% and 74.8% with 8-bit weights and activations”</td>
+<td>8-bit 权/激活下，ResNet-20 在 CIFAR-10 达 91.74%，ResNet-50 在 ImageNet 达 74.8%。（正文表 II 中 CIFAR-10 为 91.71%）</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>算法-电路协同的 multiply-less NN 部署</strong>：不靠电路硬扛乘法，而是改算法（L1 距离）让乘法根本不需要发生；</li>
+<li><strong>预计算（precalculation）L1 计算方案</strong>：把绝对差计算重写成“求和 + 最小选择”，Σw 编译期预存（每列仅 15 个额外 SRAM 单元）、Σx 激活累加器共享 → 面积 −1.5×、权重稀疏度 +86×；</li>
+<li><strong>位串行最小选择数据流</strong>：MSB 优先位串行比较，面积/能耗随位宽<strong>线性</strong>扩展（突破二次成本）；</li>
+<li><strong>动态逻辑改进比较器 + 提前停止</strong>：交换 ACT/WB 位置把电荷共享误差阈值从 2 个高-高对提高到 6 个，激活正则化放宽到 ≤5 个「1」（[19] 为 ≤3）→ 只需 0.9% 激活被正则化（[19] 需 15%），精度显著提升；</li>
+<li><strong>完整实测</strong>：102 TOPS/W、4.4 TOPS/mm²、CIFAR-10 91.71%、ImageNet 74.8%，vs 近似数字 CIM [15] 能效 6.58×、面积效率 1.7×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“算法-电路协同设计（co-design）”的教科书级例子——先问“算法能不能变简单”，再问“电路怎么把简单算法跑得快”。读时注意三点：L1 为什么能替代点积（§3）、预计算分解怎么省硬件（§4）、动态比较器误差从哪来（§5/7）。</p>
+</div>
+</section>

@@ -1,0 +1,17 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>FP-CIM 的三大挑战（论文的问题定义）</h2>
+<figure>
+  <img src="assets/diagrams/d03_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 3.1　三大挑战：① 对齐方案的非垂直截断浪费算力；② 变位宽时内存容量浪费；③ 固定 PBW 缺乏灵活性。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig30_1_1_动机与挑战.png" alt="论文图 30.1.1">
+  <figcaption>图 3.2　论文原图 Fig. 30.1.1：动机、设计挑战与解决方案。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① 对齐浪费算力</td><td>输入对齐方案的“非垂直截断”产生无效位</td><td><strong>SDBS 滑动</strong>：垂直截断、无冗余运算</td></tr>
+<tr><td>② 内存容量浪费</td><td>尾数/指数位宽可变时固定布局不适应</td><td><strong>HDM 映射</strong>：MXFP6/8 都塞满，隐藏位不占位</td></tr>
+<tr><td>③ 位宽不可调</td><td>固定 PBW 无法按任务/层/组自适应</td><td><strong>双级分配</strong>：CGA + FGA 动态分配 PBW</td></tr>
+</table>
+</section>

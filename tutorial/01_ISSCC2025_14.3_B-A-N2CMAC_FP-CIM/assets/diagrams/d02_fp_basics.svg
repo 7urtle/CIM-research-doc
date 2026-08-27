@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">浮点格式与“指数对齐”：浮点乘法为什么比整数贵</text>
+
+  <!-- BF16 格式 -->
+  <text x="250" y="94" text-anchor="middle" fill="#0e5a8a" font-size="15" font-weight="700">BF16 格式（16 bit = 1 符号 + 8 指数 + 7 尾数）</text>
+  <g font-size="11.5">
+    <rect x="60" y="108" width="90" height="52" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="105" y="128" text-anchor="middle" fill="#c25e2e" font-weight="600">S 符号</text>
+    <text x="105" y="148" text-anchor="middle" fill="#45536b">1 bit</text>
+    <rect x="160" y="108" width="320" height="52" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="320" y="128" text-anchor="middle" fill="#0e5a8a" font-weight="600">E 指数（含偏置 127）</text>
+    <text x="320" y="148" text-anchor="middle" fill="#45536b">8 bit</text>
+    <rect x="490" y="108" width="280" height="52" rx="6" fill="#eefaf3" stroke="#1d8a5f"/>
+    <text x="630" y="128" text-anchor="middle" fill="#1d8a5f" font-weight="600">M 尾数（隐含 1）</text>
+    <text x="630" y="148" text-anchor="middle" fill="#45536b">7 bit</text>
+    <text x="60" y="190" fill="#45536b" font-size="12.5">数值 = (−1)^S × 1.M × 2^(E−127)。指数决定数量级，尾数决定精度。</text>
+    <text x="60" y="212" fill="#c25e2e" font-size="12.5" font-weight="600">浮点乘法 = 指数相加 + 尾数相乘；浮点加法 = 先“指数对齐”再尾数相加（最贵的一步）</text>
+  </g>
+
+  <!-- 对齐问题 -->
+  <text x="250" y="250" text-anchor="middle" fill="#6b3fa0" font-size="15" font-weight="700">为什么“对齐”对 CIM 不友好？</text>
+  <rect x="40" y="262" width="880" height="196" rx="12" fill="#fff" stroke="#dcccf0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="70" y="290" width="360" height="52" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="250" y="312" text-anchor="middle" fill="#6b3fa0" font-weight="600">整数 MAC（CIM 擅长的）</text>
+    <text x="250" y="332" text-anchor="middle" fill="#45536b">所有乘数“天然对齐”，直接乘累加即可</text>
+    <rect x="520" y="290" width="360" height="52" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="700" y="312" text-anchor="middle" fill="#c25e2e" font-weight="600">浮点 MAC（CIM 头疼的）</text>
+    <text x="700" y="332" text-anchor="middle" fill="#45536b">每个数的指数不同 → 对齐后尾数位宽大不相同</text>
+    <text x="70" y="380" fill="#45536b">例：1.5 × 2³ 与 1.25 × 2⁻² 相加 ——</text>
+    <text x="70" y="404" fill="#45536b">尾数分别是 1100000 与 0010100，对齐后 1100000 00000 对 00000 0010100…</text>
+    <text x="70" y="428" fill="#6b3fa0" font-weight="600">→ 传统做法：外围放一堆减法器 + 桶形移位器做“并行对齐” → 面积大、功耗高、复用性差</text>
+    <text x="70" y="450" fill="#c25e2e" font-weight="600">→ 本论文：嵌入式“2b 串行对齐”，把对齐藏进 CIM 数据流（见 §5）</text>
+  </g>
+</svg>

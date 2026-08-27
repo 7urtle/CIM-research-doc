@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">MXFP-CIM 宏架构：54kb、24 个 bank、一条自适应精度流水线</text>
+
+  <!-- 控制侧 -->
+  <rect x="40" y="90" width="260" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="118" fill="#6b3fa0" font-size="13" font-weight="700">控制器与外围</text>
+  <g font-size="11">
+    <rect x="60" y="132" width="220" height="32" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="170" y="152" text-anchor="middle" fill="#6b3fa0">控制器</text>
+    <rect x="60" y="170" width="220" height="32" rx="6" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="170" y="190" text-anchor="middle" fill="#0e5a8a">全局 FP 解码器</text>
+    <rect x="60" y="208" width="220" height="32" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="170" y="228" text-anchor="middle" fill="#c25e2e">位宽分配器（CGA/FGA）</text>
+    <rect x="60" y="246" width="220" height="32" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="170" y="266" text-anchor="middle" fill="#1d8a5f">共享尺度缓冲 + 累加器 + 归一化</text>
+    <text x="60" y="310" fill="#45536b">输入缓冲 → 广播到 24 个 bank</text>
+  </g>
+  <path d="M300,200 H360" stroke="#6b3fa0" stroke-width="2.4" marker-end="url(#ar)"/>
+
+  <!-- banks -->
+  <rect x="365" y="90" width="555" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="385" y="118" fill="#0e5a8a" font-size="13" font-weight="700">24 个 FP-CIM bank（54kb = 24×18×128b）</text>
+  <g font-size="10.5">
+    <rect x="385" y="130" width="170" height="180" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="470" y="150" text-anchor="middle" fill="#0e5a8a" font-weight="600">Bank（每个）</text>
+    <rect x="397" y="160" width="146" height="30" rx="5" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="470" y="179" text-anchor="middle" fill="#1d8a5f">18×128 分裂 WL 6T-SRAM</text>
+    <rect x="397" y="196" width="146" height="30" rx="5" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="470" y="215" text-anchor="middle" fill="#c25e2e">本地解码器</text>
+    <rect x="397" y="232" width="146" height="30" rx="5" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="470" y="251" text-anchor="middle" fill="#6b3fa0">EPU 指数处理</text>
+    <rect x="397" y="268" width="146" height="30" rx="5" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="470" y="287" text-anchor="middle" fill="#0e5a8a">尾数 MAC 单元（SDBS）</text>
+    <rect x="580" y="130" width="90" height="180" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="625" y="150" text-anchor="middle" fill="#0e5a8a" font-weight="600">bank1</text>
+    <text x="625" y="220" text-anchor="middle" fill="#45536b">同左</text>
+    <text x="680" y="220" text-anchor="middle" fill="#9aa8bd" font-size="13">……</text>
+    <rect x="700" y="130" width="200" height="180" rx="8" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.5"/>
+    <text x="800" y="150" text-anchor="middle" fill="#0e5a8a" font-weight="600">bank23</text>
+    <text x="800" y="220" text-anchor="middle" fill="#45536b">同左</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="352" width="880" height="126" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="380" fill="#0e5a8a" font-size="13" font-weight="700">计算流程（SDBS）</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">① 全局解码 + 位宽分配 → ② 指数相加 ESUM → 最大值查找 → SDT 生成滑动控制；</text>
+  <text x="60" y="428" fill="#45536b" font-size="12.5">③ DBSU 每周期滑 2b（时钟门控 + C2MOS 动态寄存器）→ ④ 乘积压缩器（6 个全加器）→</text>
+  <text x="60" y="450" fill="#45536b" font-size="12.5">⑤ 通道级加法树 → ⑥ 累加/归一化（A&N）→ 输出。PBW 越大周期越多（2~14 周期），精度越高。</text>
+</svg>

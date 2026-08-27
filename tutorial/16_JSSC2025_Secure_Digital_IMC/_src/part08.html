@@ -1,0 +1,68 @@
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>性能、安全开销与可扩展性</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 8.1 TOPS/W 与吞吐；② 安全开销花在哪（位单元 ×5.3、加法树 ×15.5）；③ 多宏并行怎么扩展、解密开销怎么控制。</p>
+</div>
+
+<h3>8.1 宏性能（表 V）</h3>
+<p>14nm CMOS 流片（论文 Fig.8a），0.55V/80MHz 下：</p>
+<ul>
+<li>保护版最高能效 <strong>8.1 TOPS/W</strong>（0.50V）；</li>
+<li>频率上限 100 MHz（测试环境同步通信 + FPGA 数据输入的 setup 限制）；</li>
+<li><strong>吞吐反而更高</strong>：Boolean 共享的非完备性要求加法树/累加器流水化 → 流水线提升吞吐（未保护版若也流水会有类似提升，代价是少量面积）；</li>
+<li>延迟：模型解密使权重加载延迟 +3.2×，但计算延迟主导典型模型 → 整体影响不大。</li>
+</ul>
+
+<h3>8.2 安全开销（论文 Fig.13）</h3>
+<table>
+<tr><th>组件</th><th>开销</th><th>原因</th></tr>
+<tr><td>位单元 + 乘法列</td><td>面积 <strong>×5.3</strong></td><td>每单元拆 3 份共享 + 2 个 PUF 反馈切断晶体管</td></tr>
+<tr><td>全加器</td><td>面积 ×14.2</td><td>共享后的全加器（主要开销来源）</td></tr>
+<tr><td>加法树</td><td>面积 <strong>×15.5</strong></td><td>加法树是数字 IMC 的主导组件</td></tr>
+<tr><td>加法器 + 累加器</td><td>面积效率 −6.4×</td><td>—</td></tr>
+</table>
+<p>与先前工作 [30] 一致（乘法器面积效率 −6.1×、能效 −5.7×）——<strong>安全不能免费</strong>，但本论文的优化避免了更高开销（免随机比特、XNOR 简化、CSA 免半加器）。</p>
+
+<figure>
+<img src="assets/figs/fig16_13_功耗面积分解.png" alt="功耗面积分解">
+<figcaption>图 12 · 论文 Fig.13：安全 IMC 各组件功耗与面积 vs 基线。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_overhead.svg" alt="开销教学图">
+<figcaption>教学图 8 · 性能、安全开销分解与对比。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_面积开销.png" alt="面积开销图">
+<figcaption>数据图 2 · Boolean 共享的面积开销（示意，依据论文 §IV-C）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_性能开销.png" alt="性能开销图">
+<figcaption>数据图 3 · 能效与面积效率的安全开销（示意，依据论文表 V/Fig.13）。</figcaption>
+</figure>
+
+<h3>8.3 与先前安全工作对比（表 VI）</h3>
+<ul>
+<li><strong>第一个考虑数字 IMC 安全的工作</strong>；</li>
+<li>SCA 测试更严格：CPA + TVLA（先前的 IMC 安全工作未做）；</li>
+<li>不限制位精度、不影响 NN 精度；</li>
+<li><strong>运行期零随机比特</strong>（仅配置期一次性）——IMC 安全的硬约束，本论文完全满足；</li>
+<li>高 SNR 理想攻击下 BPA+SCA 超 100 万采样 → 真实场景安全期显著更长。</li>
+</ul>
+
+<h3>8.4 可扩展性（论文 §IV-D）</h3>
+<ul>
+<li><strong>多宏并行</strong>（类似 chiplet）：各宏独立安全计算，安全协处理器合并共享输出；并行宏多 → 攻击者更难从总功耗分辨 → 安全等级可放宽（用更少的安全门）；</li>
+<li><strong>解密扩展</strong>：ASCON-128a（8 周期 128 位数据块）或每宏一个 ASCON 实例（仅占宏面积 16%）→ 解密延迟不成为瓶颈；</li>
+<li><strong>PUF 扩展</strong>：内存增大 → 更多 PUF 位 → 可做裁剪/掩蔽选最优单元；可单密钥（各宏 PUF 组合）或每 ASCON 实例独立密钥。</li>
+</ul>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 8.1 TOPS/W、吞吐因流水而更高、解密开销被摊薄；② 安全开销集中在计算共享化（位单元 ×5.3、加法树 ×15.5），安全外设（ASCON 16%、PUF 极小）占比小；③ 多宏并行可放宽安全等级、解密/PUF 按需扩展。</p>
+</div>
+</section>

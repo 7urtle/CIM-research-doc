@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">输入-权重协同对齐：免 XE_max 选择 + UBF16 简化转换（论文 Fig.8–12）</text>
+
+  <!-- clamping -->
+  <rect x="40" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">离线权重无损钳位（[0, Xmax]）</text>
+  <g font-size="11.5">
+    <text x="60" y="138" fill="#45536b">multiply-less 的权重范围 &gt; 输入范围（Fig.8a）</text>
+    <text x="60" y="160" fill="#45536b">输入经 ReLU → [0, Xmax]（经验值）</text>
+    <text x="60" y="184" fill="#1d8a5f" font-weight="600">权重 &lt; 0 → 最小必是权重 → 直接钳到 0 并入偏置</text>
+    <text x="60" y="208" fill="#1d8a5f" font-weight="600">权重 &gt; Xmax → 最小必是 Xmax → 钳到 Xmax</text>
+    <text x="60" y="236" fill="#45536b">95% 的输入样本最大值 &lt; Xmax → 精度几乎不受影响</text>
+    <text x="60" y="258" fill="#1d8a5f" font-weight="600">→ 权重分布与输入对齐 [0,Xmax] → 稀疏度↑ → 能耗↓</text>
+  </g>
+
+  <!-- pre-align -->
+  <rect x="490" y="84" width="430" height="220" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="13.5" font-weight="700">离线权重预对齐（论文 Fig.9）</text>
+  <g font-size="11.5">
+    <text x="510" y="138" fill="#45536b">每个 CIM core 选权重最大指数 WE_max 预存</text>
+    <text x="510" y="160" fill="#45536b">权重尾数按 WE_max 预对齐后存入 CIM</text>
+    <text x="510" y="190" fill="#1d8a5f" font-weight="600">在线：输入尾数直接用 WE_max 对齐（ManAU）</text>
+    <text x="510" y="212" fill="#45536b">→ 消除步骤①（XE_max 选择，127 个比较器）</text>
+    <text x="510" y="240" fill="#45536b">输入指数 &gt; WE_max 的边界情况：最小必是权重</text>
+    <text x="510" y="262" fill="#45536b">→ ManAU 直接置输入尾数为 8′11111111</text>
+    <text x="510" y="288" fill="#1d8a5f" font-weight="600">省 22.3% 面积 · 31.7% 能耗（vs 基线）</text>
+  </g>
+
+  <!-- UBF16 -->
+  <rect x="40" y="324" width="430" height="210" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="350" fill="#6b3fa0" font-size="13.5" font-weight="700">UBF16 格式（论文 Fig.11）</text>
+  <g font-size="11.5">
+    <text x="60" y="378" fill="#45536b">BF16：MSB=符号位，尾数 MSB 是隐藏位（必须为 1）</text>
+    <text x="60" y="400" fill="#45536b">→ 归一化 16 位整数需搜最高位 1 + 移位</text>
+    <text x="60" y="428" fill="#1d8a5f" font-weight="600">UBF16：最高位 = 尾数 MSB（非符号位）</text>
+    <text x="60" y="452" fill="#45536b">输出非负（X、W 都非负）→ 免符号位</text>
+    <text x="60" y="474" fill="#45536b">搜最高位 1 范围 16→8 位；高 8 位无 1 时低 8 位直接存</text>
+    <text x="60" y="498" fill="#6b3fa0" font-weight="600">→ 再省 11.5% 面积 · 6.5% 能耗</text>
+  </g>
+
+  <!-- co-align flow -->
+  <rect x="490" y="324" width="430" height="210" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="350" fill="#0e5a8a" font-size="13.5" font-weight="700">在线协同对齐流水（论文 Fig.10）</text>
+  <g font-size="11.5">
+    <text x="510" y="380" fill="#45536b">ManAU：输入尾数按 WE_max 对齐 → XMA</text>
+    <text x="510" y="404" fill="#45536b">CIM core：XMA 与 16 列预对齐权重尾数 WMA 计算</text>
+    <text x="510" y="428" fill="#45536b">ITFU：16 位整数 OMA → UBF16（免 XE_max、简化移位）</text>
+    <text x="510" y="460" fill="#1d8a5f" font-weight="600">UBF16 与 BF16 混算：最高位直接拼 Mantissa⟨6:0⟩ → 正常 FP 运算</text>
+    <text x="510" y="488" fill="#45536b">→ 硬件开销极小</text>
+  </g>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c25e2e"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">模拟 CiM vs 数字 CiM（DCiM）：为什么本论文选择“数字 + 可综合”</text>
+
+  <!-- 模拟 CiM -->
+  <text x="250" y="92" text-anchor="middle" fill="#c25e2e" font-size="16" font-weight="700">模拟 CiM（Analog）</text>
+  <rect x="40" y="106" width="420" height="180" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <rect x="60" y="122" width="180" height="56" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="150" y="146" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">6T/8T SRAM 单元</text>
+  <text x="150" y="166" text-anchor="middle" fill="#6b7a93" font-size="11.5">字线电压 / 位线电流</text>
+  <rect x="260" y="122" width="180" height="56" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="350" y="146" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">电流求和 + ADC</text>
+  <text x="350" y="166" text-anchor="middle" fill="#6b7a93" font-size="11.5">电荷/电流 → 数字</text>
+  <path d="M240,150 H260" stroke="#c25e2e" stroke-width="2.4" marker-end="url(#a2)"/>
+  <text x="60" y="206" fill="#45536b" font-size="12">按位线电荷共享 / 电流累加做“模拟加法”，列级 ADC 读出</text>
+  <text x="60" y="226" fill="#45536b" font-size="12">在存储阵列内部直接完成 MAC，单元面积最小</text>
+  <text x="60" y="252" fill="#c25e2e" font-size="12.5" font-weight="600">问题：</text>
+  <text x="60" y="272" fill="#45536b" font-size="12">① 电流/电荷求和是模拟量 → 有噪声、ADC 量化误差</text>
+  <text x="60" y="290" fill="#45536b" font-size="12">② 工艺波动（PVT）导致精度不可预测，精度不可复现</text>
+
+  <!-- 数字 CiM -->
+  <text x="710" y="92" text-anchor="middle" fill="#0e5a8a" font-size="16" font-weight="700">数字 CiM（Digital, DCiM）</text>
+  <rect x="500" y="106" width="420" height="180" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <rect x="520" y="122" width="180" height="56" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+  <text x="610" y="146" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">存储单元（锁存/标准单元）</text>
+  <text x="610" y="166" text-anchor="middle" fill="#6b7a93" font-size="11.5">数字 0/1，读出是确定性的</text>
+  <rect x="720" y="122" width="180" height="56" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+  <text x="810" y="146" text-anchor="middle" fill="#1a2332" font-size="13" font-weight="600">数字乘法器/加法树</text>
+  <text x="810" y="166" text-anchor="middle" fill="#6b7a93" font-size="11.5">Booth + CSA 树</text>
+  <path d="M700,150 H720" stroke="#0e5a8a" stroke-width="2.4" marker-end="url(#a1)"/>
+  <text x="520" y="206" fill="#45536b" font-size="12">存储阵列读出的是数字位，交给旁边的数字逻辑精确计算</text>
+  <text x="520" y="226" fill="#45536b" font-size="12">逐位精确、可复现 → 确定性精度（Deterministic）</text>
+  <text x="520" y="252" fill="#0e5a8a" font-size="12.5" font-weight="600">优势：</text>
+  <text x="520" y="272" fill="#45536b" font-size="12">① 精度确定，无 ADC/噪声/工艺波动问题，可低压运行</text>
+  <text x="520" y="290" fill="#45536b" font-size="12">② 与标准数字流程完全兼容 → 可综合、可移植</text>
+
+  <!-- 对比表 -->
+  <text x="480" y="316" text-anchor="middle" fill="#1a2332" font-size="15" font-weight="700">关键对比</text>
+  <rect x="40" y="330" width="880" height="130" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <g font-size="12.5">
+    <text x="70" y="356" fill="#123a57" font-weight="700">维度</text>
+    <text x="320" y="356" fill="#c25e2e" font-weight="700">模拟 CiM</text>
+    <text x="640" y="356" fill="#0e5a8a" font-weight="700">数字 CiM（本论文）</text>
+    <line x1="60" y1="366" x2="900" y2="366" stroke="#dfe6f0"/>
+    <text x="70" y="388" fill="#1a2332">计算精度</text>
+    <text x="320" y="388" fill="#45536b">模拟近似，有 ADC/噪声误差</text>
+    <text x="640" y="388" fill="#45536b">逐位精确，结果可复现</text>
+    <text x="70" y="412" fill="#1a2332">电压/工艺缩放</text>
+    <text x="320" y="412" fill="#45536b">低压下模拟误差恶化</text>
+    <text x="640" y="412" fill="#45536b">数字逻辑可低压运行（本论文 400mV）</text>
+    <text x="70" y="436" fill="#1a2332">设计流程</text>
+    <text x="320" y="436" fill="#45536b">定制版图，难以跨工艺移植</text>
+    <text x="640" y="436" fill="#45536b">标准单元 + 综合/布局布线 → 可移植</text>
+  </g>
+
+  <rect x="20" y="476" width="920" height="34" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="480" y="498" text-anchor="middle" fill="#0e5a8a" font-size="12.5">本论文的口号：确定性精度（Deterministic Accuracy）+ 工艺电压可缩放（Scalable）+ 全可综合（Fully Synthesizable）</text>
+</svg>

@@ -1,0 +1,52 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：SNG 与大复用——把 25× 的成本摊薄到 &gt;32×</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① SNG 怎么用 LFSR + 级联 MUX 精确转换；② 激活存内存的复用因子；③ 并行 SNG 怎么用 LFSR 状态作种子。</p>
+</div>
+
+<h3>5.1 SNG：LFSR + 级联 MUX（论文 Fig.5）</h3>
+<p>二进制→随机流的转换（SNG）是 SC 的能耗大头（是 SC MAC 的 25×）：</p>
+<ul>
+<li>每个 LFSR 寄存器控制一个 MUX，MUX 级联；N 位二进制数 → N 个 MUX → 随机流；</li>
+<li><strong>精确转换的两条件</strong>：① 最大长度 LFSR（遍历 2ᴺ−1 种组合）；② LFSR 特征多项式阶数 = 输入位宽；</li>
+<li>原理：MSB 被复用 2ᴺ⁻¹ 次，其他位按二进制加权频率（2ᴺ⁻²…2⁰）→ 流中 1 的频率精确表示输入；</li>
+<li>本设计 8-bit 计算（1 符号 + 7 幅值）→ 7 位 LFSR；输出端解复用器按符号选 xp/xn。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_5_SNG电路.png" alt="SNG电路">
+<figcaption>图 7 · 论文 Fig.5：SNG 电路——输入/权重的数据通路与并行 SNG 的种子调度。</figcaption>
+</figure>
+
+<h3>5.2 激活的 SNG 复用（论文 Fig.6）</h3>
+<p>激活的随机流<strong>预转换后存进内存</strong>（位并行数据流的基础）→ 可以从滤波器的滑动窗口和输出通道复用：</p>
+<ul>
+<li>2-D 滤波器 R×R、M 个输出通道 → 最大复用 R²×M；</li>
+<li>Y 方向滑动窗口并行（宏行并行）、X 方向串行；X 维过大需重载激活时复用降为 R×M（下界）；</li>
+<li>实测 MNIST/CIFAR-10 网络：激活 SNG 复用 <strong>&gt;32</strong>。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_6_激活复用与SNG能耗.png" alt="激活复用与SNG能耗">
+<figcaption>图 8 · 论文 Fig.6：(上) 存储激活的复用 (下) 有/无复用时的 SNG 能耗。</figcaption>
+</figure>
+
+<h3>5.3 滤波器与并行 SNG</h3>
+<ul>
+<li><strong>滤波器 SNG</strong>：计算周期把二进制滤波器系数转随机位，CPWLP/N 驱动缓冲 xp/xn；宏内 32 行并行 → SNG/驱动能耗共享 32 行；</li>
+<li><strong>并行 SNG</strong>：每个 LFSR 状态用作不同宏的种子（宏 1 seed1 … 宏 K seedK）→ K 个 SNG 一个转换周期的结果 = 单个 SNG 跑 K 个周期 → 支持位并行处理；</li>
+<li>结果：激活+滤波器 SNG 能耗降低 &gt;32×（Fig.6 对比）。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d04_sng.svg" alt="SNG教学图">
+<figcaption>教学图 4 · SNG 电路与复用机制。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① SNG = LFSR + 级联 MUX（最大长度 LFSR + 阶数匹配 → 精确转换）；② 激活流存内存 → 滑动窗/通道复用 &gt;32×；③ 滤波器 SNG 32 行共享 + LFSR 状态作种子并行化 → 25× 的 SNG 成本摊薄到可忽略。</p>
+</div>
+</section>

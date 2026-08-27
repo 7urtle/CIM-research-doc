@@ -1,0 +1,59 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：BRPU——用移位+OR 干掉 regime 的译码器</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么 regime 加法等价于“连续 0/1 个数”的加减；② shift-OR 怎么用一个译码器替代两个译码器+加法器+编码器；③ 双向移位控制器为什么必须“解码小 |R|、移位大 |R|”；④ 合并前导 0/1 检测器怎么再省一块。</p>
+</div>
+
+<h3>4.1 核心观察：regime 的十进制值就是连续 0/1 的个数</h3>
+<p>POSIT 相乘 A×B 时，两个 regime 的十进制值要相加（RDA + RDB）。但 regime 本身是温度计码——<strong>十进制值 = 连续 0 或 1 的个数</strong>。所以“RDA + RDB”本质上就是“连续个数增加/减少”：</p>
+<ul>
+<li>同号（都正或都负）：个数增加 → 相当于<strong>右移</strong>（温度计码变长）；</li>
+<li>异号：个数减少 → 相当于<strong>左移</strong>（温度计码变短）。</li>
+</ul>
+<p>基于这个性质，BRPU 的做法（论文 Fig.5）：只译码 RA 得到 RDA，把 RB <strong>右移 RDA 位</strong>得到 RB′，再与 RA <strong>逐位 OR</strong>——结果与传统的“译码×2 + 加法 + 编码”完全相同，但省掉一个译码器，加法/编码简化为移位+OR：</p>
+<div class="box key">
+<div class="bt">💡 例子</div>
+<p>RA = “11110”（R=+3），RB = “1 10”（R=+1，4 位表示）。RDA=3 → RB 右移 3 位得 “00011” → OR：11110 | 00011 = “11111”（R=+4）✓。传统做法：3+1=4 再编码成 11111，殊途同归。</p>
+</div>
+<p>结果：regime 处理面积 −67.8%、功耗 −79.6%；整个宏面积 −23.6%、功耗 −22.2%。</p>
+
+<figure>
+<img src="assets/figs/fig15_5_移位OR regime处理.png" alt="移位OR regime处理">
+<figcaption>图 5 · 论文 Fig.5：shift-OR regime 处理——传统（译码×2+加法+编码）vs 本论文（译码1+移位+OR）。</figcaption>
+</figure>
+
+<h3>4.2 双向移位控制器：为什么要“解码小 |R|、移位大 |R|”？</h3>
+<p>shift-OR 里要选一个译码、另一个移位。如果<strong>随机选</strong>会出两个问题（论文 Fig.6）：</p>
+<ul>
+<li><strong>同号情形（右移）</strong>：若解码了大 |R|、去移小 |R| → 移位码大 → 移位能耗随移位码线性增加（浪费）；</li>
+<li><strong>异号情形（左移）</strong>：若解码大 |R|、去移小 |R| → 左移移出界（例：RDA=4，RB=“001XX”左移 4 位 → “XXXXX”错误）。加额外移位位能修，但移位器成本翻倍。</li>
+</ul>
+<p>解法：<strong>动态解码小的 |R|、移位大的 |R|</strong>——同号时小移位码省能量；异号时大 |R| 左移小 |R| 位不会出界（不加位宽、不犯错）。</p>
+<p>怎么快速找到小 |R|？用 4-bit XOR + 前导 0/1 检测器：小 |R| 的连续 0/1 少 → 1→0 翻转出现得早 → 前导检测位置即小 |R| 值。温度计码本身不用转十进制，直接比较即可。</p>
+
+<figure>
+<img src="assets/figs/fig15_6_双向小R移位机制.png" alt="双向小R移位机制">
+<figcaption>图 6 · 论文 Fig.6：双向小 |R| 静态移位机制——解码小 |R|、移位大 |R|，省能量、免错误。</figcaption>
+</figure>
+
+<h3>4.3 BRPU 架构与合并检测器（论文 Fig.7）</h3>
+<p>BRPU 由<strong>regime 提取单元、双向移位控制器、数字控制移位线、16-bit 输出 regime 寄存器堆</strong>组成。每个周期处理 2×4 位 RA/RB（POSIT(8,3) 的 regime 最大 4 位）。</p>
+<p>另一个细节：区分正/负 regime 需要前导 1 检测器 + 前导 0 检测器 + 2:1 MUX。分离实现（TSMC 28nm 400MHz 4 位检测）占 4.93 µm²、耗 0.31 µW。本论文把两者的真值表合并成<strong>统一逻辑表达式</strong>，复用电路 → 面积 −28.4%、功耗 −25.8%。</p>
+
+<figure>
+<img src="assets/figs/fig15_7_BRPU架构.png" alt="BRPU架构">
+<figcaption>图 7 · 论文 Fig.7：BRPU 架构与设计细节——提取单元、双向移位控制器、合并前导 0/1 检测器。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d04_brpu.svg" alt="BRPU教学图">
+<figcaption>教学图 4 · 传统 vs shift-OR regime 处理，以及双向移位控制器的原理。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① regime 加法 = 连续个数增减 → shift-OR 替代 codec+加法+编码（省 1 译码器、面积 −67.8%、功耗 −79.6%）；② 双向移位控制：解码小 |R|、移位大 |R|（同号省能、异号免错）；③ 合并前导 0/1 检测器再省 28.4% 面积。BRPU 让三模型平均能效 +29.7%（再加双向调度 +39%）。</p>
+</div>
+</section>

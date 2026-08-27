@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">计算模块内部：RISC-V 加速器（ACC）+ 存储控制器 + 3D DRAM PHY</text>
+
+  <!-- ACC -->
+  <rect x="60" y="90" width="420" height="300" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="80" y="118" fill="#0e5a8a" font-size="13.5" font-weight="700">ACC（加速器）×2，每个包含：</text>
+  <g font-size="11.5">
+    <rect x="80" y="132" width="180" height="44" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="170" y="152" text-anchor="middle" fill="#0e5a8a" font-weight="600">RISC-V 内核</text>
+    <text x="170" y="168" text-anchor="middle" fill="#45536b">通用指令 + fsqrt 等</text>
+    <rect x="280" y="132" width="180" height="44" rx="7" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="370" y="152" text-anchor="middle" fill="#0e5a8a" font-weight="600">L1 指令/数据缓存</text>
+    <text x="370" y="168" text-anchor="middle" fill="#45536b">降低访问延迟</text>
+    <rect x="80" y="190" width="180" height="44" rx="7" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="170" y="210" text-anchor="middle" fill="#c25e2e" font-weight="600">自定义 FPU</text>
+    <text x="170" y="226" text-anchor="middle" fill="#45536b">fadd/fsub/fmul/fdiv 加速</text>
+    <rect x="280" y="190" width="180" height="44" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="370" y="210" text-anchor="middle" fill="#1d8a5f" font-weight="600">DMA 模块</text>
+    <text x="370" y="226" text-anchor="middle" fill="#45536b">批量搬运数据（LLM 连续访存多）</text>
+    <rect x="80" y="248" width="380" height="44" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="270" y="268" text-anchor="middle" fill="#6b3fa0" font-weight="600">SRAM 系统内存（挂在内存总线上）</text>
+    <text x="270" y="284" text-anchor="middle" fill="#45536b">ACC 的本地数据暂存</text>
+    <text x="80" y="330" fill="#45536b">ACC 可以直接发 DRAM 访问命令，</text>
+    <text x="80" y="350" fill="#45536b">或触发“系统内存 ↔ 3D DRAM”的 DMA 传输</text>
+    <text x="80" y="376" fill="#0e5a8a" font-weight="600">→ 计算引擎 = 可编程内核 + 专用浮点 + 自动搬运</text>
+  </g>
+
+  <!-- 控制器 -->
+  <rect x="520" y="90" width="400" height="300" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="540" y="118" fill="#6b3fa0" font-size="13.5" font-weight="700">存储控制器（Memory Controller）</text>
+  <g font-size="11.5">
+    <rect x="540" y="132" width="360" height="40" rx="7" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="720" y="156" text-anchor="middle" fill="#6b3fa0" font-weight="600">命令调度器 FSM（有限状态机）</text>
+    <text x="540" y="200" fill="#45536b">• <strong>开放页策略（open-page）</strong>：行激活后保持打开</text>
+    <text x="540" y="224" fill="#45536b">• <strong>2048b 数据缓冲</strong>：缓存最近访问的数据</text>
+    <text x="540" y="248" fill="#45536b">　 buf_hit → 直接从缓冲返回（免 DRAM 访问！）</text>
+    <text x="540" y="272" fill="#45536b">　 row hit → 直接读/写命令；row miss → 先预充电+激活</text>
+    <rect x="540" y="290" width="360" height="40" rx="7" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="720" y="314" text-anchor="middle" fill="#1d8a5f" font-weight="600">刷新控制 + 可编程配置模块（时序/刷新调度）</text>
+    <text x="540" y="360" fill="#45536b">生成 DRAM 控制信号；按模式（PNM 开/关）与外部主机信号二选一</text>
+    <text x="540" y="382" fill="#6b3fa0" font-weight="600">→ “开卷策略 + 大缓冲”命中时省掉整次 DRAM 访问</text>
+  </g>
+
+  <!-- PHY -->
+  <rect x="60" y="410" width="860" height="56" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="490" y="434" text-anchor="middle" fill="#1d8a5f" font-size="13" font-weight="700">3D DRAM PHY：4 个 256Mb PHY 子模块服务 1Gb DRAM 空间</text>
+  <text x="490" y="456" text-anchor="middle" fill="#45536b" font-size="12">总线 2048b 很宽 → 引脚速率很低 → PHY 只是“数据同步器 + 电平转换”，比 DDR/HBM PHY 简单省电</text>
+
+  <rect x="60" y="486" width="860" height="56" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="490" y="510" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">DMA + 2048b 缓冲的实测收益：GEMM 吞吐平均提升 53.8%（相对无 DMA/缓冲的基线）</text>
+  <text x="490" y="532" text-anchor="middle" fill="#45536b" font-size="12">权重开机只上传一次 3D DRAM → 离片访问量大幅减少</text>
+</svg>

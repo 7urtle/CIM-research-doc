@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">双级分配（Twin-Stage Allocation）：按层粗调 + 按组精调</text>
+
+  <!-- CGA -->
+  <rect x="40" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">层级粗粒度分配（CGA）</text>
+  <g font-size="12">
+    <text x="60" y="140" fill="#45536b">离线为每一层构建一个小型查表</text>
+    <text x="60" y="162" fill="#45536b">（层 → 最优保留位宽 PBW）</text>
+    <rect x="60" y="178" width="180" height="26" rx="5" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="150" y="196" text-anchor="middle" fill="#0e5a8a">层 1 → PBW 5b</text>
+    <rect x="250" y="178" width="180" height="26" rx="5" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="340" y="196" text-anchor="middle" fill="#0e5a8a">层 2 → PBW 11b</text>
+    <text x="60" y="236" fill="#45536b">不敏感层用低位宽、敏感层用高位宽</text>
+    <text x="60" y="266" fill="#1d8a5f" font-weight="600">→ LLaMA-3.1 8B：平均 PBW −14.8%，精度无损</text>
+    <text x="60" y="296" fill="#45536b">查表存在“位宽分配器”里，运行时不重算</text>
+  </g>
+
+  <!-- FGA -->
+  <rect x="500" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">组级细粒度分配（FGA）</text>
+  <g font-size="12">
+    <text x="520" y="140" fill="#45536b">MXFP 每组 32 个数共享一个 E8M0 尺度 SS；</text>
+    <text x="520" y="162" fill="#45536b">一个累加向量由多个组组成：</text>
+    <text x="520" y="190" fill="#45536b">• SS 大 → 对累加贡献大 → 多算几位（高位宽）</text>
+    <text x="520" y="212" fill="#45536b">• SS 小 → 贡献小 → 少算几位（低位宽）</text>
+    <text x="520" y="240" fill="#45536b">按组间尺度差 ΔSS 动态分配组级 PBW</text>
+    <text x="520" y="274" fill="#6b3fa0" font-weight="600">→ 平均 PBW 再降 29.3%（LLaMA-3.1 8B）</text>
+    <text x="520" y="302" fill="#45536b">“贡献大的组多花周期、贡献小的组省周期”</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="344" width="880" height="112" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">三种配置 + 应用映射</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">① 固定 PBW　② 层级 CGA　③ CGA + 组级 FGA —— 由“位宽分配器”按需选择；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">BERT-base：3~9b 即可保 &lt;1% 精度损失；LLaMA-3.1 8B：11~17b 近无损；19~27b 支持训练（ResNet-18 略胜 BF16）；</text>
+  <text x="60" y="442" fill="#1d8a5f" font-size="12.5" font-weight="600">PBW 从 3b 到 27b 宽范围可调 = “一个宏覆盖简单推理 → 复杂推理 → 训练”</text>
+</svg>

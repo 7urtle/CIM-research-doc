@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">双模权重映射：同一个 4 槽（W0–W3），INT4 和 INT8 两种玩法</text>
+
+  <!-- INT4 -->
+  <text x="250" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">INT4 模式（TR 关闭）：4 个独立 4b MAC / 周期</text>
+  <rect x="40" y="108" width="420" height="170" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="13">
+    <rect x="70" y="130" width="80" height="44" rx="6" fill="#eefaf3" stroke="#1d8a5f"/><text x="110" y="158" text-anchor="middle" fill="#1a2332">W0</text>
+    <rect x="160" y="130" width="80" height="44" rx="6" fill="#eefaf3" stroke="#1d8a5f"/><text x="200" y="158" text-anchor="middle" fill="#1a2332">W1</text>
+    <rect x="250" y="130" width="80" height="44" rx="6" fill="#eefaf3" stroke="#1d8a5f"/><text x="290" y="158" text-anchor="middle" fill="#1a2332">W2</text>
+    <rect x="340" y="130" width="80" height="44" rx="6" fill="#eefaf3" stroke="#1d8a5f"/><text x="380" y="158" text-anchor="middle" fill="#1a2332">W3</text>
+    <text x="70" y="200" fill="#1d8a5f">A[3:0] 4b 权重</text>
+    <text x="70" y="222" fill="#1d8a5f">B[3:0] 4b 权重</text>
+    <text x="70" y="244" fill="#1d8a5f">C[3:0] 4b 权重</text>
+    <text x="70" y="266" fill="#1d8a5f">D[3:0] 4b 权重</text>
+  </g>
+  <text x="60" y="304" fill="#45536b" font-size="12">4 个槽 = 4 个互不相干的 4b 权重 → 每个 MUL 一次算 2 个 4b MAC</text>
+
+  <!-- INT8 -->
+  <text x="710" y="94" text-anchor="middle" fill="#0e5a8a" font-size="15" font-weight="700">INT8 模式（TR 开启）：2 个 8b MAC / 周期</text>
+  <rect x="500" y="108" width="420" height="170" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <g font-family="'Cascadia Code','Consolas',monospace" font-size="13">
+    <rect x="530" y="130" width="80" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a"/><text x="570" y="158" text-anchor="middle" fill="#1a2332">W0</text>
+    <rect x="620" y="130" width="80" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a"/><text x="660" y="158" text-anchor="middle" fill="#1a2332">W1</text>
+    <rect x="710" y="130" width="80" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a"/><text x="750" y="158" text-anchor="middle" fill="#1a2332">W2</text>
+    <rect x="800" y="130" width="80" height="44" rx="6" fill="#eef7fd" stroke="#0e5a8a"/><text x="840" y="158" text-anchor="middle" fill="#1a2332">W3</text>
+    <text x="530" y="200" fill="#0e5a8a">A[3:0]（A 的低 4 位）</text>
+    <text x="530" y="222" fill="#0e5a8a">B[3:0]（B 的低 4 位）</text>
+    <text x="530" y="244" fill="#0e5a8a">A[7:4]（A 的高 4 位）</text>
+    <text x="530" y="266" fill="#0e5a8a">B[7:4]（B 的高 4 位）</text>
+  </g>
+  <text x="520" y="304" fill="#45536b" font-size="12">W0+W2 拼成 8b 权重 A；W1+W3 拼成 8b 权重 B → 每周期 2 个 8b MAC</text>
+
+  <!-- 底部 -->
+  <rect x="40" y="340" width="880" height="108" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="368" fill="#0e5a8a" font-size="13" font-weight="700">自适应精度选择：不同层用不同精度</text>
+  <text x="60" y="392" fill="#45536b" font-size="12.5">模型里精度敏感层用 INT8（更准），不敏感层用 INT4（更省）→ 逐层可配，无需改硬件</text>
+  <text x="60" y="416" fill="#45536b" font-size="12.5">INT8 模式下的“翻转缩减器（TR）”：拼装高低 4 位时消除冗余的信号翻转 → 降低动态功耗</text>
+  <text x="60" y="438" fill="#1d8a5f" font-size="12.5" font-weight="600">同一套 4 槽存储 + 2 个 MUX 乘法器，INT4/INT8 两用 → 面积大幅节省</text>
+</svg>

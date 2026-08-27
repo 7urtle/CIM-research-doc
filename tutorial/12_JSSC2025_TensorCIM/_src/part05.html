@@ -1,0 +1,38 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新③：ILA-CIM —— 输入前瞻</h2>
+<figure>
+  <img src="assets/diagrams/d05_ila_cim.svg" alt="ILA-CIM" style="max-width:940px">
+  <figcaption>图 5.1　传统“一次一行”导致空闲 vs ILA-CIM 前瞻未来输入让所有子阵列忙碌。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_16_ILA-CIM计算示例.png" alt="论文图16">
+  <figcaption>图 5.2　论文原图 Fig. 16：ILA-CIM 计算示例。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>即使初始化平衡了，计算中仍有空闲：每个 CIM 一次只能处理一行输入，而当前输入行因稀疏只激活部分阵列。ILA-CIM 的思路：<strong>空闲的子阵列“看未来输入”提前算</strong>。计算流水三步：</p>
+<ol>
+<li><strong>输入前瞻</strong>：把未来的输入行分配给空闲子阵列；</li>
+<li><strong>FP 对齐</strong>：按“输入指数 + 权重指数”的和把乘积归一化到 FP32（为后续加法）；</li>
+<li><strong>输出合并</strong>：收集各子阵列结果、把输出索引转成全局缓冲地址，与之前的部分和累加并写回。</li>
+</ol>
+<p>ILA-CIM 的稀疏归约也复用了同一数据通路：特征张量稀疏时<strong>不加载零</strong>，直接在 CIM 里做归约 → 省 SpG 的加载功耗。</p>
+<div class="box key">
+<div class="bt">📊 ILA-CIM 收益</div>
+<p>单独：利用率 17.6%→33.2%、加速 1.88×；与 EOCI 联合：利用率 <strong>95.4%</strong>、加速 <strong>5.28×</strong>（子阵列计算时间几乎相同）。附加逻辑面积仅 <strong>2.64%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_16_ILA-CIM计算示例.png">
+  <source src="assets/videos/v03_ila.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · ILA-CIM 动画：空闲子阵列前瞻未来输入，全部保持忙碌。</div>
+</div>
+<div class="demo">
+<div class="dhead">⚡ 演示 C · 利用率对比（基线 vs ILA vs 联合）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">基线 17.6% → ILA 33.2% → 联合 95.4%</span>
+</div>
+<div class="hint">三档对比：红色=基线（一次一行，大量空闲）；蓝色=ILA（部分前瞻）；绿色=联合（全部忙碌）。ILA 附加逻辑面积仅 +2.64%。</div>
+</div>
+</section>

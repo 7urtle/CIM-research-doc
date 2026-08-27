@@ -1,0 +1,16 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：位串行 vs 位并行 CIM</h2>
+<p>数字 SRAM CIM 做“8b×8b 乘法”有两条路线：</p>
+<figure>
+  <img src="assets/diagrams/d01_bit_serial_vs_parallel.svg" alt="位串行 vs 位并行" style="max-width:920px">
+  <figcaption>图 1.1　位串行 CIM（1b 单元、串行累加、需要串并转换）vs 位并行 CIM（8b 整存、1 周期乘法、直接匹配数据格式）。</figcaption>
+</figure>
+<ul>
+<li><strong>位串行（Bit-Serial）</strong>：单元只存/算 1 位，8b 乘法拆成 8 个 1b 周期串行完成。优点是单元极小、面积效率高；缺点是① 需要“并行→串行”转换电路和特殊权重映射；② 高位（MSB）每周期翻转、功耗高；③ 吞吐低（1 周期只算 1 位）。</li>
+<li><strong>位并行（Bit-Parallel，本文）</strong>：8b 权重整存，1 周期完成 8b×8b。优点：直接匹配软件数据格式（无串并转换）、MSB 翻转率低、吞吐高；缺点：位列加法布线拥塞、符号位处理难、加法树空转。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 为什么“MSB 翻转率低”能省电？</div>
+<p>有符号数据的高位（符号位和附近位）在相邻数据之间通常变化很小（比如 0.0012 → 0.0013，高位都是 0）。位串行方案把每个位都平等地扫一遍，高位也跟着翻转；位并行方案一次读完整字，高位本来就不动 → 动态功耗天然更低。这是位并行在“功耗账”上赢的第一分。</p>
+</div>
+</section>

@@ -1,0 +1,23 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：CWM-SRAM 循环权重映射 —— 转置的“几何巧解”</h2>
+<figure>
+  <img src="assets/diagrams/d04_cwm.svg" alt="CWM-SRAM" style="max-width:940px">
+  <figcaption>图 4.1　CWM-SRAM：权重矩阵每行按行号循环右移存储；FF 读使能连 4 行单元、BP 读使能连 4 对角单元，共享 256b 读口。</figcaption>
+</figure>
+<p><strong>存储侧（循环映射）</strong>：权重矩阵的第 r 行，存储时整体循环右移 r 格。为什么要移？因为移位之后，原本“列方向”的转置关系在存储网格里变成了“对角线方向”——而对角线可以通过“每行错位一格”的连线来访问。</p>
+<p><strong>读侧（双读使能）</strong>：</p>
+<ul>
+<li><strong>FF 读使能</strong>：连接 4 行单元 → 读出权重行（与激活向量对齐后做 A×W）；</li>
+<li><strong>BP 读使能</strong>：连接 4 对角单元 → 读出“转置后的权重向量”（做 G×Wᵀ）；</li>
+<li>两个使能共用 <strong>256b 读口</strong> → 同一套 MAC 电路服务 FF 和 BP。</li>
+</ul>
+<p><strong>布线技巧</strong>：对角连接走第 3 层金属、对角连接在第 4 层、行连接在第 5 层 → 缓解布线拥塞（避免前作 [7,8] 那种“为转置加大量 MAC 电路和读口”的做法）。</p>
+<div class="box key">
+<div class="bt">🧠 为什么激活也要“转”？</div>
+<p>权重被循环移位了，激活向量也要相应右移才能保持“权重-激活”的元素对齐——这个调整由外围的“激活旋转与对齐电路（activation rotate-and-align）”完成。存储不动、读方向改、激活配合转——三方配合才让“转置”在单端口 SRAM 上成立。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_5_3_CWM-SRAM.png" alt="论文图 14.5.3">
+  <figcaption>图 4.2　论文原图 Fig. 14.5.3：CWM-SRAM 循环方案与 6T 位单元的 FF/BP 读使能。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>

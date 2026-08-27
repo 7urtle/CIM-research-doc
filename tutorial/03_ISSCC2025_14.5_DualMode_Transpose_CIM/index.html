@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：训练/推理双模式转置 FP CIM 宏（ISSCC 2025 14.5）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 ISSCC 2025 14.5 精确/近似双模式转置数字 6T-SRAM CIM 宏的循环权重映射、SFME 编码、向量级预对齐与双模式 MAC。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">训练/推理转置 FP-CIM 零基础精讲</div>
+    <div class="t2">ISSCC 2025 · Session 14 · Paper 14.5</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：片上训练</a>
+  <a class="sec" href="#sec2">02 · T-CIM 的三大挑战</a>
+  <a class="sec" href="#sec3">03 · 转置的概念</a>
+  <a class="sec" href="#sec4">04 · 创新①：CWM-SRAM</a>
+  <a class="sec" href="#sec5">05 · 创新②：SFME + VWPA</a>
+  <a class="sub" href="#sec5-1">5.1 SFME 编码</a>
+  <a class="sub" href="#sec5-2">5.2 VWPA 预对齐</a>
+  <a class="sec" href="#sec6">06 · 创新③：DMBP-MAC</a>
+  <a class="sec" href="#sec7">07 · 系统架构与四格式</a>
+  <a class="sec" href="#sec8">08 · 实测与对比</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">训练/推理双模式转置浮点存内计算零基础精讲：一套电路，前向反向通吃
+<span class="en">A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference（ISSCC 2025 · Paper 14.5）</span></h1>
+<div class="meta">论文作者：Yiyang Yuan, Bingxin Zhang 等 · 中科院微电子所 + 国科大 + 北京理工大学 + 澳门大学（通讯作者：李晓然、张锋）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.5
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>大多数 CIM 只做<strong>推理</strong>。但<strong>片上训练/微调</strong>（实时响应、省电、隐私）才是边缘 AI 的下一站。训练比推理多一个“反向传播（BP）”：误差梯度要乘<strong>转置后的权重矩阵</strong>——CIM 里“权重转置”是出了名的硬骨头。这篇中科院微电子所的工作用一个 <strong>28nm 转置数字 6T-SRAM CIM 宏</strong>解决：</p>
+<ol>
+<li><strong>CWM-SRAM（循环权重映射）</strong>：权重按行循环右移存储，<strong>FF 读“行”、BP 读“对角”＝转置</strong>——一套单端口 SRAM、一套 MAC 电路，前向反向完全复用；</li>
+<li><strong>SFME（有符号定点尾数编码）+ VWPA（向量级预对齐）</strong>：把 FP8/BF16/INT4/INT8 四种格式统一进 4b/8b 整数通路（首个四格式统一 FP-CIM），预对齐截断损失大幅降低；</li>
+<li><strong>DMBP-MAC（精确/近似双模式位并行 MAC）</strong>：近似模式丢部分和 + 低位 OR → 速度 +12%、功耗 −31%（NMED 仅 5.3%），按应用自由切换。</li>
+</ol>
+<p>实测：峰值 <strong>192.3 TFLOPS/W</strong>（FP8，近似模式，0.55V）、2.5ns 访问时间。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>训练 = FF + BP：</strong>前向（FF）和推理一样；反向（BP）要算“误差梯度 × 权重转置”。转置意味着读数据的“方向”变了——在普通 SRAM 里，行向访问容易、列向（转置）访问极难。</li>
+<li><strong>“循环映射”是转置的巧解：</strong>把每行权重循环右移存储后，读“对角线”正好等于读“转置后的行”。存储没变、只改读取方向 → 单端口 SRAM 就能同时服务 FF 和 BP。</li>
+<li><strong>浮点可以“伪装”成整数：</strong>预对齐后，浮点尾数变成“有符号定点数”（SFME），4b/8b 的整数乘法器直接复用——FP 的 MAC 硬件几乎免费，这就是“一格式四精度”的电路基础。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“On-device training offers advantages such as real-time response, power saving, and user-privacy protection. The training process primarily involves two phases: feed-forward (FF) and backpropagation (BP). BP requires the multiplication of the error gradient with the transposed weight matrix”</td>
+<td>片上训练的好处（实时/省电/隐私）；训练 = 前向 + 反向，反向需要“梯度 × 转置权重”。</td></tr>
+<tr><td class="num">“Previous work uses separate circuits for FF and BP, thereby diminishing area and energy efficiency due to lack of MAC circuit reuse”</td>
+<td>挑战 1：前作 FF/BP 两套电路，MAC 不复用 → 面积能效双输。</td></tr>
+<tr><td class="num">“Prior work is limited to integer (INT) formats; research indicates that INT representation can significantly reduce accuracy during training”</td>
+<td>挑战 2：前作只支持 INT，而 INT 训练精度低（需要 FP）。</td></tr>
+<tr><td class="num">“A cyclic-weight-mapping 6T-SRAM array (CWM-SRAM) that enables array transpose operations thus reusing MAC circuits for FF and BP”</td>
+<td>方案 1：循环权重映射 SRAM → 转置操作 → FF/BP 复用 MAC。</td></tr>
+<tr><td class="num">“A DCIM architecture with a signed fixed-point mantissa encoding (SFME) and a vector-wise pre-alignment (VWPA) that supports FP8, BF16, INT4, and INT8”</td>
+<td>方案 2：SFME + VWPA → 四种格式统一（首个）。</td></tr>
+<tr><td class="num">“An accurate/approximate dual-mode bit-parallel MAC circuit (DMBP-MAC)… to improve MD, access speed, AF, and EF”</td>
+<td>方案 3：精确/近似双模式位并行 MAC → 提升密度/速度/面积/能效。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>CWM-SRAM 循环权重映射</strong>：单端口 6T-SRAM（1 端口 4b/单元 64×64），FF 读行/BP 读对角 → MAC 电路完全复用（对比前作 [7,8] 省面积省功耗）；</li>
+<li><strong>SFME + VWPA</strong>：首个同时支持 INT4/INT8/FP8/BF16 的 FP-CIM；VWPA 让预对齐截断窗口最小化，精确模式精度优于逐层预对齐 [1]；</li>
+<li><strong>DMBP-MAC</strong>：BAM 近似乘法器 + LOA 加法树，精确/近似双模（+12% 速度 / −31% 功耗 / NMED 5.3%），中心对称布局缓解布线；</li>
+<li><strong>实测成绩</strong>：192.3 TFLOPS/W（FP8）、2.5ns 访问；FP8 是“精度 × 能效”最佳格式（精度略低于 INT8/BF16 但远高于 INT4，能效最优）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“转置读取”和“SFME 统一格式”是最值得细品的两个设计。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：片上训练（On-Device Training）与“转置”难题</h2>
+<figure>
+  <img src="assets/diagrams/d01_ondevice_training.svg" alt="片上训练" style="max-width:920px">
+  <figcaption>图 1.1　训练的两个阶段：前向（FF = 普通矩阵乘）与反向（BP = 误差梯度 × 转置权重）。BP 的“转置”是 CIM 的难题。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么片上训练重要？</div>
+<p>① <strong>实时响应</strong>：设备端即时微调，不用等云端往返；② <strong>省电</strong>：不需要把数据传到云端（上传下载都是能量）；③ <strong>隐私</strong>：用户数据（照片、语音、签名）不出设备。这就是“边缘 AI 的下一站”。</p>
+</div>
+<p>训练比推理多出来的核心运算是 <strong>BP：误差梯度 G × 转置权重矩阵 Wᵀ</strong>。矩阵转置在普通 SRAM CIM 里意味着“按列访问”——而 SRAM 天生按行组织，列向访问要么做双端口阵列（面积大）、要么做两套电路（不复用）。这就是“转置 CIM（T-CIM）”要解决的核心矛盾。</p>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>转置 CIM（T-CIM）的三大挑战</h2>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:920px">
+  <figcaption>图 2.1　三大挑战：① FF/BP 电路不共享；② INT 训练精度不足；③ 模拟 CIM 的 PVT 问题 + 密度/面积权衡。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_1_挑战与动机.png" alt="论文图 14.5.1">
+  <figcaption>图 2.2　论文原图 Fig. 14.5.1：转置 CIM 宏的挑战与本工作动机。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① MAC 不复用</td><td>前作 FF/BP 各一套电路（转置阵列 [7,8]）</td><td>CWM-SRAM：单端口 + 循环映射，一套 MAC 通吃</td></tr>
+<tr><td>② INT 精度不足</td><td>INT 训练精度低；预对齐 FP 有截断损失</td><td>SFME + VWPA：四格式统一 + 最小截断窗口</td></tr>
+<tr><td>③ PVT + 密度/面积</td><td>模拟 CIM 受 PVT 影响；数字 CIM 的 MD/AF 权衡难</td><td>DMBP-MAC：双模位并行 + 中心对称布局，紧凑集成进 SRAM</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>转置的概念：读“行”是 W，读“对角”是 Wᵀ</h2>
+<figure>
+  <img src="assets/diagrams/d03_transpose.svg" alt="转置概念" style="max-width:940px">
+  <figcaption>图 3.1　同一个存储阵列：FF 读行（权重向量）、BP 读对角（权重转置向量）。</figcaption>
+</figure>
+<p>要理解 CWM-SRAM，先理解一个几何事实：<strong>矩阵的转置就是“沿主对角线翻折”</strong>。W 的第 r 行第 c 列元素，在 Wᵀ 里位于第 c 行第 r 列。所以：</p>
+<ul>
+<li>读 W 的“第 r 行” = 正向权重向量（FF 用）；</li>
+<li>读 W 的“第 c 条对角线” = Wᵀ 的第 c 行 = 转置权重向量（BP 用）。</li>
+</ul>
+<p>问题是：SRAM 位线/字线按行组织，<strong>对角线访问</strong>在普通阵列里要绕很远（每个单元都要单独连到读口）。CWM-SRAM 用“循环映射”把这个难题化解成“行内移位 + 读使能选路”（§4）。</p>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_3_CWM-SRAM.png">
+  <source src="assets/videos/v01_transpose.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 转置读取动画：FF 高亮整行（A×W），BP 高亮对角线（G×Wᵀ）——同一阵列两种读法。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 转置读取（切换 FF 行读 / BP 对角读）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-ff" class="on">FF：读行（A × W）</button>
+  <button id="demoA-bp">BP：读对角（G × Wᵀ）</button>
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <span class="stat" id="demoA-stat">FF 模式：高亮第 0 行</span>
+</div>
+<div class="hint">绿色=FF 按行读取（权重向量）；红色=BP 按对角线读取（转置权重向量）。同一套存储、同一套 MAC，只是读方向不同。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：CWM-SRAM 循环权重映射 —— 转置的“几何巧解”</h2>
+<figure>
+  <img src="assets/diagrams/d04_cwm.svg" alt="CWM-SRAM" style="max-width:940px">
+  <figcaption>图 4.1　CWM-SRAM：权重矩阵每行按行号循环右移存储；FF 读使能连 4 行单元、BP 读使能连 4 对角单元，共享 256b 读口。</figcaption>
+</figure>
+<p><strong>存储侧（循环映射）</strong>：权重矩阵的第 r 行，存储时整体循环右移 r 格。为什么要移？因为移位之后，原本“列方向”的转置关系在存储网格里变成了“对角线方向”——而对角线可以通过“每行错位一格”的连线来访问。</p>
+<p><strong>读侧（双读使能）</strong>：</p>
+<ul>
+<li><strong>FF 读使能</strong>：连接 4 行单元 → 读出权重行（与激活向量对齐后做 A×W）；</li>
+<li><strong>BP 读使能</strong>：连接 4 对角单元 → 读出“转置后的权重向量”（做 G×Wᵀ）；</li>
+<li>两个使能共用 <strong>256b 读口</strong> → 同一套 MAC 电路服务 FF 和 BP。</li>
+</ul>
+<p><strong>布线技巧</strong>：对角连接走第 3 层金属、对角连接在第 4 层、行连接在第 5 层 → 缓解布线拥塞（避免前作 [7,8] 那种“为转置加大量 MAC 电路和读口”的做法）。</p>
+<div class="box key">
+<div class="bt">🧠 为什么激活也要“转”？</div>
+<p>权重被循环移位了，激活向量也要相应右移才能保持“权重-激活”的元素对齐——这个调整由外围的“激活旋转与对齐电路（activation rotate-and-align）”完成。存储不动、读方向改、激活配合转——三方配合才让“转置”在单端口 SRAM 上成立。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig14_5_3_CWM-SRAM.png" alt="论文图 14.5.3">
+  <figcaption>图 4.2　论文原图 Fig. 14.5.3：CWM-SRAM 循环方案与 6T 位单元的 FF/BP 读使能。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：SFME + VWPA —— 浮点“伪装”成整数 + 最小截断窗口</h2>
+
+<h3 id="sec5-1">5.1 SFME：有符号定点尾数编码</h3>
+<figure>
+  <img src="assets/diagrams/d05_sfme.svg" alt="SFME" style="max-width:940px">
+  <figcaption>图 5.1　SFME：浮点权重预对齐后变成“有符号定点补码尾数”，FP8/BF16/INT4/INT8 统一走 4b/8b 整数通路。</figcaption>
+</figure>
+<p>FP 的 MAC 贵在“指数对齐”。SFME 的招数是<strong>把对齐提前做完、把结果变成定点数</strong>：</p>
+<div class="formula">W = −1<sup>s</sup>·2<sup>E−Bias</sup>·(1.M)　→预对齐→　−1<sup>s</sup>·2<sup>Es</sup>·(0.M<sub>n</sub>)　→　M<sub>a</sub> = −1<sup>s</sup>·0.M<sub>n</sub><span class="tag">式 5.1</span></div>
+<ul>
+<li>共享指数 E<sub>s</sub> = E<sub>max</sub> − Bias（同一组数据统一）；隐藏位+尾数归一化为 M<sub>n</sub>；</li>
+<li>对齐尾数 M<sub>a</sub> 是“有符号定点补码数”（小数点跟在符号位后）→ 4b 复用 INT4 通路、8b 复用 INT8 通路；</li>
+<li>四模式 4b 乘法器覆盖 8b 2C 乘法的全部 4b 部分积组合 → 一个乘法器服务 4b/8b。</li>
+</ul>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_4_SFME与VWPA.png">
+  <source src="assets/videos/v02_sfme.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · SFME 转换动画：FP 权重 → 预对齐（共享指数）→ 有符号定点尾数 → 复用 INT 通路。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · SFME 转换（看浮点怎么变成定点尾数）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">FP → 预对齐 → SFME 定点尾数</span>
+</div>
+<div class="hint">符号、指数、尾数三段（蓝）→ 预对齐合并指数（橙）→ 生成有符号定点尾数（绿），可以直接送进整数乘法器。</div>
+</div>
+
+<h3 id="sec5-2">5.2 VWPA：向量级预对齐</h3>
+<figure>
+  <img src="assets/diagrams/d06_vwpa.svg" alt="VWPA" style="max-width:920px">
+  <figcaption>图 5.2　逐层预对齐（截断窗口大）vs 向量级预对齐 VWPA（同向量元素分布接近 → 截断窗口小）。</figcaption>
+</figure>
+<p>预对齐的精度损失来自“截断”：指数跨度越大，尾数被截掉的位数越多。VWPA 的关键观察：<strong>同一个向量（同一输出通道）里的元素数量级往往接近</strong>（权重初始化、批归一化都让分布集中），而不同层/通道差异很大。所以<strong>按向量对齐</strong>比按整层对齐的指数跨度小得多 → 截断窗口更小 → 精度更高（精确模式下优于逐层预对齐 [1]）。</p>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：DMBP-MAC —— 精确/近似双模式位并行 MAC</h2>
+<figure>
+  <img src="assets/diagrams/d07_dmbp.svg" alt="DMBP-MAC" style="max-width:940px">
+  <figcaption>图 6.1　DMBP-MAC：64 个 DM-MUL（BAM 近似乘法器）+ 6 级 DM-ADD（LOA 低位 OR 加法器）→ 14b 点积；精确/近似双模。</figcaption>
+</figure>
+<p>训练要精度、推理要速度——DMBP-MAC 用“双模式”同时满足：</p>
+<ul>
+<li><strong>精确模式</strong>：全部部分积 + 完整加法树，精度最高（训练/精度敏感场景）；</li>
+<li><strong>近似模式</strong>：DM-MUL 丢弃右侧 6 个部分和（BAM 思想），DM-ADD 把低位加法换成按位 OR（LOA 思想）；<strong>稀疏感知偏置加法器</strong>抵消 BAM 的偏移误差。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 近似模式的账</div>
+<p>关键路径缩短 + 翻转部件减少 → <strong>速度 +12%、功耗 −31%</strong>（对比精确模式）；50,000 组随机采样 <strong>NMED 仅 5.3%</strong>，误差呈高斯分布、均值接近零（说明是“无偏”的近似——平均来看不偏向任何方向，网络训练能容忍）。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_5_DMBP-MAC.png">
+  <source src="assets/videos/v03_dmbp.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · DMBP 双模式动画：精确模式全部分部分积 vs 近似模式丢右侧部分和 + 低位 OR。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_5_5_DMBP-MAC.png" alt="论文图 14.5.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.5.5：DMBP-MAC 方案与中心对称布局。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 精确 vs 近似：误差与速度的权衡</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">近似模式：丢弃右侧部分和 + 低位 OR</span>
+</div>
+<div class="hint">红色块=近似模式丢弃的部分和；绿块=精确模式保留。近似模式代价是 5.3% NMED，换来 12% 速度与 31% 功耗节省。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与四种格式</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　宏整体架构：读写控制 + 激活旋转对齐 + 上下两块（每块 = CWM-SRAM + DMBP-MAC）；AMBA 总线接口（AHB 内存、APB 控制）。</figcaption>
+</figure>
+<ul>
+<li><strong>读写控制电路</strong>：地址译码、读写信号、模式配置；</li>
+<li><strong>激活旋转与对齐电路</strong>：SFME 编码 + VWPA 预对齐 + 激活向量旋转（配合循环映射）；</li>
+<li><strong>上下两块 CWM-SRAM + DMBP-MAC</strong>：INT4 模式各自独立；INT8/FP8/BF16 模式一块处理高 4 位、一块处理低 4 位；</li>
+<li><strong>AMBA 总线</strong>：AHB 走内存访问、APB 走计算控制与结果 → 可直接集成进 SoC。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d09_formats.svg" alt="四种格式" style="max-width:940px">
+  <figcaption>图 7.2　四种格式统一：FP8（E5M2/E4M3）、BF16、INT4/INT8 全部映射进 4b/8b 数据通路。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_2_总体架构.png" alt="论文图 14.5.2">
+  <figcaption>图 7.3　论文原图 Fig. 14.5.2：转置数字 SRAM CIM 宏的总体架构。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:860px">
+  <figcaption>图 8.1　能效：FP8 峰值 192.3 TFLOPS/W（0.55V、50% 权重稀疏、近似模式）；其余格式为量级示意。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_accuracy.png" alt="精度" style="max-width:860px">
+  <figcaption>图 8.2　格式精度（示意）：INT8 ≈ BF16 &gt; FP8 &gt; INT4。FP8 精度略低但能效最优——它是“精度 × 能效”的平衡点。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_approx.png" alt="近似收益" style="max-width:920px">
+  <figcaption>图 8.3　近似模式收益：速度 +12%、功耗 −31%；NMED 5.3%（50k 采样，高斯、均值≈0）。</figcaption>
+</figure>
+<ul>
+<li><strong>访问时间</strong>：2.5 ns @ 0.9V（FP8 输入、FP8 权重、BF16 输出）；</li>
+<li><strong>峰值能效</strong>：192.3 TFLOPS/W（FP8，近似模式，0.55V，50% 权重稀疏 + 50% 翻转率）；</li>
+<li><strong>首个四格式统一</strong>：INT4/INT8/FP8/BF16 一个宏全支持（训练+推理）；</li>
+<li><strong>精度</strong>：ResNet-18@CIFAR10、VGG-19@CIFAR100 上 FP8 略低于 INT8/BF16 但显著高于 INT4。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_5_6_测量结果.png" alt="论文图 14.5.6">
+  <figcaption>图 8.4　论文原图 Fig. 14.5.6：对比表、能效电压缩放与 Shmoo 图。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig14_5_7_芯片照片.png" alt="论文图 14.5.7">
+  <figcaption>图 8.5　论文原图 Fig. 14.5.7：裸片显微照片与汇总表。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① 峰值 192.3 TFLOPS/W 的测试条件非常“友好”（50% 权重稀疏 + 50% 翻转率 + 近似模式 + 0.55V），和“训练精度最优的精确模式”不是同一个数——应用时先看清模式；② “FP8 能效最优”依赖其 4b 对齐尾数复用 INT4 通路，位宽越低位宽越省，这是结构使然不是魔法；③ 精度对比是在两个特定数据集（CIFAR10/100）上测的，对更大模型/数据集要重新评估。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更深的训练支持（完整反向流水线）</strong>：本文做的是 MAC 级 FF/BP 复用。完整训练还需要梯度计算（G = δ×Xᵀ）、权重更新（W -= ηG）、优化器状态（Adam 动量）——把整条训练流水线搬上 CIM（与 17 号论文“one-shot FP 推理 + 设备端微调”方向呼应）；</li>
+<li><strong>转置方案的通用化</strong>：CWM-SRAM 的“循环映射 + 对角读”只适用于方阵/特定形状。扩展到任意形状矩阵、块转置、注意力 QKV 转置，需要更通用的“数据布局变换”机制；</li>
+<li><strong>SFME 的格式族扩展</strong>：FP8/BF16 之后是 MXFP（06 号论文）、FP4——SFME 能否继续“折叠”更低位宽的浮点？截断窗口的数学建模（VWPA 的边界）值得深入研究；</li>
+<li><strong>近似计算的精度理论</strong>：NMED 5.3% 是经验值。能否建立“近似乘法器误差 → 训练收敛/最终精度”的解析模型？有了模型才能按层/按迭代动态切换精确/近似；</li>
+<li><strong>稀疏训练</strong>：训练中的梯度天然稀疏（很多接近 0）。把 02 号论文的 NIM/动态启动器思路引入 BP 路径（跳过零梯度），训练能效还能翻倍；</li>
+<li><strong>端到端联邦/个性化微调 SoC</strong>：CIM 宏 + RISC-V 控制 + eNVM（05 号论文路线）——做一个“能感知、能推理、能训练、能记住”的完整边缘芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>FF（Feed-Forward，前向）</dt><dd>与推理相同的前向传播。</dd>
+<dt>BP（Backpropagation，反向传播）</dt><dd>误差梯度回传；需要 × 转置权重矩阵。</dd>
+<dt>T-CIM（Transpose CIM）</dt><dd>支持权重转置读取的存内计算。</dd>
+<dt>CWM-SRAM（Cyclic-Weight-Mapping SRAM）</dt><dd>循环权重映射：每行按行号右移存储，转置=读对角。</dd>
+<dt>循环映射</dt><dd>矩阵第 r 行整体右移 r 格的存储方式。</dd>
+<dt>读使能（Read-Enable）</dt><dd>FF 读使能连 4 行、BP 读使能连 4 对角。</dd>
+<dt>SFME（Signed Fixed-point Mantissa Encoding）</dt><dd>有符号定点尾数编码：预对齐后尾数变成定点补码数。</dd>
+<dt>VWPA（Vector-Wise Pre-Alignment）</dt><dd>向量级预对齐：同向量元素分布接近 → 截断窗口小。</dd>
+<dt>DMBP-MAC（Dual-Mode Bit-Parallel MAC）</dt><dd>精确/近似双模式位并行 MAC。</dd>
+<dt>BAM（Broken-Array Multiplier）</dt><dd>断阵近似乘法器：丢右侧部分和。</dd>
+<dt>LOA（Lower-part OR Adder）</dt><dd>低位 OR 加法器：低位按位或代替加法。</dd>
+<dt>NMED（Normalized Mean Error Distance）</dt><dd>归一化平均误差距离；本文 5.3%。</dd>
+<dt>FP8</dt><dd>8 位浮点：E5M2（范围大精度低）或 E4M3（范围小精度高）。</dd>
+<dt>AMBA / AHB / APB</dt><dd>ARM 总线标准：AHB 内存访问、APB 控制。</dd>
+<dt>中心对称布局</dt><dd>DMBP-MAC 与 CWM-SRAM 中心对称集成，优化长宽比、缓解布线。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y. Yuan, B. Zhang, et al., “A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” <em>ISSCC 2025</em>, Paper 14.5. DOI: 10.1109/ISSCC49661.2025.10904659</li>
+<li>J.-W. Su et al., “Two-Way Transpose Multibit 6T SRAM Computing-in-Memory Macro for Inference-Training AI Edge Chips,” <em>IEEE JSSC</em>, vol. 57, no. 2, 2022.（转置前作 [7]）</li>
+<li>J. Song et al., “A 16Kb Transpose 6T SRAM In-Memory-Computing Macro based on Robust Charge-Domain Computing,” <em>A-SSCC 2021</em>.（转置前作 [8]）</li>
+<li>P. Micikevicius et al., “FP8 Formats for Deep Learning,” <em>arXiv:2209.05433</em>.（FP8 定义 [13]）</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain FP Computing-Unit and Double-Bit 6T-SRAM CIM Macro…,” <em>ISSCC 2023</em>, pp. 128-130.（预对齐前作 [1]）</li>
+<li>H. R. Mahdiani et al., “Bio-Inspired Imprecise Computational Blocks for Efficient VLSI Implementation of Soft-Computing Applications,” <em>IEEE TCAS-I</em>, vol. 57, no. 4, 2010.（LOA 原理 [14]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 255-257.（[11]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.5.1–14.5.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（192.3 TFLOPS/W、2.5ns、5.3% 等）均来自论文原文；能效/精度对比图中的“其余格式”数值为量级示意，已注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   转置 FP-CIM 教学教程 · 交互脚本
+   演示 A 转置读取 · 演示 B SFME · 演示 C 精确 vs 近似
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 转置读取
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let ff = true, cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const col = ff ? PAL.blue : PAL.red;
+    txt(ctx, ff ? "FF：读行（A × W）" : "BP：读对角（G × Wᵀ）", 30, 24, 15, col, "left");
+    const k = cyc % 6;
+    // 6x6 网格
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < 6; c++) {
+        const x = 120 + c * 70, y = 60 + r * 40;
+        const active = ff ? (r === k) : (c === k);
+        ctx.fillStyle = active ? (ff ? "#1e3c56" : "#3c2a26") : "#141c2a";
+        ctx.strokeStyle = active ? col : PAL.line;
+        ctx.lineWidth = active ? 3 : 1;
+        rrect(ctx, x, y, 64, 34, 5); ctx.fill(); ctx.stroke();
+      }
+    }
+    if (ff) {
+      txt(ctx, "高亮第 " + k + " 行 → 权重向量（与激活对齐 → A×W）", 60, 270, 13, col, "left");
+    } else {
+      txt(ctx, "高亮第 " + k + " 条对角线 → 转置权重向量（G×Wᵀ）", 60, 270, 13, col, "left");
+    }
+    txt(ctx, "同一存储阵列 + 同一 256b 读口 + 同一套 MAC → FF/BP 复用", 60, 296, 12, PAL.gray, "left");
+    if (stat) stat.textContent = ff ? "FF 模式：高亮第 " + k + " 行" : "BP 模式：高亮第 " + k + " 条对角线";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bFF = document.getElementById("demoA-ff");
+  const bBP = document.getElementById("demoA-bp");
+  const bPlay = document.getElementById("demoA-play");
+  if (bFF) bFF.onclick = function () { ff = true; bFF.classList.add("on"); bBP.classList.remove("on"); draw(); };
+  if (bBP) bBP.onclick = function () { ff = false; bBP.classList.add("on"); bFF.classList.remove("on"); draw(); };
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 700); } else clearInterval(timer);
+  };
+  if (play) timer = setInterval(tick, 700);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · SFME 转换
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "SFME：FP 权重 → 预对齐 → 有符号定点尾数", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 4;
+    // 三段（符号/指数/尾数）
+    const y0 = 70;
+    const fields = [
+      { name: "符号", w: 90, col: PAL.red, val: k % 2 },
+      { name: "指数 E", w: 150, col: PAL.blue, val: 5 + k },
+      { name: "尾数 1.M", w: 280, col: PAL.green, val: 10 + k },
+    ];
+    let x = 120;
+    fields.forEach(f => {
+      ctx.fillStyle = "#14263c"; ctx.strokeStyle = f.col; ctx.lineWidth = 2;
+      rrect(ctx, x, y0, f.w, 44, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, f.name + " = " + f.val, x + 10, y0 + 22, 12, f.col, "left");
+      x += f.w + 16;
+    });
+    // 预对齐
+    ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(120, y0 + 60); ctx.lineTo(860, y0 + 60); ctx.stroke();
+    txt(ctx, "预对齐：Es = Emax − Bias（共享指数）· 隐藏位+尾数 → Mn", 120, y0 + 82, 13, PAL.orange, "left");
+    // SFME 结果
+    ctx.fillStyle = "#1e3c2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, 120, y0 + 100, 740, 44, 8); ctx.fill(); ctx.stroke();
+    txt(ctx, "SFME：Ma = −1ˢ · 0.Mn（有符号定点补码尾数）→ 送进 4b/8b 整数乘法器", 130, y0 + 122, 13, PAL.white, "left");
+    txt(ctx, "4b 对齐尾数复用 INT4 通路 · 8b 复用 INT8 通路 → FP 的 MAC 走整数数据通路", 120, y0 + 170, 12.5, PAL.gray, "left");
+    txt(ctx, "四模式 4b 乘法器覆盖 8b 2C 的全部 4b 部分积组合 → 一个乘法器服务 4b/8b", 120, y0 + 196, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "例 " + (k + 1) + "：符号 " + (k % 2) + "，指数 " + (5 + k) + "，尾数 " + (10 + k);
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1200); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1200);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 精确 vs 近似
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    const k = cyc % 3;
+    txt(ctx, "精确 vs 近似（DMBP-MAC）：" + ["精确：全部部分积", "近似：丢右侧 6 个部分和", "近似：低位 OR 代替加法"][k], 30, 24, 15, PAL.white, "left");
+    // 部分积网格
+    const dropped = k > 0;
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < 12; c++) {
+        const x = 120 + c * 60, y = 60 + r * 30;
+        const isDrop = dropped && c >= 9;
+        ctx.fillStyle = isDrop ? "#3a2620" : "#1e3c56";
+        ctx.strokeStyle = isDrop ? PAL.red : (dropped ? PAL.orange : PAL.green);
+        ctx.lineWidth = isDrop ? 2 : 1;
+        rrect(ctx, x, y, 54, 24, 4); ctx.fill(); ctx.stroke();
+      }
+    }
+    if (dropped) {
+      txt(ctx, "红色 = 近似模式丢弃的部分和（BAM）", 120, 260, 13, PAL.red, "left");
+      txt(ctx, "低位加法换成按位 OR（LOA）+ 偏置补偿 → 无偏近似", 120, 286, 12, PAL.gray, "left");
+    } else {
+      txt(ctx, "全部部分积参与 → 精度最高（训练/精度敏感场景）", 120, 260, 13, PAL.green, "left");
+    }
+    if (stat) stat.textContent = ["精确：速度基准、功耗基准", "近似：速度 +12%、功耗 −31%", "近似：NMED 5.3%（高斯、均值≈0）"][k];
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1300); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1300);
+  draw();
+})();
+
+</script>
+</body>
+</html>

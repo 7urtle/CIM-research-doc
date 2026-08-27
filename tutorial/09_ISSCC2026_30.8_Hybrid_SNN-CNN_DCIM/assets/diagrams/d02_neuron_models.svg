@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">神经元模型：膜电位（Membrane Potential）怎么“涨”到阈值再发放</text>
+
+  <!-- IF -->
+  <text x="250" y="94" text-anchor="middle" fill="#0e5a8a" font-size="15" font-weight="700">IF（Integrate-and-Fire 积分发放）</text>
+  <rect x="40" y="104" width="420" height="120" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <polyline points="60,190 160,190 170,120 260,120 270,90 340,90 350,60 420,60" fill="none" stroke="#0e5a8a" stroke-width="2.5"/>
+    <line x1="60" y1="60" x2="60" y2="200" stroke="#9aa8bd" stroke-width="1"/>
+    <line x1="60" y1="60" x2="430" y2="60" stroke="#c25e2e" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="435" y="64" fill="#c25e2e" font-size="11">阈值 θ</text>
+    <text x="60" y="216" fill="#45536b" font-size="11.5">膜电位不断积分输入，撞到阈值就“发放脉冲并清零”</text>
+  </g>
+
+  <!-- LIF -->
+  <text x="710" y="94" text-anchor="middle" fill="#6b3fa0" font-size="15" font-weight="700">LIF（Leaky IF 泄漏积分发放）</text>
+  <rect x="500" y="104" width="420" height="120" rx="10" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <polyline points="520,190 560,150 590,160 630,120 660,130 700,95 730,105 760,75 790,85 820,60 880,60" fill="none" stroke="#6b3fa0" stroke-width="2.5"/>
+    <line x1="520" y1="60" x2="520" y2="200" stroke="#9aa8bd" stroke-width="1"/>
+    <line x1="520" y1="60" x2="920" y2="60" stroke="#c25e2e" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="925" y="64" fill="#c25e2e" font-size="11">θ</text>
+    <text x="520" y="216" fill="#45536b" font-size="11.5">“漏电”：没有输入时膜电位缓慢衰减 → 滤除时间噪声</text>
+  </g>
+
+  <!-- IQIF -->
+  <text x="250" y="254" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">IQIF（Integer Quadratic IF 整数二次积分发放）</text>
+  <rect x="40" y="264" width="420" height="160" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <g>
+    <polyline points="60,360 130,330 170,342 220,300 260,315 320,260 360,275 420,240" fill="none" stroke="#1d8a5f" stroke-width="2.5"/>
+    <line x1="60" y1="240" x2="60" y2="380" stroke="#9aa8bd" stroke-width="1"/>
+    <line x1="60" y1="240" x2="430" y2="240" stroke="#c25e2e" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="435" y="244" fill="#c25e2e" font-size="11">θ</text>
+    <text x="60" y="396" fill="#45536b" font-size="11.5">膜电位附近加一个“整数二次项”IQ，让积分呈非线性 → 精度更高</text>
+  </g>
+
+  <!-- 公式 -->
+  <rect x="500" y="264" width="420" height="160" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <text x="520" y="296" fill="#123a57" font-size="13.5" font-weight="700">DM-MPDBU 支持的 IQ 项（整数二次）</text>
+  <text x="520" y="330" fill="#1a2332" font-size="13" font-family="'Cambria Math',serif">若 MP[t] &lt; p<sub>deth</sub>：　IQ = (α×rest − MP[t]) &gt;&gt; 3</text>
+  <text x="520" y="362" fill="#1a2332" font-size="13" font-family="'Cambria Math',serif">否则：　　　　IQ = (β×(MP[t] − thresh)) &gt;&gt; 3</text>
+  <text x="520" y="394" fill="#45536b" font-size="11.5">参数 p<sub>deth</sub>（去阈值）、rest（静息）、thresh（阈值）、α、β 可配置</text>
+  <text x="520" y="414" fill="#45536b" font-size="11.5">“&gt;&gt;3”是整数右移 3 位 = 除以 8 → 纯整数运算，数字硬件友好</text>
+
+  <rect x="40" y="446" width="880" height="92" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="480" y="474" text-anchor="middle" fill="#0e5a8a" font-size="13.5" font-weight="700">三种模型怎么选？</text>
+  <text x="480" y="500" text-anchor="middle" fill="#45536b" font-size="12.5">IF：最简单的脉冲生成；LIF：带泄漏，滤时间噪声；IQIF：非线性积分，精度更高</text>
+  <text x="480" y="524" text-anchor="middle" fill="#45536b" font-size="12.5">→ 本论文用“数字多膜电位动力学单元（DM-MPDBU）”一硬件支持三种，按模型需求切换</text>
+</svg>

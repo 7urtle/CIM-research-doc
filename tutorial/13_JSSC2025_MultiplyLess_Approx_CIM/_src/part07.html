@@ -1,0 +1,107 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>改进的动态逻辑位串行比较器：从误差源头下手</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 动态逻辑比较器怎么工作（预充-求值）；② 原设计 [19] 的电荷共享误差从哪来（C1/C2 与 OUT 共享电荷）；③ 改进设计为什么只是“交换 ACT 和 WB 的位置”就能大幅降低误差率；④ 激活正则化（≤5 个「1」）怎么配合。</p>
+</div>
+
+<h3>7.1 为什么还要“改进”比较器？</h3>
+<p>§5/§6 里比较器是整个系统的“心脏”——每周期做一次位比较。如果用传统的<strong>静态逻辑</strong>（组合逻辑+寄存器）实现，面积和功耗都不小。动态逻辑（预充-求值）电路面积小、速度快，但有个著名的毛病：<strong>电荷共享（charge sharing）</strong>。本论文的改进比较器正是针对电荷共享误差的一次手术。</p>
+
+<figure>
+<img src="assets/figs/fig13_11_改进比较器.png" alt="改进比较器">
+<figcaption>图 11 · 论文 Fig.11：(a) 改进比较器原理图；(b) 状态转移真值表；(c) 比较操作波形示例。</figcaption>
+</figure>
+
+<h3>7.2 改进比较器的工作原理（论文 Fig.11(a)）</h3>
+<p>关键结构：C1、C2 是 N4、N6、N8 节点下的寄生电容。OUT 和 OUTB 是输出节点，RESETB 预充到 VDD：</p>
+<ul>
+<li><strong>预充阶段</strong>：RESETB=VSS → OUT、OUTB 都充到 VDD；</li>
+<li><strong>求值阶段</strong>：RESETB=VDD，激活位 ACT 与权重位 WB（注意是反相后的权重位）逐位送入；</li>
+<li><strong>相等位</strong>：OUT/OUTB 保持电荷，相等状态传递到下一周期；</li>
+<li><strong>比较断言</strong>：一旦某位分出大小，一个节点放电到 VSS，另一个被 P3 或 P4 钳位到 VDD——之后状态锁存不再变。</li>
+</ul>
+<p>具体：<strong>权重更小 → OUT 放电到 VSS</strong>；<strong>激活更小 → OUTB 放电到 VSS</strong>。这与 §6.1 的 MinMUX 控制一一对应。</p>
+<p>状态转移真值表（Fig.11(b)）：当前位 (ACT, W) 相等 → 保持；ACT=1,W=0 → OUT=VDD、OUTB=VSS（w 小，min=w）；ACT=0,W=1 → OUTB=VDD、OUT=VSS（x 小，min=x）。</p>
+
+<h3>7.3 误差根源：电荷共享（论文 Fig.13 + §V-B）</h3>
+<p>先看<strong>原设计 [19]</strong>的电荷共享问题：</p>
+<ol>
+<li>初始：OUT、OUTB 预充到 VDD；</li>
+<li>当 ACT 和 W 都是 1（高-高对）时：N7、N8 导通，N5、N6 关断；</li>
+<li>第一次比较（SAEN=VDD）：N4 和 N6 都导通 → 寄生电容 C1、C2 与 OUT <strong>电荷共享</strong> → OUT 电压大幅跌落；</li>
+<li>读第二个权重位时：RBL 预充到 VDD、SAEN=VSS → N8 导通、N4 关断 → C1、C2 被放掉；</li>
+<li>第二次比较：C1、C2 又与 OUT 电荷共享 → OUT 电压<strong>持续跌落</strong>；</li>
+<li>仿真显示：<strong>连续 3 次“高-高”比较后，比较结果出错</strong>（OUT 跌到无法正确判读）。</li>
+</ol>
+<p>根本原因：<strong>每次高-高位对比较，寄生电容都要“偷” OUT 上的电荷</strong>，连续多次就把 OUT 拉垮。</p>
+
+<h3>7.4 改进：交换 ACT 和 WB 的位置</h3>
+<p>改进设计的改动<strong>极小</strong>——把 ACT 和 WB 的接入位置互换（图 11(a) 里 ACT 接到 N4 支路、WB 接到 N6 支路）。效果分析：</p>
+<ul>
+<li>第一次比较（高-高位对）时：<strong>只有 N4 导通、N6 关断</strong> → 只有 C1 与 OUT 电荷共享（C2 不参与）→ OUT 电压跌落减半；</li>
+<li>结果：<strong>连续 6 次高-高比较后才出错</strong>（原来是 3 次）；</li>
+<li>实测（图 17）：0.54 V 下，原设计从 2 个高-高对开始出错，改进设计从 6 个开始；0.65 V 以上两者都无错。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_13_比较误差.png" alt="比较误差">
+<figcaption>图 12 · 论文 Fig.13：比较误差示例——连续高-高位对导致 OUT 电荷共享电压跌落；改进设计延迟了误差出现。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig13_12_比较器面积能效对比.png" alt="比较器面积能效对比">
+<figcaption>图 13 · 论文 Fig.12：动态逻辑比较器 vs 静态逻辑比较器——面积 −1.7×、功耗 −4.1×。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_comparator.svg" alt="改进比较器教学图">
+<figcaption>教学图 7 · 改进比较器电路示意、状态真值表与电荷共享误差分析。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么“交换位置”能减半跌落？</div>
+<p>原设计里 N4、N6 同时导通，C1 和 C2 两个电容一起参与电荷共享 → 分走的电荷多；交换后每次只有一侧（N4）导通，C1 单独共享 → 分走的电荷少。相当于把“两个电容同时偷电”变成“一个电容偷电”，OUT 的电压跌落减半 → 容错余量翻倍（3 次 → 6 次）。</p>
+</div>
+
+<h3>7.5 激活正则化：从电路限制反推算法约束</h3>
+<p>电荷共享误差的触发条件是“连续高-高位对太多”。既然无法完全消除电荷共享，就<strong>限制激活里 1 的个数</strong>（正则化）：</p>
+<ul>
+<li>推理时把每个激活的二进制表示中「1」的个数限制到 ≤5（低比特截断实现）。例：63 = 00111111（6 个 1）→ 正则化为 62 = 00111110（5 个 1）；</li>
+<li>原设计 [19] 限制到 ≤3 → 需要正则化的激活比例高（ResNet-20 上 15%）；</li>
+<li>改进设计容错提高到 6 次 → 只需 ≤5 个 1 → 只有 <strong>0.9%</strong> 的激活需要正则化（ResNet-20）→ 正则化损失小得多 → 精度提升。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_17_比较器误差率.png" alt="比较器误差率">
+<figcaption>图 14 · 论文 Fig.17：改进比较器与原设计 [19] 的误差率对比——改进设计显著降低误差率。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_比较器误差率.png" alt="误差率图表">
+<figcaption>数据图 3 · 比较器误差率 vs 连续高-高位对数（示意）：改进设计从 6 个高-高对才开始出错（依据论文 Fig.13/17 描述）。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_11_改进比较器.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 动态比较器工作过程：OUT/OUTB 预充、比较断言、电荷共享误差与激活正则化配合。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · 动态比较器波形（电荷共享误差）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">周期 1：OUT=1.00V（正常）</span>
+</div>
+<div class="hint">左：改进比较器 OUT 节点电压随连续“高-高位对”比较而跌落（电荷共享）。右：红=原设计 [19]（3 次后出错）、绿=改进设计（交换 ACT/WB 位置后 6 次才出错）。激活正则化把「1」个数限制到 ≤5 → 只需 0.9% 激活被正则化。</div>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 近似误差的完整闭环</div>
+<p>动态比较器的电荷共享是<strong>唯一真实的电路级近似误差源</strong>。论文的处理是“电路改进（减半跌落）+ 算法配合（激活正则化）”，两者协同把误差压到对精度无影响：0.65 V 以上无误差，0.54 V 下也只需极少量正则化 → 最终精度与浮点相差 &lt;0.1%。这就是“算法-电路协同近似”最精彩的部分。</p>
+</div>
+</section>

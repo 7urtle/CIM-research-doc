@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">MXFP 格式：Microscaling（微缩放）——一组数共享一个尺度</text>
+
+  <!-- MXFP 结构 -->
+  <text x="250" y="94" text-anchor="middle" fill="#123a57" font-size="15" font-weight="700">MXFP = 块共享指数尺度 + 每数小浮点</text>
+  <rect x="40" y="108" width="880" height="150" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11.5">
+    <rect x="70" y="130" width="200" height="40" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="170" y="154" text-anchor="middle" fill="#c25e2e" font-weight="600">E8M0 共享尺度（SS）</text>
+    <rect x="280" y="130" width="560" height="40" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="560" y="154" text-anchor="middle" fill="#0e5a8a" font-weight="600">32 个 MXFP 数（如 E4M3：1 符号 + 4 指数 + 3 尾数）</text>
+    <text x="70" y="200" fill="#45536b">真实值 = SS × (−1)^S × 1.M × 2^(E−bias)　（一组 32 个数共享同一个 8b 尺度 SS）</text>
+    <text x="70" y="224" fill="#45536b">→ 比“每个数都带完整指数”省一半多位数；比纯整数动态范围大得多</text>
+    <text x="70" y="248" fill="#6b3fa0" font-weight="600">MXFP6 = E2M3（1+2+3=6 bit）；MXFP8 = E4M3（1+4+3=8 bit）</text>
+  </g>
+
+  <!-- 隐藏位 -->
+  <text x="250" y="292" text-anchor="middle" fill="#123a57" font-size="15" font-weight="700">隐藏位（Hidden Bit）与 正常/次正规数</text>
+  <rect x="40" y="306" width="880" height="190" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <text x="70" y="336" fill="#45536b">• 正常数（normal）：尾数隐含前导 1（1.M），隐藏位 = 1；</text>
+    <text x="70" y="360" fill="#45536b">• 次正规数（subnormal）：指数全 0，尾数前导 0（0.M），隐藏位 = 0；</text>
+    <text x="70" y="384" fill="#45536b">→ 隐藏位不能凭空生成，硬件必须“解码”出来参与乘法；</text>
+    <text x="70" y="416" fill="#6b3fa0" font-weight="600">本文技巧：写权重时全局预解码（符号-数值 → 2C，隐藏位并入 MW[3]）</text>
+    <text x="70" y="440" fill="#6b3fa0" font-weight="600">→ 丢弃 MW[3] 只存 {SW, MW[2:0]}，计算时本地解码器恢复 → 省 63.1% 解码器面积</text>
+    <text x="70" y="474" fill="#45536b">（详见 §5 的 HDM 无害数据映射）</text>
+  </g>
+</svg>

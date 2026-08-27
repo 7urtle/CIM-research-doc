@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">MCM-CIM 系统的新挑战（论文 Fig. 3）</text>
+
+  <g>
+    <rect x="40" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="180" y="118" text-anchor="middle" fill="#c25e2e" font-size="14" font-weight="700">挑战 1（SpG）：冗余</text>
+    <text x="60" y="146" fill="#45536b" font-size="12">采集/归约有强局部性（用户偏好</text>
+    <text x="60" y="168" fill="#45536b" font-size="12">集中在小部分物品、图有社区结构）</text>
+    <text x="60" y="198" fill="#c25e2e" font-size="12" font-weight="600">→ 重复的片外 DRAM 访问、跨芯粒访问、</text>
+    <text x="60" y="220" fill="#c25e2e" font-size="12" font-weight="600">重复的归约运算（f0、f2、f3 重复取；</text>
+    <text x="60" y="242" fill="#c25e2e" font-size="12" font-weight="600">f2+f3 重复算）</text>
+    <text x="60" y="286" fill="#c25e2e" font-size="12.5" font-weight="600">→ 需要“冗余消除的采集管理”（REGM）</text>
+
+    <rect x="340" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="480" y="118" text-anchor="middle" fill="#6b3fa0" font-size="14" font-weight="700">挑战 2a（SpA 初始化）</text>
+    <text x="360" y="146" fill="#45536b" font-size="12">不规则稀疏 → 不同宏的有效 MAC 数不同</text>
+    <text x="360" y="176" fill="#45536b" font-size="12">例：CIM0 的有效 MAC 比 CIM1 少</text>
+    <text x="360" y="206" fill="#6b3fa0" font-size="12" font-weight="600">→ 宏间负载不平衡 → 有的宏算完闲着</text>
+    <text x="360" y="250" fill="#6b3fa0" font-size="12.5" font-weight="600">→ 需要“等操作 CIM 初始化”（EOCI）</text>
+
+    <rect x="640" y="90" width="280" height="250" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="780" y="118" text-anchor="middle" fill="#0e5a8a" font-size="14" font-weight="700">挑战 2b（SpA 计算）</text>
+    <text x="660" y="146" fill="#45536b" font-size="12">即使初始化平衡了，计算中仍会有空闲：</text>
+    <text x="660" y="176" fill="#45536b" font-size="12">每个 CIM 一次只能处理一行输入，</text>
+    <text x="660" y="206" fill="#45536b" font-size="12">但当前输入行只激活部分阵列</text>
+    <text x="660" y="236" fill="#45536b">（不规则稀疏）→ 子阵列利用率低</text>
+    <text x="660" y="286" fill="#0e5a8a" font-size="12.5" font-weight="600">→ 需要“输入前瞻 CIM”（ILA-CIM）</text>
+  </g>
+
+  <rect x="40" y="364" width="880" height="112" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="60" y="392" fill="#1d8a5f" font-size="13.5" font-weight="700">本文三招对应（一个芯粒内联合优化）</text>
+  <text x="60" y="418" fill="#45536b" font-size="12.5">① REGM：重排访问张量 + 动态把高频特征/归约结果维护在 CIM 里 → 消冗余；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">② EOCI：按有效 MAC 数在子阵列级平衡 WT/GT 分配 → 消宏间不平衡；</text>
+  <text x="60" y="460" fill="#45536b" font-size="12.5">③ ILA-CIM：前瞻未来输入 → 让所有子阵列一直忙 → 消宏内空闲。</text>
+</svg>

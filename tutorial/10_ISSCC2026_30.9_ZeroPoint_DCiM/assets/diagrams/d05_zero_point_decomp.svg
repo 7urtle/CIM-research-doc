@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC','Cambria Math',serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">核心数学：零点量化 → 拆成 8b×8b + 三个“廉价”修正项</text>
+
+  <!-- 上：问题 -->
+  <rect x="40" y="82" width="880" height="96" rx="12" fill="#fdf3e7" stroke="#e0a96a" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#c25e2e" font-size="14" font-weight="700">朴素做法（有问题）</text>
+  <text x="60" y="134" fill="#1a2332" font-size="15">输出 = Σ<sub>i=1..N</sub> A<sub>z,i</sub> · W<sub>z,i</sub>，其中 A<sub>z</sub>、W<sub>z</sub> 是 8b 无符号（0~255）</text>
+  <text x="60" y="162" fill="#45536b" font-size="13.5">减掉零点后范围可能是 [-z, 255−z]，超出 8b 有符号范围 → 需要 9b 有符号 × 9b 有符号</text>
+
+  <!-- 中：映射 -->
+  <rect x="40" y="196" width="880" height="118" rx="12" fill="#eef7fd" stroke="#0e5a8a" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="60" y="222" fill="#0e5a8a" font-size="14" font-weight="700">本论文的“无符号→有符号映射 + 零点扩展”</text>
+  <text x="60" y="250" fill="#1a2332" font-size="15">A<sub>z</sub> = A<sub>s</sub> + C<sub>A</sub>，W<sub>z</sub> = W<sub>s</sub> + C<sub>W</sub></text>
+  <text x="60" y="274" fill="#45536b" font-size="13">其中 A<sub>s</sub>、W<sub>s</sub> 是映射后的 8b 有符号数（无符号数 − 128，只需把 MSB 取反！）</text>
+  <text x="60" y="298" fill="#45536b" font-size="13">C<sub>A</sub> = C + Z<sub>W</sub>，C<sub>W</sub> = C + Z<sub>A</sub>（C=128 为映射偏置，Z<sub>A</sub>/Z<sub>W</sub> 为激活/权重零点）</text>
+
+  <!-- 下：展开 -->
+  <rect x="40" y="332" width="880" height="130" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">展开：Σ (A<sub>s</sub>+C<sub>A</sub>)(W<sub>s</sub>+C<sub>W</sub>) ＝ 四个项</text>
+  <g font-size="13.5">
+    <rect x="60" y="376" width="196" height="66" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="158" y="400" text-anchor="middle" fill="#1a2332" font-weight="700">① Σ A<sub>s</sub>·W<sub>s</sub></text>
+    <text x="158" y="420" text-anchor="middle" fill="#45536b" font-size="12">主项：8b×8b 有符号</text>
+    <text x="158" y="436" text-anchor="middle" fill="#45536b" font-size="12">Booth → 4 个部分积</text>
+    <rect x="272" y="376" width="196" height="66" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="370" y="400" text-anchor="middle" fill="#1a2332" font-weight="700">② C<sub>W</sub>·Σ A<sub>s</sub></text>
+    <text x="370" y="420" text-anchor="middle" fill="#45536b" font-size="12">每周期算一次，</text>
+    <text x="370" y="436" text-anchor="middle" fill="#45536b" font-size="12">32 列共享（激活广播）</text>
+    <rect x="484" y="376" width="196" height="66" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="582" y="400" text-anchor="middle" fill="#1a2332" font-weight="700">③ C<sub>A</sub>·Σ W<sub>s</sub></text>
+    <text x="582" y="420" text-anchor="middle" fill="#45536b" font-size="12">写权重时预计算</text>
+    <text x="582" y="436" text-anchor="middle" fill="#45536b" font-size="12">存入存储器，计算时不耗电</text>
+    <rect x="696" y="376" width="196" height="66" rx="8" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="794" y="400" text-anchor="middle" fill="#1a2332" font-weight="700">④ N·C<sub>A</sub>·C<sub>W</sub></text>
+    <text x="794" y="420" text-anchor="middle" fill="#45536b" font-size="12">固定常数，</text>
+    <text x="794" y="436" text-anchor="middle" fill="#45536b" font-size="12">只需加一次</text>
+  </g>
+
+  <rect x="40" y="478" width="880" height="48" rx="10" fill="#eefaf3" stroke="#bfe6d2"/>
+  <text x="480" y="508" text-anchor="middle" fill="#1d8a5f" font-size="13.5" font-weight="600">结果：9b×9b（5 个部分积、10b 宽）→ 8b×8b（4 个部分积、9b 宽）→ 面积 −21%、功耗 −17%</text>
+</svg>

@@ -1,0 +1,36 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>存储层次与数据通路：一条 2048b 的数据是怎么“流”出来的</h2>
+
+<h3 id="sec7-1">7.1 DRAM 内部层次：bank → segment → subarray</h3>
+<p>要理解 3D 近存为什么快，得先知道 DRAM 内部长什么样（本设计的层次）：</p>
+<figure>
+  <img src="assets/diagrams/d07_dram_hierarchy.svg" alt="存储层次" style="max-width:940px">
+  <figcaption>图 7.1　DRAM 块（512Mb）= 8 bank；每 bank = 8 segment；每 segment = 16 subarray（两两共享一个 512-SA 读出放大级）→ 列选（MDQ_sel）→ 二级 SA → 16b RDL → 3D 路径 → 逻辑层。</figcaption>
+</figure>
+<ul>
+<li><strong>bank（8 个）</strong>：DRAM 的基本并行单元，不同 bank 可以同时服务不同访问；</li>
+<li><strong>segment（8 个/bank）</strong>：段内组织 subarray；</li>
+<li><strong>subarray（16 个/segment）</strong>：真正的存储阵列。<strong>两个相邻 subarray 共享一个 512-SA 读出放大级</strong>——SA（Sense Amplifier）是 DRAM 里最占面积的电路之一，共享 = 省一半读出电路面积；</li>
+<li><strong>列选（MDQ_sel）→ 二级 SA</strong>：把目标列的数据选到 MDQ 线上，二级 SA 加速读出；</li>
+<li><strong>16b RDL 输出</strong>：每个 segment 输出 16b；8 segment × 8 bank × 2 die = <strong>2048b/BG</strong>，经 3D 路径送进逻辑层。</li>
+</ul>
+
+<h3 id="sec7-2">7.2 交互演示 A：3D 堆叠与数据路径</h3>
+<div class="demo">
+<div class="dhead">🏗 演示 A · 3D 堆叠与数据路径（可交互）</div>
+<canvas id="demoA" width="980" height="360"></canvas>
+<div class="dbar">
+  <button id="demoA-layer1" class="on">DRAM_N 直连 HB</button>
+  <button id="demoA-layer2">DRAM_F 穿 TSV</button>
+  <button id="demoA-play" class="on">▶ 数据流动画</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">DRAM_N：信号直连 HB 到逻辑层</span>
+</div>
+<div class="hint">点按切换查看两层 DRAM 各自的 3D 路径：DRAM_N 走直连 HB；DRAM_F 要走 “HB → mini-TSV → HB” 链穿过 DRAM_N。播放时看数据块沿路径流动。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么 subarray 要“两两共享”读出放大级而不是每列一个？（提示：面积 vs 性能的折中，SA 面积大。）② 二级 SA 起什么作用？（提示：第一级读出信号很弱，需要再放大才能驱动长距离 RDL 总线。）③ 如果 RDL 是 16b/segment，一次 DRAM 读能取多少个 FP16 权重？2048b 呢？</p>
+</div>
+</section>

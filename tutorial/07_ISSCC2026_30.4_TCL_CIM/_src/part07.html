@@ -1,0 +1,35 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：4 个 bank、两种模式</h2>
+
+<h3 id="sec7-1">7.1 宏架构</h3>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　TCL-CIM 宏架构：全局控制器 + SRAM 读写控制器 + 全局输入缓冲 + BF16 指数后处理；4 个 CIM bank，每 bank = 本地 10 相发生器 + 块外加法树 + 4 个 CIM 块（每块 16 个 CIM 单元 + 块内加法树）。</figcaption>
+</figure>
+<ul>
+<li><strong>CIM 单元</strong>：16×8b 6T-SRAM（整存不切片的 8b 权重）+ 计算单元（64 个 MMU + 15 个 CNT + 合并加法器）；</li>
+<li><strong>数据路径</strong>：16 个 CIM 单元各出 1 个 16b 乘积 → 块内加法树（16×16b → 20b）→ 块外加法树（4×20b → 22b MACV）；</li>
+<li><strong>10 相发生器</strong>：每个 bank 本地一个，驱动本 bank 所有 TCL 和加法树分阶段工作。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_4_2_宏架构.png" alt="论文图 30.4.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.4.2：TCL 数字 SRAM CIM 宏的整体架构。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 INT8 / BF16 两种模式</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_4_6_测量结果.png">
+  <source src="assets/videos/v03_datapath.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 数据流动画：INT8 模式（64 特征 → 4 bank → 4 个 22b MACV）与 BF16 模式（指数预对齐 → 尾数 MACV → 指数后处理 → FP32）。</div>
+</div>
+<table>
+<tr><th>模式</th><th>输入</th><th>bank 内容</th><th>输出</th><th>流水</th></tr>
+<tr><td><strong>INT8</strong></td><td class="num">64 个特征（8b）</td><td class="num">64×4 个预读 8b 权重</td><td class="num">每周期 4 个 22b MACV</td><td>直接乘累加</td></tr>
+<tr><td><strong>BF16</strong></td><td class="num">BF16（指数预对齐 [1]）</td><td class="num">预对齐权重的尾数</td><td class="num">4 尾数 MACV → FP32</td><td>三级流水（每周期 1 个 FP32）</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 位并行 + BF16：整数乘法器直接复用</div>
+<p>BF16 的尾数乘法（7 位尾数 + 隐含位 ≈ 8b 有效位）在预对齐后就是普通的 8b×8b 无符号乘法——<strong>完全复用 INT8 的 TCL 计算单元</strong>，只需外围加“指数预对齐 + 指数后处理”两级。这就是“一个宏支持 INT8 和 BF16”的硬件代价极小化的原因。</p>
+</div>
+</section>

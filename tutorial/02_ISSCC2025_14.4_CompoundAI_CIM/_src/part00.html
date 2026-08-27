@@ -1,0 +1,60 @@
+<section class="chapter" id="sec0">
+<h1 class="title">Compound AI 全数据通路浮点存内计算零基础精讲：多个小模型，一套全存内硬件
+<span class="en">A 51.6TFLOPs/W Full-Datapath CIM Macro Approaching Sparsity Bound and &lt;2⁻³⁰ Loss for Compound AI（ISSCC 2025 · Paper 14.4）</span></h1>
+<div class="meta">论文作者：Zhiheng Yue*, Xujiang Xiang* 等（*共同一作）· 清华大学（通讯作者：尹首一）
+&nbsp;|&nbsp; 发表：2025 IEEE ISSCC，Session 14（存内计算），论文 14.4
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p><strong>Compound AI（复合式 AI）</strong>是 2024 年 Berkeley 提出的新范式：把多个专精小模型组合起来，精度不输单个巨模型（例：RevCol 融合多个卷积模型，ImageNet 上比 7.2B 巨模型还高 1.64%）。这为边缘部署打开了新路——但传统 FP-CIM 有三块绊脚石：<strong>高斯分布假设失效（精度掉 &gt;5%）、部分和/残差搬移费电（占 26~72%）、稀疏模式不匹配（加速打折扣）</strong>。</p>
+<p>这篇清华尹首一组的论文用一个 <strong>224kb 异质 CIM 宏</strong>（28nm）逐一解决：</p>
+<ol>
+<li><strong>MantissaEE 格式 + 后乘积对齐</strong>：把 FP16 尾数按指数低位“折叠”成 16b MantissaEE（兼容 FP8/INT8），乘法后<strong>再对齐</strong>（误差只在累加时发生一次）→ FP16-MAC 误差 &lt; 2⁻³⁰、SER 60.1 dB；</li>
+<li><strong>全数据路径存内</strong>：MAC（ME-CIM）+ 路由（NIM）+ 累加（AIM）全在内存里完成，部分和/残差<strong>就地累加不搬移</strong>；输入 2C、权重 SM 的混合格式把翻转降到最低（功耗 −6.3%~42.7%）；</li>
+<li><strong>NIM + 动态启动器</strong>：静态 2:4 剪枝 + 动态 Booth 池双管齐下 → 平均加速 <strong>5.30×</strong>，达到稀疏理论上限的 92.6%。</li>
+</ol>
+<p>实测：峰值 <strong>51.6 TFLOPS/W</strong>、2.44 TFLOPS/mm²，复合模型上平均 5.55~12.54 TFLOPS/W。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>Compound AI = 芯片的多模型并行：</strong>每个小模型可以部署在独立计算核上（本宏 16 个核），核间只需少量融合运算——这正好绕开“单个巨模型放不下”的容量问题。</li>
+<li><strong>“后对齐”为什么更准：</strong>传统浮点 CIM 先按指数差“预对齐”再乘，移位误差被注入<strong>每个乘积</strong>（放大 N 次）；本论文先算完乘积再对齐，误差只在<strong>累加那一步</strong>出现一次——误差从 2⁻¹ 降到 2⁻³⁰，差了 10 亿倍。</li>
+<li><strong>“全数据路径在存内”省的是搬移：</strong>部分和/残差累加是 CIM 最容易忽视的功耗大头（26~72%）。把累加也做进内存（AIM），数据不出内存，搬移功耗直接归零。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“The compound-AI combines several specialized small models to achieve matched or even superior accuracy… RevCol fuses multiple convolutional models and surpasses the 7.2B-parameter monolithic LLM by 1.64%”</td>
+<td>Compound AI：多个专精小模型组合，精度不输巨模型（RevCol 例子）。这是“边缘也能跑高精度 AI”的前提。</td></tr>
+<tr><td class="num">“Previous FP CIMs rely on a Gaussian data distribution… compound-AI employs diverse models, with multiple data distributions, leading to an accuracy degradation of more than 5%”</td>
+<td>挑战 1：旧方案假设数据高斯分布（集中在均值附近）；复合模型多种分布 → 高斯假设失效 → 精度掉 5% 以上。</td></tr>
+<tr><td class="num">“partial-sum/residual accumulation requires data movement and accounts for 26-72% power consumption”</td>
+<td>挑战 2：部分和/残差累加的数据搬移占功耗 26~72%（位串行 CIM 更严重）。</td></tr>
+<tr><td class="num">“A heterogeneous-CIM macro… allows post-product alignment to approach &lt; 2⁻³⁰ accuracy loss. The proposed mantissaEE format supports different data precision for lossless computing”</td>
+<td>方案 1：异质 CIM + 后乘积对齐 → 误差 &lt; 2⁻³⁰；MantissaEE 格式兼容多种精度无损计算。</td></tr>
+<tr><td class="num">“The full data path is computed in memory… a hybrid format is explored to achieve peak-energy efficiency”</td>
+<td>方案 2：全数据路径在存内计算（含累加），混合格式追求峰值能效。</td></tr>
+<tr><td class="num">“A network-in-memory (NIM) and a dynamic launcher capture static and dynamic sparsity opportunities, achieving &gt;2.7× performance improvement”</td>
+<td>方案 3：NIM + 动态启动器捕获静态/动态稀疏 → 性能提升 &gt;2.7×。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>异质 CIM + 后乘积对齐</strong>：尾数乘法与指数累加并行，乘积后再对齐 → FP16-MAC 误差 &lt; 2⁻³⁰、SER 60.1 dB（3.14×）、精度损失平均降 11.07×；</li>
+<li><strong>MantissaEE 格式</strong>：16b 统一格式兼容 FP16/FP8/INT8，指数分布折叠、对齐位宽减小；</li>
+<li><strong>全数据路径存内</strong>：AIM 累加存内（INT32 −38.3%、FP32 −15.4% 功耗）；混合 2C×SM 格式翻转 −5.2~47.5%、功耗 −6.3~42.7%；</li>
+<li><strong>NIM + 动态启动器</strong>：静态 2:4（2×）+ 动态 Booth 池（2.65×）= 5.30× 平均加速，达理论上限 92.6%；</li>
+<li><strong>无预充电 10T 位单元</strong>：稀疏数据读 0 不耗电，比 8T 省 1.95×（面积 +1.26×）；</li>
+<li><strong>实测</strong>：51.6 TFLOPS/W、2.44 TFLOPS/mm²，FoM（SER×吞吐/面积/功耗）比前作 FP-CIM 高 &gt;5.72×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“后乘积对齐”和“全数据路径存内”是本文最值得反复咀嚼的两个设计思想。</p>
+</div>
+</section>

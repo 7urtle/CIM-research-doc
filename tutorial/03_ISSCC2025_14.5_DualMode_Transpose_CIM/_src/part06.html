@@ -1,0 +1,36 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：DMBP-MAC —— 精确/近似双模式位并行 MAC</h2>
+<figure>
+  <img src="assets/diagrams/d07_dmbp.svg" alt="DMBP-MAC" style="max-width:940px">
+  <figcaption>图 6.1　DMBP-MAC：64 个 DM-MUL（BAM 近似乘法器）+ 6 级 DM-ADD（LOA 低位 OR 加法器）→ 14b 点积；精确/近似双模。</figcaption>
+</figure>
+<p>训练要精度、推理要速度——DMBP-MAC 用“双模式”同时满足：</p>
+<ul>
+<li><strong>精确模式</strong>：全部部分积 + 完整加法树，精度最高（训练/精度敏感场景）；</li>
+<li><strong>近似模式</strong>：DM-MUL 丢弃右侧 6 个部分和（BAM 思想），DM-ADD 把低位加法换成按位 OR（LOA 思想）；<strong>稀疏感知偏置加法器</strong>抵消 BAM 的偏移误差。</li>
+</ul>
+<div class="box key">
+<div class="bt">📊 近似模式的账</div>
+<p>关键路径缩短 + 翻转部件减少 → <strong>速度 +12%、功耗 −31%</strong>（对比精确模式）；50,000 组随机采样 <strong>NMED 仅 5.3%</strong>，误差呈高斯分布、均值接近零（说明是“无偏”的近似——平均来看不偏向任何方向，网络训练能容忍）。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_5_DMBP-MAC.png">
+  <source src="assets/videos/v03_dmbp.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · DMBP 双模式动画：精确模式全部分部分积 vs 近似模式丢右侧部分和 + 低位 OR。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig14_5_5_DMBP-MAC.png" alt="论文图 14.5.5">
+  <figcaption>图 6.2　论文原图 Fig. 14.5.5：DMBP-MAC 方案与中心对称布局。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 精确 vs 近似：误差与速度的权衡</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">近似模式：丢弃右侧部分和 + 低位 OR</span>
+</div>
+<div class="hint">红色块=近似模式丢弃的部分和；绿块=精确模式保留。近似模式代价是 5.3% NMED，换来 12% 速度与 31% 功耗节省。</div>
+</div>
+</section>

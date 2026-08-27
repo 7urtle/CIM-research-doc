@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="430" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">eNVM（MRAM）集成：大网络 + 永久学习 + 长寿命</text>
+
+  <!-- 双模式 -->
+  <rect x="40" y="80" width="420" height="190" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">模式 A：片上 SRAM（SpikeRAM 独立）</text>
+  <g font-size="12">
+    <text x="60" y="140" fill="#45536b">• 推理 + OCL 全部在片内 SRAM 完成</text>
+    <text x="60" y="164" fill="#45536b">• 快速、低功耗；断电数据丢失</text>
+    <text x="60" y="196" fill="#45536b">• 适合中小规模网络</text>
+  </g>
+
+  <rect x="500" y="80" width="420" height="190" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#c25e2e" font-size="13.5" font-weight="700">模式 B：外接 40nm 4Mb MRAM（eNVM）</text>
+  <g font-size="12">
+    <text x="520" y="140" fill="#45536b">• 参数扩展 5.4×（101 类 N-Caltech101，时间复用）</text>
+    <text x="520" y="164" fill="#45536b">• 永久学习：断电不丢，跨会话保存</text>
+    <text x="520" y="188" fill="#c25e2e" font-weight="600">• 寿命：e-OTBP + 三值梯度 + 格雷码</text>
+    <text x="520" y="210" fill="#c25e2e" font-weight="600">→ OCL 中 MRAM 寿命延长 13.9×</text>
+    <text x="520" y="240" fill="#45536b">（能耗与纯 SRAM 模式相当）</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="294" width="880" height="112" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="322" fill="#0e5a8a" font-size="13.5" font-weight="700">为什么“寿命”是 eNVM 系统级问题？</text>
+  <text x="60" y="348" fill="#45536b" font-size="12.5">MRAM/RRAM 写次数有限（~10⁶~10⁹ 次）；在线学习=反复写权重；若每步梯度都写满整个权重矩阵，</text>
+  <text x="60" y="370" fill="#45536b" font-size="12.5">寿命很快耗尽。本文三招组合：① e-OTBP 收敛快（1 epoch）→ 学习步数少；② 三值梯度 → 多数权重不写；</text>
+  <text x="60" y="392" fill="#45536b" font-size="12.5">③ 格雷码 → 每次更新只翻 1 位 → 单器件写压力最小。最终“写总量”降一个数量级以上。</text>
+</svg>

@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">改进的动态逻辑位串行比较器：交换 ACT/WB 位置消除电荷共享</text>
+
+  <!-- schematic -->
+  <rect x="40" y="84" width="430" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">改进比较器电路（图 11a）</text>
+  <g font-size="11" fill="#45536b">
+    <!-- RESETB precharge PMOS -->
+    <text x="70" y="138">RESETB</text>
+    <line x1="130" y1="132" x2="130" y2="146" stroke="#45536b"/>
+    <line x1="130" y1="146" x2="170" y2="146" stroke="#45536b"/>
+    <circle cx="170" cy="146" r="3" fill="#45536b"/>
+    <line x1="170" y1="146" x2="170" y2="120" stroke="#45536b"/>
+    <rect x="160" y="116" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="165" cy="123" r="2" fill="#45536b"/>
+    <line x1="170" y1="130" x2="190" y2="146" stroke="#45536b"/>
+    <text x="205" y="132" fill="#0e5a8a" font-size="12">OUT</text>
+    <line x1="170" y1="146" x2="250" y2="146" stroke="#45536b"/>
+    <line x1="250" y1="146" x2="250" y2="170" stroke="#45536b"/>
+    <rect x="240" y="164" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="245" cy="171" r="2" fill="#45536b"/>
+    <line x1="250" y1="178" x2="250" y2="196" stroke="#45536b"/>
+    <text x="258" y="192" fill="#45536b">N4</text>
+    <line x1="250" y1="196" x2="280" y2="196" stroke="#45536b"/>
+    <line x1="280" y1="196" x2="280" y2="230" stroke="#45536b"/>
+    <rect x="270" y="224" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="275" cy="231" r="2" fill="#45536b"/>
+    <line x1="280" y1="238" x2="280" y2="262" stroke="#45536b"/>
+    <text x="288" y="258" fill="#45536b">N8</text>
+    <!-- right branch -->
+    <line x1="190" y1="146" x2="330" y2="146" stroke="#45536b"/>
+    <line x1="330" y1="146" x2="330" y2="120" stroke="#45536b"/>
+    <rect x="320" y="116" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="325" cy="123" r="2" fill="#45536b"/>
+    <line x1="330" y1="130" x2="350" y2="146" stroke="#45536b"/>
+    <text x="360" y="132" fill="#1d8a5f" font-size="12">OUTB</text>
+    <line x1="330" y1="146" x2="410" y2="146" stroke="#45536b"/>
+    <line x1="410" y1="146" x2="410" y2="170" stroke="#45536b"/>
+    <rect x="400" y="164" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="405" cy="171" r="2" fill="#45536b"/>
+    <line x1="410" y1="178" x2="410" y2="196" stroke="#45536b"/>
+    <text x="418" y="192" fill="#45536b">N6</text>
+    <line x1="410" y1="196" x2="440" y2="196" stroke="#45536b"/>
+    <line x1="440" y1="196" x2="440" y2="230" stroke="#45536b"/>
+    <rect x="430" y="224" width="20" height="14" fill="none" stroke="#45536b"/>
+    <circle cx="435" cy="231" r="2" fill="#45536b"/>
+    <line x1="440" y1="238" x2="440" y2="262" stroke="#45536b"/>
+    <text x="448" y="258" fill="#45536b">N7</text>
+    <!-- bottom cross -->
+    <line x1="280" y1="262" x2="280" y2="288" stroke="#45536b"/>
+    <line x1="440" y1="262" x2="440" y2="288" stroke="#45536b"/>
+    <line x1="280" y1="288" x2="440" y2="288" stroke="#45536b"/>
+    <text x="330" y="302" fill="#45536b">交叉：ACT 接到 N4 支路，WB 接到 N6 支路（改进点）</text>
+    <text x="70" y="170" fill="#1d8a5f" font-size="11">P3 钳位 OUT=VDD</text>
+    <text x="360" y="170" fill="#1d8a5f" font-size="11">P4 钳位 OUTB=VDD</text>
+    <text x="70" y="226" fill="#45536b">C1、C2：N4/N6/N8 节点寄生电容</text>
+    <text x="70" y="250" fill="#45536b">SAEN：比较使能（SRAM 读位线变化期间关断）</text>
+  </g>
+
+  <!-- state table -->
+  <rect x="490" y="84" width="430" height="240" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#0e5a8a" font-size="14" font-weight="700">状态转移真值表（图 11b）与波形（图 11c）</text>
+  <g font-size="11">
+    <line x1="510" y1="126" x2="900" y2="126" stroke="#c9d8ea"/>
+    <line x1="510" y1="126" x2="510" y2="210" stroke="#c9d8ea"/>
+    <line x1="660" y1="126" x2="660" y2="210" stroke="#c9d8ea"/>
+    <line x1="780" y1="126" x2="780" y2="210" stroke="#c9d8ea"/>
+    <text x="560" y="140" text-anchor="middle" fill="#0e5a8a">当前位 (ACT,W)</text>
+    <text x="720" y="140" text-anchor="middle" fill="#0e5a8a">OUT/OUTB</text>
+    <text x="845" y="140" text-anchor="middle" fill="#0e5a8a">比较结果</text>
+    <text x="560" y="162" text-anchor="middle" fill="#45536b">相等 (0,0)/(1,1)</text>
+    <text x="720" y="162" text-anchor="middle" fill="#45536b">保持</text>
+    <text x="845" y="162" text-anchor="middle" fill="#45536b">未定</text>
+    <text x="560" y="184" text-anchor="middle" fill="#45536b">ACT=1, W=0</text>
+    <text x="720" y="184" text-anchor="middle" fill="#45536b">OUT=VDD, OUTB=VSS</text>
+    <text x="845" y="184" text-anchor="middle" fill="#45536b">w 小 → min=w</text>
+    <text x="560" y="206" text-anchor="middle" fill="#45536b">ACT=0, W=1</text>
+    <text x="720" y="206" text-anchor="middle" fill="#45536b">OUTB=VDD, OUT=VSS</text>
+    <text x="845" y="206" text-anchor="middle" fill="#45536b">x 小 → min=x</text>
+    <text x="510" y="240" fill="#45536b">初始：RESETB=VSS → OUT/OUTB 预充到 VDD</text>
+    <text x="510" y="262" fill="#45536b">比较一旦断言：一个节点放电、另一个被 P3/P4 钳位</text>
+    <text x="510" y="284" fill="#45536b">后续位不变（锁存），MinMUX 依据 OUT 送对应位</text>
+    <text x="510" y="310" fill="#1d8a5f" font-size="12" font-weight="600">vs 静态逻辑比较器：面积 −1.7×，功耗 −4.1×</text>
+  </g>
+
+  <!-- error analysis -->
+  <rect x="40" y="344" width="880" height="192" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="370" fill="#e66e5a" font-size="14" font-weight="700">误差分析：电荷共享导致 OUT 电压跌落 → 比较出错（图 13）</text>
+  <g font-size="12">
+    <text x="60" y="400" fill="#45536b">原比较器[19]：ACT=W=1 时 N7/N8 开、N5/N6 关；比较时 C1、C2 与 OUT 电荷共享 → 电压持续跌落</text>
+    <text x="60" y="424" fill="#45536b">连续 3 次「高-高」比较后即出错（0.54 V 下从 2 个高-高对开始出错）</text>
+    <text x="60" y="456" fill="#1d8a5f" font-weight="600">改进：交换 ACT 与 WB 位置 → 首周期只 N4 开（C1 单独共享），跌落减半 → 6 次才出错</text>
+    <text x="60" y="484" fill="#45536b">0.65 V 以上无比较误差；0.54 V 下从 6 个高-高对开始出错（[19] 从 2 个开始）</text>
+    <text x="60" y="512" fill="#45536b">缓解：推理时正则化激活「1」的最大个数（本工作 ≤5，[19] ≤3）→ 正则化损失小</text>
+    <text x="60" y="536" fill="#1d8a5f" font-weight="600">ResNet-20 只需 0.9% 激活被正则化（[19] 需 15%）→ 精度 91.71% vs [19] 更低</text>
+  </g>
+</svg>

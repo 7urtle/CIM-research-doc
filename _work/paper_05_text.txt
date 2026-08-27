@@ -1,0 +1,262 @@
+===== PAGE 1 =====
+314  •  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 18 / TECHNOLOGY AND CIRCUITS FOR DOMAIN-SPECIFIC ACCELERATORS / 18.4
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Edge perceptual SoCs increasingly demand high energy efﬁciency, privacy and adaptability 
+for real-world tasks as shown in Fig. 18.4.1 (top) [1–6]. For perception, an event-based 
+vision sensor (EVS) with asynchronous, sparse and edge-only imaging, offers low power 
+and high privacy [7-8]. For computation, the use of a spiking neural network (SNN) further 
+increases energy efﬁciency through the spike-driven paradigm [9-14]. In addition, on-chip 
+learning (OCL) with emerging non-volatile memories (eNVMs) enables permanent in-situ 
+training without cloud computing, mitigating privacy risks while supporting user-speciﬁc 
+and environment adaptation [15-17]. However, to achieve energy efﬁciency, privacy and 
+adaptability simultaneously, there are three challenges as shown in Fig. 18.4.1 (middle). 1) 
+Inefﬁcient inference arises from data movement due to the separation of sensing, memory 
+and computing, along with frame conversion and redundant multiply-accumulations. 2) 
+High power and memory overhead in spatial-temporal OCL, which scales with the depth of 
+time-window (TW). 3) Excessive memory updates during OCL increase energy and hamper 
+lifetimes for eNVMs with limited writing endurance [18-21]. 
+ 
+To tackle these challenges, we introduce the SpikeRAM system comprising an on-chip EVS-
+integrated spiking convolution neural network (EVS-sCNN) core with near-memory 
+computing (NMC) and a spiking fully connected OCL (sFC-OCL) core featuring compute-
+in-memory (CIM). Fig. 18.4.1 (bottom) depicts three key features of SpikeRAM: 1) 
+Memory-centric asynchronous near-sensor computing. The SNN core directly processes 
+asynchronous events from on-chip EVS, eliminating frame conversion, reducing data 
+movement and redundant operations. 2) Eligibility one-time backpropagation (e-OTBP) OCL 
+algorithm trains a multi-layer network through a single TW and eligibility trace (ET). It 
+maintains low power, while signiﬁcantly reducing memory requirements by 73.1% at 32 
+TWs. 3) Ternary gradients with gray-code weights signiﬁcantly reduce memory 
+programming times. Combined with the high convergence of e-OTBP, it enhances both 
+durability and energy efﬁciency. On NMNIST and DVS Gesture, the average programming 
+times are reduced by 89.1% and 88.4%, respectively. To summarize, SpikeRAM is an EVS-
+based spiking sense-memory-compute system with OCL. It also enables eNVM-based 
+in-situ training and can extend eNVM lifetime by over 10×. 
+ 
+Figure 18.4.2 (top) illustrates the architecture of the SpikeRAM system. In the EVS-sCNN 
+core, raw events from on-chip EVS (3.8MEps and 130.9dB dynamic range) or external 
+sources are denoised and routed to the sCNN processing elements (PEs) for feature 
+extraction through conﬁgurable convolution layers, scheduled by a Network-on-Chip (NoC) 
+for diverse tasks. In the sFC-OCL core, extracted feature events are processed through sFC 
+and OCL PEs with conﬁgurable ﬁlters and neurons for inference and OCL. Fig. 18.4.2 
+(bottom) shows the workﬂow of the sCNN PE, which adopts a fully asynchronous design 
+with dual-rail handshake logic to eliminate the clock tree overhead. Each PE performs event-
+driven convolution, activating kernels only upon event arrival and skipping blank regions to 
+avoid invalid operations, enabling sparsity adaptation. During processing, padding ensures 
+dimensional consistency, and the kernel anchor determines output feature locations. 
+Address sweep generates addresses for Leaky-Integrate-and-Fire (LIF) neurons, where non-
+zero 8b weights are accumulated into 16b membrane potential (Vmem). Once Vmem exceeds 
+the threshold, neurons reset and output events. These events are merged via polling, 
+packetized, and routed to the next layer or the sFC-OCL core under NoC control.  
+ 
+Figure 18.4.3 (top) illustrates the system diagram of the CIM-based sFC-OCL core. The ﬁrst 
+sFC PE contains 8 digital CIM macros, each including an 32Kb RAM, containing 8b weights 
+with sense ampliﬁers (SAs), gray-code decoders, parallel shift-adders, and 16 conﬁgurable 
+neurons. The second sFC PE consists of 10 CIM macros with a total of 10Kb for weights 
+and 10 output neurons. Within each TW, input events are compressed into weighted spikes 
+and routed to a conﬁgurable event ﬁlter to exploit input sparsity, skipping up to 92.4% of 
+redundant computations in DVS Gesture. Addresses of weighted spikes activate the 
+corresponding word-lines in the ﬁrst sFC PE and decoded weights are shifted and 
+accumulated into Vmem to avoid multiplications. Neurons support LIF, IF and InoF behaviors, 
+allowing dynamic trade-offs between temporal sensitivity and energy efﬁciency. The 
+generated spikes are routed to the second sFC-PE for subsequent processing. At the end 
+of inference, the OCL PEs based on e-OTBP are activated for backpropagation by reusing 
+the preserved inference states. Fig. 18.4.3 (bottom) shows a handshake-based pipeline that 
+ensures efﬁcient inference and learning in the sFC-OCL core. 
+Figure 18.4.4 (top) shows the e-OTBP algorithm and ternary gradient in OCL. The e-OTBP 
+performs global learning through a single TW and captures temporal information via both 
+ETs and output Vmem across previous TWs, retained in inference and reused in learning. 
+Gradients of layer 2 are computed by errors and corresponding input spikes. Gradients of 
+layer 1 are computed by propagating errors via transposed weights and a surrogate (Surr) 
+function, then combined with ETs. Both gradients are fed into ternary quantization function 
+yielding the ternary value. The computing graph shows that e-OTBP eliminates historical 
+computations compared with conventional backpropagation through time (BPTT) algorithm. 
+For efﬁcient hardware implementation, the Surr function is binarized using two comparators, 
+the ET cell is realized via a cyclic accumulator, and the FC weight transpose is computed 
+via a horizontal adder tree to reuse the weight array. Compared with BPTT, the memory and 
+computation overheads of e-OTBP are 4.3% and 3.1%, respectively. 
+ 
+Figure 18.4.4 (bottom) illustrates the gray-code dataﬂow. All weights are stored in the array 
+using gray-code encoding. During inference, gray-code decoders implemented by parallel 
+XOR logic are integrated with the SAs to enable binary readout of weights for neuron 
+accumulations. During learning, readout weights are added or subtracted with ternary 
+gradients and updated in gray-code. This combination ensures that each weight is updated 
+by no more than 1b per batch, signiﬁcantly reducing memory programming times. 
+SpikeRAM can be either standalone or combined with a non-volatile MRAM array to achieve 
+large-scale neural networks and permanent learning. With an external 4Mb MRAM chip, the 
+parameters can be expanded by 5.4× for 101-class N-Caltech101 [23] tasks through time 
+multiplexing. 
+ 
+Figure 18.4.5 (top) shows the event-based signature veriﬁcation system as a demonstration 
+of real-world private edge learning. Signatures are private data for authentication, leading 
+to cloud training privacy leakage issues. Conventional image-based methods ignore 
+temporal dynamics, reducing accuracy and raising forgery risks. SpikeRAM addresses these 
+by sensing the spatial-temporal features with EVS, followed by SNN-based inference and 
+OCL. Fig. 18.4.5 (top left) shows the system setup. The on-chip EVS with an infrared ﬁlter 
+captures the signature signals from an infrared pen at 200Hz within the 850nm band. To 
+suppress interference from sensor and ambient noise, the NeuroPass layer employs a LIF-
+based sCNN to selectively respond to a speciﬁc frequency range, thereby improving the 
+signal-to-noise ratio as shown in Fig. 18.4.5 (top middle). SpikeRAM extracts spatial 
+features while preserving sign speed thanks to the high temporal resolution of EVS as shown 
+in Fig. 18.4.5 (right). Although forgeries appear nearly same in static image, they are easily 
+distinguishable in temporal domain. Based on SpikeRAM, we introduce the EHSV dataset, 
+comprising one class of genuine signatures and four classes of forgeries. With 2-shot OCL 
+from random initialization, SpikeRAM achieves 94.3% accuracy in authenticity veriﬁcation 
+and classiﬁcation. Fig. 18.4.5 (middle) shows the measurement results. Static power and 
+dynamic power for real-time processing are 1.26mW and 8.28mW, respectively. On 
+NMNIST, DVS Gesture and DailyDVS, SpikeRAM achieves rapid convergence from random 
+initialization, reaching 96.4%, 92.9% and 90.5% accuracy, respectively, with only 1 OCL 
+epoch. 
+ 
+Figure 18.4.5 (middle right and bottom) shows that integrating ternary gradients, gray-code 
+weights, and the high convergence of e-OTBP signiﬁcantly reduces MRAM write operations. 
+In DVS Gesture, mean and standard deviation of the update times are reduced by 10.9× 
+and 35.6×, respectively. Across four datasets, the maximum number of memory devices 
+written is reduced by 92.8% and the total write time per sample is reduced by 86.3%, on 
+average. These results indicate that SpikeRAM effectively mitigates MRAM endurance 
+limitations during OCL. 
+ 
+Figure 18.4.6 compares state-of-the-art neuromorphic processors. SpikeRAM improves 
+power density (48.1pW/Synapse/Bit) by 2.7× over [2] through its NMC and CIM hybrid 
+architecture with asynchronous and event-driven sparsity adaptation. SpikeRAM supports 
+464M synapses and 328K neurons for diverse networks, improving network density 
+(441.9Synapse/Byte) by 24.3× over [10]. Learning efﬁciency is evaluated by the total energy 
+per learning task. SpikeRAM achieves outstanding learning efﬁciency and accuracy across 
+multiple event-based tasks, validated with on-chip SRAM and an external 40nm, 4Mb MRAM 
+chip. The MRAM lifetime is extended by 13.9× in OCL, while energy consumption remains 
+18.4    SpikeRAM: A 48.1pW/Synapse/Bit Event-Driven Spiking Compute-Near/In-Memory Processor with Neuromorphic Sensor Enabling  
+           Life-Long On-Chip Learning 
+ 
+Haotian Fu1, Yue Zhou1, Zhuo Zhang1, Hongzhao Zheng1, Renxu Yang1, Yulong Huang1, Dezhen Yang2, Yannan Xing3, Tugba Demirci4, Ning Qiao5,  
+Bojun Cheng1 
+ 
+1Hong Kong University of Science and Technology, Guangzhou, China, 2North China Research Institute of Electro-Optics, Beijing, China, 3SynSense, Chengdu, China,  
+4SynSense, Zurich, Switzerland, 5SynSense, Ningbo, China 
+SpikeRAM is a high efﬁciency (48.1pW/Synapse/Bit) memory-centric neuromorphic system 
+with perception, computing and on-chip learning, achieving 464M synapses and 8.28mW 
+power in real-time processing, while realizing few-shot learning for event-based signature 
+veriﬁcation. The EVS-sCNN core enables asynchronous sensing and feature extraction. The 
+sFC-OCL core enables event-driven inference and learning with the e-OTBP algorithm. Gray-
+code weights and ternary gradients reduce memory write times by over 86%. 
+Abstract
+2026 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-8936-3/26/$31.00 ©2026 IEEE | DOI: 10.1109/ISSCC49663.2026.11409002
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:12 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 18.4.1: Motivation of edge perceptual SoC with high energy efﬁciency, privacy 
+and adaptability (top), challenges (middle), and our solutions in SpikeRAM (bottom).
+Figure 18.4.2: Architecture of SpikeRAM system (top), and event-driven convolution 
+workﬂow in EVS-sCNN core (bottom).
+ISSCC 2026 / February 17, 2026 / 4:50 PM
+315  
+DIGEST OF TECHNICAL PAPERS  •
+18
+comparable. At the system level, SpikeRAM integrates on-chip EVS for real-time sensing, 
+processing and learning, achieving 8.28mW system power in real-world tasks. Fig. 18.4.7 
+shows the summaries, voltage characteristics, micrographs and test system. SpikeRAM 
+enables both real-time perception and inference, while supporting long-life learning in an 
+eNVM-based system. 
+ 
+Acknowledgement: 
+This work was supported by 1+1+1: Guangdong S&T program (Project number 
+2025A0505000036), and National Key R&D Program of China (Project number 
+2025YFG0100300). The corresponding author is Bojun Cheng (bocheng@hkust-
+gz.edu.cn). 
+ 
+References: 
+[1] Y. Yuan et al., “A 28nm 192.3 TFLOPS/W Accurate/Approximate Dual-Mode-Transpose 
+Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” ISSCC, pp. 
+258-260, Feb. 2025. https://doi.org/10.1109/ISSCC49661.2025.10904659 
+[2] D. Huo et al., “A 67μW/Channel, 0.13 nW/Synapse/b Nose-on-a-Chip for Noninvasive 
+Diagnosis of Diseases with On-Chip Incremental Learning,” ISSCC, pp. 350-352, Feb. 
+2025. https://doi.org/10.1109/ISSCC49661.2025.10904713 
+[3] J. Liu et al., “A High-Accuracy and Energy-Efﬁcient Zero-Shot-Retraining Seizure-
+Detection Processor with Hybrid-Feature-Driven Adaptive Processing and Learning-Based 
+Adaptive Channel Selection,” ISSCC, pp. 542-544, Feb. 2024.  
+https://doi.org/10.1109/ISSCC49657.2024.10454405 
+[4] J. Zhang et al., “ANP-I: A 28nm 1.5 pJ/SOP Asynchronous Spiking Neural Network 
+Processor Enabling Sub-0.1 μJ/Sample On-Chip Learning for Edge-AI Applications,” 
+ISSCC, pp. 21-23, Feb. 2023. https://doi.org/10.1109/ISSCC42615.2023.10067650 
+[5] Y. Zhong et al., “PAICORE: A 1.9-Million-Neuron 5.181-TSOPS/W Digital 
+Neuromorphic Processor With Uniﬁed SNN-ANN and On-Chip Learning Paradigm,” IEEE 
+JSSC, vol. 60, no. 2, pp. 651-671, Feb. 2025. https://doi.org/10.1109/JSSC.2024.3426319 
+[6] R. Mao et al., “FSNAP: An Ultra-Energy-Efﬁcient Reconﬁgurable Few-Spikes-Neuron-
+Based SNN Processor Supporting Uniﬁed On-Chip Learning and Adaptive Time-Window 
+Tuning,” IEEE JSSC, early access, 2025. https://doi.org/10.1109/JSSC.2025.3576485 
+[7] P. Lichtsteiner et al., “A 128× 128 120 dB 15 μs Latency Asynchronous Temporal 
+Contrast Vision Sensor,” IEEE JSSC, vol. 43, no. 2, pp. 566-576, Feb. 2008. 
+https://doi.org/10.1109/JSSC.2007.914337 
+[8] T. Finateu et al., “A 1280×720 Back-Illuminated Stacked Temporal Contrast Event-
+Based Vision Sensor with 4.86μm Pixels, 1.066GEPS Readout, Programmable Event-Rate 
+Controller and Compressive Data-Formatting Pipeline,” ISSCC, pp. 112-114, Feb. 2020. 
+https://doi.org/10.1109/ISSCC19947.2020.9063149 
+[9] C. Frenkel et al., “ReckOn: A 28nm Sub-mm2 Task-Agnostic Spiking Recurrent Neural 
+Network Processor Enabling On-Chip Learning over Second-Long Timescales,” ISSCC, 
+pp. 1-3, Feb. 2022. https://doi.org/10.1109/ISSCC42614.2022.9731734 
+[10] Y. Liu et al., “A 22nm 0.26nW/Synapse Spike-Driven Spiking Neural Network 
+Processing Unit Using Time-Step-First Dataﬂow and Sparsity-Adaptive In-Memory 
+Computing,” ISSCC, pp. 484-486, Feb. 2024.  
+https://doi.org/10.1109/ISSCC49657.2024.10454472 
+[11] X. Yang et al., “A 10 000-Inference/s Bio-Inspired Spiking Vision Chip Based on an 
+End-to-End SNN Embedding Image Signal Enhancement,” IEEE JSSC, early access, 2025. 
+https://doi.org/10.1109/JSSC.2025.3583310 
+[12] X. Qi et al., “A 0.67-to-5.4 TSOPs/W Spiking Neural Network Accelerator With 
+128/256 Reconﬁgurable Neurons and Asynchronous Fully Connected Synapses,” IEEE 
+JSSC, vol. 59, no. 10, pp. 3366-3377, Oct. 2024.  
+https://doi.org/10.1109/JSSC.2024.3402208 
+[13] S. Kim et al., “C-Transformer: A 2.6-18.1μJ/Token Homogeneous DNN-
+Transformer/Spiking-Transformer Processor with Big-Little Network and Implicit Weight 
+Generation for Large Language Models,” ISSCC, pp. 368-370, Feb. 2024.  
+https://doi.org/10.1109/ISSCC49657.2024.10454330 
+[14] M. Yao et al., “Spike-Based Dynamic Computing with Asynchronous Sensing-
+Computing Neuromorphic Chip,” Nature Communications, vol. 15, article no. 4464, 2024. 
+https://doi.org/10.1038/s41467-024-47811-6 
+[15] H. -J. Lee et al., “A 13.5μW 35-Keyword End-to-End Keyword Spotting System 
+Featuring Personalized On-Chip Training in 28nm CMOS,” ISSCC, pp. 620-622, Feb. 2025. 
+https://doi.org/10.1109/ISSCC49661.2025.10904744 
+[16] X. Li et al., “Federated learning Using a Memristor Compute-in-Memory Chip with In 
+Situ Physical Unclonable Function and True Random Number Generator,” Nature 
+Electronics, vol. 8, no. 6, pp. 518-528, Jun. 2025. https://doi.org/10.1038/s41928-025-
+01390-6 
+[17] W. Zhang et al., “Edge Learning Using a Fully Integrated Neuro-Inspired Memristor 
+Chip,” Science, vol. 381, no. 6663, pp. 1205-1211, Sep. 2023.  
+https://doi.org/10.1126/science.ade3483 
+[18] M. Zhao et al., “Characterizing Endurance Degradation of Incremental Switching in 
+Analog RRAM for Neuromorphic Systems,” IEDM, pp. 20.2.1-20.2.4, Dec. 2018.  
+https://doi.org/10.1109/IEDM.2018.8614664 
+[19] Y. -D. Chih et al., “Design Challenges and Solutions of Emerging Nonvolatile Memory 
+for Embedded Applications,” IEDM, pp. 2.4.1-2.4.4, Dec. 2021.  
+https://doi.org/10.1109/IEDM19574.2021.9720557 
+[20] D. Zeng et al., “Achieving Over 95% Yield of Sub-1 ppm BER with Retention Over 10 
+years at 125 °C and Endurance of 1 × 1012 Cycles Towards Automotive Non-Volatile RAM 
+Applications,” J. Semicond., vol. 46, no. 3, pp. 032301, Mar. 2025.  
+https://doi.org/10.1088/1674-4926/24090037 
+[21] C. Mu et al., “A 28-nm RRAM/SRAM Collaborative CIM Accelerator Supporting 
+RRAM-Endurance-Latency Awareness for Edge Fine-Tuning,” IEEE JSSC, vol. 60, no. 10, 
+pp. 3626-3638, Oct. 2025. https://doi.org/10.1109/JSSC.2025.3577335 
+[22] G. Orchard et al., “Converting Static Image Datasets To Spiking Neuromorphic 
+Datasets Using Saccades,” Frontiers in neuroscience, vol. 9, no. 437, Nov. 2015. 
+https://doi.org/10.3389/fnins.2015.00437 
+[23] A. Amir et al., “A Low Power, Fully Event-Based Gesture Recognition System,” IEEE 
+CVPR, pp. 7388-7397, Jul. 2017. https://doi.org/10.1109/CVPR.2017.781 
+[24] Q. Liu et al., “Event-based Action Recognition Using Motion Information and Spiking 
+Neural Networks,” IJCAI, pp. 1743-1749, Aug. 2021.  
+https://doi.org/10.24963/ijcai.2021%2F240 
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:12 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+Figure 18.4.3: System diagram of sFC-OCL core (top), event ﬁlter, shift-adder with 
+weighed spikes and conﬁgurable neurons (top right), and handshake-based pipeline 
+(bottom). 
+Figure 18.4.4: e-OTBP on-chip learning algorithm and ternary gradient implementations 
+(top), and gray-code dataﬂow with weight updating and optional learning in MRAM 
+(bottom).
+Figure 18.4.5: Event-based signature veriﬁcation system based on SpikeRAM for few-
+shot on-chip learning (top), and chip measurement results (bottom).
+Figure 18.4.6: Comparison with state-of-the-art neuromorphic processors.
+Figure 18.4.7: Summary table (top left), voltage characteristics and chip micrograph 
+(top right), and measurement system (bottom).
+•  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 18 / TECHNOLOGY AND CIRCUITS FOR DOMAIN-SPECIFIC ACCELERATORS / 18.4
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:12 UTC from IEEE Xplore.  Restrictions apply. 

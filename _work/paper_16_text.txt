@@ -1,0 +1,1551 @@
+===== PAGE 1 =====
+3390
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+Digital In-Memory Compute for Machine Learning
+Applications With Input and Model Security
+Maitreyi Ashok , Student Member, IEEE, Saurav Maji , Member, IEEE, Xin Zhang , Senior Member, IEEE,
+John Cohn, Life Fellow, IEEE, and Anantha P. Chandrakasan , Fellow, IEEE
+Abstract— Digital in-memory compute (IMC) architectures
+allow for a balance of the high accuracy and precision necessary
+for many machine learning applications, with high data reuse and
+parallelism to reduce energy consumption. However, one often
+overlooked parameter is security, which is necessary to maintain
+the privacy and integrity of the accelerator. In this work,
+we propose an IMC macro design that is protected against two
+types of eavesdropping attacks, passive physical side-channels and
+memory bus-probing. This is achieved through secure compute
+that eliminates the need for random bits, local model decryption
+with a lightweight cipher, and secret key generation reusing
+existing IMC circuitry. These contributions provide side-channel
+security against all practical attackers beyond 1 million samples,
+while still operating without any effect on neural network
+accuracy at 8.1 TOPS/W energy efficiency.
+Index Terms— In-memory compute (IMC), machine learning,
+physically unclonable functions, side-channel security.
+I. INTRODUCTION
+M
+ACHINE learning accelerators are specialized hardware
+for energy-efficient implementations of neural networks
+required for a wide variety of applications, including natural
+language processing, computer vision, and speech recognition
+tasks. In contrast to traditional machine learning accelera-
+tors [1], in-memory compute (IMC) co-locates the memory
+and computation to minimize data transfer energy, while taking
+advantage of high parallelism and data reuse to amortize
+costs [2], [3], [4]. This is particularly useful since many
+modern applications require large amounts of data, and the
+energy of loading all this data far exceeds that of performing
+the computation. While many initial implementations used
+Received 31 July 2024; revised 19 November 2024 and 12 January 2025;
+accepted 23 January 2025. Date of publication 6 February 2025; date of
+current version 27 August 2025. This article was approved by Associate Editor
+Meng-Fan Chang. This work was supported in part by the Massachusetts
+Institute of Technology (MIT)-Massachusetts Institute of Technology (IBM)
+Watson AI Lab, NSF Graduate Research Fellowship Program (GRFP) under
+Grant 1745302; and in part by the MathWorks Engineering Fellowship.
+(Corresponding author: Maitreyi Ashok.)
+Maitreyi Ashok and Anantha P. Chandrakasan are with Massachusetts
+Institute
+of
+Technology,
+Cambridge,
+MA
+02139
+USA
+(e-mail:
+maitreyi@alum.mit.edu).
+Saurav Maji was with Massachusetts Institute of Technology, Cambridge,
+MA 02139 USA. He is now with Intel Labs, Hillsboro, OR 97124 USA.
+Xin Zhang is with the IBM T. J. Watson Research Center, Yorktown Heights,
+NY 10598 USA, and also with MIT-IBM Watson AI Laboratory, Cambridge,
+MA 02142 USA.
+John Cohn is with the MIT-IBM Watson AI Laboratory, Cambridge,
+MA 02142 USA.
+Color versions of one or more figures in this article are available at
+https://doi.org/10.1109/JSSC.2025.3534753.
+Digital Object Identifier 10.1109/JSSC.2025.3534753
+current- or charge-based computing within memory cells to
+perform multiply and accumulate operations in the analog
+domain, more recent works have proposed digital IMC to
+achieve some of the benefits of analog IMC, while still provid-
+ing the high bitwidths and accuracy levels necessary for many
+practical workloads, especially with technology scaling [5],
+[6], [7]. Digital IMC interleaves the memory bitcells and
+computation logic to minimize data transfer distance and
+energy but still performs the computation with logic gates that
+are robust to noise and mismatch.
+ML workloads contain security risks that can be exploited
+using physical attacks [8], [9], [10] to affect the privacy and
+integrity of the device. The input activation to the accelerators
+can reflect private data that is being collected on an IoT device,
+such as images of faces or voice recordings, which should
+not be leaked to an untrusted entity. Furthermore, knowledge
+of the model stored in an accelerator can reveal multiple
+vulnerabilities. For one, the weights are generally trained using
+private training datasets that can be revealed once the model is
+known [11], [12]. In addition, knowledge of the weights of an
+accelerator allows an attacker to perform targeted adversarial
+attacks through methods such as RowHammer [13], [14], [15],
+which affects the computation integrity. Finally, the process of
+training these specialized ML algorithms generally requires a
+significant amount of man and machine hours and thus must
+be protected as private IP for competitive advantage.
+This work proposes a secure digital IMC accelerator that
+can protect against SCAs and BPAs. The key contributions
+are listed below.
+1) Computing with SCA secure MACs that take advantage
+of natively secure gates to eliminate fresh random bits
+and reduce latency, with no impact on neural network
+accuracy.
+2) Performing model decryption with a lightweight cipher
+on-chip for BPA security.
+3) Generating a secret key on-chip to maintain statistical
+security guarantees of the cipher with a minimal over-
+head physically unclonable function that reuses IMC
+SRAM.
+Section II describes the threat model and assumptions we
+make about the attacker, as well as some prior work that
+addresses these same scenarios. Section III discusses the key
+contributions of this work. The security and performance
+measurement results of this implementation are provided in
+Section IV. Section V concludes and suggests some directions
+for future work.
+0018-9200 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence
+and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3391
+II. BACKGROUND
+A. Threat Model
+We assume that the attacker can perform two types
+of attacks—physical side-channel and bus probing attacks
+(BPAs). Other attacks, such as software-based or micro-
+architectural side channels, active fault injection, and foundry
+Trojan insertion are out of scope for this work and can be
+addressed with parallel protections proposed in literature [16],
+[17], [18], [19].
+Side-channel
+attacks
+(SCAs)
+use
+unintended
+leakage
+sources to reconstruct data or operations on-chip [8], [20],
+[21]. Specifically, physical power and electromagnetic (EM)
+SCAs take advantage of the direct relation between CMOS
+circuit operation and the current consumption. Power SCAs
+measure these different currents directly by measuring the
+voltage drop across a shunt resistor on the power rail [22].
+However, EM SCAs can non-invasively use a probe to measure
+the EM fields resulting from the spatially distributed current
+flows [23]. For this work, we assume that attackers are limited
+to a practical number of samples they can collect before
+their presence is detected. Using these side-channel traces to
+perform template- or correlation-based attacks, an attacker can
+passively predict the data being processed in the computation
+operation.
+Bus-probing attacks are also relevant to ML accelerator
+applications. Since standard models are too large to be stored
+entirely on-chip, weights are fed from off-chip memory during
+the inference operation [1]. With traditional packaging meth-
+ods, this happens across exposed PCB traces for data lines that
+can easily be tapped by the attacker to read out the model [24].
+Furthermore, storage of the model in off-chip non-volatile
+memory allows for cold-boot attacks that can recover data
+even when the device is powered off [25], [26]. A BPA on a
+naive implementation can easily reconstruct the entire neural
+network structure by collecting the digital weights and biases
+during the data loading and computation of each layer.
+These attacks can be performed with physical access to the
+system being attacked, or through remote or far-field attacks
+that have been proposed in prior work [27], [28]. We also
+assume that the attacker can perform full reverse engineering
+of the chip for complete knowledge of the architecture down
+to the transistor-level circuits [29]. This allows the attacker to
+know the control flow and macro operation, but it is still too
+expensive to quantify small mismatch-dependent variations in
+fabrication for a large number of chips.
+B. Side-Channel Security
+Prior works have addressed ML side-channel security
+through algorithmic masking and equalization methods [30],
+[31]. Maji et al. [30] addressed SCA security for tradi-
+tional accelerators through a threshold implementation (TI),
+where each computation is split up into decorrelated shares.
+By applying this protection to all neural network computations,
+the accelerator is secure for an infinite number of attack
+samples. The area and energy overheads are lowered somewhat
+by using a shift operation to perform multiplies, but this poses
+a limitation that weights must be powers of 2. In addition, the
+ideal TI design requires a constant source of random bits every
+clock cycle.
+An empirical protection that is instead intended for practical
+limitations is provided in [31]. Some security is provided by
+shuffling the MAC operations in time and space across the
+processing elements. In addition, the power consumption for
+each set of inputs and weights is estimated and compensated
+for with an on-chip DAC that attempts to have constant total
+chip power consumption. While this method provides a voltage
+scaling agnostic and block-level protection, it also requires a
+random sequence generator for the shuffling.
+Both these prior works focus on security for conventional
+accelerator architectures. While the requirements for constant
+random bits were not a limitation in these implementations,
+they cannot be applied to IMC. IMC macros have thousands or
+even millions of multiply-and-accumulates (MACs) in parallel
+each clock cycle. If each required even a small number of
+random bits, this would become prohibitively expensive with
+the pseudorandom number generation (PRNG) cost overtak-
+ing the computation. Thus, any security scheme for IMC
+should eliminate the need for fresh random bits during the
+operation.
+C. Bus Probing Security
+BPA security has been provided in prior works through
+block-level algorithmic or fine-grained circuit-level protec-
+tions. Maji et al. [30] and Fang et al. [31] used a trusted
+execution environment-like architecture, where the model is
+stored in an encrypted form off-chip, and only decrypted
+on-chip when needed. By using ciphers such as AES [31]
+and Trivium [30], these works provide cryptographic security
+guarantees. However, this mathematical security assumes the
+presence of a secret key. If this key must be read from off-
+chip, that transmission can be probed and the security of the
+cipher is lost.
+Security from probing attacks of non-volatile IMC data is
+instead focused on in [32]. Each bitcell stores the correct
+value and its inverse, and decryption is performed as part
+of the compute by charging or discharging the bitline. This
+implements a low overhead XOR cipher but can lead to security
+flaws if the key is reused. Thus, we need a key as long as the
+entire neural network model [33], which would be expensive
+to generate and provide from off-chip.
+III. CHIP DESIGN
+The overall architecture of the macro with key contributions
+highlighted is shown in Fig. 1. The baseline architecture
+follows that of [5], using a bit-serial computation of 1–8 bit
+activations and weight precisions that are a multiple of 4.
+The SRAM consists of eight columns, each with 128 rows of
+4-bit weights. The columns are interleaved with 1-bit XNOR
+multiply gates, and each column contains an adder tree and
+accumulator. Multiple columns can be concatenated for higher
+weight precision. In addition, low area and power overhead
+model decryption and key generation circuits are included
+external to the SRAM bank.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+3392
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+Fig. 1.
+Block diagram of the proposed secure macro with Boolean-shared digital IMC for SCA security, model decryption on-chip for BPA security, and a
+secure key generated on-chip.
+A. Side-Channel Secure Compute
+The MAC computation is done using a Boolean-sharing
+methodology for side-channel security. The secret sharing
+scheme is similar to cryptographic multi-party computation,
+where n parties split information in a way that it can only be
+recovered if at least x of them collude [34], [35]. With Boolean
+masking, every digital bit is split such that all n shares (which
+are seemingly random when observed alone) are required to
+know the original value [36], [37], [38]. Each logic function
+is also split to receive and operate on strict subsets of the
+input shares, such that each subfunction’s computation and
+thus the total circuit’s power consumption is unrelated to actual
+data.
+In this work, a Boolean-shared implementation with three
+shares is chosen to achieve first-order security. As in
+prior work for neural network side-channel protections in
+realistic conditions [30], [39], [40], we assume that the
+eavesdropper is limited to first-order attacks and cannot col-
+lect enough data for higher-order attacks [41], [42], [43].
+This is especially fitting in IMC, with the high num-
+ber of bits being processed in parallel. If necessary, the
+design described here could be directly extended with more
+shares and more complex shared functions for higher-order
+security.
+One particular type of Boolean sharing, called a TI, provides
+provable security against SCA attacks of various orders, but it
+comes at the cost of large overheads [30], [37]. Specifically,
+one of the most difficult conditions to satisfy is uniformity,
+which requires that each of the shared representations has
+equal probability for any given unshared input. This ensures
+that only bias in the distribution of unshared values contributes
+to any bias in the shared version [44]. Some common func-
+tions, such as AND gates, do not produce uniform outputs given
+uniform inputs with a minimal number of shares. This can be
+solved by using more shares, at the expense of much larger
+circuits [45]. Alternately, the output shares can be refreshed
+with independent random bits to generate uniform inputs for
+the successive gates [46].
+Fig. 2.
+Comparison of conventional AND and proposed XNOR multiply in
+shared format.
+In this work, we use a relaxed uniformity requirement that
+targets practical attacker levels rather than ideal security and
+saves on these overheads. Specifically, we require that our
+circuits satisfy the following properties for a function t =
+F(b, c) shared as (t1, t2, t3) = Fsh((b1, b2, b3), (c1, c2, c3)).
+1) Correctness: If b = b1 ⊕b2 ⊕b3, c = c1 ⊕c2 ⊕c3, then
+t = t1 ⊕t2 ⊕t3.
+2) Non-Completeness: If Fsh = {F1, F2, F3}, then each of
+F j uses a proper subset of {b1, b2, b3} and {c1, c2, c3}.
+3) Approximate Uniformity: Each individual sub-circuit
+output is uniform. Non-jointly uniform outputs are com-
+bined after approximate refreshing (not with random
+bits).
+Approximate uniformity is particularly acceptable for IMC
+implementations, which have many parallel operations with
+unrelated weights and activations, and thus higher attacker
+SNR compared to typical accelerators.
+1) Multiplier:
+In a typical bit-serial computation with
+multi-bit weights and activations [5], multiply operations are
+implemented with AND or NOR gates. However, these contain
+nonlinear logic, so the multiply between each activation and
+weight share cannot be performed independently. Furthermore,
+these require remasking with random bits or utilizing more
+input shares to maintain uniformity and registers on the out-
+puts to maintain non-completeness and glitch resistance [43].
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3393
+Implemented in standard TI form, each AND 1-bit multiplier
+would require the logic shown in Fig. 2, which contains
+48 gate equivalents and 2 random bits per clock cycle. How-
+ever, this is not scalable with in-memory compute, where there
+are many parallel multiply operations.
+We can achieve significant savings by using a natively
+secure linear XNOR gate for the multiply. The linearity allows
+for computing each share independently and maintains uni-
+formity and glitch resistance without random bits or registers
+after the multiply. The standard four transistor transmission
+gate implementation can be used for the XOR gates, for a
+total of six gate equivalents per multiply (each XNOR has
+four additional transistors for inverters on the weight inputs
+to balance the SRAM bitcell loads for the PUF operation
+described in Section III-B2) and no random bits necessary.
+However, directly substituting
+AND for
+XNOR gates will
+not lead to a proper computation. For arithmetic correct-
+ness, some modifications to the neural network compute are
+necessary.
+In general, XNOR-based multiplication is used for binary
+neural networks, where working with +1 and −1 values
+provides better range and efficiency compared to 0 and 1
+[47], [48]. However, most practical tasks require higher bit
+precisions. Traditionally, since both activations and weights
+need to be in the same format, implementations with binary
+weights and higher precision activations require both to be in
+2’s complement representation. Instead, [7] stores the multibit
+activation as a sum of powers of 2 multiplied by +1 and −1,
+so that binary weights can also be +1 or −1, which restores
+neural network accuracy.
+A similar idea is utilized in this work to maximize the
+usage of natively secure XNOR gates, but without limiting the
+weights to binary. We propose a method to use multi-bit XNOR
+computation for computing the MAC of multi-bit weights and
+activations to reduce Boolean-sharing overheads. The details
+of this method are presented below.
+We first describe the case of signed weights and signed
+activation values. Each signed value (SV) is a sum of binary
+weighted +1 and −1 s, SV = Pn
+i=0 2i × (−1)1−bi. This is
+represented in a binary value (BV) format on which com-
+putation is performed, which ranges from all 0 s (minimum
+negative) to all 1 s (maximum positive). While the SV is
+limited to odd values, we can store a 2× wider range in
+values (e.g., 4 bits can store −15 to 15), so the neural network
+can be retrained without any expected loss in accuracy. The
+conversion between SV and BV can be expressed as SV =
+2BV −(2n −1).
+We now prove that multiplication with XNOR and standard
+binary addition (output of IMC is BVout), as defined in (1),
+provides the correct MAC value after constant factors, as
+shown in (8) are applied (output after conversion is SVout).
+For this, we define the bitwidth of the activation as na, the
+bitwidth of the weight as nw, and the number of inputs (IMC
+rows) being added as r. The IMC computation works in a bit
+serial activation format [49], [50]
+BVout =
+0
+X
+i=na−1
+2i
+r
+X
+j=0
+nw−1
+X
+k=0
+2k × ba,i j ⊕bw, jk
+(1)
+BVout =
+0
+X
+i=na−1
+2i
+r
+X
+j=0
+
+
+
+nw−1
+X
+k=0
+2k × bw, jk,
+if ba,i j = 1
+nw−1
+X
+k=0
+2k × bw, jk,
+if ba,i j = 0
+(2)
+BVout =
+0
+X
+i=na−1
+2i
+r
+X
+j=0
+(
+BVw, j,
+if ba,i j = 1
+BVw, j,
+if ba,i j = 0.
+(3)
+By the definition of the SV and BV conversion, we find that
+inverting BV is the same as negating SV. Thus,
+BVout =
+0
+X
+i=na−1
+2i
+r
+X
+j=0
+ 
+(−1)1−ba,i jSVw, j + 2nw −1
+2
+!
+(4)
+BVout =
+r
+X
+j=0
+SVw, j
+2
+0
+X
+i=na−1
+2i(−1)1−ba,i j
++
+r
+X
+j=0
+0
+X
+i=na−1
+2i(2nw −1)
+2
+(5)
+BVout =
+r
+X
+j=0
+SVw, j × SVa, j
+2
++ 2nw −1
+2
+× r
+0
+X
+i=na−1
+2i
+(6)
+BVout = SVout
+2
++ (2nw −1)(2na −1)
+2
+× r
+(7)
+SVout = 2 × BVout −(2nw −1)(2na −1)r.
+(8)
+This expression provides the correction factor for the true
+accumulator output from the one computed by the macro, with
+constant terms determined by only the network bitwidths and
+sizes, which can easily be precomputed off-chip.
+A similar method can also be used for unsigned activations
+with signed weights, such as those that result from the output
+of ReLU activation functions. In this case, the unsigned value
+(UV) of the activation and BV used for computing are the
+same. We can find the correction factor similarly for XOR
+multiplication, by continuing from (6), to get SVout = BVout −
+(((2nw −1)(2na −1)r)/2) + ((2na −1)/2) Pr
+j=0 SVw, j. While
+this factor does require the sum of all weights in the MAC
+operation, this does not change for different input activations
+and can also be precomputed and stored.
+We also confirm that restricting weights and activations to
+odd values only has no effect on neural network accuracy
+with some test cases shown in Table I. Quantization-aware
+training [51] is used for both standard and odd quantization
+results. Since odd quantization does not limit the amount
+of information that can be stored in the network, and the
+digital IMC computation is only affected by quantization
+noise, we expect these results to apply to other test cases and
+networks without loss of generality.
+2) Adder Tree: After performing the multiplication with
+XNOR gates, the partial products from the rows are combined
+with standard digital addition. In traditional digital IMC imple-
+mentations, this is done with a ripple carry adder tree [5].
+While the sharing of the carry computation for a full adder is
+natively uniform, that of a half adder is not since it uses an
+AND gate. Thus, we avoid half adders to eliminate the need for
+random bits for refreshing. In addition, even though the sum
+computation is linear with shares computed independently,
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+3394
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+TABLE I
+ACCURACY COMPARISON OF STANDARD QUANTIZATION (ODD AND EVEN
+VALUES) AND XNOR-MULTIPLY QUANTIZATION (ONLY ODD VALUES)
+Fig. 3.
+Benefit of carry-save adder compared to ripple-carry for shared
+implementations, as well as structure of adder tree in MAC computation logic.
+a register is required on each output to maintain timing
+synchronization with the carries (which require registers for
+non-completeness).
+However, latency can be decreased significantly by using a
+carry-save adder format, where carry bits are not propagated
+within the same add, as shown in Fig. 3 compared to the
+ripple carry adder. Furthermore, by combining three operands
+at a time, no half-adders are necessary in the adder tree. For
+a standard carry save adder tree, the output of the last stage
+is in carry save format, where each bit position has 2 bits
+of information per share (carry and save values). We reduce
+the latency further by eliminating the last two pipeline stages
+of the adder tree and leaving the partial sum in a modified
+carry-save format where some positions have 1 or 3 bits
+of information instead. These last few additions are then
+performed along with the bit-serial accumulator computations.
+As mentioned in [52], the sum and carry output of each
+adder are not jointly uniform. However, these values are never
+combined directly, as they refer to different bit positions.
+Instead, at least one of these outputs will pass through
+another adder stage before being recombined, regardless of
+the specifics of the digital logic synthesis. This is not always
+enough to recover perfect joint uniformity of the values.
+However, this intermediate logic with other unrelated bits
+significantly reduces the biases in the sharing so that it is
+approximately uniform. For the limited number of traces in
+practical attacks, this slight deviation from ideal uniformity is
+acceptable and will not lead to leakage of information.
+For example, we look at three cases of a full adder with
+different inputs: 1) when carry and sum are combined directly;
+Fig. 4.
+Plot of the probabilities of the possible sharings of each unshared
+set of inputs to the full adder, along with the average coefficient of variation.
+(a) CV = 0.44. (b) CV = 0.11. (c) CV = 0.01.
+2) after the sum output is passed through an unrelated adder
+stage; and 3) after both the sum and carry outputs are passed
+through unrelated adder stages. We depict the uniformity of
+each of these options in Fig. 4, which shows the probability
+of the 64 ((22)3) different sharings for each of 8 (23) possible
+triplets of unshared inputs to the full adder. As we can see, the
+standard deviation becomes negligible compared to the mean
+when we combine the sum and carry more indirectly, implying
+approximate joint uniformity.
+3) Bit
+Serial
+Accumulator:
+The
+adder
+described
+in
+Section III-A2 generates a partial sum. This is then combined
+over multiple clock cycles bit serially to multiply the multi-bit
+activation by the weights. To gain the same benefits of
+low latency and no random bits for half adder refreshing,
+accumulation is also performed with a carry-save adder with a
+modified carry-save adder representation. The reduction of bits
+is done in two stages (completed in 1 clock cycle on positive
+and negative clock edges).
+However, when computing the first accumulation operation
+(MSB of activation), some of the inputs of the previous
+accumulation value need to be reset to zero. Adding shared
+secret values with known zeroes is not secure, so it is necessary
+to modify the compute operations to account for this, with the
+options shown in Fig. 5. When possible, this can be done by
+substituting addition operations with direct assignment of the
+secret values.
+However, this is not possible for 7 of the full adders that
+contain reset 0 values. Instead of requiring 14 actual random
+bits from a constantly running PRNG to represent the zeros
+in a shared form ((s1 = r1, s2 = r2, and s3 = r1 ⊕r2),
+we can use a method inspired by [53]. Here, we use 2 shares of
+accumulator bits from previous computations to create random
+shares of zero. Thus, fresh random bits are only required
+one-time at the start of the operation for the chip. The main
+requirement for these random shares of zero is that these
+bits are jointly uniform with the corresponding partial sum
+bits, even when the shared weight bits are the same between
+computations. As with the design of the adder, we only require
+computational rather than mathematical uniformity to reduce
+overheads of remasking. This is confirmed with functional
+Monte Carlo functional simulations of the compute circuitry
+for different biases in the activation and weight input values,
+as well as different frequencies of weight update.
+B. BPA Security
+All neural network computations require weight and activa-
+tion inputs. For IoT applications where attackers have easy
+access to devices, we assume the activations are fed from
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3395
+Fig. 5.
+Special methods during MSB accumulation computation to maintain
+uniformity.
+an SCA secure ADC such as [54], [55], and [56]. However,
+for practical neural networks, there are too many weights
+to store completely on-chip. Thus, these must be fed from
+an off-chip DRAM or NVM. Any SCA protections on-chip
+are irrelevant if the attacker can directly measure the buses
+transferring weight data between the DRAM and custom IC,
+or perform a cold boot attack on the NVM. For this reason,
+memory encryption should be used for off-chip storage [57].
+The weights can then be decrypted on-chip when needed
+before being used in compute.
+1) Lightweight Cipher: A cryptographic cipher for encrypt-
+ing and decrypting the weights provides mathematical guar-
+antees of security, but we do not want this component to
+add a large area or power overhead. In addition, the cipher
+itself must be implemented in an SCA-secure fashion to
+avoid information leakage during the decryption. We use the
+ASCON cipher [58], the winner of the NIST Lightweight
+Cryptography competition [59], which has been well-proven
+for its area and energy efficiency. Key-generation and sharing
+can be coordinated in advance through the PUF described in
+Section III-B2. In addition, the cipher is relatively resilient to
+SCAs, since determining the cipher’s state does not directly
+lead to recovering the secret key for breaking future decryption
+operations [58]. Furthermore, the ASCON implementation
+is conducive to masking, with the lowest percent of AND
+gates (which have high Boolean-sharing overheads) among
+lightweight ciphers [60]. The other operations in the cipher
+(NOT, XOR, and rotate) are all linear operations that can be
+performed independently on the shares with minimal overhead.
+Daemen [53] proposed a “Changing of the Guards” imple-
+mentation of the Keccak [61] permutation, which uses various
+bits of the state to remask other bits to maintain uniformity in
+the nonlinear permutation. This method only requires 4 exter-
+nal random bits at the start of the operation and no constant
+random bits during the operation of the cipher. Since the base
+nonlinear step of both the Keccak and ASCON permutation
+are the same, we can use this same method for low overhead
+threshold implemented SCA secure ASCON [62]. The block
+diagram of the model decryption process is shown in Fig. 6.
+2) Secret Key Generation: Cryptographic ciphers to decrypt
+weights on-chip require a secret key, but feeding the key value
+from off-chip is inherently insecure and can nullify the security
+of later operations of the cipher. Techniques such as e-fuses
+are vulnerable to SEM imaging that can read out whether
+each fuse is connected [63]. Instead, physically unclonable
+functions (PUFs) can be used to securely generate keys [64],
+[65]. During manufacturer testing, a table of challenge and
+response pairs of the PUF can be collected for each chip. Later
+Fig. 6.
+Block diagram of ASCON cipher implementation.
+Fig. 7.
+SRAM (a) bitcell and (b) timing diagram for use as PUF. If the right
+(left) pull-down dominates, the PUF generates a 0 (1).
+upon deployment, a certain key can be used by the cipher sim-
+ply by evaluating the PUF on that specific challenge, without
+being measurable to an external observer. The security of the
+ASCON cipher allows for 2128 decryptions without changing
+the key, which is a high enough security level for any practical
+usage. In addition, the key can be refreshed occasionally with
+a new challenge to achieve additional security.
+Even so, a large PUF bank can be a significant area overhead
+on the IC. Instead, we propose reusing the IMC circuitry for
+the PUF. Much of the IMC consists of SRAM cells, which are
+conducive to PUF circuits. Prior SRAM-based PUFs require
+overwriting entire banks or multiple rows of SRAM to get
+responses from one address [66], [67], [68]. Others require
+additional peripheral circuitry such as level shifters and time
+to digital converters to generate the PUF bits [69], [70].
+Here, we propose a SRAM PUF that requires only a small
+additional block of synthesized digital logic, by using the SCA
+secure SRAM [Fig. 7(a) and (b)] of [71] as the bitcell. The
+bitcell has a standard cell-type layout, with each set of three
+vertically stacked cells forming one set of Boolean shares.
+This arrangement leads to three differential bitlines vertically
+routed within the width of each bitcell, where each pair is
+routed on a different metal layer to reduce coupling between
+shares without increasing the bitcell size further. Each bitcell
+is also adjacent to the custom XNOR multiply gate, which
+has horizontal connections to the activation driver and local
+internal bitcell nodes.
+An effective SRAM PUF requires a method of overriding
+the stored data with the intrinsic preferred bitcell state due to
+manufacturing variation (bits of key). The side-channel secure
+bitcell already contains feedback-cut transistors that can be
+used for this purpose. First, the feedback is cut and the inputs
+to both separated inverters are predischarged. After this, the
+feedback can be re-connected so that the SRAM settles to
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+3396
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+0 or 1 based on which inverter is stronger, which can be read
+out with standard SRAM read. Only the pre-existent data at a
+specific wordline is erased as part of this evaluation, and this
+can be minimized through sub-divided wordlines. This leads
+to a noise-resistant and low-overhead PUF that can be used
+throughout chip operation to generate reliable keys on demand.
+Furthermore, error-correction and entropy extraction can be
+added to further improve the randomness and robustness [72].
+Resilience to noise is added through temporal majority
+voting (TMV) [73] with successive evaluations of the same
+bitcell. We allow a configurable number of evaluations to set
+the robustness per use case. Since the finite-state machine
+(FSM) is working on small groups of four key bits, it does leak
+some data statistics even with Boolean sharing, particularly
+since the repeated TMV operations increase attacker SNR. For
+example, if we see power spikes corresponding to 11 counter
+increments, it is known that three unshared bits are 1 s, and
+the other is 0. Though this does not lead to full recovery of
+the key, it may provide valuable information that reduces the
+difficulty of brute force attacks on the cipher.
+For this reason, we protect against this simple power anal-
+ysis attack with differential operation in the TMV logic. The
+sense amplifier already provides differential values after the
+read, and both of these are provided to the FSM. This generates
+constant switching activity regardless of the specifics of the
+data and is enough to secure the key generation from SCAs
+combined with the existing Boolean sharing.
+We expect some degradation in PUF performance due to
+small systematic differences being amplified. Biases in PUF
+bits can be fixed through trimming, where cells with strong
+dependence on external factors and less intrinsic mismatch
+can be masked [73], [74], [75] or have debiasing methods
+applied [76], [77]. While negative-bias temperature instability
+aging typically affects SRAM PUFs, the near randomness
+of the weights stored during normal operation alternates
+which transistor is experiencing aging and partially offsets the
+effects [78]. Furthermore, noise resilience can be improved
+through burn-in hardening. This method has been used in sim-
+ilar cross-coupled bitcells to direct aging for each cell in the
+direction of the existing mismatch, forcing it to have an even
+greater propensity for settling in its preferred direction [73].
+IV. MEASUREMENT RESULTS
+This design, shown in Fig. 8(a), was taped out in 14-nm
+CMOS technology. Multiple facets of the chip are evaluated
+as detailed in Sections IV-A–IV-C.
+A. Side-Channel Security
+The independent digital circuits are individually imple-
+mented on a Chip Whisperer [79] CW305 FPGA platform
+[Fig. 8(b)] to achieve high targeted SNR and to demonstrate
+the strong SCA security guarantees in real-world scenar-
+ios. For example, the independent pipeline stages (and even
+sub-parts of just one) can be implemented and attacked sep-
+arately to minimize background switching. If SCA security
+remains beyond 1 million measurements in even these ideal
+Fig. 8.
+(a) Custom ASIC micrograph and (b) Chip Whisperer targeted SNR
+setup.
+tests, this implies even stronger security guarantees in real-
+world scenarios, once parallel operations and unrelated activity
+lower the attacker SNR. Due to the algorithmic nature of
+Boolean sharing protections, security to SCA on an FPGA also
+holds for custom IC implementations. Power SCA security
+directly translates to EM SCA security, since computations of
+individual shares will be too spatially close to resolve with
+current EM probes. Furthermore, testing on a dedicated attack
+platform like the Chip Whisperer allows for artificially boost-
+ing attacker SNR with multiple parallel copies and utilizing
+the proven high SNR measurement circuitry.
+Correlation power analysis (CPA) simulates a realistic attack
+on the system where the attacker controls one varying input
+and tries to recover a fixed secret input [80]. For compute
+logic, we consider the varying input to be activations, and the
+fixed input to be model weights. Since weights are stationary
+in the IMC SRAM throughout the computation, we maintain
+the same sharing of the weights throughout all of the attacker
+measurements. However, since activations are streaming in
+real-time, these are newly shared for each sample. The results
+for CPA of each sub-block of the SCA-protected multiply
+and adder tree are shown in Fig. 9(a), when compared to the
+unprotected (non-pipelined) version in Fig. 10(a). We see that
+the correct secret value (red) has indistinguishable correlation
+values from the other incorrect secret value guesses (gray) for
+each individual compute block for the protected implementa-
+tion. The same is true for each of the two accumulator pipeline
+stages shown in Fig. 9(b), when compared to the unprotected
+accumulator in Fig. 10(b).
+We also perform CPA for the cipher in the Chip Whisperer
+platform, with a fixed key and varying nonce. As is standard
+in the literature, SCA analysis is performed at the end of the
+initialization stage when the key is directly combined with the
+state [62], [81]. We see in Fig. 9(c) that the true key value is
+indistinguishable from other guesses in terms of the correlation
+to the power measurements.
+Differential power analysis (DPA) is used to test the
+algorithmic security guarantees, by attempting to differenti-
+ate between a circuit operating on fixed and random secret
+inputs [22], [82]. By testing if there is a statistically significant
+difference between side channels from random weights and
+inputs versus a fixed weight and input, we determine whether
+there is any exploitable data-dependent leakage. In the high
+SNR attack scenario, we find that the unprotected circuits
+have significant differences (large T -value) with less than
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3397
+Fig. 9.
+CPA results—protected (a) multiply + adder tree pipeline stage
+sub-blocks, (b) accumulator pipeline stage sub-blocks, and (c) ASCON cipher.
+Fig. 10.
+CPA results—unprotected (a) multiply + adder tree and (b) accu-
+mulator.
+Fig. 11.
+DPA results on unprotected and protected ASIC compute.
+1000 samples, whereas the protected circuits do not have
+significant differences (small T -value) even after 1 million
+samples.
+In addition to high-attack SNR tests, we confirm the SCA
+security of the custom IMC on-chip with DPA. The results
+for the unprotected baseline and protected compute are shown
+in Fig. 11. As we can see, the unprotected version has large
+T -values with less than 5000 samples, indicating a statisti-
+cally significant difference between fixed and random data.
+However, the protected implementation has small T -values for
+more than 1 million samples, so there is no reason to believe
+exploitable differences in side-channel traces exist.
+We read from the IMC SRAM using a differential
+and shared TMV FSM. We confirm that this operation is
+SCA-resilient on the Chip Whisperer by attempting to recon-
+struct the key using a convolutional neural network [83], which
+was shown to have high SCA accuracy in prior work [54], [55].
+Since we are working with Boolean-shared keys with 3 shares,
+we consider the rms error of guessing the unshared and shared
+key values. The results (Table II) show that the difficulty of
+TABLE II
+RMSE OF KEY-VALUE PREDICTION FROM TMV SCA
+TABLE III
+PUF NIST TEST RESULTS
+TABLE IV
+PUF STABILITY RESULTS
+guessing the key increases significantly with Boolean-shared
+and differential logic protections applied, as expected.
+B. PUF Performance
+We collect the PUF challenge–response pairs after on-chip
+TMV and off-chip Von Neumann debiasing [84]. We test these
+against the NIST 800-22 randomness standards [85], and as in
+prior work with limited bits [70], we confirm that all applicable
+NIST tests pass for each of the five chips with all p-values
+larger than 0.01, as shown in Table III. Thus, we have no
+reason to believe the PUF sequences are not random. The
+most common value estimator also indicates the min-entropy
+for each chip is ∼0.91–0.93.
+We also test the PUF’s resilience to noise for various
+levels of TMV and error correction (Table IV). While raising
+the TMV time can increase stability significantly, it is not
+enough for the cells with very low mismatch that are instead
+decided by transient noise. For these, we can achieve a 0%
+bit-error rate with an off-chip BCH code [86]. Masking out
+unstable cells would also be a solution to reduce the number
+of error correction bits. Finally, we evaluate the inter- and
+intra-key hamming distance (HD) to validate the uniqueness
+and stability of the keys. Fig. 12 shows the intra-key HD is
+close to 0 (stable), whereas the inter-key HD is close to half
+the key bitwidth, 192 (unique).
+While this initial demonstration shows the potential of the
+feedback-cut PUF, techniques used in orthogonal PUF works
+to improve performance can also be applied to this topology.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+3398
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+Fig. 12.
+HD between measurements of same key and different keys.
+TABLE V
+MACRO PERFORMANCE METRICS COMPARISON
+For example, dark bit masking can turn off unstable bits to
+reduce TMV length and BCH code size, burn-in hardening
+can increase the mismatch between inverter arms and improve
+stability, and randomness extraction can maximize the entropy
+per bit [73]. In addition, the symmetry of the bitcell can be
+improved using careful transistor and interconnect layout for
+reduction of systematic variation.
+C. Overall Performance
+We evaluate the performance of the macro according to
+standard ML accelerator metrics. The throughput, energy
+efficiency, and area efficiency for different data bitwidths are
+shown in Table V for the unprotected and protected macros at a
+0.55-V supply and 80-MHz operation frequency. The protected
+implementation achieves a maximum energy efficiency of
+8.1 TOPS/W at a 0.50-V supply voltage. The scaling of the
+frequency is limited to 100 MHz due to the setup of the test
+environment, with synchronous communication and data input
+from the FPGA.
+The throughput is higher for the protected implementation
+due to the pipelining of the adder tree and accumulation
+required for satisfying the non-completeness property of the
+Boolean sharing. If we also pipeline the unprotected imple-
+mentation, we would see similar improvements in throughput,
+potentially at the expense of minor increases in area due to
+the additional flip-flops. While the latency of the protected
+version will have some overheads due to the model decryption
+before writing into SRAM, the computed latency dominates
+for typical models, so the ∼3.2× increase in weight loading
+latency is not significant overall. Particularly, weight decryp-
+tion operations occur quite infrequently for IMC, since the
+weight is loaded once and many computations are performed
+on it before reloading to maximize data reuse and energy
+efficiency, and thus any overheads to the power consumption
+of data loading are also amortized.
+On the other hand, there are reductions in the energy and
+area efficiency due to Boolean sharing. The custom memory
+bitcell and multiply columns increase in area by a factor
+5.3×, due to a combination of each cell being split into three
+Fig. 13.
+Breakdown of power and area consumption of various components
+of secure IMC circuitry compared to baseline.
+independent shares and the 2 additional PUF feedback-cut
+transistors. However, the major contributor to energy increase
+is the adder tree, which is generally the dominant component
+of any digital IMC implementation. The post-synthesis area
+of a full adder increases by 14.2×, which causes the entire
+adder tree to increase by 15.5×. In terms of area efficiency,
+this causes the adder and accumulator to be 6.4× less area-
+efficient. The power breakdown for the various portions of the
+circuitry for the unprotected and protected implementation is
+also shown in Fig. 13. These results are in line with prior
+work [30], which saw a 6.1× and 5.7× decrease in area
+efficiency and energy efficiency, respectively, for the multiplier
+circuitry alone. While this leads to a high energy and area
+overhead, security cannot be achieved without some costs and
+our optimizations ensure that we do not have even higher
+overheads.
+This work is compared with prior secure ML accelerators
+in Table VI. Comparison can be made across different archi-
+tectures and applications by assuming full utilization of the
+macro and finding the overhead compared to its own baseline
+implementation. The area and power overheads include the
+IMC macro, cipher, and PUF FSM and are calculated as
+the ratio of the unprotected macro’s efficiency (in TOPS/W
+and TOPS/mm2) to that of the protected macro. Compared
+to the other work, this is the first to consider digital IMC
+security. In addition, it includes much more rigorous testing
+of SCA security compared to prior IMC security work, using
+CPA [80] and test vector leakage assessment (TVLA) [82]
+tests. Furthermore, the security is added without placing addi-
+tional limitations on bit precision or neural network accuracy.
+Most importantly, it does not require random bits during the
+operation and only needs one-time bits during chip configura-
+tion. With these protections, we have BPA and SCA beyond
+1 million attack measurements even in ideally high-attack SNR
+conditions, which ensures security will last significantly longer
+for realistic operation.
+D. Scalability
+While this work presents a small macro for demonstration
+of the security concepts, a commercial-scale accelerator will
+have many macros in parallel. This can be considered similar
+to the case of parallel processing in chiplets, each of which
+performs a small part of a larger task before the outputs
+are integrated [87], [88]. While the individual macros will
+perform side-channel secure computation in the same way,
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3399
+TABLE VI
+COMPARISON TO PRIOR WORK
+they will create macro outputs that will need to be accumu-
+lated. We expect that the side-channel secure co-processor,
+which combines the carry-save outputs and the shares, will
+also be used to combine the outputs of the separate secure
+macros. With many macros operating in parallel, we also have
+higher attacker difficulty in determining data from total power
+consumption, and thus the security level can be lowered to
+take advantage of this with less secure gates.
+As the system size increases and we have multiple macros
+in parallel, there are a few options to ensure the weight
+decryption and loading overheads do not dominate. For one,
+we can use the ASCON-128a scheme to produce 128-bit
+data blocks within 8 clock cycles, rather than 64 bits within
+6 clocks. Furthermore, in the case of high-bandwidth memory
+interfaces for loading data from off-chip, we can have a
+separate ASCON instance for each instance of the macro, since
+this only contributes 16% of the total macro area and will
+limit any latency overheads from decryption to our demon-
+strated levels. Furthermore, as the memory size increases, there
+will be more PUF bits available. Depending on the off-chip
+memory encryption procedure, either one key (generated by a
+combination of PUF bits across the different macros) can be
+used to decrypt the weights written to all macros, or a separate
+key can be generated and used for each individual ASCON
+instance. In either case, the greater availability of PUF bits
+ensures that the most optimal cells can be chosen through
+trimming or masking for key randomness and stability.
+V. CONCLUSION
+This work provides a generalized solution for secure digital
+IMC that can provide privacy and integrity in a wide variety of
+ML applications such as AR/VR and health monitoring. This is
+done by eliminating fresh random bits for security, minimizing
+compute latency overheads, and avoiding restrictions on neural
+network architectures.
+Future work should focus on further decreasing the area
+and energy overheads of the protections, for more convenient
+adoption in real systems. This can be done by better charac-
+terizing the attacker’s attack abilities, and potentially finding
+a better optimal point in the tradeoff between security level
+and Boolean-sharing overheads. In addition, methods such as
+approximate computing [7] can be used for further exploitation
+of natively secure compute gates, which still allow for high
+accuracy due to the resilience of neural network computations.
+ACKNOWLEDGMENT
+The authors thank Kevin Tien, Cliff Osborn, Seiji Munetoh,
+and Kohji Hosokawa for tape-out support and valuable discus-
+sions; Cyril Cabral, Kai Schleupen, and John Timmerwilke
+for packaging solutions; Dirk Pfeiffer, Daniel Friedman, Dan
+Dechene, David Cox, Mukesh Khare for management support;
+and Dimple Kochar for assistance with revisions. They also
+thank members of the Energy Efficient Circuits and Systems
+Group at MIT.
+REFERENCES
+[1] Y.-H. Chen, T. Krishna, J. Emer, and V. Sze, “Eyeriss: An energy-
+efficient
+reconfigurable
+accelerator
+for
+deep
+convolutional
+neural
+networks,” IEEE J. Solid-State Circuits, vol. 52, no. 1, pp. 127–138,
+Jan. 2017.
+[2] N. R. Shanbhag and S. K. Roy, “Comprehending in-memory computing
+trends via proper benchmarking,” in Proc. IEEE Custom Integr. Circuits
+Conf. (CICC), Apr. 2022, pp. 1–7.
+[3] Z. Jiang, S. Yin, J.-S. Seo, and M. Seok, “C3SRAM: An in-memory-
+computing SRAM macro based on robust capacitive coupling computing
+mechanism,” IEEE J. Solid-State Circuits, vol. 55, no. 7, pp. 1888–1897,
+Jul. 2020.
+[4] J. Zhang, Z. Wang, and N. Verma, “In-memory computation of a
+machine-learning classifier in a standard 6T SRAM array,” IEEE
+J. Solid-State Circuits, vol. 52, no. 4, pp. 915–924, Apr. 2017.
+[5] Y.-D. Chih et al., “16.4 an 89 TOPS/W and 16.3 TOPS/mm2 all-digital
+SRAM-based full-precision compute-in memory macro in 22 nm for
+machine-learning edge applications,” in IEEE Int. Solid-State Circuits
+Conf. (ISSCC) Dig. Tech. Papers, vol. 64, Feb. 2021, pp. 252–254.
+[6] H. Fujiwara et al., “A 5-nm 254-TOPS/W 221-TOPS/mm2 fully-digital
+computing-in-memory macro supporting wide-range dynamic-voltage-
+frequency scaling and simultaneous MAC and write operations,” in
+IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65,
+Feb. 2022, pp. 1–3.
+[7] D. Wang, C. T. Lin, G. K. Chen, P. Knag, R. K. Krishnamurthy, and
+M. Seok, “DIMC: 2219TOPS/W 2569F2/b digital in-memory comput-
+ing macro in 28 nm based on approximate arithmetic hardware,” in
+IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65,
+May 2022, pp. 266–268.
+[8] M. Méndez Real and R. Salvador, “Physical side-channel attacks on
+embedded neural networks: A survey,” Appl. Sci., vol. 11, no. 15,
+p. 6790, Jul. 2021. [Online]. Available: https://www.mdpi.com/2076-
+3417/11/15/6790
+[9] L. Wei, B. Luo, Y. Li, Y. Liu, and Q. Xu, “I know what you see: Power
+side-channel attack on convolutional neural network accelerators,” in
+Proc. 34th Annu. Comput. Secur. Appl. Conf., New York, NY, USA,
+Dec. 2018, pp. 393–406, doi: 10.1145/3274694.3274696.
+[10] L. Batina, S. Bhasin, D. Jap, and S. Picek, “CSI NN: Reverse engi-
+neering of neural network architectures through electromagnetic side
+channel,” in Proc. USENIX Secur. Symp., 2019, pp. 515–532.
+[11] G. Ateniese, L. V. Mancini, A. Spognardi, A. Villani, D. Vitali, and
+G. Felici, “Hacking smart machines with smarter ones: How to extract
+meaningful data from machine learning classifiers,” Int. J. Secur. Netw.,
+vol. 10, no. 3, pp. 137–150, Sep. 2015, doi: 10.1504/IJSN.2015.071829.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+3400
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+[12] R.
+Shokri,
+M.
+Stronati,
+C.
+Song,
+and
+V.
+Shmatikov,
+“Mem-
+bership
+inference
+attacks
+against
+machine
+learning
+models,”
+in
+Proc. IEEE Symp. Secur. Privacy (SP), Los Alamitos, CA, USA,
+May 2017, pp. 3–18, doi: 10.1109/SP.2017.41. [Online]. Available:
+https://doi.ieeecomputersociety.org/10.1109/SP.2017.41
+[13] A.
+Chakraborty,
+M.
+Alam,
+V.
+Dey,
+A.
+Chattopadhyay,
+and
+D. Mukhopadhyay, “Adversarial attacks and defences: A survey,”
+2018, arXiv:1810.00069.
+[14] O. Mutlu and J. S. Kim, “RowHammer: A retrospective,” IEEE
+Trans. Comput.-Aided Design Integr. Circuits Syst., vol. 39, no. 8,
+pp. 1555–1571, Aug. 2020.
+[15] A. S. Rakin, Z. He, and D. Fan, “Bit-flip attack: Crushing neural network
+with progressive bit search,” in Proc. IEEE/CVF Int. Conf. Comput. Vis.
+(ICCV), Oct. 2019, pp. 1211–1220.
+[16] S. Maji, K. Lee, C. Gongye, Y. Fei, and A. P. Chandrakasan,
+“An energy-efficient neural network accelerator with improved resilience
+against fault attacks,” IEEE J. Solid-State Circuits, vol. 59, no. 9,
+pp. 3106–3116, Sep. 2024.
+[17] P. Sun, B. Halak, and T. Kazmierski, “Towards hardware trojan resilient
+design of convolutional neural networks,” in Proc. IEEE 35th Int. Syst.-
+Chip Conf. (SOCC), Sep. 2022, pp. 1–6.
+[18] H. Yu, P. Sun, B. Halak, K. Shanthakumar, and T. Kazmierski, “Tamper
+resistant design of convolutional neural network hardware accelerator,”
+in Proc. Asian Hardw. Oriented Secur. Trust Symp. (AsianHOST),
+Dec. 2023, pp. 1–5.
+[19] W. Hua, M. Umar, Z. Zhang, and G. E. Suh, “GuardNN: Secure
+accelerator architecture for privacy-preserving deep learning,” in Proc.
+59th ACM/IEEE Design Autom. Conf., New York, NY, USA, Jul. 2022,
+pp. 349–354, doi: 10.1145/3489517.3530439.
+[20] H. Chabanne, J. Danger, L. Guiga, and U. Kühne, “Side channel
+attacks for architecture extraction of neural networks,” CAAI Trans.
+Intell. Technol., vol. 6, no. 1, pp. 3–16, Mar. 2021. [Online]. Available:
+https://ietresearch.onlinelibrary.wiley.com/doi/abs/10.1049/cit2.12026
+[21] V. Meyers, D. Gnad, and M. Tahoori, “Active and passive physical
+attacks on neural network accelerators,” IEEE Des. Test. IEEE Des. Test.
+Comput., vol. 40, no. 5, pp. 70–85, May 2023.
+[22] P. Kocher, J. Jaffe, and B. Jun, “Differential power analysis,” in Proc.
+19th Annu. Int. Cryptol. Conf. Adv. Cryptol., Santa Barbara, CA, USE,
+M. Wiener, Ed., Berlin, Germany: Springer, Aug. 1999, pp. 388–397.
+[23] D. Agrawal, B. Archambeault, J. R. Rao, and P. Rohatgi, “The EM
+side—Channel(s),” in Proc. Cryptograph. Hardw. Embedded Syst.-
+CHES, B. S. Kaliski, ç. K. Koç, and C. Paar, Eds., Berlin, Germany:
+Springer, Jan. 2003, pp. 29–45.
+[24] W. Hua, Z. Zhang, and G. E. Suh, “Reverse engineering convolutional
+neural networks through side-channel information leaks,” in Proc. 55th
+ACM/ESDA/IEEE Design Autom. Conf. (DAC), New York, NY, USA,
+Jun. 2018, pp. 1–6, doi: 10.1109/DAC.2018.8465773.
+[25] M. Gruhn and T. Müller, “On the practicability of cold boot attacks,” in
+Proc. Int. Conf. Availab., Rel. Secur., 2013, pp. 390–397.
+[26] J. A. Halderman et al., “Lest we remember: Cold-boot attacks on
+encryption keys,” Commun. ACM, vol. 52, no. 5, pp. 91–98, May 2009,
+doi: 10.1145/1506409.1506429.
+[27] R. Wang, H. Wang, and E. Dubrova, “Far field EM side-channel attack
+on AES using deep learning,” in Proc. 4th ACM Workshop Attacks
+Solutions Hardw. Secur., Nov. 2020, pp. 35–44.
+[28] M. Zhao and G. E. Suh, “FPGA-based remote power side-channel
+attacks,” in Proc. IEEE Symp. Secur. Privacy (SP), Jul. 2018,
+pp. 229–244.
+[29] S. E. Quadir et al., “A survey on chip to system reverse engineering,”
+ACM J. Emerg. Technol. Comput. Syst., vol. 13, no. 1, pp. 1–34,
+Apr. 2016, doi: 10.1145/2755563.
+[30] S. Maji, U. Banerjee, S. H. Fuller, and A. P. Chandrakasan, “A thresh-
+old implementation-based neural network accelerator with power and
+electromagnetic side-channel countermeasures,” IEEE J. Solid-State
+Circuits, vol. 58, no. 1, pp. 141–154, Jan. 2023.
+[31] Q. Fang, L. Lin, H. Zhang, T. Wang, and M. Alioto, “Voltage scaling-
+agnostic counteraction of side-channel neural net reverse engineering
+via machine learning compensation and multi-level shuffling,” in Proc.
+IEEE Symp. VLSI Technol. Circuits (VLSI Technol. Circuits), Jun. 2023,
+pp. 1–2.
+[32] Y.-C. Chiu et al., “A 22nm 4Mb STT-MRAM data-encrypted near-
+memory computation macro with a 192GB/s read-and-decryption
+bandwidth and 25.1–55.1TOPS/W 8b MAC for AI operations,” in IEEE
+Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers, vol. 65,
+Feb. 2022, pp. 178–180.
+[33] S. Huang, H. Jiang, X. Peng, W. Li, and S. Yu, “Secure XOR-CIM
+engine: Compute-in-memory SRAM architecture with embedded XOR
+encryption,” IEEE Trans. Very Large Scale Integr. (VLSI) Syst., vol. 29,
+no. 12, pp. 2027–2039, Dec. 2021.
+[34] A. Shamir, “How to share a secret,” Commun. ACM, vol. 22, no. 11,
+pp. 612–613, Nov. 1979, doi: 10.1145/359168.359176.
+[35] G. R. Blakley, “Safeguarding cryptographic keys,” in Proc. Int.
+Workshop
+Manag.
+Requirements
+Knowl.
+(MARK),
+Los Alamitos,
+CA,
+USA,
+Jun.
+1979,
+pp.
+313–318.
+[Online].
+Available:
+https://doi.ieeecomputersociety.org/10.1109/AFIPS.1979.98
+[36] O. Reparaz, B. Bilgin, S. Nikova, B. Gierlichs, and I. Verbauwhede,
+“Consolidating masking schemes,” in Proc. Cryptol. ePrint Arch., 2015,
+pp. 1–6. [Online]. Available: https://eprint.iacr.org/2015/719
+[37] S. Nikova, C. Rechberger, and V. Rijmen, “Threshold implementations
+against side-channel attacks and glitches,” in Proc. ICICS, vol. 4307.
+Cham, Switzerland: Springer, Jan. 2006, pp. 529–545.
+[38] H. Gross, S. Mangard, and T. Korak, “Domain-oriented masking:
+Compact masked hardware implementations with arbitrary protection
+order,” in Proc. ACM Workshop Theory Implement. Secur., New York,
+NY, USA, Oct. 2016, p. 3, doi: 10.1145/2996366.2996426.
+[39] A. Dubey, R. Cammarota, V. Suresh, and A. Aysu, “Guarding machine
+learning hardware against physical side-channel attacks,” ACM J. Emerg.
+Technol. Comput. Syst., vol. 18, no. 3, pp. 1–31, Apr. 2022, doi:
+10.1145/3465377.
+[40] A. Dubey, R. Cammarota, and A. Aysu, “BoMaNet: Boolean masking
+of an entire neural network,” in Proc. IEEE/ACM Int. Conf. Comput.
+Aided Design (ICCAD), New York, NY, USA, Nov. 2020, pp. 1–9, doi:
+10.1145/3400302.3415649.
+[41] S. Chari, C. S. Jutla, J. R. Rao, and P. Rohatgi, “Towards sound
+approaches to counteract power-analysis attacks,” in Proc. 19th Annu.
+Int. Cryptol. Conf., vol. 1666, M. Wiener, Ed., Berlin, Germany:
+Springer, Aug. 1999, pp. 398–412.
+[42] J. Daemen, M. Peeters, and G. V. Assche, “Bitslice ciphers and power
+analysis attacks,” in Proc. Fast Softw. Encryption, G. Goos, J. Hartmanis,
+J. van Leeuwen, and B. Schneier, Eds., Berlin, Germany: Springer,
+Jan. 2001, pp. 134–149.
+[43] O. Reparaz, B. Bilgin, S. Nikova, B. Gierlichs, and I. Verbauwhede,
+“Consolidating masking schemes,” in 35th Annu. Cryptol. Conf. Adv.
+Cryptol., R. Gennaro and M. Robshaw, Eds., Berlin, Germany: Springer,
+2015, pp. 764–783.
+[44] T. Beyne and B. Bilgin, “Uniform first-order threshold implementations,”
+in Proc. Cryptol. ePrint Arch., 2016, pp. 1–8. [Online]. Available:
+https://eprint.iacr.org/2016/715
+[45] B. Bilgin, B. Gierlichs, S. Nikova, V. Nikov, and V. Rijmen, “Higher-
+order threshold implementations,” in Proc. Cryptol. ePrint Arch., 2014,
+pp. 1–9. [Online]. Available: https://eprint.iacr.org/2014/751
+[46] B.
+Bilgin,
+J.
+Daemen,
+V.
+Nikov,
+S.
+Nikova,
+V.
+Rijmen,
+and
+G. Van Assche, “Efficient and first-order DPA resistant implementations
+of KECCAK,” in Smart Card Research and Advanced Applications,
+A. Francillon and P. Rohatgi, Eds., Cham, Switzerland: Springer, 2014,
+pp. 187–199.
+[47] I. Hubara, M. Courbariaux, D. Soudry, R. El-Yaniv, and Y. Bengio,
+“Binarized neural networks,” in Proc. Adv. Neural Inf. Process.
+Syst., vol. 29, D. Lee, M. Sugiyama, U. Luxburg, I. Guyon, and
+R. Garnett, Eds., Red Hook, NY, USA: Curran Associates, Feb. 2016,
+pp. 4107–4115.
+[Online].
+Available:
+https://proceedings.neurips.
+cc/paper/2016/file/d8330f857a17c53d217014ee776bfd50-Paper.pdf
+[48] P. C. Knag et al., “A 617-TOPS/W all-digital binary neural network
+accelerator in 10-nm FinFET CMOS,” IEEE J. Solid-State Circuits,
+vol. 56, no. 4, pp. 1082–1092, Apr. 2021.
+[49] P. Judd, J. Albericio, T. Hetherington, T. M. Aamodt, and A. Moshovos,
+“Stripes: Bit-serial deep neural network computing,” in Proc. 49th Annu.
+IEEE/ACM Int. Symp. Microarchit., Sep. 2016, pp. 1–12.
+[50] H. Kim, T. Yoo, T. T. Kim, and B. Kim, “Colonnade: A reconfig-
+urable SRAM-based digital bit-serial compute-in-memory macro for
+processing neural networks,” IEEE J. Solid-State Circuits, vol. 56, no. 7,
+pp. 2221–2233, Jul. 2021.
+[51] K. Wang, Z. Liu, Y. Lin, J. Lin, and S. Han, “HAQ: Hardware-aware
+automated quantization with mixed precision,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 8604–8612.
+[52] T. Schneider, A. Moradi, and T. Güneysu, “Arithmetic addition over
+Boolean masking,” in Applied Cryptography and Network Security,
+T. Malkin, V. Kolesnikov, A. B. Lewko, and M. Polychronakis, Eds.,
+Cham, Switzerland: Springer, 2015, pp. 559–578.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 12 =====
+ASHOK et al.: DIGITAL IMC FOR MACHINE LEARNING APPLICATIONS WITH INPUT AND MODEL SECURITY
+3401
+[53] J. Daemen, “Changing of the guards: A simple and efficient method
+for achieving uniformity in threshold sharing,” in Proc. Int. Conf.
+Cryptogr. Hardw. Embed. Syst., W. Fischer and N. Homma, Eds., Cham,
+Switzerland: Springer, 2017, pp. 137–153.
+[54] T. Jeong, A. P. Chandrakasan, and H.-S. Lee, “S2ADC: A 12-bit,
+1.25-MS/s secure SAR ADC with power side-channel attack resis-
+tance,” IEEE J. Solid-State Circuits, vol. 56, no. 3, pp. 844–854,
+Mar. 2021.
+[55] M. Ashok, E. V. Levine, and A. P. Chandrakasan, “Randomized switch-
+ing SAR (RS-SAR) ADC for power and EM side-channel security,”
+IEEE Solid-State Circuits Lett., vol. 5, pp. 247–250, 2022.
+[56] R. Chen, H. Wang, A. Chandrakasan, and H.-S. Lee, “RaM-SAR: A low
+energy and area overhead, 11.3fJ/conv.-step 12b 25MS/s secure random-
+mapping SAR ADC with power and EM side-channel attack resilience,”
+in Proc. IEEE Symp. VLSI Technol. Circuits, Nov. 2022, pp. 94–95.
+[57] M. Henson and S. Taylor, “Memory encryption: A survey of existing
+techniques,” ACM Comput. Surveys, vol. 46, no. 4, pp. 1–26, Mar. 2014,
+doi: 10.1145/2566673.
+[58] C. Dobraunig, M. Eichlseder, F. Mendel, and M. Schläffer. (2019).
+ASCON V1.2. Submission to Round 1 NIST Lightweight Cryptography
+project. [Online]. Available: https://csrc.nist.gov/CSRC/media/Projects/
+Lightweight-Cryptography/documents/round-1/spec-doc/ascon-spec.pdf
+[59] NIST. (2022). Lightweight Cryptography. [Online]. Available: https://
+csrc.nist.gov/Projects/lightweight-cryptography/finalists
+[60] K. Mandal and G. Gong, “Can LWC and PEC be friends: Evaluating
+lightweight ciphers in privacy-enhancing cryptography,” in Proc. NIST
+Lightweight Cryptogr. Workshop, 2020, pp. 1–17.
+[61] G. Bertoni, J. Daemen, M. Peeters, and V. A. Gilles. (2011). The KEC-
+CAK Reference. [Online]. Available: https://keccak.team/files/Keccak-
+reference-3.0.pdf
+[62] H. Gross, E. Wenger, C. Dobraunig, and C. Ehrenhöfer, “ASCON
+hardware implementations and side-channel evaluation,” Microproces-
+sors Microsyst., vol. 52, pp. 470–479, Jul. 2017. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0141933116302721
+[63] N. Robson et al., “Electrically programmable fuse (eFUSE): From
+memory redundancy to autonomic chips,” in Proc. IEEE Custom Integr.
+Circuits Conf., Oct. 2007, pp. 799–804.
+[64] B. Gassend, D. Clarke, M. van Dijk, and S. Devadas, “Silicon
+physical random functions,” in Proc. 9th ACM Conf. Comput. Com-
+mun. Secur., New York, NY, USA, Nov. 2002, pp. 148–160, doi:
+10.1145/586110.586132.
+[65] S. Katzenbeisser, Ü. Koçabas, V. Roži´c, A. Sadeghi, I. Verbauwhede, and
+C. Wachsmann, “PUFs: Myth, fact or busted? A security evaluation of
+physically unclonable functions (PUFs) cast in silicon,” in Proc. Cryp-
+tograph. Hardw. Embedded Syst.-CHES, E. Prouff and P. Schaumont,
+Eds., Berlin, Germany: Springer, Jan. 2012, pp. 283–301.
+[66] D. E. Holcomb, W. P. Burleson, and K. Fu, “Power-up SRAM state as
+an identifying fingerprint and source of true random numbers,” IEEE
+Trans. Comput., vol. 58, no. 9, pp. 1198–1210, Sep. 2009.
+[67] K. Liu, Y. Min, X. Yang, H. Sun, and H. Shinohara, “A 373-F2 0.21%-
+Native-BER EE SRAM physically unclonable function with 2-D power-
+gated bit cells and VSS bias-based dark-bit detection,” IEEE J. Solid-State
+Circuits, vol. 55, no. 6, pp. 1719–1732, Jun. 2020.
+[68] S. Jeloka, K. Yang, M. Orshansky, D. Sylvester, and D. Blaauw,
+“A sequence dependent challenge-response PUF using 28nm SRAM 6T
+bit cell,” in Proc. Symp. VLSI Circuits, Jun. 2017, pp. C270–C271.
+[69] S. Chellappa, A. Dey, and L. T. Clark, “Improved circuits for microchip
+identification using SRAM mismatch,” in Proc. IEEE Custom Integr.
+Circuits Conf. (CICC), Sep. 2011, pp. 1–4.
+[70] S. Taneja, V. K. Rajanna, and M. Alioto, “36.1 unified in-memory
+dynamic TRNG and multi-bit static PUF entropy generation for ubiqui-
+tous hardware security,” in IEEE Int. Solid-State Circuits Conf. (ISSCC)
+Dig. Tech. Papers, vol. 64, Feb. 2021, pp. 498–500.
+[71] V. Rožic, W. Dehaene, and I. Verbauwhede, “Design solutions for
+securing SRAM cell against power analysis,” in Proc. IEEE Int. Symp.
+Hardware-Oriented Secur. Trust, Jun. 2012, pp. 122–127.
+[72] S. Satpathy et al., “A 4-fJ/b delay-hardened physically unclonable
+function circuit with selective bit destabilization in 14-nm trigate
+CMOS,” IEEE J. Solid-State Circuits, vol. 52, no. 4, pp. 940–949,
+Apr. 2017.
+[73] S. K. Mathew et al., “A 0.19pJ/b PVT-variation-tolerant hybrid physi-
+cally unclonable function circuit for 100% stable secure key generation
+in 22 nm CMOS,” in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig.
+Tech. Papers, Feb. 2014, pp. 278–279.
+[74] S. Stanzione, D. Puntin, and G. Iannaccone, “CMOS silicon physi-
+cal unclonable functions based on intrinsic process variability,” IEEE
+J. Solid-State Circuits, vol. 46, no. 6, pp. 1456–1463, Jun. 2011.
+[75] K. Yang, Q. Dong, D. Blaauw, and D. Sylvester, “A physically unclon-
+able function with BER <10-8 for robust chip authentication using
+oscillator collapse in 40 nm CMOS,” in IEEE Int. Solid-State Circuits
+Conf. (ISSCC) Dig. Tech. Papers, Feb. 2015, pp. 1–3.
+[76] R. Maes, V. van der Leest, E. van der Sluis, and F. M. J. Willems,
+“Secure key generation from biased PUFs,” in Proc. Cryptograph.
+Hardw. Embedded Syst.-CHES. Berlin, Germany: Springer, Jan. 2015,
+pp. 517–534, doi: 10.1007/978-3-662-48324-4_26.
+[77] S. Crocker and J. I. Schiller, Randomness Requirements for Security,
+document RFC 4086, Jun. 2005. [Online]. Available: https://www.rfc-
+editor.org/info/rfc4086
+[78] R. Maes and V. van der Leest, “Countering the effects of silicon aging
+on SRAM PUFs,” in Proc. IEEE Int. Symp. Hardware-Oriented Secur.
+Trust (HOST), May 2014, pp. 148–153.
+[79] NewAE. (2020). Chipwhisperer. [Online]. Available: https://www.
+newae.com/chipwhisperer
+[80] E. Brier, C. Clavier, and F. Olivier, “Correlation power analysis with a
+leakage model,” in Proc. Int. Workshop Cryptograph. Hardw. Embedded
+Syst., in Lecture Notes in Computer Science, vol. 3156, Cambridge, MA,
+USA. Cham, Switzerland: Springer, Aug. 2004, pp. 16–29. [Online].
+Available: https://iacr.org/archive/ches2004/31560016/31560016.pdf
+[81] L. Weissbart and S. Picek, “Lightweight but not easy: Side-channel
+analysis of the Ascon authenticated cipher on a 32-bit microcontroller,”
+in Proc. Cryptol. ePrint Arch., 2023, pp. 1–5. [Online]. Available:
+https://eprint.iacr.org/2023/1598
+[82] (2015). Test Vector Leakage Assessment (TVLA) Derived Test Require-
+ments (DTR) With AES 1 Document. [Online]. Available: https://api.
+semanticscholar.org/CorpusID:44241387
+[83] Y. LeCun, Y. Bengio, and G. Hinton, “Deep learning,” Nature, vol. 521,
+no. 7553, pp. 436–444, 2015.
+[84] J. Von Neumann et al., “Various techniques used in connection with ran-
+dom digits,” John Von Neumann, Collected Works, vol. 5, pp. 768–770,
+Aug. 1963.
+[85] L. E. Bassham et al., “SP 800-22 rev. 1a. A statistical test suite
+for random and pseudorandom number generators for cryptographic
+applications,” Nat. Inst. Standards, Gaithersburg, MD, USA, Tech.
+Rep. 800-22 Rev 1a, 2010.
+[86] R. C. Bose and D. K. Ray-Chaudhuri, “On a class of error correcting
+binary group codes,” Inf. Control, vol. 3, no. 1, pp. 68–79, 1960.
+[Online].
+Available:
+https://www.sciencedirect.com/science/article/
+pii/S0019995860902874
+[87] R. Hwang, T. Kim, Y. Kwon, and M. Rhu, “Centaur: A chiplet-based,
+hybrid sparse-dense accelerator for personalized recommendations,”
+in Proc. ACM/IEEE 47th Annu. Int. Symp. Comput. Archit. (ISCA),
+May 2020, pp. 968–981.
+[88] Z. Tan, H. Cai, R. Dong, and K. Ma, “NN-baton: DNN workload orches-
+tration and chiplet granularity exploration for multichip accelerators,”
+in Proc. ACM/IEEE Int. Symp. Comput. Archit. (ISCA), Nov. 2021,
+pp. 1013–1026.
+Maitreyi Ashok (Student Member, IEEE) received
+the B.S. degree in electrical engineering from Cal-
+ifornia Institute of Technology (Caltech), Pasadena,
+CA, USA, in 2019, and the S.M. degree in
+electrical engineering and computer science from
+Massachusetts Institute of Technology (MIT), Cam-
+bridge, MA, USA, in 2021. She is currently pursuing
+the Ph.D. degree with MIT, supervised by Professor
+Anantha Chandrakasan.
+She has previously interned at Intel Labs, Hills-
+boro, OR, USA, in 2021; and Microsoft, Redmond,
+WA, USA, in 2018 and 2019. Her research focuses on hardware security in
+digital and mixed-signal integrated circuits against physical attacks including
+passive side channels and hardware trojan insertion.
+Ms. Maitreyi received the National Science Foundation Graduate Research
+Fellowship in 2019, the Analog Devices Fellowship in 2019, and the Math-
+Works Engineering Fellowship in 2021.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 13 =====
+3402
+IEEE JOURNAL OF SOLID-STATE CIRCUITS, VOL. 60, NO. 9, SEPTEMBER 2025
+Saurav Maji (Member, IEEE) received the B.Tech.
+degree in electronics and electrical communication
+engineering from Indian Institute of Technology
+(IIT) Kharagpur, Kharagpur, India, in 2017, and the
+S.M. and Ph.D. degrees in electrical engineering
+and computer science from Massachusetts Institute
+of Technology (MIT), Cambridge, MA, USA, in
+2019 and 2023, respectively.
+Since July 2023, he has been a Research Scien-
+tist with Circuits Research Lab, Intel Labs, Intel,
+Hillsboro, OR, USA. His research interests include
+energy-efficient security solutions for IoT applications, side-channel security,
+fault analysis for machine learning and artificial intelligence applications, and
+circuits for biomedical applications.
+Dr. Maji was a recipient of the President of India Gold Medal from IIT
+Kharagpur in 2017, the Analog Devices Fellowship from MIT in 2017,
+the MIT EECS MathWorks Fellowship from MIT in 2022, and the Student
+Research Preview (SRP) Poster Award at the IEEE International Solid-State
+Circuits Conference (ISSCC) 2023. He received the Second Place Winner
+Award in the Design Contest at the 2020 ACM/IEEE International Symposium
+on Low Power Electronics and Design (ISLPED).
+Xin Zhang (Senior Member, IEEE) received the
+B.S. degree in electronics engineering from Xi’an
+Jiaotong University, Xi’an, China, in 2003, and
+the Ph.D. degree in microelectronics from Peking
+University, Beijing, China, in 2008.
+From 2008 to 2012, he was a Project Researcher
+and a Project Research Associate at the Institute of
+Industrial Science, The University of Tokyo, Tokyo,
+Japan. In 2012, he was a Visiting Scholar at the
+University of California at Berkeley, Berkeley, CA,
+USA. In 2013, he was a Scientist at the Institute
+of Microelectronics (IME), Agency for Science, Technology and Research
+(A*STAR), Singapore. Since 2014, he has been with the IBM T. J. Watson
+Research Center, Yorktown Heights, NY, USA, where he is currently a
+Research Staff Member and the Manager. Since 2021, he has been an
+Adjunct Professor with the Department of Electrical Engineering, Columbia
+University, New York City, NY, USA. Since 2022, he has been associated
+with the MIT-IBM Watson AI Laboratory, Cambridge, MA, USA. He has
+authored or co-authored over 60 technical articles and has over 40 filed
+or issued patents. His research interests include analog circuits, power
+management circuits, dc–dc converters, power devices, magnetics, machine
+learning hardware/accelerators, computer system architecture, server system
+packaging/power delivery/cooling, and AI-/ML-assisted EDA.
+Dr. Zhang has served as a Technical Program Committee Member for the
+Applied Power Electronics Conference (APEC), the IEEE VLSI Symposium
+on Technology and Circuits, the IEEE Custom Integrated Circuits Conference
+(CICC), the IEEE International Solid-State Circuits Conference (ISSCC),
+and the Design Automation Conference (DAC). He has been an Organizing
+Committee Member of the IBM IEEE CAS/EDS—AI Compute Symposium
+since 2018. He is also serving as a member of the Analog-Mixed Signal
+Circuits, Systems, and Devices (AMS-CSD) Technical Advisory Board at the
+Semiconductor Research Corporation (SRC) representing IBM. He served as
+a Guest Editor for IEEE JOURNAL ON EMERGING AND SELECTED TOPICS
+IN CIRCUITS AND SYSTEMS and IEEE SOLID-STATE CIRCUITS LETTERS.
+He is an Associate Editor of IEEE SSC-L.
+John Cohn (Life Fellow, IEEE) received the BSEE
+degree from Massachusetts Institute of Technology
+(MIT), Cambridge, MA, USA, in 1981, and the
+Ph.D. degree in computer engineering from Carnegie
+Mellon University, Pittsburgh, PA, USA, in 1991,
+where he was named a Distinguished Alumni in
+2014.
+He is an IBM Fellow Emeritus with the IBM
+Research Division, Cambridge. He has authored
+more than 45 technical papers, contributed to four
+books, and has more than 120 worldwide patents.
+Dr. Cohn was elected a fellow of the IEEE for contributions to high-speed
+integrated circuit design in 2005. In 2022, he was elected to the US National
+Academy of Engineering. He is active in education issues at the local, state,
+and national levels. In 2019, he was awarded the IEEE CAS John Choma
+Education Award for his efforts in STEM promotion. In 2021, he was awarded
+the IEEE EAB Meritorious Achievement Award in Outreach and Informal
+Education.
+Anantha P. Chandrakasan (Fellow, IEEE) received
+the B.S., M.S., and Ph.D. degrees in electrical
+engineering and computer sciences from the Univer-
+sity of California at Berkeley, Berkeley, CA, USA,
+in 1989, 1990, and 1994, respectively.
+Since September 1994, he has been with Mas-
+sachusetts Institute of Technology (MIT), Cam-
+bridge, MA, USA, where he is currently the
+Vannevar Bush Professor of Electrical Engineering
+and Computer Science. He was the Director of
+the Microsystems Technology Laboratories, MIT,
+from 2006 to 2011. From July 2011 to June 2017, he was the Head of
+the Department of Electrical Engineering and Computer Science, MIT. Since
+July 2017, he has been the Dean of the School of Engineering, MIT. Since
+January 2024, he has also held the position of MIT Chief Innovation and
+Strategy Officer. He is a co-author of Low Power Digital CMOS Design
+(Kluwer Academic Publishers, 1995), Digital Integrated Circuits (Pearson
+Prentice-Hall, 2003, Second Edition), and Sub-threshold Design for Ultra-Low
+Power Systems (Springer 2006). His research interests include ultra-low-power
+circuit and system design, energy harvesting, energy-efficient RF circuits, and
+hardware security.
+Dr. Chandrakasan was elected as a fellow of the Association for Computing
+Machinery (ACM) in 2020. He was a co-recipient of several awards, including
+the 2007 ISSCC Beatrice Winner Award for Editorial Excellence and the
+ISSCC Jack Kilby Award for Outstanding Student Paper in 2007, 2008,
+and 2009. He received the 2009 Semiconductor Industry Association (SIA)
+University Researcher Award and the 2013 IEEE Donald O. Pederson Award
+in Solid-State Circuits, an Honorary Doctorate from KU Leuven in 2016, the
+UC Berkeley EE Distinguished Alumni Award in 2017, and the 2019 IEEE
+Solid-State Circuits Society Distinguished Service Award. In 2015, he was
+elected to the National Academy of Engineering. In 2019, he was elected to the
+American Academy of Arts and Sciences. He was a recipient of the 2022 IEEE
+Mildred Dresselhaus Medal. He has served in various roles for the IEEE
+ISSCC including the Program Chair, the Signal Processing Sub-Committee
+Chair, and the Technology Directions Sub-committee Chair. He served as the
+Conference Chair for ISSCC from 2010 to 2018. He served as the Senior
+Technical Advisor to the Conference from ISSCC 2019 to ISSCC 2023.
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 04:10:36 UTC from IEEE Xplore.  Restrictions apply. 

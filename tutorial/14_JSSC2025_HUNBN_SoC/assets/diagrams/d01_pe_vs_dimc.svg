@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">数字 PE 阵列 vs DIMC 阵列：权重“住在哪里”决定能耗</text>
+
+  <!-- PE array -->
+  <rect x="40" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="14" font-weight="700">传统数字 PE 阵列（冯·诺依曼式）</text>
+  <g font-size="12">
+    <rect x="70" y="130" width="150" height="52" rx="8" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="145" y="152" text-anchor="middle" fill="#a0402e" font-weight="600">权重 SRAM</text>
+    <text x="145" y="170" text-anchor="middle" fill="#45536b">（片外/片上大容量）</text>
+    <rect x="270" y="130" width="150" height="52" rx="8" fill="#fff" stroke="#45536b"/>
+    <text x="345" y="150" text-anchor="middle" fill="#45536b" font-weight="600">PE（处理单元）</text>
+    <text x="345" y="168" text-anchor="middle" fill="#45536b">乘法器+加法树</text>
+    <path d="M 224 156 L 266 156" stroke="#e66e5a" stroke-width="3" marker-end="url(#ar)"/>
+    <path d="M 345 186 L 345 216 L 120 216 L 120 186" stroke="#e66e5a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+    <text x="228" y="238" text-anchor="middle" fill="#e66e5a" font-size="11">权重来回搬（高能耗）</text>
+    <rect x="70" y="260" width="360" height="38" rx="8" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="250" y="284" text-anchor="middle" fill="#a0402e">瓶颈：权重访问能耗高 + 寄存器数量爆炸</text>
+  </g>
+
+  <!-- DIMC -->
+  <rect x="490" y="84" width="430" height="230" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="14" font-weight="700">DIMC 阵列（本论文）</text>
+  <g font-size="12">
+    <rect x="520" y="130" width="180" height="52" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="610" y="150" text-anchor="middle" fill="#1d8a5f" font-weight="600">6T SRAM（存权重）</text>
+    <text x="610" y="168" text-anchor="middle" fill="#45536b">256×96 pushed-rule 6T</text>
+    <rect x="720" y="130" width="160" height="52" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="800" y="150" text-anchor="middle" fill="#1d8a5f" font-weight="600">本地 MAC 单元</text>
+    <text x="800" y="168" text-anchor="middle" fill="#45536b">就地乘加</text>
+    <path d="M 704 156 L 716 156" stroke="#1d8a5f" stroke-width="3" marker-end="url(#ar)"/>
+    <rect x="520" y="208" width="360" height="38" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="700" y="232" text-anchor="middle" fill="#1d8a5f">权重就地存储 → 权重不搬移（直接省 28% 功耗[23]）</text>
+    <text x="520" y="292" fill="#45536b">但前提：模型权重必须装得下！否则仍要搬 → 高密度是系统级能效的钥匙</text>
+  </g>
+
+  <!-- 系统级能效两把钥匙 -->
+  <rect x="40" y="334" width="880" height="180" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="360" fill="#0e5a8a" font-size="14" font-weight="700">系统级能效的两把钥匙（论文核心论点）</text>
+  <g font-size="12.5">
+    <text x="60" y="392" fill="#1d8a5f" font-weight="600">钥匙① 宏级面积利用率（FoM）</text>
+    <text x="80" y="414" fill="#45536b">FoM = 存储密度(MB/mm²) × MAC密度(#MAC/mm²) → 面积效率越高，同等面积装得越多</text>
+    <text x="60" y="442" fill="#1d8a5f" font-weight="600">钥匙② 宏级 MAC 能效（TOPS/W）</text>
+    <text x="80" y="464" fill="#45536b">宏级能效直接决定系统级能效上限</text>
+    <text x="60" y="492" fill="#1d8a5f" font-weight="600">钥匙③ 阵列利用率（数据流匹配）</text>
+    <text x="80" y="514" fill="#45536b">不同层的映射方式匹配度 → 欠利用率会拉低系统能效</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,63 @@
+<section class="chapter" id="sec0">
+<h1 class="title">POSIT 存内计算宏零基础精讲：换一个更聪明的“数”来算
+<span class="en">An Energy-Efficient POSIT Compute-in-Memory Macro for High-Accuracy AI Applications（IEEE JSSC, vol.60, no.8, 2025）</span></h1>
+<div class="meta">论文作者：Yang Wang, Xiaolong Yang, Yubin Qin, Zhiren Zhao, Ruiqi Guo, Zhiheng Yue, Huiming Han, Shaojun Wei, Yang Hu, Shouyi Yin（清华大学）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 8, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前几篇用 INT8 / FP16 / MXFP 做 CIM。这篇清华尹首一团队的工作换了一条思路：<strong>换一种数的表示——POSIT</strong>。POSIT 的位宽是<strong>动态分配</strong>的（指数范围大时多给 regime 位、需要精度时多给尾数位），所以 <strong>POSIT8 就能达到 ≈FP16/BF16 的精度</strong>，存储和 MAC 能耗却只有 FP16 的 1/6.25。</p>
+<p>但 POSIT 的动态特性给硬件带来三大坑：① regime（温度计码）处理要 extract+codec，能耗 +2.62×；② 动态尾数位宽让固定结构的 CIM 阵列 41.3% 单元闲置；③ 动态对齐后无重叠位的加法是冗余翻转，加法树浪费 62.5% 能耗。本论文用三招一一攻破：</p>
+<ol>
+<li><strong>BRPU（双向 regime 处理单元）</strong>：用“移位+OR”替代“译码+加法+编码”——regime 的十进制值就是连续 0/1 的个数，加法只是个数增减 → 用移位实现 → 省 40.3% regime 能耗；</li>
+<li><strong>CPCS（关键位预计算存储）CIM 阵列</strong>：把动态位宽尾数留下的<strong>空闲单元</strong>用来存预计算好的“关键位” → 每周期做<strong>双位 MAC</strong> → 单元利用率 +63%；</li>
+<li><strong>CASU（循环交替调度单元）</strong>：无重叠位的加法等价于 OR（X+0=X|0）→ 用 OR 替代加法省 82.9% 功耗；重叠时用<strong>循环交替调度</strong>错开位串行计算顺序，制造无重叠 → 加法树省 56.9%。</li>
+</ol>
+<p>28nm 实测：<strong>83.23 TFLOPS/W</strong>（POSIT(8,1)），ViT-B ImageNet 分类比 SOTA FP-CIM 省能 <strong>2.36×</strong>、加速 <strong>3.51×</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“数的表示”也是硬件设计的一部分：</strong>INT8 便宜但不准，FP16 准但贵。POSIT 想两头都占——用<strong>动态位分配</strong>在“范围”和“精度”之间按数据分布自动权衡。硬件设计的自由度不只是电路，还包括<strong>数据格式本身</strong>。</li>
+<li><strong>“动态”是把双刃剑：</strong>POSIT 灵活换来的是硬件复杂度——regime 要动态解析、尾数位宽不固定。本论文的全部创新都在回答同一个问题：<strong>怎么把“动态”的代价压掉，只留下好处</strong>。</li>
+<li><strong>“无重叠就不需要加法”：</strong>两个数对齐后如果占位不重叠，加起来就是逐位 OR（X+0=X|0）。POSIT 尾数短、重叠概率低 → 大量加法可以换成又小又省的 OR 门。这是“利用数据特性省硬件”的经典例子。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“FP-CIM with FP32/FP16/BF16 data format incurs a performance bottleneck due to the large storage requirements and MAC power”</td>
+<td>传统 FP-CIM 的病根：FP16 等格式位宽大 → 存储开销大、MAC 功耗高。</td></tr>
+<tr><td class="num">“The emerging POSIT data format exploits dynamic bit width that adapts to varied data distributions”</td>
+<td>POSIT 用动态位宽适配不同数据分布（范围-精度运行时权衡）。</td></tr>
+<tr><td class="num">“enabling using a low-bit-width to reach nearly the same accuracy performance as conventional high-bit-width FP (POSIT8 ≈FP16/BF16)”</td>
+<td>低位数 POSIT8 就能达到 ≈FP16/BF16 的精度。</td></tr>
+<tr><td class="num">“a bi-directional regime processing unit (BRPU) simplifies the complicated codec logic”</td>
+<td>创新①：BRPU 简化 regime 处理的编解码逻辑。</td></tr>
+<tr><td class="num">“a critical-bit pre-compute-and-store (CPCS) CIM utilizes the spare CIM cells … to improve cell utilization”</td>
+<td>创新②：CPCS 用空闲 CIM 单元存预计算关键位，提高单元利用率。</td></tr>
+<tr><td class="num">“a cyclically alternating computing-scheduling unit replaces the bit-wise addition of dynamically aligned mantissas with bit-wise OR”</td>
+<td>创新③：CASU 用逐位 OR 替代动态对齐尾数的逐位加法。</td></tr>
+<tr><td class="num">“reaches an 83.23 TFLOPS/W peak energy efficiency at POSIT(8,1) for ImageNet classification on ViT-B”</td>
+<td>28nm 实测：ViT-B ImageNet 分类，POSIT(8,1) 峰值能效 83.23 TFLOPS/W。</td></tr>
+<tr><td class="num">“PD-CIM reduces energy by 2.36× and offers 3.51× speedup”</td>
+<td>对比 SOTA FP-CIM：省能 2.36×、加速 3.51×。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>POSIT 数据格式 + CIM 的完整落地</strong>：首次系统解决 POSIT 动态特性在 CIM 中的三大挑战（regime 处理、单元欠利用、加法树浪费）；</li>
+<li><strong>BRPU</strong>：shift-OR 替代 codec+加法+编码（regime 处理能耗 −40.3%、面积 −67.8%、功耗 −79.6%）；双向移位控制器（解码小 |R|、移位大 |R|）省移位能耗、免移位错误；合并前导 0/1 检测器（面积 −28.4%、功耗 −25.8%）；</li>
+<li><strong>CPCS CIM 阵列</strong>：空闲单元存关键位 → 双位 MAC（利用率 +63.0%、吞吐 +38.2%）；2–4b 关联（+24.7%）、3b 优先分区（POSIT16 +1.34×）；</li>
+<li><strong>CASU</strong>：OR 替代加法（无重叠位，省 82.9%）；提前检测（省 36.1% 加法器）；循环交替调度（无重叠率 +36.4%、功率 −31.3%）；</li>
+<li><strong>完整实测</strong>：83.23 TFLOPS/W @ POSIT(8,1)；ViT-B 省能 2.36×、加速 3.51×；16 宏系统线性扩展 15.3×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇的“数据格式思维”很关键：先理解 POSIT 的位结构（§1/2），再看三个创新怎么分别治三种病（§4/5/6）。读时反复问：<strong>这个硬件技巧利用了 POSIT 的哪个特性？</strong></p>
+</div>
+</section>

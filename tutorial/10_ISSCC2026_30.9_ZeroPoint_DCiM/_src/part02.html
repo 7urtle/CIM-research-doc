@@ -1,0 +1,46 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>数字 CiM（DCiM）与“全可综合”：本论文的技术路线选择</h2>
+
+<h3 id="sec2-1">2.1 模拟 CiM vs 数字 CiM：一个决定性的选择</h3>
+<p>CiM 内部怎么“算”，业界分成两大流派：</p>
+<p><strong>模拟 CiM（Analog CiM）</strong>：让存储单元直接参与模拟运算——比如把权重编码成单元的电导/阈值电压，把激活编码成字线电压或位线电流，电流在位线上“自然累加”（基尔霍夫电流定律），最后在列尾用一个 ADC 把模拟结果转回数字。它的优点是：<em>单元面积最小、功耗可以极低、部分积“免费”</em>。但缺点是致命的：</p>
+<ul>
+<li><strong>精度不确定</strong>：电流求和是模拟量，受噪声、失调、温度影响；ADC 本身还有量化误差。同一个网络在不同芯片（甚至同一芯片不同温度）上结果不同——这对需要“确定性精度”的推理系统是灾难；</li>
+<li><strong>工艺缩放困难</strong>：模拟精度对工艺波动（PVT variation）极敏感，跟着工艺节点缩放时信噪比恶化；</li>
+<li><strong>难以移植</strong>：模拟电路几乎全是定制版图，换个工艺节点就要重新设计、重新验证。</li>
+</ul>
+<p><strong>数字 CiM（Digital CiM, DCiM）</strong>：存储单元只负责“存”数字 0/1（可以是最普通的锁存器/触发器/SRAM 位单元），读出后交给旁边的<strong>数字逻辑</strong>（乘法器、加法树）做精确运算。它的优点正好补上模拟的短板：<em>逐位精确、可复现；低压可运行；100% 标准数字设计流程</em>。代价是：单元面积比纯模拟大、每个乘法都要显式做（没有“免费的部分积”）。</p>
+<figure>
+  <img src="assets/diagrams/d02_analog_vs_digital.svg" alt="模拟 CiM vs 数字 CiM" style="max-width:880px">
+  <figcaption>图 2.1　模拟 CiM 与数字 CiM 的本质区别：模拟靠“电荷/电流累加”，数字靠“显式逻辑计算”。本论文坚定选择数字路线。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么这篇论文敢说“确定性精度 + 工艺电压可缩放”</div>
+<p>因为它是纯数字的：每一个加法都是布尔逻辑的确定结果，与电压高低、工艺角无关（只要满足时序）。所以它敢把电压一路压到 <strong>400 mV</strong>（1.1 V 的 1/3 都不到）来换能效——这在模拟 CiM 上几乎不可想象（400 mV 下模拟精度早就崩了）。这是“数字”给它的最大红利。</p>
+</div>
+
+<h3 id="sec2-2">2.2 “全可综合”（Fully Synthesizable）到底意味着什么？</h3>
+<p>芯片设计有两种典型流程：</p>
+<ul>
+<li><strong>全定制/半定制（Full-Custom / Semi-Custom）</strong>：画原理图、手动画版图、做 DRC/LVS 验证。存储宏（SRAM/Register File）通常是定制 IP。模拟 CiM 基本属于这一类。</li>
+<li><strong>可综合流程（Synthesizable RTL Flow）</strong>：用 Verilog/VHDL 描述功能 → <strong>逻辑综合</strong>（工具自动映射到标准单元库）→ <strong>布局布线（APR）</strong> → 签核（时序/功耗/DRC 检查）→ 出 GDSII 流片。整个流程工具化、自动化。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d03_synthesizable.svg" alt="可综合设计流程" style="max-width:880px">
+  <figcaption>图 2.2　可综合流程 vs 定制流程：前者换工艺只需换库重综合，后者要重新画版图。</figcaption>
+</figure>
+<p>本论文标题里的 <strong>“Fully Synthesizable”（全可综合）</strong> 有三个层次的含义，缺一不可：</p>
+<ol>
+<li><strong>计算逻辑可综合</strong>：Booth 选择器、CSA 加法树、流水线寄存器——这些本来就是标准数字逻辑，没什么稀奇；</li>
+<li><strong>存储也可综合</strong>：这是最关键的！权重存储不用定制 SRAM 宏，而是用<strong>标准单元库里的锁存器（Latch）</strong>拼出来的（12T 多比特锁存，见 §6）。锁存器是标准单元库的成员，所以“存储”也是综合工具能处理的对象——整个加速器没有一个定制 IP；</li>
+<li><strong>整个加速器作为一个宏（on-die accelerator）可综合</strong>：可以像普通 RTL 一样被嵌入 SoC，用标准工具链完成物理实现。</li>
+</ol>
+<div class="box info">
+<div class="bt">🧠 为什么要强调“可综合”？——为了推广与移植</div>
+<p>可综合意味着：① <strong>换工艺节点</strong>（比如 18A → 下一个节点）只需换标准单元库、重新综合布局布线，几周搞定，而不是重新画版图；② <strong>设计周期短</strong>，适合快速迭代验证新架构；③ 可以直接集成进 Intel 的 SoC 设计流程，降低采用门槛。论文摘要里那句 “promoting broader adoption”（促进更广泛采用）说的就是这个。当然代价也有：锁存器存储的面积/密度不如定制 SRAM，所以论文才要在“高密度多比特锁存”上花功夫（§6.2）。</p>
+</div>
+<div class="box warn">
+<div class="bt">⚠️ 一个容易误解的点：可综合 ≠ 性能差</div>
+<p>有人会觉得“用标准单元做存储、做计算”是妥协，性能肯定不如定制。但本文用结果说话：<strong>2.62 GHz、250 TOPS/mm²、147 TOPS/W</strong>，在能效和面积效率上对标甚至超过很多定制模拟 CiM。可综合路线真正牺牲的是“存储密度”（锁存器比 6T SRAM 大），而不是速度或能效——因为数字计算的功耗主要由“翻转活动率”决定，与是否定制无关。这其实是本文最重要的产业启示。</p>
+</div>
+</section>

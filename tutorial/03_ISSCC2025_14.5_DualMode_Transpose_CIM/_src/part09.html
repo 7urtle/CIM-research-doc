@@ -1,0 +1,48 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更深的训练支持（完整反向流水线）</strong>：本文做的是 MAC 级 FF/BP 复用。完整训练还需要梯度计算（G = δ×Xᵀ）、权重更新（W -= ηG）、优化器状态（Adam 动量）——把整条训练流水线搬上 CIM（与 17 号论文“one-shot FP 推理 + 设备端微调”方向呼应）；</li>
+<li><strong>转置方案的通用化</strong>：CWM-SRAM 的“循环映射 + 对角读”只适用于方阵/特定形状。扩展到任意形状矩阵、块转置、注意力 QKV 转置，需要更通用的“数据布局变换”机制；</li>
+<li><strong>SFME 的格式族扩展</strong>：FP8/BF16 之后是 MXFP（06 号论文）、FP4——SFME 能否继续“折叠”更低位宽的浮点？截断窗口的数学建模（VWPA 的边界）值得深入研究；</li>
+<li><strong>近似计算的精度理论</strong>：NMED 5.3% 是经验值。能否建立“近似乘法器误差 → 训练收敛/最终精度”的解析模型？有了模型才能按层/按迭代动态切换精确/近似；</li>
+<li><strong>稀疏训练</strong>：训练中的梯度天然稀疏（很多接近 0）。把 02 号论文的 NIM/动态启动器思路引入 BP 路径（跳过零梯度），训练能效还能翻倍；</li>
+<li><strong>端到端联邦/个性化微调 SoC</strong>：CIM 宏 + RISC-V 控制 + eNVM（05 号论文路线）——做一个“能感知、能推理、能训练、能记住”的完整边缘芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>FF（Feed-Forward，前向）</dt><dd>与推理相同的前向传播。</dd>
+<dt>BP（Backpropagation，反向传播）</dt><dd>误差梯度回传；需要 × 转置权重矩阵。</dd>
+<dt>T-CIM（Transpose CIM）</dt><dd>支持权重转置读取的存内计算。</dd>
+<dt>CWM-SRAM（Cyclic-Weight-Mapping SRAM）</dt><dd>循环权重映射：每行按行号右移存储，转置=读对角。</dd>
+<dt>循环映射</dt><dd>矩阵第 r 行整体右移 r 格的存储方式。</dd>
+<dt>读使能（Read-Enable）</dt><dd>FF 读使能连 4 行、BP 读使能连 4 对角。</dd>
+<dt>SFME（Signed Fixed-point Mantissa Encoding）</dt><dd>有符号定点尾数编码：预对齐后尾数变成定点补码数。</dd>
+<dt>VWPA（Vector-Wise Pre-Alignment）</dt><dd>向量级预对齐：同向量元素分布接近 → 截断窗口小。</dd>
+<dt>DMBP-MAC（Dual-Mode Bit-Parallel MAC）</dt><dd>精确/近似双模式位并行 MAC。</dd>
+<dt>BAM（Broken-Array Multiplier）</dt><dd>断阵近似乘法器：丢右侧部分和。</dd>
+<dt>LOA（Lower-part OR Adder）</dt><dd>低位 OR 加法器：低位按位或代替加法。</dd>
+<dt>NMED（Normalized Mean Error Distance）</dt><dd>归一化平均误差距离；本文 5.3%。</dd>
+<dt>FP8</dt><dd>8 位浮点：E5M2（范围大精度低）或 E4M3（范围小精度高）。</dd>
+<dt>AMBA / AHB / APB</dt><dd>ARM 总线标准：AHB 内存访问、APB 控制。</dd>
+<dt>中心对称布局</dt><dd>DMBP-MAC 与 CWM-SRAM 中心对称集成，优化长宽比、缓解布线。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y. Yuan, B. Zhang, et al., “A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” <em>ISSCC 2025</em>, Paper 14.5. DOI: 10.1109/ISSCC49661.2025.10904659</li>
+<li>J.-W. Su et al., “Two-Way Transpose Multibit 6T SRAM Computing-in-Memory Macro for Inference-Training AI Edge Chips,” <em>IEEE JSSC</em>, vol. 57, no. 2, 2022.（转置前作 [7]）</li>
+<li>J. Song et al., “A 16Kb Transpose 6T SRAM In-Memory-Computing Macro based on Robust Charge-Domain Computing,” <em>A-SSCC 2021</em>.（转置前作 [8]）</li>
+<li>P. Micikevicius et al., “FP8 Formats for Deep Learning,” <em>arXiv:2209.05433</em>.（FP8 定义 [13]）</li>
+<li>A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain FP Computing-Unit and Double-Bit 6T-SRAM CIM Macro…,” <em>ISSCC 2023</em>, pp. 128-130.（预对齐前作 [1]）</li>
+<li>H. R. Mahdiani et al., “Bio-Inspired Imprecise Computational Blocks for Efficient VLSI Implementation of Soft-Computing Applications,” <em>IEEE TCAS-I</em>, vol. 57, no. 4, 2010.（LOA 原理 [14]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 255-257.（[11]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.5.1–14.5.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（192.3 TFLOPS/W、2.5ns、5.3% 等）均来自论文原文；能效/精度对比图中的“其余格式”数值为量级示意，已注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

@@ -1,0 +1,51 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>TCL 的位宽扩展与通用化</strong>：本文 TCL 做 8b×8b 的 15 位列。扩展到 INT12/INT16（23/31 位列）、FP16 尾数、块浮点（block FP），TCL 的“数沿”机制是否依然划算？位数越多，链越长，单周期 10 相是否够？这是最自然的延伸；</li>
+<li><strong>多相发生器省电化的极限</strong>：10 相由 RDC 链产生，相位间隔是“模拟延迟”而不是时钟 → 有 PVT 敏感性（论文用 Monte Carlo 验证了裕量）。更先进的方案：用更少相位、或把相位数量做成可配置（乘法位数可调）；</li>
+<li><strong>稀疏计算深度融合</strong>：TCL 对“位积为 0”天然省电，但激活/权重“整字为 0”的跳过（skip）还没有。在 TCL 链上加“整列全零检测”，跳过全零列，能效还能再上一个台阶；</li>
+<li><strong>与浮点/训练结合</strong>：本文 BF16 靠外围指数对齐+后处理。能否把 TCL 扩展到“按需对齐”的浮点（像 01 号论文那样内嵌对齐）？训练场景的梯度计算（符号变化频繁）对 TCL 的稀疏假设是挑战；</li>
+<li><strong>编译器与活动率感知调度</strong>：能效强依赖输入稀疏/翻转率。做一个“按数据分布选模式/选电压”的运行时调度器（稀疏层低压高能效、稠密层高压保吞吐），把 TCL 的稀疏红利变成系统级收益；</li>
+<li><strong>与 3D/近存结合</strong>：TCL 计算单元面积小（晶体管最少），非常适合作为 3D 近存（08 号论文路线）逻辑层里的“计算块”——两个方向可以合成一个大芯片。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>位串行（Bit-Serial）</dt><dd>按位逐周期计算，单元小但需串并转换、MSB 翻转多。</dd>
+<dt>位并行（Bit-Parallel）</dt><dd>整字一次计算，直接匹配数据格式，MSB 翻转率低。</dd>
+<dt>外积（Outer Product）</dt><dd>两个数的各位两两相乘得到位积矩阵；8b×8b → 64 个位积。</dd>
+<dt>位列（Bit Column）</dt><dd>同移位位置的位积集合；8b×8b 共 15 个位列。</dd>
+<dt>位列加法（Bit-Column Addition）</dt><dd>把一列位积求和（数 1 的个数），是乘法器的核心。</dd>
+<dt>压缩器（Compressor）</dt><dd>把多个输入位压缩成和与进位的电路（如 3:2 CSA）；TCL 是另一种“无损压缩”。</dd>
+<dt>TCL（Transition-Counting-Line，转移计数行）</dt><dd>本文核心：级联 MMU + 计数器，用跳变沿个数编码列和。</dd>
+<dt>MMU（Multiply-Multiplex Unit）</dt><dd>乘-选单元：与门算位积 + 选择器决定取反/直通。</dd>
+<dt>CNT（Counter）</dt><dd>计数器，数跳变沿得列和（4b 输出）。</dd>
+<dt>8-to-4 无损压缩</dt><dd>8 个位积 → 4b 列和，无精度损失。</dd>
+<dt>总线 TCL（Bus TCL）</dt><dd>TCL-14 的 MMU 复用到 TCL-7~14 实现符号位扩展。</dd>
+<dt>符号位扩展（Sign Extension）</dt><dd>2C 负数的最高位复制到更高位；本文嵌入总线 TCL 实现。</dd>
+<dt>RDC（Rising-edge Delay Cell）</dt><dd>上升沿延迟单元；10 个级联组成 10 相发生器。</dd>
+<dt>10 相（10-Phase）</dt><dd>一个计算周期的 10 个相位：Ph0~7 乘法、Ph8 合并、Ph9 加法树。</dd>
+<dt>分阶段使能（Stage-Wise Enabling）</dt><dd>按相位开关电路，未轮到就强制接地 → 能效 +42%。</dd>
+<dt>MACV（MAC Value）</dt><dd>乘累加结果（本文 22b）。</dd>
+<dt>稀疏自适应</dt><dd>输入为 0 时电路不翻转（TCL 的天然属性）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>L. Feng, Y. Liu, L. Wu, D. Li, Z. Zhu, “A 28nm 106.85TOPS/W and 77.68TFLOPS/W CIM Macro with Stage-Wise-Enabled Lossless Compressors Based on Sign-Bit-Embedded Transition-Counting-Lines for Edge-AI Devices,” <em>ISSCC 2026</em>, Paper 30.4. DOI: 10.1109/ISSCC49663.2026.11409281</li>
+<li>X. Wang et al., “A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment Floating-Point CIM Macro with Non-Two's-Complement MAC…,” <em>ISSCC 2025</em>, pp. 254-255.（前作 [2]，本系列 01 号论文）</li>
+<li>X. Chen et al., “A 28nm 64kb Bit-Rotated Hybrid-CIM Macro with an Embedded Sign-Bit-Processing Array…,” <em>ISSCC 2025</em>, pp. 260-261.（前作 [3]）</li>
+<li>H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm²… INT12 × INT12…,” <em>ISSCC 2024</em>, pp. 572-573.（数字 CIM [4]）</li>
+<li>Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based Floating-Point SRAM CIM Macro with Logarithm Bit-Width Residual ADC,” <em>ISSCC 2024</em>, pp. 576-577.（ADC 压缩对比 [5]）</li>
+<li>Y. Yuan et al., “A 28nm 192.3TFLOPS/W Accurate/Approximate Dual-Mode-Transpose Digital 6T-SRAM CIM Macro for Floating-Point Edge Training and Inference,” <em>ISSCC 2025</em>, pp. 258-259.（前作 [6]）</li>
+<li>P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-Compute Macro…,” <em>ISSCC 2023</em>, pp. 126-127.（前作 [7]）</li>
+<li>D. Wang et al., “DIMC: 2219TOPS/W 2569F²/b Digital In-Memory Computing Macro in 28nm Based on Approximate Arithmetic Hardware,” <em>ISSCC 2022</em>, pp. 266-267.（近似压缩器 [10]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 30.4.1–30.4.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2026 IEEE）。所有实测数字（106.85 TOPS/W、77.68 TFLOPS/W、42%、2.95% 等）均来自论文原文；图表中“归一化”数值均已在图中注明依据。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

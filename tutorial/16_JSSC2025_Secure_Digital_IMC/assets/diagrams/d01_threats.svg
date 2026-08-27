@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">ML 加速器的安全威胁：输入隐私与模型完整性</text>
+
+  <!-- SCA -->
+  <rect x="40" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="14" font-weight="700">攻击① 物理侧信道攻击（SCA）</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">CMOS 电路功耗与数据直接相关 → 被动测量即可重建数据</text>
+    <text x="60" y="162" fill="#45536b"><tspan fill="#e66e5a" font-weight="600">功耗侧信道</tspan>：测电源轨分流电阻的压降</text>
+    <text x="60" y="186" fill="#45536b"><tspan fill="#e66e5a" font-weight="600">电磁侧信道</tspan>：探针测电流产生的 EM 场（非侵入）</text>
+    <rect x="70" y="200" width="170" height="40" rx="8" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="155" y="216" text-anchor="middle" fill="#a0402e">功率探针/EM 探针</text>
+    <text x="155" y="232" text-anchor="middle" fill="#a0402e">→ 相关/模板攻击</text>
+    <rect x="260" y="200" width="170" height="40" rx="8" fill="#fde8e4" stroke="#e66e5a"/>
+    <text x="345" y="216" text-anchor="middle" fill="#a0402e">重建输入激活</text>
+    <text x="345" y="232" text-anchor="middle" fill="#a0402e">（人脸/语音=隐私）</text>
+    <text x="60" y="270" fill="#45536b">物联网设备的输入激活反映私密数据（人脸图像、语音录音）</text>
+  </g>
+
+  <!-- BPA -->
+  <rect x="490" y="84" width="430" height="210" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#d08a10" font-size="14" font-weight="700">攻击② 总线探测攻击（BPA）</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">模型太大 → 权重从片外 DRAM/NVM 逐个加载</text>
+    <text x="510" y="162" fill="#45536b">传统封装：数据走 PCB 裸露走线 → 可被搭线窃听</text>
+    <text x="510" y="186" fill="#45536b">片外 NVM → 冷启动攻击（断电后仍能恢复数据）</text>
+    <rect x="520" y="200" width="150" height="40" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="595" y="216" text-anchor="middle" fill="#a06510">片外 DRAM/NVM</text>
+    <text x="595" y="232" text-anchor="middle" fill="#a06510">（权重密文）</text>
+    <rect x="700" y="200" width="180" height="40" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="790" y="212" text-anchor="middle" fill="#a06510">ASIC 加速器</text>
+    <text x="790" y="228" text-anchor="middle" fill="#a06510">（权重明文）</text>
+    <path d="M 674 220 L 696 220" stroke="#e66e5a" stroke-width="3" marker-end="url(#ar)"/>
+    <text x="688" y="206" text-anchor="middle" fill="#e66e5a" font-size="10">窃听</text>
+    <text x="510" y="270" fill="#45536b">知道权重 → ① 泄露私有训练数据 ② RowHammer 定向攻击 ③ 模型 IP 泄露</text>
+  </g>
+
+  <!-- threat model -->
+  <rect x="40" y="314" width="880" height="200" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="340" fill="#0e5a8a" font-size="14" font-weight="700">威胁模型与假设（论文 §II-A）</text>
+  <g font-size="12.5">
+    <text x="60" y="370" fill="#45536b">攻击者能力：物理接触 + 完全逆向芯片（知道架构/控制流/宏操作）</text>
+    <text x="60" y="394" fill="#45536b">但：无法量化大量芯片的制造失配差异（太贵）· 采样数受“被发现”限制（实际数量级）</text>
+    <text x="60" y="424" fill="#1d8a5f" font-weight="600">本工作防御范围：被动物理侧信道（SCA）+ 总线探测（BPA）</text>
+    <text x="60" y="450" fill="#45536b">不在范围：软件/微架构侧信道、主动故障注入、代工厂木马（文献另有对策）</text>
+    <text x="60" y="486" fill="#0e5a8a" font-weight="600">三大对策：① SCA 安全 MAC（原生安全 XNOR 门，免随机比特）· ② 片上轻量解密（ASCON）· ③ 片上密钥生成（PUF 复用 IMC SRAM）</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

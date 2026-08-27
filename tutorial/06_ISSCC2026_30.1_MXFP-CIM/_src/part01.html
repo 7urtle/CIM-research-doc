@@ -1,0 +1,12 @@
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：为什么需要 MXFP 低比特浮点</h2>
+<figure>
+  <img src="assets/diagrams/d01_mxfp_motivation.svg" alt="MXFP 动机" style="max-width:920px">
+  <figcaption>图 1.1　模型规模爆炸 + 低比特浮点的必要性与“自适应位宽”需求。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 一句话背景</div>
+<p>模型参数每两年涨约 10×（GPT-2 1.5B → DeepSeek-V3 671B），访存、带宽、能效全线告急。两个事实把“低比特浮点”推上台前：① INT8 动态范围不够（训练、大模型敏感层掉精度）；② FP16/BF16 太贵（16 位存储/带宽）。MXFP6/MXFP8 用“块共享尺度”在两者之间找到平衡——<strong>8 位（或 6 位）的表面积，接近 16 位的动态范围</strong>。DeepSeek-V3 用 FP8 训练并商用，就是最硬的产业证据。</p>
+</div>
+<p>但问题随之而来：<strong>不同任务需要的精度不一样</strong>。BERT 这类中小模型低位宽就够（省电），LLaMA 8B 需要中位宽（近无损），训练则需要高位宽（保梯度精度）。固定位宽的 FP-CIM 只能按“最坏情况”设计 → 简单任务也花高位宽的钱。所以论文提出两个需求：<strong>① 支持低比特 FP 格式；② 保留位宽（PBW）可调</strong>。</p>
+</section>

@@ -1,0 +1,60 @@
+<section class="chapter" id="sec0">
+<h1 class="title">One-Shot 浮点存内计算引擎零基础精讲：一个周期算完浮点
+<span class="en">A Computing-in-Memory Engine Supporting One-Shot Floating-Point NN Inference and On-Device Fine-Tuning for Edge AI（IEEE JSSC, vol.60, no.9, 2025）</span></h1>
+<div class="meta">论文作者：Haikang Diao, Haoyang Luo, Jiahao Song, Bocheng Xu, Runsheng Wang, Yuan Wang, Xiyuan Tang（北京大学）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 9, 2025（CICC'24 短文 [19] 的期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>上一篇（第 13 篇）是北大团队的 multiply-less <strong>INT</strong> CIM。这篇把同一思想推进到<strong>浮点（BF16）</strong>并加了<strong>片上微调</strong>。传统 FP-CIM 要四步：选最大指数、对齐输入、INT 尾数 MAC（位串行 8 周期！）、INT→FP 转换——前三步的电路 87.5% 时间闲置。本论文的 <strong>One-Shot CIM 引擎</strong>用三招把 FP 运算压进一个周期：</p>
+<ol>
+<li><strong>One-Shot 计算方案</strong>：用 multiply-less NN（L1 距离）把 INT 尾数 MAC 变成<strong>最小选择</strong> → 运算够简单 → 位并行 1 周期完成（原 8 周期）→ 吞吐提升 <strong>8×</strong>、硬件 100% 利用；定制 <strong>ParMS（8-bit 并行最小选择器）</strong>把最小选择的成本再压低（vs 乘法器面积 −11.5×、能耗 −8.2×）；</li>
+<li><strong>输入-权重协同对齐</strong>：离线无损钳位让权重与输入同分布 → 直接用<strong>权重的最大指数</strong>对齐输入（免掉 127 个比较器的 XE_max 选择）；新的 <strong>UBF16 格式</strong>免符号位、把归一化搜索从 16 位缩到 8 位 → 转换开销大减；</li>
+<li><strong>ODFC（片上微调核心）</strong>：轻量训练硬件（128 轮顺序更新 + 时分复用 + 保损失 FP 加法）→ 边缘环境变化导致精度暴跌（99.1%→13.8%）时，片上微调 10 epochs 恢复到 <strong>84.3%</strong>。</li>
+</ol>
+<p>28nm 实测：<strong>128 TFLOPS/W</strong>、<strong>7.02 TFLOPS/mm²</strong>（BF16），比 SOTA FP-CIM 提升 <strong>4.1× / 3.4×</strong>；CIFAR-10 91.84%、ImageNet 75.00%、COCO 36.8% mAP——与 FP32 基线无精度损失。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“先把运算变简单，再让电路跑得快”：</strong>浮点 MAC 最贵的是尾数乘法（位串行 8 周期）。本论文不硬扛乘法，而是换算法（L1 距离）让乘法变成“找最小值”——找最小值比乘快得多，所以位并行可行，一个周期就能算完。这是“算法-架构-电路”三层协同的典范。</li>
+<li><strong>“指数的活儿能省就省”：</strong>FP 计算要先对齐指数。传统做法每周期都要找输入的最大指数（127 个比较器）。本论文发现：权重是静态的，它的最大指数可以离线算好 → 输入直接对齐到权重指数即可，输入偶尔超过就钳位处理。把“实时做”变成“提前做”。</li>
+<li><strong>“边缘芯片也要会‘再学习’”：</strong>光照/天气变化会让测试样本偏离训练集 → 精度暴跌。真正的边缘 AI 需要能在设备上微调模型。但训练硬件很贵 → ODFC 用“一次只更新 16 个权重、128 轮扫完”的面积换时间，把训练塞进小面积。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“the complex digital circuitry required for integer (INT) mantissa multiply-accumulate (MAC) computation and exponent alignment severely limits the efficiency and throughput of FP CIM”</td>
+<td>FP-CIM 的痛点：INT 尾数 MAC 和指数对齐的数字电路又大又慢。</td></tr>
+<tr><td class="num">“a one-shot compute scheme is proposed to perform FP operation within one cycle”</td>
+<td>创新①：one-shot 计算方案——1 个周期完成 FP 运算。</td></tr>
+<tr><td class="num">“It adopts the multiply-less NN instead of the multiply-based NN to simplify the integer mantissa MAC to minimum selection”</td>
+<td>用 multiply-less NN 把 INT 尾数 MAC 简化为最小选择。</td></tr>
+<tr><td class="num">“an input–weight co-alignment workflow is proposed to eliminate maximum exponent selection and simplify mantissa shifting logic”</td>
+<td>创新②：输入-权重协同对齐——消除最大指数选择、简化尾数移位。</td></tr>
+<tr><td class="num">“a lightweight on-device fine-tuning core (ODFC) is designed to support online weight updates”</td>
+<td>创新③：轻量 ODFC 支持在线权重更新（片上微调）。</td></tr>
+<tr><td class="num">“achieves an energy efficiency of 128 TFLOPS/W and a computational density of 7.02 TFLOPS/mm² at BF16”</td>
+<td>28nm 实测：128 TFLOPS/W、7.02 TFLOPS/mm²（BF16）。</td></tr>
+<tr><td class="num">“representing a 4.1× and 3.4× improvement over previous state-of-the-art works”</td>
+<td>比 SOTA 提升 4.1×（能效）和 3.4×（计算密度）。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>One-Shot 计算方案</strong>：multiply-less（L1 距离 → Σ|xi−wi|=Σxi+Σwi−2Σmin）把 INT 尾数 MAC 变成最小选择 → 位并行 1 周期、8× 吞吐、100% 硬件利用率；位并行还利用输入相关性（MSB 翻转少）降功耗；</li>
+<li><strong>ParMS 并行最小选择器</strong>：硬连线、进位前瞻比较树、传输管编码器（14→7 管）、三态反相器门控（加法树 −44%）；vs INT8 乘法器面积 −11.5×、能耗 −8.2×；</li>
+<li><strong>输入-权重协同对齐</strong>：离线无损钳位 [0,Xmax] + 权重 WE_max 预对齐 → 免 XE_max 选择（面积 −22.3%、能耗 −31.7%）；UBF16 格式免符号位、归一化 16→8 位（再省 11.5%/6.5%）；</li>
+<li><strong>ODFC 片上微调</strong>：128 轮顺序更新、时分复用（面积 −10%）、保损失 FP 加法；MNIST-M 精度 13.8%→84.3%；</li>
+<li><strong>完整实测</strong>：128 TFLOPS/W、7.02 TFLOPS/mm²、三任务零精度损失、FoM 比基线 +5×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。建议先读本系列第 13 篇（multiply-less INT CIM）建立 L1 距离直觉，再读本篇看它如何被推到 FP 和训练。读时注意三件事：<strong>one-shot 为什么可行（§3）· 协同对齐怎么省指数逻辑（§5）· 微调硬件怎么把面积压小（§6）</strong>。</p>
+</div>
+</section>

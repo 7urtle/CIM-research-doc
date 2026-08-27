@@ -1,0 +1,84 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新④：特征图数据结构与数据搬移优化</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 四级数据结构（PixelPack→RowList→ColList→MapList）怎么组织特征图；② ColList 的 mod-3 分布怎么避免 bank 冲突；③ 正常卷积的滑动窗口取数与转置卷积的数据前瞻机制。</p>
+</div>
+
+<h3>6.1 四级数据结构：从像素到整张图</h3>
+<p>论文 Fig.10 把 3-D 特征图张量拆成四个层级，每一级都是“为了某类操作而设计”的：</p>
+<table>
+<tr><th style="width:18%">层级</th><th>内容</th><th>设计动机</th></tr>
+<tr><td><strong>PixelPack</strong></td><td>同一 (x,y) 坐标、32 个通道的像素打包 → 32×4b=128 bit</td><td>与 I/O SRAM 字长（128 bit）对齐 → 一次取一整包；C&gt;32 用多个 PixelPack</td></tr>
+<tr><td><strong>RowList</strong></td><td>同一 y 行的 PixelPack 线性排列：起始地址 + x 长度</td><td>线性取址覆盖大多数 CNN 层 → 简化内存管理</td></tr>
+<tr><td><strong>ColList</strong></td><td>每 32 通道一组，含特征图所有像素；最小可调度单元</td><td>层级调度以 ColList 为单位（C=64 需 2 个 ColList）</td></tr>
+<tr><td><strong>MapList</strong></td><td>不同输入通道的 ColList 全集</td><td>代表整张特征图</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig14_10_特征图内存表示.png" alt="特征图内存表示">
+<figcaption>图 10 · 论文 Fig.10：特征图的内存表示——PixelPack → RowList → ColList → MapList 四级结构。</figcaption>
+</figure>
+
+<h3>6.2 避免 bank 冲突：mod-3 分布</h3>
+<p>ColList 把 RowList 按 <strong>mod-3 同余</strong>分布到三个 SRAM bank：RL0→bank0、RL1→bank1、RL2→bank2、RL3→bank0……这样<strong>连续三行分到不同 bank</strong> → FX=FY=3 的层每周期只访问单个 bank → 无访问冲突、单周期完成取数。</p>
+
+<h3>6.3 SRAM 分区配置（论文 Fig.11）</h3>
+<p>卷积开始前要配置 P1–P3 的角色。例：C=96 的层 → 输入激活和权重需要 3 个 ColList 和 3 个 DIMC 地址 → 3 次簇运行（cluster run）完成输出；P1 做输入供给，P2/P3 交替做部分和缓冲（双缓冲）。</p>
+
+<figure>
+<img src="assets/figs/fig14_11_SRAM分区配置.png" alt="SRAM分区配置">
+<figcaption>图 11 · 论文 Fig.11：SRAM 分区配置示例（C=96：P1 输入、P2/P3 交替部分和缓冲）。</figcaption>
+</figure>
+
+<h3>6.4 正常卷积的数据搬移：滑动窗口</h3>
+<p>论文 Fig.12 展示了 3×3 正常卷积的搬移流程：</p>
+<ol>
+<li>run1 开始：base 地址=0（ColList1 第一个 RowList 起始）；x 指针以当前 x 坐标为偏移，取 RowList0/1/2 的 PixelPack；</li>
+<li><strong>三深度寄存器缓存</strong> 3 行数据 → 提供一次卷积所需的完整数据集（窗口数据复用）；</li>
+<li>同一 x 指针同时从 P2 取上次部分和、把本次部分和存到 P3；</li>
+<li>第一行完成后进入第二行：需要 RL1–RL3；RL1/RL2 继续用 base=0，RL3 的 base=0+IX 定位到 bank0 → 无 bank 冲突；部分和也偏移 0+IX 防止行数据覆盖；</li>
+<li>run2：部分和从 P3 取（P2/P3 互换），12-bit 部分和用<strong>扩展 PixelPack</strong>（3 bank 同地址的 3 个 PixelPack 合并）存；4-bit 输出激活用单个 PixelPack。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig14_12_正常卷积数据搬移.png" alt="正常卷积数据搬移">
+<figcaption>图 12 · 论文 Fig.12：正常卷积的数据搬移（run1 的 (a)–(c) 与 run2 的差异 (d)）。</figcaption>
+</figure>
+
+<h3>6.5 转置卷积的数据搬移：零插入 + 数据前瞻</h3>
+<p>论文 Fig.13：FX=FY=4 转置卷积有两处特殊：</p>
+<ul>
+<li><strong>输入插零上采样</strong> → 行取机制更复杂；每周期最大输入通道降为 18（跨两个 PixelPack，C 维不对齐）；</li>
+<li><strong>零插入的红利</strong>：新输入请求频率减半（相对正常卷积）→ 允许<strong>数据前瞻（look-ahead）</strong>机制：t=n 时预取下一像素 PixelPack1（通道 0–17），t=n+1 取 PixelPack2（18–35）→ DIMC 保持与正常卷积相同的节奏；</li>
+<li>共 16 种细粒度 PixelPack 取数模式 → 支持全速执行 4×4 转置卷积。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_13_转置卷积数据搬移.png" alt="转置卷积数据搬移">
+<figcaption>图 13 · 论文 Fig.13：FX=FY=4 转置卷积的数据搬移——(a) 示例、(b) C 维不对齐、(c) 零插入的假读周期、(d) 数据前瞻、(e) 16 种取数模式。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d07_datastructure.svg" alt="数据结构教学图">
+<figcaption>教学图 7 · 四级数据结构与 mod-3 bank 分布、滑动窗口取数。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_data_movement.svg" alt="数据搬移教学图">
+<figcaption>教学图 8 · 正常卷积滑动窗口 vs 转置卷积零插入/数据前瞻，以及部分和精度控制。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_12_正常卷积数据搬移.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 数据搬移优化：正常卷积的滑动窗口（三深度寄存器复用）vs 转置卷积的零插入 + 数据前瞻。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 设计哲学：数据结构跟着“操作模式”走</div>
+<p>每个层级都为一种操作服务：PixelPack 对齐 SRAM 字长（取数单位），RowList 对齐行卷积（线性取址），ColList 对齐层调度（32 通道一组），MapList 对齐整图管理。配合滑动窗口（正常卷积）与数据前瞻（转置卷积），把“输入搬移”这个系统级能耗大头压到最小。这就是 §1 说的“系统级数据搬移定制”。</p>
+</div>
+</section>

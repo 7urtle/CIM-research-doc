@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">SCIM 总结 · 评价 · 未来方向（UCLA）</text>
+
+  <!-- summary -->
+  <rect x="40" y="84" width="880" height="220" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">三大贡献与逻辑链</text>
+  <g font-size="12.5">
+    <text x="60" y="140" fill="#45536b">① <strong>位并行数据流</strong>：把位串 SC 的逐位处理映射到 N 个 SCIM 宏并行（宏 i 存激活第 i 位）→ 1 周期输出所有位；</text>
+    <text x="60" y="168" fill="#45536b">② <strong>预转换随机数存内存</strong>：激活随机流存进位单元 → 卷积滑动窗/输出通道复用 &gt;32× → SNG 成本摊薄（SNG 能耗是 SC MAC 的 25×）；</text>
+    <text x="60" y="196" fill="#45536b">③ <strong>计算跳算</strong>：平均池化（MUX 实现）时未选中的随机位不计算 → 流长缩短 4×；</text>
+    <text x="60" y="232" fill="#1d8a5f" font-weight="600">硬件：10T 单元（6T SRAM + 4T AND 乘法）+ wired-OR 累加（伪 nMOS 预充）→ 免 ADC/DAC → 面积密度高</text>
+    <text x="60" y="258" fill="#45536b">训练：OR 累加建模为 1−e^(−s) 激活 + 精确 LFSR 流模拟 → 精度 ≈ INT8</text>
+    <text x="60" y="286" fill="#45536b">实测：65nm 7.96 TOPS/W（系统）/ 20 TOPS/W（宏）· 14nm 140 TOPS/W（8-bit 带池化）</text>
+  </g>
+
+  <!-- eval -->
+  <rect x="40" y="324" width="880" height="110" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="350" fill="#0e5a8a" font-size="14" font-weight="700">评价（供思考）</text>
+  <g font-size="12">
+    <text x="60" y="376" fill="#1d8a5f" font-weight="600">强：</text>
+    <text x="110" y="376" fill="#45536b">① SC+CIM 组合新颖，免 ADC/DAC（模拟 CIM 的痛点）；② 单元 +4 晶体管（vs 数字 CIM ~20）密度优势明显；③ 训练时建模硬件误差的算法-硬件协同扎实；④ 完整片上 CNN（无片外搬移）</text>
+    <text x="60" y="402" fill="#e66e5a" font-weight="600">弱：</text>
+    <text x="110" y="402" fill="#45536b">① 高精度（8-bit）流长指数增长（256 次），优势收窄到 1.6×；② 65nm 频率仅 5 MHz（供电限制，未优化）；③ 宏利用率低（LeNet-5 仅 5.1%）拖累系统能效；④ OR 近似累加的误差需特殊训练</text>
+  </g>
+
+  <!-- future -->
+  <rect x="40" y="454" width="880" height="80" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="480" fill="#6b3fa0" font-size="14" font-weight="700">未来研究方向</text>
+  <g font-size="12">
+    <text x="60" y="506" fill="#45536b">① 混合精度（低精度层用 SC、高精度层用定点）；② 改进供电/时钟结构提升频率；③ 更高利用率的数据流（大滤波器/多通道）；④ 与 Transformer 结合（SC 注意力）；⑤ 先进工艺系统级集成（14nm 宏已验证）</text>
+  </g>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">HDM 无害数据映射：MXFP6/8 都塞满内存，隐藏位层次化解码</text>
+
+  <!-- MXFP8 映射 -->
+  <text x="230" y="94" text-anchor="middle" fill="#0e5a8a" font-size="14.5" font-weight="700">MXFP8（E4M3）：9 个数 / 子阵列</text>
+  <rect x="40" y="104" width="420" height="150" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="10.5">
+    <rect x="60" y="126" width="380" height="22" rx="4" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="250" y="141" text-anchor="middle" fill="#0e5a8a">偶数行：符号位 + 3b 尾数</text>
+    <rect x="60" y="152" width="380" height="22" rx="4" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="250" y="167" text-anchor="middle" fill="#c25e2e">奇数行：4b 指数</text>
+    <text x="60" y="206" fill="#45536b">9 个 MXFP8 数 = 9×(1+4+3) = 72b</text>
+    <text x="60" y="226" fill="#45536b">→ 用满 18 行 × 4 列子阵列（不浪费）</text>
+    <text x="60" y="248" fill="#6b7a93">注：1 个共享尺度 SS 在共享尺度缓冲</text>
+  </g>
+
+  <!-- MXFP6 映射 -->
+  <text x="710" y="94" text-anchor="middle" fill="#6b3fa0" font-size="14.5" font-weight="700">MXFP6（E2M3）：12 个数 / 子阵列</text>
+  <rect x="500" y="104" width="420" height="150" rx="10" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="10.5">
+    <rect x="520" y="126" width="380" height="22" rx="4" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="710" y="141" text-anchor="middle" fill="#6b3fa0">偶数行：符号 + 3b 尾数</text>
+    <rect x="520" y="152" width="380" height="22" rx="4" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="710" y="167" text-anchor="middle" fill="#1d8a5f">奇数行：2 个 MXFP6 指数（1+1 拼装）</text>
+    <text x="520" y="206" fill="#45536b">12 个数 × 6b = 72b → 同样塞满子阵列</text>
+    <text x="520" y="226" fill="#6b3fa0" font-weight="600">→ 同一块 18×4 阵列，MXFP6/8 都能满用</text>
+    <text x="520" y="248" fill="#45536b">“无害”= 模式切换不影响容量利用</text>
+  </g>
+
+  <!-- 层次化解码器 -->
+  <rect x="40" y="274" width="880" height="200" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="302" fill="#123a57" font-size="13.5" font-weight="700">层次化隐藏位解码器（全局预解码 + 24 个本地解码）</text>
+  <g font-size="11.5">
+    <rect x="60" y="318" width="220" height="60" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="170" y="340" text-anchor="middle" fill="#c25e2e" font-weight="600">写权重时：全局预解码器</text>
+    <text x="170" y="360" text-anchor="middle" fill="#45536b">隐藏位→2C：{SW, MW[3:0]}</text>
+    <rect x="320" y="318" width="220" height="60" rx="8" fill="#eef7fd" stroke="#b8d9ee"/>
+    <text x="430" y="340" text-anchor="middle" fill="#0e5a8a" font-weight="600">存进 SRAM：</text>
+    <text x="430" y="360" text-anchor="middle" fill="#45536b">{SW, MW[2:0]}（丢掉 MW[3]）</text>
+    <rect x="580" y="318" width="220" height="60" rx="8" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="690" y="340" text-anchor="middle" fill="#1d8a5f" font-weight="600">计算时：本地解码器 ×24</text>
+    <text x="690" y="360" text-anchor="middle" fill="#45536b">由 {SW, MW[2:0]} + EW 恢复 MW[3]</text>
+    <path d="M280,348 H320" stroke="#c25e2e" stroke-width="2" marker-end="url(#a1)"/>
+    <path d="M540,348 H580" stroke="#0e5a8a" stroke-width="2" marker-end="url(#a1)"/>
+    <text x="60" y="420" fill="#45536b">隐藏位不占 SRAM 位 → 内存容量满用；本地解码器很小 → 总解码器面积比直连方案 [7] 减 63.1%</text>
+    <text x="60" y="448" fill="#1d8a5f" font-weight="600">→ 三层组合（全局 1 次 + 本地 24 次）用“时间换面积”，把重复的解码工作集中到写权重时做一次</text>
+  </g>
+</svg>

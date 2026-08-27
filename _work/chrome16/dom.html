@@ -1,0 +1,1088 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：安全的数字存内计算（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 MIT 安全数字 IMC 宏的 Boolean 共享、XNOR 原生安全乘法、ASCON 轻量解密与 SRAM PUF 密钥生成。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress" style="width: 0%;"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">安全数字 IMC 宏零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.9 · MIT + IBM Watson AI Lab</div>
+  </div>
+  <a class="sec active" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：ML 加速器的安全威胁</a>
+  <a class="sec" href="#sec2">02 · 安全基础：Boolean 共享</a>
+  <a class="sec" href="#sec3">03 · 创新①：XNOR 安全乘法</a>
+  <a class="sec" href="#sec4">04 · 安全加法树与累加器</a>
+  <a class="sec" href="#sec5">05 · 创新②：ASCON 解密</a>
+  <a class="sec" href="#sec6">06 · 创新③：SRAM PUF 密钥</a>
+  <a class="sec" href="#sec7">07 · 安全评估：CPA/DPA</a>
+  <a class="sec" href="#sec8">08 · 性能与安全开销</a>
+  <a class="sec" href="#sec9">09 · 总结 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">安全数字存内计算宏零基础精讲：让 CIM 也学会“保守秘密”
+<span class="en">Digital In-Memory Compute for Machine Learning Applications With Input and Model Security（IEEE JSSC, vol.60, no.9, 2025）</span></h1>
+<div class="meta">论文作者：Maitreyi Ashok, Saurav Maji, Xin Zhang, John Cohn, Anantha P. Chandrakasan（MIT + Intel Labs + IBM T.J. Watson Research Center）
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 9, 2025
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>前十几篇论文都在卷“能效”。这篇 MIT + IBM 的工作把视角转向另一个常被忽视的维度：<strong>安全</strong>。ML 加速器处理人脸/语音等隐私输入，模型权重是私有 IP——但传统数字 IMC 的功耗会泄露数据（侧信道），片外权重总线可以被窃听（总线探测）。本论文提出一个<strong>安全数字 IMC 宏</strong>，用三招同时防住两类攻击：</p>
+<ol>
+<li><strong>SCA 安全计算</strong>：用 <strong>Boolean 共享</strong>（每个比特拆成 3 份看似随机的共享）让电路功耗与真实数据无关；关键是乘法用<strong>原生安全的 XNOR 门</strong>（线性逻辑）替代 AND——每份可独立计算、天然均匀、抗毛刺 → <strong>运行期零随机比特</strong>（IMC 百万并行 MAC 下这是唯一可行的路线）；</li>
+<li><strong>BPA 安全</strong>：片外权重以<strong>密文</strong>存储，用 NIST 轻量密码竞赛冠军 <strong>ASCON</strong> 在片上解密——轻量、AND 门占比最低（共享开销最小）、SCA 弹性好；</li>
+<li><strong>片上密钥</strong>：用 <strong>PUF（物理不可克隆函数）</strong>复用 IMC 的 SRAM 单元（反馈切断）生成密钥——制造随机性即芯片指纹，密钥永不离开芯片。</li>
+</ol>
+<p>14nm 实测：<strong>8.1 TOPS/W</strong>、NN 精度零影响、SCA/BPA 安全超过 <strong>100 万采样</strong>（高 SNR 理想攻击条件下）。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>“功耗是数据的影子”：</strong>CMOS 电路处理 0 和 1 消耗的电流不同，测量功耗就能反推数据。侧信道攻击（SCA）就是利用这个物理事实。防御思路：<strong>让电路的功耗与真实数据统计无关</strong>。</li>
+<li><strong>“IMC 安全的最大敌人是随机比特”：</strong>传统掩码方案每周期要注入新随机比特。IMC 每周期并行百万个 MAC，若每个都要随机比特，随机数生成的开销反超计算。所以<strong>任何 IMC 安全方案必须“运行期零随机比特”</strong>——这是本论文所有设计的硬约束。</li>
+<li><strong>“密钥必须长在芯片里”：</strong>密码解密需要密钥，但密钥若从片外传入就会被探测。PUF 利用制造工艺的随机失配（每颗芯片都不同、且无法复制）在芯片内部“长”出密钥——像指纹一样独一无二。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tbody><tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“one often overlooked parameter is security, which is necessary to maintain the privacy and integrity of the accelerator”</td>
+<td>安全常被忽视，但它是维持加速器隐私与完整性的必要条件。</td></tr>
+<tr><td class="num">“we propose an IMC macro design that is protected against two types of eavesdropping attacks, passive physical side-channels and memory bus-probing”</td>
+<td>本论文的 IMC 宏同时防两类窃听攻击：物理侧信道（SCA）与总线探测（BPA）。</td></tr>
+<tr><td class="num">“secure compute that eliminates the need for random bits”</td>
+<td>对策①：安全计算消除了对（运行期）随机比特的需求。</td></tr>
+<tr><td class="num">“local model decryption with a lightweight cipher”</td>
+<td>对策②：用轻量密码在本地（片上）解密模型。</td></tr>
+<tr><td class="num">“secret key generation reusing existing IMC circuitry”</td>
+<td>对策③：复用现有 IMC 电路生成秘密密钥（PUF）。</td></tr>
+<tr><td class="num">“provide side-channel security against all practical attackers beyond 1 million samples”</td>
+<td>对超过 100 万采样的所有实际攻击者都提供侧信道安全。</td></tr>
+<tr><td class="num">“still operating without any effect on neural network accuracy at 8.1 TOPS/W energy efficiency”</td>
+<td>NN 精度零影响，能效 8.1 TOPS/W。</td></tr>
+</tbody></table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>SCA 安全计算（Boolean 共享 + XNOR 乘法）</strong>：3 份共享一阶安全；XNOR 线性乘法每份独立、免随机比特（AND 需 48 门+2 随机比特/周期，XNOR 只需 6 门+0）；SV/BV 换算 + 校正因子保持多位 MAC 精度（表 I：奇数量化 vs 标准量化精度一致）；</li>
+<li><strong>安全加法树/累加器</strong>：进位保存加法（免半加器→免随机刷新）、近似均匀性（CV 0.44→0.01）、MSB 首拍用“复用式随机 0 共享”（仅启动一次性随机比特）；</li>
+<li><strong>BPA 安全（ASCON）</strong>：NIST 轻量密码冠军、TI-ASCON 用 "Changing of the Guards"（仅 4 个一次性随机比特）、SCA 弹性好；</li>
+<li><strong>片上密钥（SRAM PUF）</strong>：反馈切断复用 IMC 位单元、TMV 抗噪 + 差分 FSM 抗简单功耗分析、NIST 随机性全过、0% 误码（TMV+BCH）；</li>
+<li><strong>完整实测</strong>：CPA/DPA 超 100 万采样安全、8.1 TOPS/W、开销量化（位单元 ×5.3、加法树 ×15.5）与可扩展性讨论。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“安全与电路设计结合”的入门佳作：先建立威胁模型（§1），再理解 Boolean 共享的数学（§2），然后看三招怎么落地（§3–6），最后看怎么用 CPA/DPA 证明安全（§7）。读时注意：<strong>每个设计决策都在回答“怎么省掉随机比特”</strong>。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：ML 加速器的安全威胁</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>零基础读者看完本节后应能回答：① 侧信道攻击（SCA）和总线探测攻击（BPA）分别怎么工作？② 权重泄露会带来哪些后果？③ 本论文的威胁模型假设攻击者能做什么、不能做什么？</p>
+</div>
+
+<h3>1.1 ML 加速器里有什么值得保护的？</h3>
+<ul>
+<li><strong>输入激活 = 用户隐私</strong>：IoT 设备收集的人脸图像、语音录音等私密数据在加速器上处理——不应泄露给不可信实体；</li>
+<li><strong>模型权重 = 私有 IP 与安全基石</strong>：① 权重用私有训练集训练 → 知道权重可能反推训练数据；② 知道权重 → RowHammer 等定向对抗攻击影响计算完整性；③ 训练模型耗费大量人力机时 → 是竞争优势，必须作为私有 IP 保护。</li>
+</ul>
+
+<h3>1.2 攻击①：物理侧信道攻击（SCA）</h3>
+<p>CMOS 电路的电流消耗与正在处理的数据<strong>直接相关</strong>——这是物理定律，无法通过软件修复。两种典型方式：</p>
+<ul>
+<li><strong>功耗 SCA</strong>：在电源轨上串分流电阻，测量电压降获得功耗轨迹；</li>
+<li><strong>电磁（EM）SCA</strong>：用探针非侵入地测量空间分布电流产生的 EM 场。</li>
+</ul>
+<p>攻击者收集多条侧信道轨迹后，用<strong>相关功耗分析（CPA）</strong>或<strong>模板攻击</strong>被动预测正在处理的数据。本文假设攻击者采样数受“被发现”限制（实用数量级，非无限）。</p>
+
+<h3>1.3 攻击②：总线探测攻击（BPA）</h3>
+<p>标准模型太大，无法全部存片上 → 推理时权重从片外存储器逐批加载：</p>
+<ul>
+<li><strong>传统封装</strong>：数据走 PCB 裸露走线 → 攻击者可轻易搭线读出整个模型（收集数字权重和偏置就能重构整个神经网络结构）；</li>
+<li><strong>片外 NVM</strong>：冷启动攻击能在设备断电后恢复数据。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d01_threats.svg" alt="威胁模型教学图">
+<figcaption>教学图 1 · 两类攻击（SCA/BPA）与威胁模型假设。</figcaption>
+</figure>
+
+<h3>1.4 威胁模型（论文 §II-A）</h3>
+<div class="box key">
+<div class="bt">💡 攻击者能做什么</div>
+<ul>
+<li>物理接触设备；</li>
+<li>对芯片做<strong>完全逆向工程</strong>（知道架构、控制流、宏操作，一直到晶体管级）；</li>
+<li>收集“实用数量级”的侧信道采样（超过会被发现）；</li>
+<li>但：量化大量芯片的制造失配差异太贵（攻击者无法精确知道每颗芯片的随机失配）。</li>
+</ul>
+</div>
+<div class="box warn">
+<div class="bt">⚠️ 不在范围内的攻击</div>
+<p>软件/微架构侧信道、主动故障注入、代工厂木马插入——这些可用文献中的平行防护解决，本文不重复。</p>
+</div>
+<h3>1.5 为什么现有方案不适用于 IMC？</h3>
+<ul>
+<li><strong>掩码/均衡方案 [30][31]</strong>：阈值实现（TI）需每周期恒定随机比特；[31] 需随机序列生成器做洗牌——都不适合 IMC；</li>
+<li><strong>IMC 的硬约束</strong>：每周期并行数千到数百万 MAC，每个 MAC 若只要几个随机比特，PRNG 开销就反超计算 → <strong>必须消除运行期新鲜随机比特</strong>；</li>
+<li><strong>BPA 方案 [32]</strong>：位单元存值+反相实现低开销 XOR 密码，但密钥复用有安全漏洞 → 需要与整个模型等长的密钥，不现实。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① SCA 用功耗/EM 泄露数据，BPA 用总线窃听泄露模型；② 权重泄露 → 反推训练数据、RowHammer 攻击、IP 泄露；③ 攻击者能完全逆向芯片但无法量化制造失配；④ IMC 安全方案必须“运行期零随机比特”——这是贯穿全篇的设计约束。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>安全基础：Boolean 共享与阈值实现</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 3 份 Boolean 共享怎么让功耗不泄露数据；② 阈值实现（TI）的三条性质（正确性/非完备性/均匀性）；③ 为什么 AND 门是难点、均匀性为什么需要刷新。</p>
+</div>
+
+<h3>2.1 Boolean 共享：把秘密拆成看似随机的份</h3>
+<p>类似密码学多方计算：n 方分信息，至少 x 方串通才能恢复。用 Boolean 掩码时，每个数字比特拆成 n 份，所有份一起（XOR）才恢复原值：</p>
+<p class="formula">b = b1 ⊕ b2 ⊕ b3</p>
+<ul>
+<li>单独观察任何一份都看似随机（与 b 无关）；</li>
+<li>每个逻辑函数也拆成子函数，每个子函数只操作输入份的<strong>严格子集</strong> → 任何子电路都碰不到完整秘密；</li>
+<li>结果：整个电路的功耗与真实数据无关。</li>
+</ul>
+<p>本论文用 <strong>3 份共享</strong>实现一阶安全（攻击者被限制为一阶攻击，无法收集高阶攻击所需数据——这对并行度极高的 IMC 尤其合适）。需要更高阶安全时可扩展更多份。</p>
+
+<figure>
+<img src="assets/diagrams/d02_sharing.svg" alt="共享教学图">
+<figcaption>教学图 2 · Boolean 共享的三条性质，以及 IMC 为什么不能要随机比特。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig16_1_安全宏框图.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · Boolean 共享（3 份拆分）与 XNOR 乘法：为什么线性门让安全免费。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · Boolean 共享（3 份）</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">b=0，共享 (1,0,1)，b1⊕b2⊕b3=0</span>
+</div>
+<div class="hint">每个秘密比特 b 拆成 3 份（b1,b2,b3），XOR 恢复。下方功耗条显示单份功耗随机波动——单独观察任何一份都看不出 b，子电路只碰严格子集（非完备性）→ 总功耗与真实数据无关。</div>
+</div>
+
+<h3>2.2 阈值实现（TI）的三条性质</h3>
+<p>一种特殊的 Boolean 共享——TI——提供<strong>可证明的</strong>多阶 SCA 安全，但开销大。对函数 t = F(b,c) 的共享 (t1,t2,t3) = Fsh((b1,b2,b3),(c1,c2,c3))，要求：</p>
+<table>
+<tbody><tr><th>性质</th><th>含义</th></tr>
+<tr><td><strong>正确性</strong></td><td>若 b=b1⊕b2⊕b3、c=c1⊕c2⊕c3，则 t=t1⊕t2⊕t3（共享计算恢复正确结果）</td></tr>
+<tr><td><strong>非完备性</strong></td><td>每个子函数 Fj 只用输入份的严格子集 → 任何子电路都不含完整秘密</td></tr>
+<tr><td><strong>均匀性</strong></td><td>任意非共享输入下共享表示分布均匀 → 只有非共享值分布的偏差会贡献到共享版偏差</td></tr>
+</tbody></table>
+
+<h3>2.3 难点：AND 门不满足均匀性</h3>
+<p>像 <strong>AND</strong> 这样的常见函数，在最小共享数下输入均匀但输出不均匀。两个常规解法都贵：</p>
+<ol>
+<li><strong>加共享数</strong>：电路大幅膨胀；</li>
+<li><strong>输出刷新</strong>：用独立随机比特重新生成均匀输入 → 每周期都要随机比特。</li>
+</ol>
+<p>对 IMC 的百万并行 MAC，这两条路都走不通。本论文用<strong>放宽的均匀性要求</strong>（近似均匀）配合<strong>原生安全的线性 XNOR 门</strong>解决——这正是下一节的核心。</p>
+
+<div class="box key">
+<div class="bt">💡 近似均匀性为什么对 IMC 可接受？</div>
+<p>IMC 有大量并行操作、权重/激活互不相关 → 攻击者信噪比（SNR）比传统加速器更低。计算性（而非数学性）的均匀性就足够：实际攻击采样有限，微小偏差不会导致信息泄露。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：用原生安全的 XNOR 门做乘法</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① AND 乘法共享后为什么贵（48 门 + 2 随机比特）；② XNOR 是线性逻辑 → 共享后天然安全（6 门 + 0 随机比特）；③ 怎么用 XNOR（±1 乘法）算多位 MAC 而不失精度（SV/BV 换算 + 校正因子）。</p>
+</div>
+
+<h3>3.1 问题：AND 乘法的共享成本（论文 Fig.2）</h3>
+<p>传统位串行数字 IMC 用 AND/NOR 门做 1-bit 乘法。AND 是<strong>非线性</strong>逻辑 → 共享后：</p>
+<ul>
+<li>激活和权重的每份乘法不能独立进行；</li>
+<li>需要随机比特 remask 或更多输入共享来维持均匀性；</li>
+<li>需要输出寄存器维持非完备性和抗毛刺。</li>
+</ul>
+<p>标准 TI 形式的每个 AND 1-bit 乘法器需要 <strong>48 个门等效 + 每周期 2 个随机比特</strong>——对 IMC 的百万并行 MAC 完全不可扩展。</p>
+
+<figure>
+<img src="assets/figs/fig16_2_AND与XNOR乘法对比.png" alt="AND与XNOR乘法对比">
+<figcaption>图 1 · 论文 Fig.2：传统 AND 乘法与提出的 XNOR 乘法在共享格式下的对比。</figcaption>
+</figure>
+
+<h3>3.2 方案：原生安全的线性 XNOR 门</h3>
+<p>XNOR（=反相的 XOR）是<strong>线性</strong>逻辑：</p>
+<ul>
+<li><strong>每份可独立计算</strong>（线性运算在共享上的分配律）；</li>
+<li><strong>天然保持均匀性与抗毛刺</strong> → 无需随机比特、无需输出寄存器；</li>
+<li>标准 4 晶体管传输门实现 XOR，加权重输入反相器平衡 SRAM 位单元负载（为 PUF 操作准备）→ 每个乘法 <strong>6 个门等效、0 随机比特</strong>。</li>
+</ul>
+<div class="box key">
+<div class="bt">💡 48 门 + 2 随机比特 → 6 门 + 0 随机比特</div>
+<p>这就是“原生安全”的含义：<strong>XNOR 门本身在共享格式下就是安全的</strong>，不需要任何附加保护。对 IMC 这种并行度极高的结构，这是唯一的可行路线。</p>
+</div>
+
+<h3>3.3 但 XNOR 是 ±1 乘法，怎么算多位 MAC？</h3>
+<p>XNOR 乘法对应二值神经网络（BNN）的 +1/−1 乘法。直接替换 AND 会导致算术错误。本论文的解法（类似 [7]）：</p>
+<ul>
+<li><strong>有符号值（SV）</strong>：每个有符号值写成二进制加权 +1/−1 的和，SV = Σ 2ⁱ × (−1)^(1−bᵢ)（只取奇数值：±1、±3、±5…）；</li>
+<li><strong>二进制值（BV）</strong>：计算用的表示，从全 0（最小负）到全 1（最大正）；换算 SV = 2·BV − (2ⁿ−1)；</li>
+<li><strong>范围翻倍</strong>：SV 虽只取奇数，但 4 位可存 −15~15（原本 −8~7）→ 网络可重训，预期无精度损失（表 I 验证：奇数量化 vs 标准量化精度一致）；</li>
+<li><strong>校正因子</strong>（论文式 8）：SVout = 2 × BVout − (2ⁿᵂ−1)(2ⁿᴬ−1)·r —— 校正项只依赖位宽和输入数 r，<strong>可片外预计算</strong>。</li>
+</ul>
+<p>无符号激活（ReLU 输出）+ 有符号权重时，校正因子 = BVout − 常数 + Σ权重项（权重和也随激活不变，可预计算存储）。</p>
+
+<figure>
+<img src="assets/diagrams/d03_xnor.svg" alt="XNOR教学图">
+<figcaption>教学图 3 · AND vs XNOR 乘法，以及 SV/BV 换算与校正因子。</figcaption>
+</figure>
+
+<div class="demo">
+<div class="dhead">🔬 演示 B · XNOR 乘法（线性）vs AND 乘法（非线性）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">XNOR 恢复=0 ✓ vs AND 恢复=0 ✗</span>
+</div>
+<div class="hint">同一组 3 份输入下：XNOR 对每份独立计算后 XOR 恢复 = 正确结果（线性 → 天然安全）；AND 共享后恢复 ≠ 正确结果（非线性破坏正确性）→ 需要随机比特 remask。这就是“原生安全”的含义。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① AND 乘法共享后 48 门+2 随机比特/周期 → IMC 不可扩展；② XNOR 线性 → 6 门+0 随机比特，原生安全；③ SV/BV 换算 + 常数校正因子让 XNOR（±1 乘法）也能做多位 MAC，精度零影响（表 I）。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>安全加法树与位串行累加器</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么用进位保存加法（免半加器→免随机刷新）；② 近似均匀性怎么从 CV=0.44 降到 0.01；③ MSB 首拍的“随机 0 共享”怎么只用一次性随机比特。</p>
+</div>
+
+<h3>4.1 加法树：进位保存（CSA）替代行波进位（论文 Fig.3）</h3>
+<p>XNOR 乘法后，各行的部分积用标准数字加法合并。传统数字 IMC 用<strong>行波进位加法树</strong>。本论文的安全版本：</p>
+<ul>
+<li><strong>半加器的问题</strong>：半加器用 AND 门 → 共享后不天然均匀 → 需要随机比特刷新 → 必须避免；</li>
+<li><strong>进位保存（CSA）</strong>：进位不在同一次加法内传播 → 延迟低；且<strong>每 3 个操作数合并</strong> → 只用全加器（其进位共享是天然均匀的）、无需半加器；</li>
+<li>和的计算是线性的（每份独立算），但每输出需寄存器（与进位同步时序 + 非完备性要求）；</li>
+<li><strong>延迟优化</strong>：砍掉加法树最后两级流水，部分和留在“修改版进位保存格式”（某些位位置 1 或 3 位信息）→ 最后几次加法并入位串行累加器完成。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig16_3_进位保存加法器.png" alt="进位保存加法器">
+<figcaption>图 2 · 论文 Fig.3：进位保存加法器 vs 行波进位（共享实现），以及 MAC 加法树结构。</figcaption>
+</figure>
+
+<h3>4.2 近似均匀性（论文 Fig.4）</h3>
+<p>全加器的和/进位输出<strong>不联合均匀</strong>，但：</p>
+<ul>
+<li>和与进位指向不同位位置 → 不会直接合并；</li>
+<li>任一输出在重新合并前至少经过另一级加法器 → 中间逻辑混合无关比特 → 偏差大幅降低；</li>
+<li>论文测量三种情况的变异系数（CV，越小越均匀）：直接合并 CV=0.44 → 和经 1 级无关加法 CV=0.11 → 和/进位都经无关级 CV=<strong>0.01</strong>。</li>
+</ul>
+<p>实际攻击采样有限 → 这种偏离理想均匀的微小偏差可接受，不会导致信息泄露。</p>
+
+<figure>
+<img src="assets/figs/fig16_4_共享均匀性概率.png" alt="共享均匀性概率">
+<figcaption>图 3 · 论文 Fig.4：全加器各输入共享的概率分布与平均变异系数（a）0.44 (b) 0.11 (c) 0.01。</figcaption>
+</figure>
+
+<h3>4.3 位串行累加器：MSB 首拍的“随机 0 共享”（论文 Fig.5）</h3>
+<p>累加也用进位保存（两个阶段、正负时钟沿各完成一次，1 周期内完成位归约）。问题是：<strong>计算激活 MSB 的第一次累加时，上一累加值要清零</strong>——但“把共享秘密与已知 0 相加”不安全（0 不是均匀共享）：</p>
+<ul>
+<li>能直接赋值的地方直接赋值；</li>
+<li>7 个含重置 0 的全加器：常规做法需要 14 个运行期随机比特表示共享 0（s1=r1, s2=r2, s3=r1⊕r2）；</li>
+<li>本论文（借鉴 [53]）：<strong>复用上一次累加器的 2 份</strong>来构造随机 0 的共享 → 只需要芯片启动时的一次性随机比特，<strong>运行期零随机比特</strong>。</li>
+</ul>
+<p>用功能蒙特卡洛仿真验证不同激活/权重偏差、不同权重更新频率下的联合均匀性。</p>
+
+<figure>
+<img src="assets/figs/fig16_5_MSB累加特殊方法.png" alt="MSB累加特殊方法">
+<figcaption>图 4 · 论文 Fig.5：MSB 累加计算期间维持均匀性的特殊方法。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d04_adder.svg" alt="加法树教学图">
+<figcaption>教学图 4 · CSA 加法树、近似均匀性与随机 0 共享。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① CSA 免半加器 → 免随机刷新；② 和/进位经无关加法级后近似均匀（CV→0.01）；③ MSB 首拍用“复用式随机 0 共享”→ 只有启动一次性随机比特。整条计算链保持“运行期零随机比特”。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：ASCON 轻量密码做片上模型解密</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么片外权重必须加密；② 为什么选 ASCON（NIST 轻量密码冠军）；③ TI-ASCON 怎么只用 4 个一次性随机比特实现 SCA 安全。</p>
+</div>
+
+<h3>5.1 为什么必须加密片外权重？</h3>
+<p>片上 SCA 保护对“直接探针测量 DRAM↔ASIC 总线”无效——权重在片外必须以<strong>密文</strong>存储，片上解密后才能计算。密码学提供<strong>数学保证</strong>，但前提是：</p>
+<ul>
+<li>有<strong>秘密密钥</strong>（§6 的 PUF 解决）；</li>
+<li>密码实现本身<strong>SCA 安全</strong>（解密过程不能泄露）；</li>
+<li>面积/功耗开销不能大（密码只是配角）。</li>
+</ul>
+
+<h3>5.2 为什么选 ASCON？</h3>
+<p>ASCON 是 <strong>NIST 轻量密码竞赛冠军</strong>（2023），原因：</p>
+<ul>
+<li>面积/能耗效率经过充分验证；</li>
+<li>轻量密码中 <strong>AND 门占比最低</strong>——AND 的 Boolean 共享开销最大（§3 讲过），其余 NOT/XOR/rotate 都是线性操作，可对每份独立计算、开销极小；</li>
+<li><strong>SCA 弹性好</strong>：猜中密码状态不直接导致恢复密钥 → 无法破解未来解密操作。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig16_6_ASCON密码实现.png" alt="ASCON密码实现">
+<figcaption>图 5 · 论文 Fig.6：ASCON 密码实现框图。</figcaption>
+</figure>
+
+<h3>5.3 TI-ASCON：只用 4 个一次性随机比特</h3>
+<p>ASCON 置换的基础非线性步与 Keccak 相同 → 直接用 Daemen 的 <strong>"Changing of the Guards"</strong> 方法（原用于 Keccak）：</p>
+<ul>
+<li>用状态内的各种比特互相 remask → 在非线性置换中保持均匀性；</li>
+<li>操作开始时只需 <strong>4 个外部随机比特</strong>，运行期<strong>零随机比特</strong>；</li>
+<li>→ 低开销的阈值实现（TI）ASCON。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d05_ascon.svg" alt="ASCON教学图">
+<figcaption>教学图 5 · ASCON 选择理由、TI 实现与解密流程。</figcaption>
+</figure>
+
+<h3>5.4 解密流程与开销</h3>
+<ol>
+<li>片外 DRAM/NVM 存密文权重 → 总线被窃听也只能得到密文；</li>
+<li>ASCON 解密（片上，用 PUF 密钥）→ 明文权重；</li>
+<li>明文权重写入 SRAM → SCA 安全 IMC 计算。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么解密开销可以接受？</div>
+<p>IMC 的权重加载<strong>一次、计算多次</strong>（最大化数据复用）→ 解密操作很少发生 → 功耗与延迟开销被摊薄。解密延迟 +3.2×，但计算延迟主导典型模型 → 整体影响小。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：复用 IMC SRAM 的 PUF 密钥生成</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么密钥必须片上生成（片外传入会被探测、e-fuse 会被 SEM 读出）；② 反馈切断怎么把 SRAM 单元变成 PUF；③ TMV 抗噪、差分 FSM 抗功耗分析、NIST 随机性验证。</p>
+</div>
+
+<h3>6.1 密钥为什么必须“长在芯片里”？</h3>
+<ul>
+<li>密钥从片外读入 → 传输可被探测 → 密码安全性归零；</li>
+<li>e-fuse 熔丝 → SEM 成像可读出每个熔丝状态；</li>
+<li><strong>PUF（物理不可克隆函数）</strong>：利用制造工艺的随机失配生成密钥——制造测试时收集挑战-响应对，部署时评估 PUF 得到密钥，外部观察者无法测量。</li>
+</ul>
+
+<h3>6.2 复用 IMC SRAM 单元做 PUF（论文 Fig.7）</h3>
+<p>大 PUF 存储阵列是显著面积开销。本论文复用 IMC 的 SRAM 单元：SCA 安全位单元（[71]）已含<strong>反馈切断晶体管</strong>，正好用来暴露制造失配：</p>
+<ol>
+<li>切断反馈；</li>
+<li>预放电两个分离反相器的输入；</li>
+<li>重连反馈 → SRAM 按哪个反相器更强（制造失配）沉降到 0 或 1；</li>
+<li>标准 SRAM 读操作读出 → PUF 位。</li>
+</ol>
+<p>只有特定字线的既有数据被擦除（可子分字线最小化）→ <strong>抗噪声、低开销、可随时按需生成可靠密钥</strong>。只需一小块综合数字逻辑（FSM），几乎零面积开销。</p>
+
+<figure>
+<img src="assets/figs/fig16_7_SRAM作PUF.png" alt="SRAM作PUF">
+<figcaption>图 6 · 论文 Fig.7：SRAM (a) 位单元与 (b) 时序图——右（左）下拉管占优时 PUF 生成 0（1）。</figcaption>
+</figure>
+
+<h3>6.3 位单元布局细节</h3>
+<ul>
+<li>3 个共享垂直堆叠成一组 → 3 条差分位线在单元宽度内垂直走线，每对走不同金属层（减小共享间耦合、不增单元面积）；</li>
+<li>每个位单元紧邻定制 XNOR 乘法门（水平连接激活驱动与局部内部节点）。</li>
+</ul>
+
+<h3>6.4 抗噪与抗攻击</h3>
+<ul>
+<li><strong>时间多数投票（TMV）</strong>：同一位单元多次评估取多数 → 抗噪声；次数可配置（按用例设鲁棒性）；</li>
+<li><strong>差分 FSM 操作</strong>：TMV 的 FSM 处理 4 位一组时会泄露统计信息（如看到 11 次计数增加就知道 3 位是 1）→ 感放输出的差分值都给 FSM → 恒定翻转活动 → 结合 Boolean 共享，密钥生成对 SCA 安全；</li>
+<li><strong>随机性</strong>：NIST 800-22 适用测试全过（5 芯片 p&gt;0.01），最小熵 ~0.91–0.93，Von Neumann 去偏；</li>
+<li><strong>稳定性</strong>：TMV 提高稳定度 + 片外 BCH 纠错 → 0% 位错误率；intra-key HD≈0（稳定）、inter-key HD≈192（半位宽，唯一）；掩蔽不稳定单元可减少纠错位；</li>
+<li>老化：NBTI 老化通常影响 SRAM PUF，但正常运行时权重近似随机 → 交替老化部分抵消；烧灼硬化（burn-in）可进一步增强。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d06_puf.svg" alt="PUF教学图">
+<figcaption>教学图 6 · SRAM PUF 机制、TMV 与稳定性/唯一性结果。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_12_密钥汉明距离.png" alt="密钥汉明距离">
+<figcaption>图 7 · 论文 Fig.12：同一密钥与不同密钥测量的汉明距离——intra≈0（稳定）、inter≈192（唯一）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 密钥必须片上生成（PUF）；② 反馈切断复用 IMC SRAM 单元（几乎零面积）；③ TMV 抗噪、差分 FSM 抗功耗分析、NIST 随机性全过、0% 误码、intra/inter HD 验证稳定且唯一。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>安全评估：CPA 与 DPA 证明</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① CPA（相关功耗分析）和 DPA（差分功耗分析）怎么攻击、怎么判读结果；② Chip Whisperer 平台为什么能给出“理想高 SNR”的严格测试；③ 结果：100 万采样不可攻破。</p>
+</div>
+
+<h3>7.1 测试平台：Chip Whisperer CW305</h3>
+<p>独立数字电路逐个实现在 Chip Whisperer FPGA 平台上（论文 Fig.8b）：把独立流水级（甚至单级子部分）分开实现和攻击 → 最小化背景切换 → 最大化攻击者 SNR。如果<strong>在理想测试下仍安全</strong>，真实场景（并行操作 + 无关活动降低 SNR）只会更安全。由于 Boolean 共享是<strong>算法性</strong>的，FPGA 上的安全结论同样适用于定制 IC；功耗 SCA 安全直接转化为 EM SCA 安全（共享计算空间太近，EM 探针无法分辨）。</p>
+
+<figure>
+<img src="assets/figs/fig16_8_芯片照片与测试平台.png" alt="芯片照片与测试平台">
+<figcaption>图 8 · 论文 Fig.8：(a) 定制 ASIC 显微照片 (b) Chip Whisperer 高 SNR 定向测试平台。</figcaption>
+</figure>
+
+<h3>7.2 CPA：相关功耗分析（论文 Fig.9/10）</h3>
+<p>CPA 模拟真实攻击：攻击者控制一个变化输入（激活）、试图恢复固定秘密（权重）。对每个密钥猜测计算与功耗测量的相关性：</p>
+<ul>
+<li><strong>未保护</strong>（Fig.10）：正确密钥（红）相关性显著高于错误猜测（灰）→ 一击即中；</li>
+<li><strong>保护后</strong>（Fig.9a）：乘法+加法树各流水级子块中，正确密钥与错误猜测<strong>不可区分</strong>；累加器两级流水（Fig.9b）同样安全；</li>
+<li><strong>ASCON 密码</strong>（Fig.9c，固定密钥+变化 nonce，在初始化阶段密钥与状态结合处分析）：正确密钥不可区分。</li>
+</ul>
+<p>权重在 IMC SRAM 中静止 → 攻击全程共享方式不变；激活实时流入 → 每个样本重新共享（更严格）。</p>
+
+<figure>
+<img src="assets/diagrams/d07_eval.svg" alt="安全评估教学图">
+<figcaption>教学图 7 · CPA/DPA 测试方法与结果判读。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_9_CPA保护结果.png" alt="CPA保护结果">
+<figcaption>图 9 · 论文 Fig.9：保护后各子块的 CPA 结果——正确密钥（红）与错误猜测（灰）不可区分。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_10_CPA未保护结果.png" alt="CPA未保护结果">
+<figcaption>图 10 · 论文 Fig.10：未保护版本的 CPA 结果——正确密钥明显可区分（对照组）。</figcaption>
+</figure>
+
+<h3>7.3 DPA/TVLA：差分功耗分析（论文 Fig.11）</h3>
+<p>DPA 测试算法性安全保证：比较电路处理<strong>固定秘密</strong>与<strong>随机秘密</strong>时的侧信道是否有统计显著差异（Welch t-test 的 T 值）：</p>
+<ul>
+<li><strong>未保护</strong>：&lt;5000 个样本就有显著差异（T 值大）→ 可利用的数据相关泄漏存在；</li>
+<li><strong>保护后</strong>：超过 <strong>100 万样本</strong> T 值仍小 → 没有理由认为存在可利用的侧信道差异。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig16_11_DPA结果.png" alt="DPA结果">
+<figcaption>图 11 · 论文 Fig.11：未保护与保护 ASIC 计算的 DPA 结果。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c01_DPA对比.png" alt="DPA对比图">
+<figcaption>数据图 1 · DPA/TVLA 的 T 值 vs 采样数（示意，依据论文 Fig.11）：未保护快速显著，保护 100 万样本仍安全。</figcaption>
+</figure>
+
+<h3>7.4 PUF 密钥读出的 SCA 安全（表 II）</h3>
+<p>用 CNN 攻击尝试从 TMV SCA 重建密钥（先前工作证明 CNN 对 SCA 有高精度）：</p>
+<ul>
+<li>对 Boolean 共享密钥（3 份），考虑猜测非共享与共享密钥值的 RMS 误差；</li>
+<li>加 Boolean 共享 + 差分逻辑后，<strong>猜密钥难度显著增大</strong>。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig16_6_ASCON密码实现.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 模型解密流程：片外密文权重 → ASCON 片上解密 → SCA 安全 IMC 计算（BPA 安全）。</div>
+</div>
+<div class="video-wrap">
+<video controls="" preload="metadata" poster="assets/figs/fig16_7_SRAM作PUF.png">
+  <source src="assets/videos/v03.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · SRAM PUF 密钥生成：反馈切断 → 制造失配沉降 → TMV 抗噪读出（密钥长在芯片里）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · CPA：正确密钥的相关性是否可区分？</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">保护后：正确密钥不可区分</span>
+</div>
+<div class="hint">左（未保护）：对每个密钥猜测算与功耗测量的相关性——正确密钥（红）柱最高，可被识别；右（保护后）：所有猜测（含正确密钥，绿）相关性混杂在同一范围内，不可区分。这就是 CPA 测试的核心判读。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① CPA：保护后正确密钥与错误猜测不可区分（计算各块 + ASCON）；② DPA/TVLA：保护后 100 万采样 T 值仍小；③ CNN 攻击猜密钥 RMSE 显著增大；④ 高 SNR 理想测试 → 真实场景更安全。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>性能、安全开销与可扩展性</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 8.1 TOPS/W 与吞吐；② 安全开销花在哪（位单元 ×5.3、加法树 ×15.5）；③ 多宏并行怎么扩展、解密开销怎么控制。</p>
+</div>
+
+<h3>8.1 宏性能（表 V）</h3>
+<p>14nm CMOS 流片（论文 Fig.8a），0.55V/80MHz 下：</p>
+<ul>
+<li>保护版最高能效 <strong>8.1 TOPS/W</strong>（0.50V）；</li>
+<li>频率上限 100 MHz（测试环境同步通信 + FPGA 数据输入的 setup 限制）；</li>
+<li><strong>吞吐反而更高</strong>：Boolean 共享的非完备性要求加法树/累加器流水化 → 流水线提升吞吐（未保护版若也流水会有类似提升，代价是少量面积）；</li>
+<li>延迟：模型解密使权重加载延迟 +3.2×，但计算延迟主导典型模型 → 整体影响不大。</li>
+</ul>
+
+<h3>8.2 安全开销（论文 Fig.13）</h3>
+<table>
+<tbody><tr><th>组件</th><th>开销</th><th>原因</th></tr>
+<tr><td>位单元 + 乘法列</td><td>面积 <strong>×5.3</strong></td><td>每单元拆 3 份共享 + 2 个 PUF 反馈切断晶体管</td></tr>
+<tr><td>全加器</td><td>面积 ×14.2</td><td>共享后的全加器（主要开销来源）</td></tr>
+<tr><td>加法树</td><td>面积 <strong>×15.5</strong></td><td>加法树是数字 IMC 的主导组件</td></tr>
+<tr><td>加法器 + 累加器</td><td>面积效率 −6.4×</td><td>—</td></tr>
+</tbody></table>
+<p>与先前工作 [30] 一致（乘法器面积效率 −6.1×、能效 −5.7×）——<strong>安全不能免费</strong>，但本论文的优化避免了更高开销（免随机比特、XNOR 简化、CSA 免半加器）。</p>
+
+<figure>
+<img src="assets/figs/fig16_13_功耗面积分解.png" alt="功耗面积分解">
+<figcaption>图 12 · 论文 Fig.13：安全 IMC 各组件功耗与面积 vs 基线。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d08_overhead.svg" alt="开销教学图">
+<figcaption>教学图 8 · 性能、安全开销分解与对比。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c02_面积开销.png" alt="面积开销图">
+<figcaption>数据图 2 · Boolean 共享的面积开销（示意，依据论文 §IV-C）。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/charts/c03_性能开销.png" alt="性能开销图">
+<figcaption>数据图 3 · 能效与面积效率的安全开销（示意，依据论文表 V/Fig.13）。</figcaption>
+</figure>
+
+<h3>8.3 与先前安全工作对比（表 VI）</h3>
+<ul>
+<li><strong>第一个考虑数字 IMC 安全的工作</strong>；</li>
+<li>SCA 测试更严格：CPA + TVLA（先前的 IMC 安全工作未做）；</li>
+<li>不限制位精度、不影响 NN 精度；</li>
+<li><strong>运行期零随机比特</strong>（仅配置期一次性）——IMC 安全的硬约束，本论文完全满足；</li>
+<li>高 SNR 理想攻击下 BPA+SCA 超 100 万采样 → 真实场景安全期显著更长。</li>
+</ul>
+
+<h3>8.4 可扩展性（论文 §IV-D）</h3>
+<ul>
+<li><strong>多宏并行</strong>（类似 chiplet）：各宏独立安全计算，安全协处理器合并共享输出；并行宏多 → 攻击者更难从总功耗分辨 → 安全等级可放宽（用更少的安全门）；</li>
+<li><strong>解密扩展</strong>：ASCON-128a（8 周期 128 位数据块）或每宏一个 ASCON 实例（仅占宏面积 16%）→ 解密延迟不成为瓶颈；</li>
+<li><strong>PUF 扩展</strong>：内存增大 → 更多 PUF 位 → 可做裁剪/掩蔽选最优单元；可单密钥（各宏 PUF 组合）或每 ASCON 实例独立密钥。</li>
+</ul>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 8.1 TOPS/W、吞吐因流水而更高、解密开销被摊薄；② 安全开销集中在计算共享化（位单元 ×5.3、加法树 ×15.5），安全外设（ASCON 16%、PUF 极小）占比小；③ 多宏并行可放宽安全等级、解密/PUF 按需扩展。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>总结 · 未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3>9.0 全文总结：给 IMC 穿上“安全外衣”</h3>
+<p>把整篇论文串成一句话：<strong>IMC 的功耗泄露数据、总线泄露模型 → 用 Boolean 共享让功耗与数据无关（XNOR 原生安全免随机比特）→ 用 ASCON 把片外权重锁成密文 → 用 PUF 在芯片里“长”出密钥</strong>。逻辑链：</p>
+<ol>
+<li><strong>威胁</strong>：SCA（功耗/EM 泄露输入隐私）、BPA（总线窃听泄露模型 IP）（§1）；</li>
+<li><strong>基础</strong>：Boolean 共享（3 份、正确性/非完备性/均匀性），但 IMC 不能要运行期随机比特（§2）；</li>
+<li><strong>创新① 计算安全</strong>：XNOR 线性乘法（6 门+0 随机比特）+ SV/BV 换算保持多位精度 + CSA 加法树（免半加器）+ 复用式随机 0 共享（§3–4）；</li>
+<li><strong>创新② 模型安全</strong>：ASCON 轻量密码（NIST 冠军、AND 最少）片上解密，TI 实现仅 4 个一次性随机比特（§5）；</li>
+<li><strong>创新③ 密钥安全</strong>：SRAM PUF（反馈切断）复用 IMC 单元，TMV 抗噪 + 差分 FSM 抗攻击（§6）；</li>
+<li><strong>闭环验证</strong>：CPA/DPA 超 100 万采样安全、8.1 TOPS/W、NN 精度零影响（§7–8）。</li>
+</ol>
+
+<figure>
+<img src="assets/diagrams/d09_summary.svg" alt="总结教学图">
+<figcaption>教学图 9 · 三大贡献闭环、可扩展性与未来方向。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🎓 对本论文的评价（供思考）</div>
+<ul>
+<li><strong>强</strong>：① 选题稀缺——CIM 安全是空白领域，本文是第一篇数字 IMC 安全；② 约束明确（零随机比特）且全篇每个设计都服从它，逻辑自洽；③ 数学功底扎实（SV/BV 校正因子证明、均匀性分析）；④ 测试严格（CPA+TVLA、高 SNR 平台、100 万采样）；⑤ PUF 复用 IMC 电路是聪明的面积优化。</li>
+<li><strong>弱/局限</strong>：① 8.1 TOPS/W 远低于无安全 IMC（安全开销巨大：加法树 ×15.5）；② 只演示小宏（8 列×128 行），商用规模靠推断；③ 一阶安全假设（攻击者限一阶）；④ 未覆盖故障注入/软件侧信道等攻击面（作者声明了范围外）；⑤ PUF 的 BCH 纠错需片外支持。</li>
+</ul>
+</div>
+
+<h2 id="sec9-1"><span class="no">9.1</span>未来研究方向</h2>
+<ol>
+<li><strong>降低安全开销</strong>：刻画攻击者真实能力 → 找“安全等级-共享开销”最优权衡点（并行宏多时可放宽）；与近似计算（[7]）结合进一步省能耗；</li>
+<li><strong>更高阶安全</strong>：更多共享 + 更复杂的共享函数 → 二阶/三阶安全（当前一阶）；</li>
+<li><strong>覆盖更多攻击面</strong>：与 RowHammer 防护、故障注入检测、软件/微架构侧信道防护联合（论文明确留作平行工作）；</li>
+<li><strong>PUF 增强</strong>：暗比特掩蔽（减少 TMV/BCH 开销）、烧灼硬化、随机性提取最大化每比特熵、对称布局减小系统偏差；</li>
+<li><strong>大规模集成</strong>：多宏系统级验证（安全协处理器合并、ASCON-128a 或每宏实例、密钥管理策略）；</li>
+<li><strong>隐私计算扩展</strong>：把安全 IMC 与联邦学习/同态加密外包推理结合——安全硬件是隐私计算栈的关键底座。</li>
+</ol>
+
+<h2 id="sec9-2"><span class="no">9.2</span>术语表</h2>
+<table>
+<tbody><tr><th style="width:30%">术语</th><th>解释</th></tr>
+<tr><td>SCA（Side-Channel Attack）</td><td>侧信道攻击：利用功耗/电磁等物理泄露重建数据。</td></tr>
+<tr><td>BPA（Bus-Probing Attack）</td><td>总线探测攻击：窃听片外存储器与芯片间的总线获取模型。</td></tr>
+<tr><td>Boolean 共享（掩码）</td><td>把每个比特拆成 n 份（XOR 恢复），单份看似随机。</td></tr>
+<tr><td>TI（Threshold Implementation）</td><td>阈值实现：满足正确性/非完备性/均匀性的布尔共享。</td></tr>
+<tr><td>非完备性（Non-Completeness）</td><td>每个子函数只用输入份的严格子集，子电路碰不到完整秘密。</td></tr>
+<tr><td>均匀性（Uniformity）</td><td>共享表示分布均匀，无数据相关偏差可被利用。</td></tr>
+<tr><td>近似均匀性</td><td>本文放宽的均匀性：只要求计算性（非数学性）安全。</td></tr>
+<tr><td>XNOR 乘法</td><td>用线性 XNOR 门做 ±1 乘法，共享后原生安全、免随机比特。</td></tr>
+<tr><td>SV / BV</td><td>有符号值（±1 加权和，只取奇数）/ 二进制值（计算表示）。</td></tr>
+<tr><td>校正因子</td><td>把 XNOR-MAC 原始输出换算成真实 MAC 值的常数项（可预计算）。</td></tr>
+<tr><td>CSA（Carry-Save Adder）</td><td>进位保存加法：进位不立即传播，3 操作数合并免半加器。</td></tr>
+<tr><td>ASCON</td><td>NIST 轻量密码竞赛冠军，用于片上模型解密。</td></tr>
+<tr><td>Changing of the Guards</td><td>Daemen 提出的 Keccak/ASCON 置换 remask 方法（仅需 4 个一次性随机比特）。</td></tr>
+<tr><td>PUF（Physically Unclonable Function）</td><td>物理不可克隆函数：制造失配生成芯片唯一密钥。</td></tr>
+<tr><td>反馈切断</td><td>切断 SRAM 反相器反馈 → 暴露制造失配 → 读出 PUF 位。</td></tr>
+<tr><td>TMV（Temporal Majority Voting）</td><td>时间多数投票：多次评估取多数，抗噪声。</td></tr>
+<tr><td>CPA（Correlation Power Analysis）</td><td>相关功耗分析：对密钥猜测算与功耗的相关性。</td></tr>
+<tr><td>DPA / TVLA</td><td>差分功耗分析 / 测试向量泄漏评估（Welch t-test）。</td></tr>
+<tr><td>Chip Whisperer</td><td>侧信道攻击/防御研究平台（高 SNR 测量）。</td></tr>
+<tr><td>TOPS/W</td><td>每瓦每秒万亿次运算，能效单位。</td></tr>
+</tbody></table>
+
+<h2 id="sec9-3"><span class="no">9.3</span>参考资料</h2>
+<ol>
+<li><strong>本论文</strong>：M. Ashok et al., “Digital In-Memory Compute for Machine Learning Applications With Input and Model Security,” IEEE JSSC, vol. 60, no. 9, pp. 3390–3400, Sep. 2025. DOI: 10.1109/JSSC.2025.3534753</li>
+<li>[5] 基线数字 IMC 架构（位串行 1–8 bit 激活、4 的倍数权重精度、8 列×128 行 4-bit 权重、XNOR 乘法门 + 加法树 + 累加器）。</li>
+<li>[30] Maji et al.：阈值实现（TI）的传统加速器 SCA 保护（移位乘法、幂次权重限制、需恒定随机比特）。</li>
+<li>[31] Fang et al.：经验性 SCA 保护（时间/空间洗牌 + DAC 功耗补偿）。</li>
+<li>[58] ASCON：NIST 轻量密码竞赛冠军。</li>
+<li>[53] Daemen：Keccak/ASCON 置换的 "Changing of the Guards" remask 方法。</li>
+<li>[71] SCA 安全 SRAM 位单元（反馈切断晶体管，本论文复用作 PUF）。</li>
+<li>[7] 高位激活 + 二值权重的 XNOR 表示法（本论文 SV/BV 方法的来源）。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📚 延伸阅读建议</div>
+<p>想深入的学生：① 先读 TI 原始论文（Nikova et al.）理解阈值实现的数学；② 读 ASCON 规范与 "Changing of the Guards" 论文；③ 动手：用 Python 实现 3 份 Boolean 共享的 AND/XNOR 门，统计共享输出的均匀性（复现 CV 的概念）；④ 用 Chip Whisperer 开源平台跑一次 CPA 攻击实验，直观感受“功耗=数据影子”；⑤ 与本系列第 9 篇（混合 SNN-CNN）对比：那条路防“算法泄露”，这条路防“物理泄露”——两种安全观。</p>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   安全数字 IMC 教学教程 · 交互脚本
+   演示 A Boolean 共享 · 演示 B XNOR vs AND · 演示 C CPA
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · Boolean 共享（3 份）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 A · Boolean 共享：b = b1⊕b2⊕b3（单份看似随机）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 8;
+    const b = (k >> 2) & 1;
+    const b1 = (k >> 1) & 1, b2 = k & 1;
+    const b3 = b1 ^ b2 ^ b;
+    const bs = 90, bx = 120, by = 70;
+    // three shares
+    const shares = [[b1, "b1"], [b2, "b2"], [b3, "b3"]];
+    for (let i = 0; i < 3; i++) {
+      const x = bx + i * (bs + 20);
+      ctx.fillStyle = i === 2 ? "#1c3a2c" : "#122c3c";
+      ctx.strokeStyle = i === 2 ? PAL.green : PAL.blue; ctx.lineWidth = 2;
+      rrect(ctx, x, by, bs, 60, 8); ctx.fill(); ctx.stroke();
+      txt(ctx, shares[i][1] + " = " + shares[i][0], x + bs / 2, by + 30, 16, PAL.white, "center");
+    }
+    // XOR chain
+    txt(ctx, "⊕", bx + bs + 7, by + 30, 18, PAL.orange, "center");
+    txt(ctx, "⊕", bx + 2 * (bs + 20) - 6, by + 30, 18, PAL.orange, "center");
+    txt(ctx, "→ 恢复 b = " + b, bx + 3 * (bs + 20) + 10, by + 30, 16, PAL.green, "center");
+    // power bars
+    txt(ctx, "单份功耗（看不出 b）", 140, 170, 12.5, PAL.gray, "center");
+    for (let i = 0; i < 3; i++) {
+      const x = bx + i * (bs + 20) + 10;
+      const hgt = 30 + ((shares[i][0] * 37 + i * 13 + k * 7) % 41);
+      ctx.fillStyle = i === 2 ? PAL.green : PAL.blue;
+      ctx.fillRect(x, 200 - hgt, bs - 20, hgt);
+    }
+    txt(ctx, "每份功耗随机波动 → 三者之和也统计无关（非完备性）", 480, 230, 13, PAL.white, "center");
+    txt(ctx, "正确性：b1⊕b2⊕b3 = " + (b1 ^ b2 ^ b3) + " = 秘密 b = " + b, 480, 256, 13.5, PAL.green, "center");
+    txt(ctx, "非完备性：每个子函数只碰输入份的严格子集 → 子电路功耗与真实数据无关", 480, 284, 12.5, PAL.gray, "center");
+    if (stat) stat.textContent = "b=" + b + "，共享 (" + b1 + "," + b2 + "," + b3 + ")，b1⊕b2⊕b3=" + (b1 ^ b2 ^ b3);
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1200); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1200);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · XNOR vs AND（乘法共享）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 B · XNOR 乘法（线性）vs AND 乘法（非线性）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 2;
+    // input shares
+    const a = k; // activation bit
+    const a1 = 1, a2 = 0, a3 = a1 ^ a2 ^ a;  // 0,1 -> shares
+    const wv = 1; // weight bit fixed
+    const w1 = 0, w2 = 1, w3 = w1 ^ w2 ^ wv; // 0,1 -> shares
+    // XNOR result (share-wise): t = XNOR(a,w) computed on each share pair
+    const xn = (sh1, sh2) => 1 - (sh1 ^ sh2);
+    const t1 = xn(a1, w1), t2 = xn(a2, w2), t3 = xn(a3, w3);
+    const xnorRec = t1 ^ t2 ^ t3;
+    const andRec = (a1 & w1) ^ (a2 & w2) ^ (a3 & w3);
+    const xnorTrue = 1 - (a ^ wv);
+    const andTrue = a & wv;
+    // left: XNOR
+    ctx.fillStyle = "#122c1c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, 40, 60, 440, 200, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "XNOR 乘法（线性，本论文）", 60, 84, 14, PAL.green, "left");
+    const px = 70, py = 100, bs = 90;
+    txt(ctx, "激活份 a1a2a3：", px, py, 12, PAL.gray, "left");
+    const av = [a1, a2, a3];
+    for (let i = 0; i < 3; i++) {
+      const x = px + 130 + i * bs;
+      ctx.fillStyle = "#1c3a2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 1.5;
+      rrect(ctx, x, py - 12, bs - 10, 26, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(av[i]), x + (bs - 10) / 2, py, 14, PAL.white, "center");
+    }
+    txt(ctx, "权重份 w1w2w3：", px, py + 34, 12, PAL.gray, "left");
+    const wv2 = [w1, w2, w3];
+    for (let i = 0; i < 3; i++) {
+      const x = px + 130 + i * bs;
+      ctx.fillStyle = "#1c3a2c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 1.5;
+      rrect(ctx, x, py + 22, bs - 10, 26, 4); ctx.fill(); ctx.stroke();
+      txt(ctx, String(wv2[i]), x + (bs - 10) / 2, py + 34, 14, PAL.white, "center");
+    }
+    txt(ctx, "每份独立 XNOR：t1=" + t1 + "，t2=" + t2 + "，t3=" + t3, px, py + 80, 12.5, PAL.white, "left");
+    txt(ctx, "恢复：t1⊕t2⊕t3 = " + xnorRec + " = XNOR(" + a + "," + wv + ")=" + xnorTrue + " ✓", px, py + 108, 14, PAL.green, "left");
+    txt(ctx, "6 门等效 · 0 随机比特 · 天然均匀+抗毛刺", px, py + 134, 12.5, PAL.gray, "left");
+
+    // right: AND
+    ctx.fillStyle = "#2c1a1a"; ctx.strokeStyle = PAL.red; ctx.lineWidth = 2;
+    rrect(ctx, 500, 60, 440, 200, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "AND 乘法（非线性，传统）", 520, 84, 14, PAL.red, "left");
+    txt(ctx, "同样输入份：", 520, 110, 12, PAL.gray, "left");
+    txt(ctx, "AND 共享后：t1⊕t2⊕t3 = " + andRec + "，但真值 AND(" + a + "," + wv + ")=" + andTrue + " ✗", 520, 140, 13, PAL.red, "left");
+    txt(ctx, "→ 非线性破坏正确性 → 需要 remask（随机比特）", 520, 166, 12.5, PAL.red, "left");
+    txt(ctx, "48 门等效 · 2 随机比特/周期 · 需输出寄存器", 520, 192, 12.5, PAL.gray, "left");
+    txt(ctx, "IMC 百万并行 MAC → 随机比特开销反超计算", 520, 216, 12.5, PAL.orange, "left");
+    txt(ctx, "→ 不可扩展！", 520, 240, 13, PAL.red, "left");
+
+    txt(ctx, "SV/BV 换算 + 校正因子 → XNOR 也能算多位 MAC（SV=2·BV−(2ⁿ−1)）", 60, 280, 13.5, PAL.orange, "left");
+    txt(ctx, "校正：SVout = 2·BVout − (2ⁿᵂ−1)(2ⁿᴬ−1)·r（常量预计算）→ NN 精度零影响", 60, 304, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "XNOR 恢复=" + xnorRec + " ✓ vs AND 恢复=" + andRec + " ✗";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1800); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1800);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · CPA（相关性不可区分）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 320);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+  const nGuess = 16; // 4-bit key guesses
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "演示 C · CPA：正确密钥的相关性是否可区分？（左未保护 / 右保护）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 2;
+    // left: unprotected
+    ctx.fillStyle = "#1c2838"; ctx.strokeStyle = PAL.red; ctx.lineWidth = 2;
+    rrect(ctx, 40, 60, 440, 220, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "未保护：正确密钥（红）相关性最高 → 一击即中", 60, 84, 13, PAL.red, "left");
+    // bars: guess correlations
+    for (let i = 0; i < nGuess; i++) {
+      const x = 60 + i * 26;
+      const isCorrect = (i === 5);
+      const hgt = isCorrect ? 120 : 20 + ((i * 31 + 7) % 30);
+      ctx.fillStyle = isCorrect ? PAL.red : "#3a5a7a";
+      ctx.fillRect(x, 240 - hgt, 18, hgt);
+      if (isCorrect) txt(ctx, "✓", x + 9, 252, 11, PAL.red, "center");
+    }
+    txt(ctx, "正确密钥（红）远超其他猜测 → 可被识别", 60, 268, 12, PAL.gray, "left");
+
+    // right: protected
+    ctx.fillStyle = "#122c1c"; ctx.strokeStyle = PAL.green; ctx.lineWidth = 2;
+    rrect(ctx, 500, 60, 440, 220, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "保护后：所有猜测相关性混杂 → 不可区分", 520, 84, 13, PAL.green, "left");
+    for (let i = 0; i < nGuess; i++) {
+      const x = 520 + i * 26;
+      const isCorrect = (i === 5);
+      const hgt = 30 + ((i * 17 + 11 + k * 5) % 34);
+      ctx.fillStyle = isCorrect ? "#3cbe8c" : "#1e5a4a";
+      ctx.fillRect(x, 240 - hgt, 18, hgt);
+    }
+    txt(ctx, "正确密钥（绿）与错误猜测（灰）重叠 → 不可识别", 520, 268, 12, PAL.gray, "left");
+
+    txt(ctx, "CPA 结果：保护后乘法/加法树/累加器/ASCON 全部通过（论文 Fig.9）", 60, 300, 13, PAL.white, "left");
+    if (stat) stat.textContent = k === 0 ? "未保护：正确密钥可区分" : "保护后：正确密钥不可区分";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1600);
+  draw();
+})();
+
+</script>
+
+
+</body></html>

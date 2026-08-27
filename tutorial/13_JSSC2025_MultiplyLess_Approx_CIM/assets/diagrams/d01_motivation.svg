@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="500" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">背景动机：NN 推理被「数据搬移」和「乘法成本」双重拖累</text>
+
+  <!-- Von Neumann vs CIM -->
+  <rect x="40" y="84" width="440" height="190" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#0e5a8a" font-size="14" font-weight="700">冯·诺依曼：数据来回搬</text>
+  <g font-size="12">
+    <rect x="70" y="128" width="120" height="56" rx="8" fill="#cfe0ee" stroke="#0e5a8a"/>
+    <text x="130" y="152" text-anchor="middle" fill="#0e5a8a" font-weight="600">计算单元(ALU)</text>
+    <text x="130" y="172" text-anchor="middle" fill="#45536b">处理 MAC</text>
+    <rect x="300" y="128" width="150" height="56" rx="8" fill="#e8f0d8" stroke="#5a8a0e"/>
+    <text x="375" y="152" text-anchor="middle" fill="#5a8a0e" font-weight="600">存储器(DRAM/SRAM)</text>
+    <text x="375" y="172" text-anchor="middle" fill="#45536b">存权重/激活</text>
+    <path d="M 190 156 L 296 156" stroke="#e66e5a" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+    <path d="M 300 156 L 196 156" stroke="#e66e5a" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+    <text x="243" y="140" text-anchor="middle" fill="#e66e5a" font-size="11" font-weight="600">权重搬移×反复</text>
+    <text x="60" y="216" fill="#45536b">MVM 大量读取权重 → 数据搬移能量 ≫ 计算能量</text>
+    <text x="60" y="238" fill="#45536b">带宽受限 → 能效低、延迟高</text>
+  </g>
+
+  <rect x="500" y="84" width="420" height="190" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="110" fill="#1d8a5f" font-size="14" font-weight="700">CIM（存内计算）：就地计算</text>
+  <g font-size="12">
+    <rect x="530" y="128" width="180" height="56" rx="8" fill="#d9f0e4" stroke="#1d8a5f"/>
+    <text x="620" y="150" text-anchor="middle" fill="#1d8a5f" font-weight="600">存储阵列（8T SRAM 存权重）</text>
+    <text x="620" y="170" text-anchor="middle" fill="#45536b">就地完成 MVM</text>
+    <rect x="740" y="128" width="120" height="56" rx="8" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="800" y="150" text-anchor="middle" fill="#a06510" font-weight="600">ADC/数字逻辑</text>
+    <text x="800" y="170" text-anchor="middle" fill="#45536b">读出/累加</text>
+    <path d="M 714 156 L 736 156" stroke="#1d8a5f" stroke-width="3" fill="none" marker-end="url(#ar)"/>
+    <text x="520" y="216" fill="#45536b">多行并行激活 → 大带宽；权重不出阵列 → 省搬移</text>
+    <text x="520" y="238" fill="#45536b">但数字 CIM 中「乘法器+加法树」面积/能耗大</text>
+  </g>
+
+  <!-- 乘法二次成本 -->
+  <rect x="40" y="298" width="880" height="176" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="324" fill="#6b3fa0" font-size="14" font-weight="700">数字 CIM 的乘法成本：面积-周期积随位宽二次增长</text>
+  <g font-size="12">
+    <rect x="70" y="344" width="250" height="44" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="195" y="364" text-anchor="middle" fill="#6b3fa0" font-weight="600">位并行：乘法器面积 ∝ 位宽²</text>
+    <text x="195" y="380" text-anchor="middle" fill="#45536b">（全并行展开）</text>
+    <rect x="340" y="344" width="250" height="44" rx="8" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="465" y="364" text-anchor="middle" fill="#6b3fa0" font-weight="600">位串行：周期数 ∝ 位宽²</text>
+    <text x="465" y="380" text-anchor="middle" fill="#45536b">（乘积累加需 N×M 拍）</text>
+    <text x="620" y="370" fill="#1d8a5f" font-size="13" font-weight="700">→ 面积×周期 仍是二次增长</text>
+    <text x="70" y="420" fill="#45536b">本论文：用「乘性更少（multiply-less）」的 L1 距离算法替代乘法 → 面积/能耗与位宽成</text>
+    <text x="70" y="442" fill="#1d8a5f" font-size="13" font-weight="600">线性关系</text>
+    <text x="70" y="462" fill="#45536b">28nm 原型：8b 运算峰值能效 102 TOPS/W，面积效率 4.4 TOPS/mm²</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

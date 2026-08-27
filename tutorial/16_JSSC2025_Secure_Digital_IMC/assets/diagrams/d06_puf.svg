@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="540" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">片上密钥生成：复用 IMC SRAM 的 PUF（论文 Fig.7）</text>
+
+  <!-- key need -->
+  <rect x="40" y="84" width="430" height="170" rx="12" fill="#fff" stroke="#e66e5a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#e66e5a" font-size="13.5" font-weight="700">密钥从哪来？—— 不能从片外来</text>
+  <g font-size="12">
+    <text x="60" y="138" fill="#45536b">密钥若从片外读入 → 传输可被探测 → 密码安全性归零</text>
+    <text x="60" y="162" fill="#45536b">e-fuse 熔丝 → SEM 成像可读出每个熔丝是否熔断</text>
+    <text x="60" y="190" fill="#1d8a5f" font-weight="600">PUF（物理不可克隆函数）：利用制造随机失配生成密钥</text>
+    <text x="80" y="214" fill="#45536b">制造测试时收集挑战-响应对；部署时评估 PUF 得到密钥，外部无法测量</text>
+  </g>
+
+  <!-- PUF mechanism -->
+  <rect x="490" y="84" width="430" height="170" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="110" fill="#1d8a5f" font-size="13.5" font-weight="700">复用 IMC SRAM 单元做 PUF</text>
+  <g font-size="12">
+    <text x="510" y="138" fill="#45536b">SCA 安全位单元（[71]）已有<strong>反馈切断晶体管</strong></text>
+    <text x="510" y="162" fill="#45536b">步骤：① 切断反馈 ② 预放电两个反相器输入 ③ 重连反馈</text>
+    <text x="510" y="186" fill="#45536b">SRAM 按哪个反相器更强（制造失配）沉降到 0 或 1</text>
+    <text x="510" y="210" fill="#45536b">标准读操作读出 → PUF 位 = 制造随机性</text>
+    <text x="510" y="240" fill="#1d8a5f" font-size="11.5" font-weight="600">只需一小块综合数字逻辑（FSM + TMV），几乎零面积开销</text>
+  </g>
+
+  <!-- details -->
+  <rect x="40" y="274" width="880" height="140" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="300" fill="#0e5a8a" font-size="14" font-weight="700">关键实现细节</text>
+  <g font-size="12.5">
+    <text x="60" y="330" fill="#45536b">· 三份共享垂直堆叠（3 个单元一组）→ 3 条差分位线走不同金属层（减小共享间耦合，不增单元面积）</text>
+    <text x="60" y="356" fill="#45536b">· 时间多数投票（TMV）：同一位单元多次评估取多数 → 抗噪声；按用例可配置次数</text>
+    <text x="60" y="382" fill="#45536b">· TMV 的 FSM 处理 4 位一组，会泄露统计信息 → 用差分操作（感放输出差分值都给 FSM）恒定翻转 → 抗简单功耗分析</text>
+    <text x="60" y="408" fill="#45536b">· 随机性：NIST 800-22 全部适用测试通过（5 芯片 p&gt;0.01），最小熵 ~0.91–0.93；Von Neumann 去偏</text>
+  </g>
+
+  <!-- results -->
+  <rect x="40" y="434" width="880" height="80" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="458" fill="#6b3fa0" font-size="13.5" font-weight="700">稳定性与唯一性</text>
+  <g font-size="12.5">
+    <text x="60" y="486" fill="#45536b">TMV 提升稳定性 + 片外 BCH 纠错 → 0% 位错误率（低失配单元由噪声决定）</text>
+    <text x="60" y="506" fill="#45536b">intra-key HD≈0（稳定）· inter-key HD≈192（半位宽，唯一）· 掩蔽不稳定单元可减少纠错位</text>
+  </g>
+</svg>

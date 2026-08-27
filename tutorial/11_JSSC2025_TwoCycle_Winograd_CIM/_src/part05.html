@@ -1,0 +1,23 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：混合 Winograd（F2+F4 按层选）微架构与数据流</h2>
+<figure>
+  <img src="assets/diagrams/d05_hybrid_winograd.svg" alt="混合 Winograd" style="max-width:940px">
+  <figcaption>图 5.1　混合策略（训练时决定每层用 F2/F4/空间域）+ 通用化（核分解 + 激活分段）+ PCO 映射与三变换单元数据流。</figcaption>
+</figure>
+<p><strong>为什么“混合”？</strong>单用 F2 无损但只 1.92×；单用 F4 有 3.32× 但掉 9.1%。混合策略在<strong>训练时</strong>为每一层决定用 F2、F4 还是空间域（Table III）：精度敏感层用无损选项、不敏感层用 F4 → <strong>ResNet34 加速 2.59×、精度仅掉 0.6%</strong>（站上帕累托前沿，见 d09）。</p>
+<figure>
+  <img src="assets/diagrams/d09_tradeoff.svg" alt="权衡图" style="max-width:920px">
+  <figcaption>图 5.2　加速-精度权衡：混合策略 vs 基线/F2/F4。</figcaption>
+</figure>
+<p><strong>如何支持各种卷积配置？</strong></p>
+<ul>
+<li><strong>核分解</strong>：&gt;3×3 的核（如 7×7）拆成多个 3×3 核，各自可用 Winograd（离线做）；</li>
+<li><strong>激活分段</strong>：stride=2 时把激活和核按“颜色”分区，每区做 stride=1 的 3×3 卷积（片上输入缓冲做）；</li>
+<li><strong>PCO 映射</strong>：Winograd 域是 EWMM——同一输出通道、不同输入通道的结果相加（COM 通道序，宏内）；不同像素并行（POM 像素序，宏间）→ 并行度可扩展。</li>
+</ul>
+<p><strong>三变换单元数据流</strong>：Bᵀ()B（激活输入变换）→ CiM 核 EWMM → Aᵀ()A（输出逆变换）→ SIMD 量化回 8b；权重经 G()Gᵀ 变换后存回权重 SRAM（省容量）。F2/F4 变换电路面积（功耗）占比 0.91%（5.33%）/ 10.76%（15.97%）。</p>
+<figure>
+  <img src="assets/figs/fig11_9_Winograd分解与F4.png" alt="论文图9">
+  <figcaption>图 5.3　论文原图 Fig. 9：7×7 核分解示例、stride=2 激活分段与 F4 Winograd 3×3 卷积细节。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>

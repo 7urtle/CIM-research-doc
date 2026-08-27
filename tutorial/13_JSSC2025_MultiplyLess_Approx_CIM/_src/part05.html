@@ -1,0 +1,71 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>系统架构与数据流：16 个数字近似 CIM 阵列</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解宏（macro）的整体结构：ACT Buffer、ActACCU、16 个 CIM 阵列、每个阵列内部的 8T SRAM bank 与 L1 计算单元（MinSEL/ABS-ASM/MinACCU），以及一次 L1 计算的完整数据流。</p>
+</div>
+
+<h3>5.1 宏的顶层架构</h3>
+<p>论文 Fig.5 画出宏的整体架构，核心组成：</p>
+<table>
+<tr><th>模块</th><th>作用</th></tr>
+<tr><td><strong>16 × 数字近似 CIM 阵列</strong></td><td>主体：每个阵列 8 行 × 128 列的 8T SRAM，存 NN 权重；输入向量维度 128；位宽 2–8 b 可配；每个阵列配一个 L1 计算单元做比较式计算</td></tr>
+<tr><td><strong>ACT Buffer</strong></td><td>接收并排序激活值，把它们按位串行送入 CIM 阵列</td></tr>
+<tr><td><strong>ActACCU</strong></td><td>每周期累加 128 个激活的一位（Σx），结果广播给全部 16 个阵列共享</td></tr>
+<tr><td><strong>SRAM 读写接口控制器</strong></td><td>标准 SRAM 读写功能（权重写入等）</td></tr>
+<tr><td><strong>其他 CIM 控制外设</strong></td><td>控制/时钟等</td></tr>
+</table>
+<p>每个阵列内部的 L1 计算单元包含三个子模块：</p>
+<ul>
+<li><strong>MinSEL（最小值选择）</strong>：包含改进的动态逻辑位串行比较器 + 最小值多路选择器（MinMUX）——完成 §4 的“最小选择”；</li>
+<li><strong>ABS-ASM（绝对值装配单元）</strong>：把 Σx、Σw、2Σmin 三项汇合成最终部分和；</li>
+<li><strong>MinACCU（最小值累加器）</strong>：累加 Σmin。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig13_5_总体架构.png" alt="总体架构">
+<figcaption>图 7 · 论文 Fig.5：Multiply-Less 近似 CIM 宏总体架构——16 个数字近似 CIM 阵列 + ACT Buffer + ActACCU + 外设。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d05_architecture.svg" alt="架构教学图">
+<figcaption>教学图 5 · 宏架构示意：ActACCU 广播 Σx，16 阵列并行比较，L1 计算单元完成 min 选择与装配。</figcaption>
+</figure>
+
+<h3>5.2 位串行数据流（论文 Fig.8）</h3>
+<p>数据流按<strong>MSB 优先</strong>的位串行方式运行：</p>
+<ol>
+<li>激活从 ACT Buffer 出来，<strong>MSB 优先</strong>逐位送入宏；</li>
+<li>ActACCU 每周期移位累加激活的一个比特，结果广播到 16 个阵列的 L1 计算单元；</li>
+<li>权重 SRAM bank 用 RWL 译码器按与激活相同的 MSB 优先顺序读出权重位；</li>
+<li>对应位置的<strong>权重位与激活位送入改进比较器</strong>做比较，得到 min(x,w) 的选择信号；</li>
+<li>比较结果控制：① SRAM 读端口的预充（提前停止，§6）；② MinMUX 的传输门（选择权重位还是激活位作为 min 位输出）；</li>
+<li>MinMUX 输出的 min 位送 MinACCU 累加（结构同 ActACCU，带时钟门控输出）；</li>
+<li>WSUM SRAM 单元的内部节点并行读出 Σw；</li>
+<li>ABS-ASM 汇合 ActACCU 的 Σx、MinACCU 的 2Σmin、WSUM 的 Σw，输出部分和。</li>
+</ol>
+
+<figure>
+<img src="assets/figs/fig13_8_L1计算单元电路.png" alt="L1计算单元电路">
+<figcaption>图 8 · 论文 Fig.8：L1 计算单元的电路级设计与位串行计算——改进比较器、MinMUX、MinACCU 与 ABS-ASM。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么 MSB 优先 + 位串行是关键决策？</div>
+<ul>
+<li><strong>位宽可配（2–8 b）</strong>：位串行天然支持任意位宽——改变周期数即可，电路不变 → 2-to-8-b 可扩展；</li>
+<li><strong>线性成本</strong>：面积/能耗随位宽线性增长（创新②的目标）；</li>
+<li><strong>吃位级稀疏</strong>：每个比特独立处理 → 连续 0 可以被跳过（§6 的提前停止）；</li>
+<li><strong>比较器可锁存</strong>：一旦比较分出大小，后续位直接输出被选中的那一方，不再需要比较（MinMUX 直接透传）。</li>
+</ul>
+</div>
+
+<h3>5.3 一次 L1 计算的时间线（例）</h3>
+<p>以 8-bit 计算为例：128 个输入激活并行进入，与 16 列（16 个输出通道）的权重同时比较；每周期比较一个比特，8 个周期后得到 16 个部分和（Psum）。吞吐率口径注意：<strong>一次“比较+累加”计作 2 个 OP（OPs）</strong>（论文说明与点积类芯片不同），位串行 8 位共 8 个周期完成 2 个 OP。</p>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 顶层：ACT Buffer + ActACCU + 16 阵列 + 外设，ActACCU 广播共享 Σx；② 阵列内：8T SRAM（含 WSUM 列）+ L1 计算单元（MinSEL / MinACCU / ABS-ASM）；③ 数据流：MSB 优先位串行比较 → MinMUX 选 min → MinACCU 累加 → ABS-ASM 装配；④ 位串行带来位宽可配、线性成本、稀疏可吃三大好处。</p>
+</div>
+</section>

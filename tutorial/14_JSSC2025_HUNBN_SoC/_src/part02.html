@@ -1,0 +1,59 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>HUNBN SoC 总体架构：RISC-V + DIMC 簇 + 多 bank SRAM</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解 SoC 的三大部分（RISC-V 核、DIMC 簇、输入/输出 SRAM）及其连接方式（AXI 总线 + 三条高带宽流总线），以及“配置-执行”的流程。</p>
+</div>
+
+<h3>2.1 三大组成模块</h3>
+<table>
+<tr><th style="width:22%">模块</th><th>职责</th></tr>
+<tr><td><strong>RISC-V 通用核</strong></td><td>主控：配置卷积层参数（特征图尺寸、输入/输出通道数、SRAM 起始地址、DIMC 权重地址、核类型：标准 or 转置）；通过 AXI 低速接口读写</td></tr>
+<tr><td><strong>DIMC 簇</strong></td><td>卷积层加速器：384 个自定义 DIMC 宏，组织为 32 组 × 12 宏；每组有独立后处理模块；可配置宏子集执行</td></tr>
+<tr><td><strong>输入/输出 SRAM</strong></td><td>P1–P3 三个分区，每区 3 个 bank × 65 kB；存输入激活、部分和、输出激活</td></tr>
+</table>
+
+<figure>
+<img src="assets/figs/fig14_2_SoC架构.png" alt="SoC架构">
+<figcaption>图 2 · 论文 Fig.2：HUNBN SoC 架构——RISC-V 核、DIMC 簇（32 组×12 宏）与 P1–P3 多 bank SRAM。</figcaption>
+</figure>
+
+<h3>2.2 两条数据通路：低速 AXI vs 高速流总线</h3>
+<ul>
+<li><strong>AXI 总线</strong>：轻量读写接口，供 RISC-V 或片外源做低速数据传输；DIMC 权重经 AXI 写入（一次性成本，运行期不影响性能）；</li>
+<li><strong>三条高带宽流总线</strong>：分别承载<strong>输入激活、部分和、输出激活</strong>，在 SRAM 与 DIMC 阵列间直连传输。</li>
+</ul>
+
+<h3>2.3 DIMC 簇的内部组织</h3>
+<ul>
+<li><strong>32 组 × 12 宏 = 384 宏</strong>：所有组共享同一个输入激活向量；</li>
+<li><strong>每组独立后处理模块</strong>：两级求和——第一级把宏内位级 MAC 结果移位相加成 4b×4b 乘积级求和（每 4 个打包）；第二级把组内三个第一级输出合并 → 18-bit 全精度（288 个 4b×4b 乘积之和）；</li>
+<li><strong>每个 DIMC 宏</strong>：6T SRAM 位单元阵列（256×96，存 256×24 个 4b 权重）+ 本地 MAC 单元（位级乘累加）；</li>
+<li><strong>logger/debugger</strong>：监视与控制 DIMC 行为，便于调试。</li>
+</ul>
+
+<h3>2.4 一次 CNN 层的执行流程</h3>
+<ol>
+<li>RISC-V 配置层参数（输出通道 K、输入通道 C、核尺寸 FX/FY、SRAM 地址、核类型）；</li>
+<li>权重经 AXI 写入 DIMC（一次性）；</li>
+<li>输入激活从 P1 经流总线送入 DIMC 簇；</li>
+<li>384 宏（或子集）并行计算；</li>
+<li>后处理模块把结果量化为 12-bit 部分和（或直接 4-bit 输出）；</li>
+<li>结果写回 P2/P3（交替缓冲），供下一层使用。</li>
+</ol>
+
+<figure>
+<img src="assets/diagrams/d02_soc_arch.svg" alt="SoC架构教学图">
+<figcaption>教学图 2 · HUNBN SoC 架构示意：RISC-V 控制、DIMC 簇计算、P1–P3 存储，AXI + 流总线双通路。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 三个值得注意的设计选择</div>
+<ul>
+<li><strong>RISC-V 只做控制</strong>：通用核不参与计算（计算全在 DIMC），避免通用核的面积/能耗开销；</li>
+<li><strong>共享输入、独立后处理</strong>：32 组共享输入向量（激活广播一次），每组独立求和 → 并行度与面积开销的平衡；</li>
+<li><strong>权重写入走 AXI 慢速路径</strong>：因为是一次性成本，慢没关系 → 省掉高速权重写接口的硬件。</li>
+</ul>
+</div>
+</section>

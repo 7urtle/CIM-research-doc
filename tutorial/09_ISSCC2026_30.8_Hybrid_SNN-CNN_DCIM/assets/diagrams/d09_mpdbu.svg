@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="460" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">DM-MPDBU：数字“多膜电位动力学”单元，一个硬件三种神经元</text>
+
+  <!-- 输入 -->
+  <rect x="40" y="90" width="140" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+  <text x="110" y="116" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">加法树输出</text>
+  <text x="110" y="138" text-anchor="middle" fill="#45536b" font-size="11">（32 路 MAC 和）</text>
+
+  <!-- 模式选择 -->
+  <rect x="240" y="80" width="300" height="40" rx="8" fill="#fdf3e7" stroke="#e8a33d"/>
+  <text x="390" y="105" text-anchor="middle" fill="#c25e2e" font-size="12.5" font-weight="600">模式选择（按层配置）</text>
+  <path d="M180,125 H240" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 三个模式 -->
+  <rect x="240" y="140" width="300" height="130" rx="10" fill="#fff" stroke="#dfe6f0" filter="url(#sh)"/>
+  <g font-size="11.5">
+    <rect x="260" y="156" width="260" height="32" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="390" y="177" text-anchor="middle" fill="#0e5a8a" font-weight="600">IF：膜电位积分 → 达阈值发放 → 清零</text>
+    <rect x="260" y="196" width="260" height="32" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="390" y="217" text-anchor="middle" fill="#6b3fa0" font-weight="600">LIF：IF + 每步泄漏（减漏电流）</text>
+    <rect x="260" y="236" width="260" height="32" rx="6" fill="#eefaf3" stroke="#bfe6d2"/>
+    <text x="390" y="257" text-anchor="middle" fill="#1d8a5f" font-weight="600">IQIF：IF + 整数二次项（非线性）</text>
+  </g>
+
+  <!-- 输出 -->
+  <rect x="640" y="140" width="140" height="70" rx="8" fill="#eefaf3" stroke="#1d8a5f"/>
+  <text x="710" y="166" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">输出脉冲 / 值</text>
+  <text x="710" y="188" text-anchor="middle" fill="#45536b" font-size="11">到下一层</text>
+  <path d="M540,205 H640" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 对比 -->
+  <rect x="40" y="290" width="880" height="146" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="318" fill="#0e5a8a" font-size="13" font-weight="700">为什么“数字” MPDB 是必须的？</text>
+  <text x="60" y="344" fill="#45536b" font-size="12.5">• 膜电位累积/比较阈值/泄漏都是“数值运算”，模拟实现（电荷积分）受工艺波动（PVT）影响大——</text>
+  <text x="60" y="366" fill="#45536b" font-size="12.5">同一批芯片、同一温度下，发放时刻可能完全不同 → 推理结果不可复现；</text>
+  <text x="60" y="388" fill="#45536b" font-size="12.5">• 数字实现 = 加法器 + 比较器 + 移位（&gt;&gt;3）→ 逐位精确，与工艺角无关；</text>
+  <text x="60" y="410" fill="#45536b" font-size="12.5">• 之前数字混合方案只支持 1 种 MPDB 函数 → 本文支持 3 种（IF/LIF/IQIF）覆盖更多 SNN 模型；</text>
+  <text x="60" y="430" fill="#1d8a5f" font-size="12.5" font-weight="600">→ “确定性精度 + 多模型通用”正是数字路线的双重红利（与 10 号论文一脉相承）</text>
+</svg>

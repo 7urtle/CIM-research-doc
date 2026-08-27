@@ -1,0 +1,33 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>三种计算模式：BF16A / BF16B / INT8</h2>
+
+<h3 id="sec7-1">7.1 一种硬件，三种精度</h3>
+<figure>
+  <img src="assets/diagrams/d08_modes.svg" alt="三种模式" style="max-width:940px">
+  <figcaption>图 7.1　三种计算模式：BF16A（保留 10b 对齐尾数，23b 输出，服务 CNN/Transformer）、BF16B（8b 尾数，21b 输出，更省）、INT8（纯整数，20b 输出）。</figcaption>
+</figure>
+<table>
+<tr><th>模式</th><th>输入/权重</th><th>对齐尾数宽度</th><th>累加输出</th><th>适用</th></tr>
+<tr><td><strong>BF16A</strong></td><td class="num">BF16 × BF16</td><td class="num">10 bit</td><td class="num">23 bit</td><td>精度敏感的 CNN / Transformer（ViT）</td></tr>
+<tr><td><strong>BF16B</strong></td><td class="num">BF16 × BF16</td><td class="num">8 bit</td><td class="num">21 bit</td><td>精度要求略低的网络（省功耗）</td></tr>
+<tr><td><strong>INT8</strong></td><td class="num">INT8 × INT8</td><td class="num">—（无指数）</td><td class="num">20 bit</td><td>已量化好的推理</td></tr>
+</table>
+<p>BF16A 和 BF16B 的区别只在“对齐后尾数保留多少位”：10b 保精度（Transformer 需要），8b 省功耗（CNN 够用）。论文实测 ViT @ImageNet 推理精度 <strong>79.818%</strong>——说明这个精度配置是够用的。</p>
+
+<h3 id="sec7-2">7.2 存储器配置与“一芯四用”</h3>
+<ul>
+<li>相邻列共享 <strong>MUX</strong>：BF16A/B 模式用<strong>交错映射</strong>存放指数与尾数（指数并行取、尾数串行取）；</li>
+<li><strong>INT8 模式</strong>：列选择（CS）信号充当列译码器 → 提高存储-计算比（SCR），纯整数模式下的阵列利用率更高；</li>
+<li>一个宏四种用途：普通读写 + 3 种计算模式，按网络层需求逐层配置。</li>
+</ul>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 2C vs 符号-数值稀疏性对比（位级翻转计数）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">符号-数值格式下负权重的位翻转更少 → 加法树更省电</span>
+</div>
+<div class="hint">对比同一批含负数的权重在 2C 与符号-数值格式下的“非零位数总量”（位级稀疏性）。稀疏性高 = 加法树翻转少 = 动态功耗低。</div>
+</div>
+</section>

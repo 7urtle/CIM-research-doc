@@ -1,0 +1,183 @@
+===== PAGE 1 =====
+254  •  2025 IEEE International Solid-State Circuits Conference
+ISSCC 2025 / SESSION 14 / COMPUTE-IN-MEMORY / 14.3
+979-8-3315-4101-9/25/$31.00 ©2025 IEEE
+14.3    A 28nm 17.83-to-62.84TFLOPS/W Broadcast-Alignment  
+           Floating-Point CIM Macro with Non-Two’s-Complement MAC 
+           for CNNs and Transformers 
+ 
+Xing Wang*1,2, Tianhui Jiao*1, Yi Yang1, Shaochen Li1, Dongqi Li1, An Guo1,  
+Yuhui Shi1, Yuchen Tang1, Jinwu Chen1, Zhican Zhang1, Zhichao Liu1, Bo Liu1,  
+Weiwei Shan1, Xin Wang3, Hao Cai1, Wenwu Zhu3, Jun Yang1,2, Xin Si1 
+ 
+1Southeast University, Nanjing, China 
+2National Center of Technology Innovation for EDA, Nanjing, China 
+3Tsinghua University, Beijing, China 
+ 
+*Equally Credited Authors (ECAs) 
+ 
+The rapid advancement of artiﬁcial-intelligence (AI) models has increased demand for  
+high-precision and energy-efﬁcient edge-AI chips. Floating-point (FP) support is essential 
+for high-precision neural-network (NN) training and inference; yet FP incurs higher energy 
+and area overhead due to complex FP multiplication and accumulation (MAC) operations. 
+Digital compute-in-memory (DCIM) and ﬂoating-point CIM (FP-CIM) [1-10] have emerged 
+as promising techniques to improve energy efﬁciency with higher accuracy. Previous  
+FP-CIM implementations [1-7] achieved good performance through various alignment 
+schemes and computing processes. However, as illustrated in Figure 14.3.1, the 
+implementation of a digital-domain FP-CIM faces several challenges: (1) the difﬁculty of 
+balancing FP-computation precision and input reusability, as alignment operations are 
+unfriendly to CIM structure; (2) a large performance loss or area overhead due to peripheral 
+parallel-alignment schemes; and (3) huge digital-MAC dynamic-energy consumption due 
+to low 2’s-complement (2C) negative-weight sparsity, coupled with an additional sign-bit 
+computation overhead in digital CIM. This work presents a hierarchical broadcast-alignment 
+non-2’s-complement-MAC (B-A-N2CMAC) FP-CIM macro, featuring (1) a broadcast input 
+and embedded lightweight convertor structure to enable BF16/INT8 MAC operations with 
+an improved input reusability; (2) an embedded area-efﬁcient adaptive-alignment scheme 
+with a dual-bit serial MAC; and (3) a format-mixed N2CMAC to reduce dynamic circuit 
+activity and signed computation overhead. A 28nm 64kb B-A-N2CMAC FP-CIM macro is 
+fabricated to support FP-MAC operations using BF16 and INT8 representations. This CIM 
+macro achieved an energy efﬁciency of 62.84TFLOPS/W for BF16 and 90.15TOPS/W for 
+INT8. 
+ 
+Figure 14.3.2 illustrates the overall structure of the proposed B-A-N2CMAC FP-CIM macro, 
+which includes 16 triple-stacked arrays (TS-As), a hierarchical input buffer, a calibrated 
+accumulator and quantizer (CA&Q), and peripheral circuits. Each TS-A computes one output 
+channel: a TS-A comprises of (1) an embedded serial-input converting unit (ESICU), (2) a 
+16×256 6T SRAM array, and (3) a format-mixed non-2’s-complement MAC unit 
+(N2CMACU). Unlike previous FP-CIM designs [2,3], global ﬂoating-point or integer inputs 
+(GIN), from the hierarchical input buffer, can be reused by 16 TS-As to maximize the array-
+utilization rate. Each GIN consists of an 8b parallel-exponent input (EIN) and a 2b 
+serial-mantissa input (MIN). ESICU, which contains an align-signal generator (ASG) and  
+16-lightweight converters (LCs), is designed to achieve a local 2b-serial alignment for GIN 
+depending on the exponent data read from the SRAM array. This approach eliminates the 
+need for large-area subtractors and barrel shifters, compared to typical digital-alignment 
+methods [1,2,5]. To fully utilize small-absolute-value negative-weight sparsity, N2CMAC 
+computation is proposed to enable weight-mapping using a sign-magnitude data format; 
+where, a signed ﬂoating-point or integer MAC is divided into an unsigned MAC and a  
+sign-compensation, performed in the TS-A and CA&Q. The CIM macro supports four modes: 
+one conventional read and write mode, and 3-computation modes: BF16A, BF16B, and INT8. 
+BF16A and BF16B modes differ based on the preserved bit-width of the aligned mantissa, 
+10b for BF16A and 8b for BF16B, which are sufﬁcient to handle the target CNN and 
+transformer networks. 
+ 
+Figure 14.3.3 illustrates the ESICU structure and the embedded adaptive 2b-serial alignment 
+scheme. The ESICU is composed of an ASG and 16 LCs: the ASG consists of 16 exponent 
+adders (EAs), a maximum-value ﬁnder (MVF), a shift-destination tracer (SDT), and 16 
+equality comparators (ECs); the LC consists of an adaptive-reset register chain (ARRC), a 
+self-alignment controller (SAC), and an output select and invert unit (OSIU). After the 
+generation of exponent sums by EAs, the SDT value is determined based on the maximum 
+sum from MVF, and decreases by 1 each cycle. Each EC then compares the SDT value with 
+the higher 8 bits of its corresponding exponent sum (SUM[8:1]) and generates shift control 
+signals (SHIFT0 - 15) for the LCs. If SHIFT = 0, the ARRC is in the store state, sequentially 
+storing the serial minimum values; else, SHIFT = 1, the ARRC is in the shift state, 
+sequentially outputting the previously stored minimum values: shifting out 2b per clock 
+cycle. Then, OSIU generates OUT[1:0] and stores it as local input LIN[1:0] for N2CMAC 
+operations. The proposed adaptive 2b-serial alignment scheme reduces area overhead by 
+36.23%, compared to a traditional subtractor and barrel-shifter alignment schemes [1-6]. 
+ 
+Figure 14.3.4 illustrates the detailed implementation of the format-mixed N2CMAC 
+computation, along with the memory-bank conﬁguration and waveforms for the 3 
+computation modes. Unlike previous 2’s-complement MAC operations [11-13], weights are 
+stored in the TS-As using a sign-magnitude format. The format-mixed N2CMAC computes 
+MAC results for 2’s-complement inputs and sign-magnitude weights, resulting in a 2’s 
+complement output. Computation consists of 4 steps: (1) the hierarchical input buffer 
+provides GIN, including its 8b parallel exponent in BF16A/B modes and a 2b serial MIN in 
+BF16A/B and INT8 modes; (2) the LC serially converts GIN to LIN, performing serial alignment 
+in BF16A/B modes, and input-sign invert in BF16A/B and INT8 modes ({~LIN[m-1], LIN[m-
+2:0]}); (3) the digital multiply unit (DMU) inverts LIN based on the sign of mantissa weight 
+(MW), multiplies LIN by the magnitude of MW, and the products are accumulated in an adder 
+tree (AT); (4) the CA&Q shifts and accumulates the AT output over multiple cycles to 
+generate PMACV, which is calibrated by adding a pre-set compensation value to the 
+accumulator to obtain a MACV result: 20b result for INT8, 23b for BF16A, 21b for BF16B. 
+The proposed format-mixed N2CMAC computation divides a signed MAC operation into an 
+unsigned MAC and a sign-compensation. The unsigned MAC eliminates the overhead of 
+sign-bit computation in the DMU and AT, while the sign-compensation value can be obtained 
+either through two additional cycles or pre-set ofﬂine. This value is then shared across 
+multiple cycles, further optimizing efﬁciency. In this work, memory-bank conﬁguration is 
+achieved through the MUX shared by adjacent columns. In BF16A/B modes, a staggered-
+mapping scheme is used for exponents and mantissa, while in INT8 mode the column-select 
+(CS) signal functions as a column decoder, increasing the storage-compute ratio (SCR). 
+ 
+Figure 14.3.5 highlights the proposed schemes’ performance. The serial-alignment and 
+serial-MAC schemes proposed in this work achieve a 3.83× and 1.56× reduction in area 
+and a 1.71× and 1.20× reduction in power, compared to prior parallel-alignment schemes 
+using a parallel MAC [6] and a parallel-alignment scheme using a serial MAC [1,2]. The 
+proposed N2CMAC computation reduces the required number of computing cycles for 
+different networks with varying input precisions: a 19.80 and 16.50% reduction for 8b and 
+10b inputs using ViT (DeiT-S) @ImageNet. The use of sign-magnitude formatted weights 
+signiﬁcantly improves the sparsity of negative INT8 weights: showing a 1.83× bit-level 
+sparsity increase for ResNet50 compared to a 2’s complement format. The format-mixed 
+N2CMAC circuit achieves a 1.96, 1.25, and 1.18× lower power consumption, latency, and 
+area overhead compared to typical 2’s complement MAC circuits [1,2]. 
+ 
+Figure 14.3.6 presents measured results for the test chip, fabricated using a 28nm CMOS 
+technology, implementing a 64kb B-A-N2CMAC FP-CIM macro. For BF16A/B-mode MAC 
+operations, the measured access time is 5.4ns at 0.9V for BF16A/B inputs and weights and 
+FP32 outputs. The maximum energy and area efﬁciency are 62.84TFLOPS/W and 
+697.17GFLOPS/mm2 for BF16A/B MAC operations from a 0.55 - 0.9V supply when running 
+ResNet50 @ImageNet. Compared to prior SRAM CIMs [1-5], this work improves the  
+IN × W × memory density × norm. energy efﬁciency × output ratio FoM by 1.93 - 116.90×. 
+This work achieves a 79.818% inference accuracy when used on ViT @ImageNet. Figure 
+14.3.7 shows the die photograph and chip performance summary table. All input/weight 
+sparsity and toggle rates are bit-level and all simulation and measurements are obtained at 
+room temperature (300K). 
+ 
+Acknowledgement: 
+This work was supported in part by the National Science and Technology Major Project 
+under grant 2022ZD0118902; in part by the National Natural Science Foundation of China 
+under grants 6506009793, 92264203 and 62204036; in part by the Key Research and 
+Development Program of Jiangsu Province under grant BE2023020-1; in part by the 
+Postgraduate Research and Practice Innovation Program of Jiangsu Province under grant 
+KYCX23_0344; and, in part by the Fundamental Research Funds for the Central Universities 
+under grant 2242022k60009. The corresponding author is Xin Si (xinsi@seu.edu.cn).
+2025 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-4101-9/25/$31.00 ©2025 IEEE | DOI: 10.1109/ISSCC49661.2025.10904738
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:22 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 14.3.1: FP-CIM design challenges and proposed solutions.
+Figure 14.3.2: Overall structure with key features and BF16/INT8 CIM reconﬁguration 
+of the proposed B-A-N2CMAC FP-CIM macro.
+Figure 14.3.3: The ESICU structure for the embedded 2b-serial alignment, ASG for 
+control signal generation, LC for input conversion (top). An example of ESICU workﬂow 
+in BF16 mode (bottom).
+Figure 14.3.4: Detailed implementation of format-mixed N2CMAC computation (top). 
+Memory bank conﬁguration and MAC operation waveforms for 3 computation modes 
+(bottom).
+Figure 14.3.5: Proposed CIM macro simulated performance.
+Figure 14.3.6: Measurement results and FoM comparison to prior work.
+ISSCC 2025 / February 18, 2025 / 8:50 AM
+255  
+DIGEST OF TECHNICAL PAPERS  •
+14
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:22 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+•  2025 IEEE International Solid-State Circuits Conference
+ISSCC 2025 PAPER CONTINUATIONS AND REFERENCES
+979-8-3315-4101-9/25/$31.00 ©2025 IEEE
+Figure 14.3.7: Die micrograph and chip performance and key-metric summary table.
+References: 
+[1] A. Guo et al., “A 28nm 64-kb 31.6-TFLOPS/W Digital-Domain Floating-Point-Computing-Unit and Double-Bit 6T-SRAM Computing-in-Memory Macro for Floating-Point CNNs,” 
+ISSCC, pp. 128-130, 2023. 
+[2] W.-S. Khwa et al., “A 16nm 96Kb Integer/Floating-Point Dual-Mode-Gain-Cell-Computing-in-Memory Macro Achieving 73.3-163.3TOPS/W and 33.2-91.2TFLOPS/W for AI-
+Edge Devices,” ISSCC, pp. 568-570, 2024. 
+[3] P.-C. Wu et al., “A 22nm 832Kb Hybrid-Domain Floating-Point SRAM In-Memory-Compute Macro with 16.2-70.2TFLOPS/W for High-Accuracy AI-Edge Devices,” ISSCC, pp. 
+126-128, 2023. 
+[4] Y. Yuan et al., “A 28nm 72.12TFLOPS/W Hybrid-Domain Outer-Product Based Floating-Point SRAM Computing-in-Memory Macro with Logarithm Bit-Width Residual ADC,” 
+ISSCC, pp. 576-578, 2024. 
+[5] F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconﬁgurable Digital CIM Processor with Uniﬁed FP/INT Pipeline and Bitwise In-Memory Booth Multiplication 
+for Cloud Deep Learning Acceleration,” ISSCC, pp. 254-256, 2022. 
+[6] J. Saikia et al., “FP-IMC: A 28nm All-Digital Conﬁgurable Floating-Point In-Memory Computing Macro,” European Solid State Cir. Conf., pp. 405-408, 2023. 
+[7] Y. Wang et al., “A 28nm 83.23TFLOPS/W POSIT-Based Compute-in-Memory Macro for High-Accuracy AI Applications,” ISSCC, pp. 566-568, 2024. 
+[8] H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm2 and 3.78Mb/mm2 Fully-Digital Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC Architecture 
+and Foundry 6T-SRAM Bit Cell,” ISSCC, pp. 572-574, 2024. 
+[9] Y. He et al., “A 28nm 2.4Mb/mm2 6.9-16.3TOPS/mm2 eDRAM-LUT-Based Digital-Computing-in-Memory Macro with In-Memory Encoding and Refreshing,” ISSCC, pp. 578-
+580, 2024. 
+[10] H. Mori et al., “A 4nm 6163-TOPS/W/b 4790−TOPS/mm2/b SRAM Based Digital-Computing-in-Memory Macro Supporting Bit-Width Flexibility and Simultaneous MAC and 
+Weight Update,” ISSCC, pp. 132-134, 2023. 
+[11] B. Wang et al., “A 28nm Horizontal-Weight-Shift and Vertical-feature-Shift-Based Separate-WL 6T-SRAM Computation-in-Memory Unit-Macro for Edge Depthwise Neural-
+Networks,” ISSCC, pp. 134-136, 2023. 
+[12] A. Guo et al., “A 22nm 64kb Lightning-Like Hybrid Computing-in-Memory Macro with a Compressed Adder Tree and Analog-Storage Quantizers for Transformer and CNNs,” 
+ISSCC, pp. 570-572, 2024. 
+[13] T.-H. Wen et al., “Fusion of memristor and digital compute-in-memory processing for energy-efﬁcient edge computing,” Science vol. 384, 325-332, 2024. 
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:57:22 UTC from IEEE Xplore.  Restrictions apply. 

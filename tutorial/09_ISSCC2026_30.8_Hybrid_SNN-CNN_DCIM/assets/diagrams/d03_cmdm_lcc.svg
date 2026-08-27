@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">CMDM-LCC：一个“跨模型双模式”本地计算单元</text>
+
+  <!-- 单元框图 -->
+  <rect x="40" y="80" width="880" height="330" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#6b3fa0" font-size="14" font-weight="700">CMDM-LCC = Cross-Model Dual-Mode Local Computing Cell（跨模型双模式本地计算单元）</text>
+
+  <!-- 输入 -->
+  <rect x="60" y="130" width="140" height="70" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+  <text x="130" y="156" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">输入 IN</text>
+  <text x="130" y="176" text-anchor="middle" fill="#45536b" font-size="11">SNN：1b 脉冲（BW）</text>
+  <text x="130" y="192" text-anchor="middle" fill="#45536b" font-size="11">CNN：8b 值（WW）</text>
+
+  <rect x="60" y="220" width="140" height="86" rx="8" fill="#eefaf3" stroke="#1d8a5f"/>
+  <text x="130" y="246" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">权重 W0–W3</text>
+  <text x="130" y="266" text-anchor="middle" fill="#45536b" font-size="11">INT4：4 个 4b 权重</text>
+  <text x="130" y="284" text-anchor="middle" fill="#45536b" font-size="11">INT8：2 个 8b 权重</text>
+  <text x="130" y="298" text-anchor="middle" fill="#45536b" font-size="11">（双模映射）</text>
+
+  <!-- 乘法器 -->
+  <rect x="300" y="140" width="160" height="86" rx="8" fill="#f5f0fc" stroke="#6b3fa0" stroke-width="1.8"/>
+  <text x="380" y="166" text-anchor="middle" fill="#6b3fa0" font-size="12.5" font-weight="600">MUX 乘法器 ×2</text>
+  <text x="380" y="188" text-anchor="middle" fill="#45536b" font-size="11">两个基于 MUX 的乘法器</text>
+  <text x="380" y="206" text-anchor="middle" fill="#45536b" font-size="11">（MUL0 / MUL1）</text>
+
+  <rect x="300" y="246" width="160" height="60" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="380" y="272" text-anchor="middle" fill="#c25e2e" font-size="12" font-weight="600">INT8 翻转缩减器 TR</text>
+  <text x="380" y="292" text-anchor="middle" fill="#45536b" font-size="10.5">消除冗余翻转（仅 INT8 模式）</text>
+
+  <path d="M200,165 H300" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M200,263 H300" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M380,226 V246" stroke="#6b3fa0" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 输出分流 -->
+  <rect x="560" y="140" width="150" height="60" rx="8" fill="#eef7fd" stroke="#0e5a8a"/>
+  <text x="635" y="162" text-anchor="middle" fill="#0e5a8a" font-size="12" font-weight="600">pMAC0–7</text>
+  <text x="635" y="182" text-anchor="middle" fill="#45536b" font-size="10.5">8 个部分 MAC</text>
+  <path d="M460,170 H560" stroke="#6b3fa0" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="560" y="240" width="150" height="76" rx="8" fill="#fdf3e7" stroke="#e0a96a"/>
+  <text x="635" y="262" text-anchor="middle" fill="#c25e2e" font-size="12" font-weight="600">SaA</text>
+  <text x="635" y="282" text-anchor="middle" fill="#45536b" font-size="10.5">移位相加（shift-and-add）</text>
+  <text x="635" y="298" text-anchor="middle" fill="#45536b" font-size="10.5">字宽累积（CNN 专用）</text>
+  <path d="M635,200 V240" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 汇合 -->
+  <rect x="780" y="150" width="120" height="110" rx="8" fill="#eefaf3" stroke="#1d8a5f" stroke-width="1.8"/>
+  <text x="840" y="180" text-anchor="middle" fill="#1d8a5f" font-size="12.5" font-weight="600">加法树</text>
+  <text x="840" y="202" text-anchor="middle" fill="#45536b" font-size="11">（bank 内 32 路）</text>
+  <text x="840" y="222" text-anchor="middle" fill="#45536b" font-size="11">SNN：pMAC 直连</text>
+  <text x="840" y="240" text-anchor="middle" fill="#45536b" font-size="11">CNN：经 SaA 后进入</text>
+  <path d="M710,160 H780" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M710,280 H760" stroke="#0e5a8a" stroke-width="2"/>
+  <path d="M760,280 V200 H780" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 模式说明 -->
+  <rect x="60" y="430" width="860" height="106" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="80" y="458" fill="#0e5a8a" font-size="13" font-weight="700">为什么“双模式”难？</text>
+  <text x="80" y="482" fill="#45536b" font-size="12.5">SNN 输入是 1b 脉冲 → 位宽乘法（BW-IN）；CNN 输入是 8b 值 → 字宽乘法（WW-IN）。</text>
+  <text x="80" y="506" fill="#45536b" font-size="12.5">两种乘法的数据通路完全不同；若各做一套电路 → 面积翻倍。CMDM-LCC 用“两个 MUX 乘法器 + 模式切换”共用一套电路，同时支持两种模式。</text>
+  <text x="80" y="528" fill="#1d8a5f" font-size="12.5" font-weight="600">效果：宏面积比“两套电路”方案节省 33%</text>
+</svg>

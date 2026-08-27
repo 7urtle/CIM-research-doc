@@ -1,0 +1,32 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：总线 TCL 嵌入符号位扩展 —— 2C 有符号 MAC 只多 2.95% 面积</h2>
+<figure>
+  <img src="assets/diagrams/d07_sign_embed.svg" alt="符号位嵌入" style="max-width:920px">
+  <figcaption>图 5.1　总线 TCL：TCL-14（符号位列）的 8 个 MMU 同时充当 TCL-7~14 的符号扩展位——P<sub>07</sub> 被复用 8 次、P<sub>17</sub> 复用 7 次……零额外延迟。</figcaption>
+</figure>
+<p>2 的补码有符号乘法有个“讨厌的尾巴”：<strong>符号位扩展</strong>。负权重的最高位位积 P<sub>m7</sub> 必须被“复制”到更高的每一个位列（因为符号位代表负数，要扩展成全 1 或参与修正）。传统做法是单独做一套符号扩展电路（面积大）或加周期（吞吐降）。</p>
+<p>本文发现：<strong>TCL-14 的 8 个 MMU 本来就是“符号位列”的压缩器</strong>（它负责 P<sub>m7</sub>，m=0~7 的求和）。让这些 MMU 的输出<strong>同时接入 TCL-7~14 的链</strong>——即“总线 TCL（bus TCL）”，就实现了符号扩展的嵌入：</p>
+<ul>
+<li>P<sub>07</sub>（m=0 的符号位积）需要参与 TCL-7~14 共 8 个列的求和 → 复用到 8 个 TCL；</li>
+<li>P<sub>17</sub> → 复用 7 次（TCL-8~14）；……以此类推，正好是 2C 乘法里符号扩展的规律；</li>
+<li>再配两个小机关：反相权重 W<sub>n</sub>' 接到“取反 MMU”（处理负权重的符号）、TCL-7 的 CNT 初值设为 XIN[7]——补全 2C 乘法的修正项。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧮 有符号/无符号切换成本</div>
+<p>切换只需要 <strong>7 个传输门 + 8 个 2:1 多路选择器</strong>：有符号时连接 P<sub>m7</sub>、CNT 初值 = XIN[7]；无符号时断开、CNT 初值 = 0。总面积开销仅 <strong>2.95%</strong>，且零额外延迟。论文还用 10k 次 Monte Carlo 仿真验证：MMU 传播延迟恒小于 RDC 延迟 → PVT 波动下 TCL 计数不会出错。</p>
+</div>
+<figure>
+  <img src="assets/figs/fig30_4_4_符号嵌入与使能电路.png" alt="论文图 30.4.4">
+  <figcaption>图 5.2　论文原图 Fig. 30.4.4：总线 TCL 的符号位嵌入与合并加法器/块内加法树的使能电路。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🔬 演示 C · 2C vs 符号-数值：同一个 −7，位级稀疏性差多少</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">2C 非零位 6 vs 符号-数值 4（本例 −7）</span>
+</div>
+<div class="hint">2 的补码里 −7 = 1111 1001，数值位被“填满”；符号-数值 −7 = 1 000 0111，只有符号位翻转。TCL 链上“0 直通不翻转”→ 符号-数值格式让负权重更省电。</div>
+</div>
+</section>

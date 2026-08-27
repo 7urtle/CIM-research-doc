@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">ILA-CIM：前瞻未来输入，让所有子阵列一直忙</text>
+
+  <!-- 问题 -->
+  <rect x="40" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#c25e2e" font-size="13.5" font-weight="700">传统：一次只处理一行输入</text>
+  <g font-size="11.5">
+    <g transform="translate(70,126)">
+      <g stroke="#9aa8bd" stroke-width="0.8">
+        <rect x="0" y="0" width="40" height="40" fill="#eef7fd"/><rect x="42" y="0" width="40" height="40" fill="#eef7fd"/><rect x="84" y="0" width="40" height="40" fill="#eef7fd"/>
+        <rect x="0" y="42" width="40" height="40" fill="#eef7fd"/><rect x="42" y="42" width="40" height="40" fill="#eef7fd"/><rect x="84" y="42" width="40" height="40" fill="#eef7fd"/>
+      </g>
+      <rect x="0" y="0" width="40" height="40" fill="#fdf3e7"/>
+      <text x="20" y="22" text-anchor="middle" fill="#c25e2e" font-size="10">忙</text>
+    </g>
+    <text x="180" y="160" fill="#45536b">当前输入行只激活部分阵列（不规则稀疏）</text>
+    <text x="180" y="184" fill="#45536b">→ 空闲子阵列白等 → 利用率低</text>
+    <text x="180" y="216" fill="#c25e2e" font-weight="600">→ 子阵列利用率仅 17.6%（基线）</text>
+  </g>
+
+  <!-- ILA -->
+  <rect x="500" y="80" width="420" height="240" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">ILA-CIM：前瞻未来输入（Input-Lookahead）</text>
+  <g font-size="11.5">
+    <g transform="translate(530,126)">
+      <g stroke="#9aa8bd" stroke-width="0.8">
+        <rect x="0" y="0" width="40" height="40" fill="#eefaf3"/><rect x="42" y="0" width="40" height="40" fill="#eefaf3"/><rect x="84" y="0" width="40" height="40" fill="#eefaf3"/>
+        <rect x="0" y="42" width="40" height="40" fill="#eefaf3"/><rect x="42" y="42" width="40" height="40" fill="#eefaf3"/><rect x="84" y="42" width="40" height="40" fill="#eefaf3"/>
+      </g>
+      <rect x="0" y="0" width="40" height="40" fill="#f0b446"/>
+      <rect x="84" y="42" width="40" height="40" fill="#f0b446"/>
+      <text x="20" y="22" text-anchor="middle" fill="#1a2332" font-size="10">现在</text>
+      <text x="104" y="64" text-anchor="middle" fill="#1a2332" font-size="10">未来</text>
+    </g>
+    <text x="660" y="160" fill="#45536b">空闲子阵列“看未来输入”提前算 → 全部保持忙碌</text>
+    <text x="660" y="184" fill="#45536b">三个步骤（Fig. 18）：</text>
+    <text x="660" y="206" fill="#45536b">① 输入前瞻（未来输入分配）</text>
+    <text x="660" y="228" fill="#45536b">② FP 对齐（按指数和归一化到 FP32）</text>
+    <text x="660" y="250" fill="#45536b">③ 输出合并（结果写回全局缓冲 + 部分和累加）</text>
+    <text x="660" y="280" fill="#1d8a5f" font-weight="600">→ 利用率 17.6%→33.2%（单独）、1.88× 加速</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="344" width="880" height="102" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="372" fill="#0e5a8a" font-size="13.5" font-weight="700">联合效果（Fig. 19）</text>
+  <text x="60" y="398" fill="#45536b" font-size="12.5">EOCI（负载分布）从“分布侧”平衡操作数；ILA-CIM（负载执行）从“执行侧”让子阵列忙碌；</text>
+  <text x="60" y="420" fill="#45536b" font-size="12.5">两者联合：利用率 <strong>95.4%</strong>、总加速 <strong>5.28×</strong>、计算时间几乎一致（无空闲）；</text>
+  <text x="60" y="440" fill="#45536b" font-size="12.5">ILA 附加逻辑面积开销仅 2.64%；且 ILA-CIM 的稀疏归约支持避免加载特征张量中的零（省 SpG 功耗）。</text>
+</svg>

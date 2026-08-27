@@ -1,0 +1,71 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：Multiply-Less 神经网络——用 L1 距离替代点积</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解 AdderNet 的核心思想（L1 距离卷积）、为什么它能替代传统卷积而不掉精度、以及它在硬件上带来的“乘法消失”红利。这是全文的理论地基。</p>
+</div>
+
+<h3>3.1 从“点积卷积”到“加法卷积”</h3>
+<p>传统卷积核（ConvNet kernel）对输入特征图的一个窗口做的是<strong>点积（内积）</strong>：</p>
+<p class="formula">Y(m,n,t) = Σ<sub>i,j,k</sub> X(m+i, n+j, k) · W(i,j,k,t)</p>
+<p>点积的几何含义是<strong>投影</strong>：衡量输入窗口与卷积核的“方向一致性”——两者越“像”，点积越大。AdderNet（Chen et al., CVPR 2020，论文引 [28]）提出一个大胆问题：<strong>深度学习真的需要乘法吗？</strong>它的答案是：用<strong>L1 距离（曼哈顿距离）</strong>替代点积：</p>
+<p class="formula">Y(m,n,t) = − Σ<sub>i,j,k</sub> |X(m+i, n+j, k) − W(i,j,k,t)|</p>
+<p>L1 距离的几何含义是<strong>距离</strong>：输入窗口与卷积核越接近，距离越小；加负号后就是“相似度”——<strong>越像，输出越大</strong>，与点积的行为一致。关键区别：L1 距离只需要<strong>减法和绝对值</strong>，完全不需要乘法。</p>
+
+<figure>
+<img src="assets/figs/fig13_3_AdderNet核示例.png" alt="AdderNet核示例">
+<figcaption>图 3 · 论文 Fig.3：AdderNet 核示例——用 L1 距离计算也能得到与卷积核相似的输出（例如都能检测/强化对角边缘）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 为什么 L1 距离能和点积一样“工作”？</div>
+<p>论文 Fig.4 解释了数学直觉：固定权重单位向量、旋转输入单位向量，分别画点积结果与 L1 距离结果，两条响应曲线<strong>形状相似</strong>（都在输入与权重对齐时达到峰值/最大相似度）。文献 [34] 甚至给出了定量证明：L1 距离算子与 CNN 具有<strong>相同的逼近能力（approximation capacity）</strong>。所以对神经网络推理而言，CNN 核可以被 AdderNet 核近似替代——而硬件实现能省掉最贵的乘法器。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig13_4_CNN与AdderNet相似性.png" alt="CNN与AdderNet相似性">
+<figcaption>图 4 · 论文 Fig.4：固定权重单位向量、旋转输入单位向量时，点积（ConvNet MAC）与 L1 距离（AdderNet）响应相似。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_multiply_less.svg" alt="L1距离与点积">
+<figcaption>教学图 3 · 点积卷积 vs L1 距离卷积的计算对比，以及 |x−w| = x + w − 2·min(x,w) 的分解预览。</figcaption>
+</figure>
+
+<h3>3.2 AdderNet 的实用性证据</h3>
+<p>论文表 I 汇总了 ConvNets 与 AdderNets 的性能对比：AdderNet 在多种模型（CNN、Transformer）和多种任务（图像分类、目标检测、超分、压缩等，论文引 [28]–[33]）上都验证了有效性，精度与传统 CNN 相当、可扩展性良好。例如 AdderNet 在 ImageNet 上能达到与传统 ResNet 相近的精度。</p>
+<div class="box warn">
+<div class="bt">⚠️ 但是——算法便宜了，硬件还不会用</div>
+<p>AdderNet 是算法工作，它证明了“免乘法”在软件上可行。但把它落到硬件时，L1 距离的朴素实现（每位做减法 → 取绝对值 → 累加）仍然需要<strong>多位加法器和绝对值单元</strong>，面积依然不小；而且绝对值运算破坏了位串行数据流的连续性（无法利用位级稀疏）。所以“算法好”不等于“硬件好”——这正是本论文创新②（§4）要解决的事。</p>
+</div>
+
+<h3>3.3 multiply-less 的硬件红利</h3>
+<ul>
+<li><strong>乘法器消失</strong>：比较/减法/绝对值电路的面积随位宽<strong>线性</strong>增长，而不是平方增长 → 面积-周期积从 O(n²) 降到 O(n)；</li>
+<li><strong>无符号位</strong>：配合 ReLU 激活非负的性质（§4.3 的截断），权重和激活都非负 → 不需要符号位和补码 → 位宽减少、电路简化；</li>
+<li><strong>位级稀疏可吃</strong>：L1 的“比较”天然是按位比较，配合位串行数据流，连续 0 权重位可以直接跳过（§6 详述）。</li>
+</ul>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig13_3_AdderNet核示例.png">
+  <source src="assets/videos/v01.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 点积 vs L1 距离：3×3 卷积核在输入特征图上滑动，两种算法输出对比（乘法 vs 减法）。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · 卷积核滑动：点积 vs L1 距离</div>
+<canvas id="demoA" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">滑动窗口 @0：点积=…，L1 距离=…</span>
+</div>
+<div class="hint">黄色框=3×3 滑动窗口。左列是输入特征图窗口的 9 个值与卷积核；中间列对比两种算法：点积需要 9 次乘法，L1 距离只需减法+绝对值，且两者响应方向一致（越匹配输出越大）。→ 乘法消失、硬件成本从平方降到线性。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 点积=投影，L1 距离=负距离，两者“越像越大”的行为一致；② 文献证明 L1 距离算子与 CNN 逼近能力相当，AdderNet 在多种模型/任务上精度不掉；③ 硬件上 L1 只需减法/比较，乘法消失 → 成本从平方降到线性。但朴素 L1 硬件仍有多位加法器，需要创新②进一步优化。</p>
+</div>
+</section>

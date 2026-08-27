@@ -1,0 +1,41 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新①：Two-DRAM-One-Logic 架构——带宽密度怎么做到 12.77 GB/s/mm²</h2>
+
+<h3 id="sec4-1">4.1 为什么是“两片 DRAM + 一片逻辑”</h3>
+<p>两片 512Mb DRAM（DRAM_N 与 DRAM_F）+ 一片 28nm 逻辑，组成一个 1Gb 的“bankgroup 块（BG）”，全芯片 8 个 BG = 1GB。这个结构的三个理由：</p>
+<ul>
+<li><strong>容量</strong>：两片 DRAM 叠在一起，1 个 BG 就有 1Gb → 8 个 BG 共 1GB，存储密度 99.4 Mb/mm²（把“片上内存做大”以装下更多模型）；</li>
+<li><strong>带宽</strong>：每片 DRAM 的行缓冲都通过宽总线连到逻辑层 → 带宽随 DRAM 片数翻倍；</li>
+<li><strong>工艺解耦</strong>：逻辑层用标准 CMOS（28nm），频率 1.2 GHz，且未来换更先进工艺只需重做逻辑片——论文原话 “decoupling logic from DRAM allows implementing compute logic in standard CMOS and seamlessly leveraging future improvements via advances in process nodes”。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d04_architecture.svg" alt="整体架构" style="max-width:940px">
+  <figcaption>图 4.1　3D NMC 芯片整体架构：主机经 DDR4 接口 → 解码器 → 广播到 8 个 BG；每个 BG = 两片 512Mb DRAM + 计算模块（2 个 ACC），输出 2048b 总线。</figcaption>
+</figure>
+
+<h3 id="sec4-2">4.2 2048b 总线与极简 3D DRAM PHY</h3>
+<p>每个 BG 的输出总线是 <strong>2048b</strong>（= 16 段 × 8 bank × 8 组 × 2 片 DRAM）。这带来一个连锁设计红利：</p>
+<div class="box key">
+<div class="bt">💡 “宽总线”让 PHY 变得几乎免费</div>
+<p>传统 DDR/HBM 为了在有限的引脚上获得高带宽，必须把<strong>引脚速率</strong>做得极高（GHz 级）→ PHY（物理层）要做均衡、时钟恢复、训练……复杂又费电。本设计 3D 总线宽达 2048b，同样带宽下<strong>每个引脚的速率低得多</strong> → 3D DRAM PHY 只需要“数据同步 + 电平转换”，几乎是个胶水电路。这就是 0.67 pJ/b 能效的来源之一。</p>
+</div>
+<p>再看 3D 堆叠的细节（论文 Fig. 30.7.5）：HB pitch 3 μm、TSV pitch 5 μm、每 TSV 两个 HB 冗余。这些参数决定了“每平方毫米能过多少数据”——带宽密度 = 互连密度 × 每线速率。</p>
+<figure>
+  <img src="assets/figs/fig30_7_5_3D集成细节.png" alt="论文图 30.7.5">
+  <figcaption>图 4.3　论文原图 Fig. 30.7.5：3D 集成细节（HB/TSV 参数）、逻辑 die 面积分解与芯片功耗分解。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_7_5_3D集成细节.png">
+  <source src="assets/videos/v01_3d_stack.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · 3D 堆叠组装动画：DRAM_F、DRAM_N、逻辑晶圆依次叠合；TSV 穿过 DRAM_N，DRAM_F 的数据沿 “HB→TSV→HB” 链流到逻辑层。</div>
+</div>
+<figure>
+  <img src="assets/figs/fig30_7_2_架构与扩展命令.png" alt="论文图 30.7.2">
+  <figcaption>图 4.2　论文原图 Fig. 30.7.2：3D NMC 整体架构与扩展的 DDR4 命令表。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 为什么 DRAM_F 的信号要“穿过” DRAM_N 而不是直接下到逻辑层？（提示：三明治结构，中间层挡路——这就是 TSV 的用途。）② 2048b 总线 = 256 字节/次，一次能取多少 FP16 权重？（提示：128 个。）③ 如果带宽不变、总线减半到 1024b，PHY 会变难还是变简单？</p>
+</div>
+</section>

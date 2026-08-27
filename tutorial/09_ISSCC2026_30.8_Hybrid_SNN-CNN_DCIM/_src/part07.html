@@ -1,0 +1,49 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：1Mb 宏怎么把两种模型跑起来</h2>
+
+<h3 id="sec7-1">7.1 1Mb 宏架构总览</h3>
+<p>整个宏 = <strong>16 个 64kb bank</strong>（共 1Mb），每个 bank 内部结构完全一样：</p>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　1Mb 宏架构：16 bank × 64kb；每 bank = 控制/I-O/调度/字线驱动 + 32 个可重构推理块（RIB）+ 加法树 + DM-MPDBU。每个 RIB = 2kb SRAM + 权重驻留单元（WSC）+ 8 个 CMDM-LCC + SaA。</figcaption>
+</figure>
+<ul>
+<li><strong>RIB（可重构推理块）</strong>：每个 RIB 内有 <strong>2kb SRAM 阵列</strong>（存权重）+ <strong>权重驻留单元 WSC</strong>（Weight Stationary Cell，让权重“躺”着不动）+ <strong>8 个 CMDM-LCC</strong>（§4 的双模式计算单元）+ <strong>SaA</strong>；</li>
+<li><strong>32 个 RIB</strong>：每个 RIB 的 8 个 CMDM-LCC × 每单元 4 个权重槽 = 32 个权重槽 → 每周期 32 路 MAC；</li>
+<li><strong>加法树</strong>：把 32 路 MAC 的部分和相加；</li>
+<li><strong>DM-MPDBU</strong>：bank 级共享的神经元动力学单元（§5），处理 SNN 模式；</li>
+<li><strong>控制块 / I-O 块 / IN-W 调度器 / 字线驱动器</strong>：输入输出、模式配置、数据映射调度（§6）的“大脑”。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig30_8_2_宏架构与CFD-SC-RC.png" alt="论文图 30.8.2">
+  <figcaption>图 7.2　论文原图 Fig. 30.8.2：1Mb CFD-SC-RC SRAM-DCIM 宏结构与操作。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+
+<h3 id="sec7-2">7.2 SNN / CNN 两条数据流</h3>
+<p>同一套硬件，两条数据流，由“模式配置”切换（详见 §4.2 的式 4.1）：</p>
+<figure>
+  <img src="assets/diagrams/d07_dataflow.svg" alt="双模式数据流" style="max-width:920px">
+  <figcaption>图 7.3　SNN 模式：1b 脉冲 × 8b 权重 → pMAC 直通加法树 → DM-MPDBU 发放脉冲；CNN 模式：8b×8b → pMAC 先经 SaA 字宽累积 → 加法树 → 直出特征（无神经元）。</figcaption>
+</figure>
+<ul>
+<li><strong>SNN 数据流</strong>：脉冲输入（1b）→ CMDM-LCC 位宽乘法 → pMAC0–7 直通 → 加法树（32 路）→ DM-MPDBU 膜电位积分 → 输出脉冲到下一层。每个时间步的脉冲在膜电位里“滚雪球”；</li>
+<li><strong>CNN 数据流</strong>：8b 特征输入 → CMDM-LCC 字宽乘法（TR 开启）→ pMAC 经 SaA 做字宽累积 → 加法树 → 直接输出 8b 特征（激活函数在外部）。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 两个模式怎么“共线”而不打架？</div>
+<p>关键在 CMDM-LCC 内部的<strong>两个 MUX 乘法器</strong>：SNN 的 1b×8b 只是 CNN 的 8b×8b 的一个特例（输入只有 1 位有效）。MUX 乘法器天然支持“位宽可变”，加上 SaA 可旁路（SNN 模式不启用），两条数据流就能在<strong>同一组物理电路</strong>上分时复用。模式切换 = 改配置寄存器，零面积开销。这就是“可重构计算（RC）”的含义。</p>
+</div>
+
+<h3 id="sec7-3">7.3 视频演示：双模式数据流</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_1_动机与挑战.png">
+  <source src="assets/videos/v02_modes.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · SNN/CNN 双模式数据流动画：SNN 模式下稀疏脉冲流入、SaA 旁路、DM-MPDBU 发放；CNN 模式下稠密 8b 数据流、SaA 启用、跳过神经元直出特征。两种模式共用同一组 CMDM-LCC。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 16 个 bank 之间如何分工？提示：可以按输出通道划分，也可以按层划分——这是软件调度的事，宏只提供 bank 级并行。② 为什么每个 RIB 只要 2kb SRAM？权重驻留单元（WSC）意味着什么？（提示：一次推理中权重尽量不出阵列 → 省数据搬移。）③ 如果 CNN 层之间要跑“残差连接”，宏需要额外支持什么？</p>
+</div>
+</section>

@@ -1,0 +1,60 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：复用 IMC SRAM 的 PUF 密钥生成</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么密钥必须片上生成（片外传入会被探测、e-fuse 会被 SEM 读出）；② 反馈切断怎么把 SRAM 单元变成 PUF；③ TMV 抗噪、差分 FSM 抗功耗分析、NIST 随机性验证。</p>
+</div>
+
+<h3>6.1 密钥为什么必须“长在芯片里”？</h3>
+<ul>
+<li>密钥从片外读入 → 传输可被探测 → 密码安全性归零；</li>
+<li>e-fuse 熔丝 → SEM 成像可读出每个熔丝状态；</li>
+<li><strong>PUF（物理不可克隆函数）</strong>：利用制造工艺的随机失配生成密钥——制造测试时收集挑战-响应对，部署时评估 PUF 得到密钥，外部观察者无法测量。</li>
+</ul>
+
+<h3>6.2 复用 IMC SRAM 单元做 PUF（论文 Fig.7）</h3>
+<p>大 PUF 存储阵列是显著面积开销。本论文复用 IMC 的 SRAM 单元：SCA 安全位单元（[71]）已含<strong>反馈切断晶体管</strong>，正好用来暴露制造失配：</p>
+<ol>
+<li>切断反馈；</li>
+<li>预放电两个分离反相器的输入；</li>
+<li>重连反馈 → SRAM 按哪个反相器更强（制造失配）沉降到 0 或 1；</li>
+<li>标准 SRAM 读操作读出 → PUF 位。</li>
+</ol>
+<p>只有特定字线的既有数据被擦除（可子分字线最小化）→ <strong>抗噪声、低开销、可随时按需生成可靠密钥</strong>。只需一小块综合数字逻辑（FSM），几乎零面积开销。</p>
+
+<figure>
+<img src="assets/figs/fig16_7_SRAM作PUF.png" alt="SRAM作PUF">
+<figcaption>图 6 · 论文 Fig.7：SRAM (a) 位单元与 (b) 时序图——右（左）下拉管占优时 PUF 生成 0（1）。</figcaption>
+</figure>
+
+<h3>6.3 位单元布局细节</h3>
+<ul>
+<li>3 个共享垂直堆叠成一组 → 3 条差分位线在单元宽度内垂直走线，每对走不同金属层（减小共享间耦合、不增单元面积）；</li>
+<li>每个位单元紧邻定制 XNOR 乘法门（水平连接激活驱动与局部内部节点）。</li>
+</ul>
+
+<h3>6.4 抗噪与抗攻击</h3>
+<ul>
+<li><strong>时间多数投票（TMV）</strong>：同一位单元多次评估取多数 → 抗噪声；次数可配置（按用例设鲁棒性）；</li>
+<li><strong>差分 FSM 操作</strong>：TMV 的 FSM 处理 4 位一组时会泄露统计信息（如看到 11 次计数增加就知道 3 位是 1）→ 感放输出的差分值都给 FSM → 恒定翻转活动 → 结合 Boolean 共享，密钥生成对 SCA 安全；</li>
+<li><strong>随机性</strong>：NIST 800-22 适用测试全过（5 芯片 p&gt;0.01），最小熵 ~0.91–0.93，Von Neumann 去偏；</li>
+<li><strong>稳定性</strong>：TMV 提高稳定度 + 片外 BCH 纠错 → 0% 位错误率；intra-key HD≈0（稳定）、inter-key HD≈192（半位宽，唯一）；掩蔽不稳定单元可减少纠错位；</li>
+<li>老化：NBTI 老化通常影响 SRAM PUF，但正常运行时权重近似随机 → 交替老化部分抵消；烧灼硬化（burn-in）可进一步增强。</li>
+</ul>
+
+<figure>
+<img src="assets/diagrams/d06_puf.svg" alt="PUF教学图">
+<figcaption>教学图 6 · SRAM PUF 机制、TMV 与稳定性/唯一性结果。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/figs/fig16_12_密钥汉明距离.png" alt="密钥汉明距离">
+<figcaption>图 7 · 论文 Fig.12：同一密钥与不同密钥测量的汉明距离——intra≈0（稳定）、inter≈192（唯一）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 密钥必须片上生成（PUF）；② 反馈切断复用 IMC SRAM 单元（几乎零面积）；③ TMV 抗噪、差分 FSM 抗功耗分析、NIST 随机性全过、0% 误码、intra/inter HD 验证稳定且唯一。</p>
+</div>
+</section>

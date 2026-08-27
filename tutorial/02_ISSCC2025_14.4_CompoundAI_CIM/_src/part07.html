@@ -1,0 +1,25 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与数据流：16 个核部署 16 个模型</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　异质 CIM 宏：16 个核（每个部署一个专精小模型），每核 = 8 个 CIM-set + 核间加法器 + 0.5kb AIM；CIM-set = 1.375kb ME-CIM（4 并行 FP16 / 8 并行 FP8）+ 0.25kb NIM + 动态启动器。</figcaption>
+</figure>
+<ul>
+<li><strong>16 个异质 CIM 核</strong>：每个核部署一个 Compound AI 小模型；核间通过核间加法器做融合（残差/组合）；</li>
+<li><strong>CIM-set</strong>：1.375kb ME-CIM（尾数-指数存内计算）执行 4 个并行 FP16 或 8 个并行 FP8 MAC；0.25kb NIM + 动态启动器做稀疏感知加速；</li>
+<li><strong>AIM（0.5kb）</strong>：部分和与残差的就地累加；</li>
+<li><strong>全数据路径存内</strong>：MAC → 路由 → 累加都在内存内部完成，只有最终结果出内存。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig14_4_2_架构与特性.png" alt="论文图 14.4.2">
+  <figcaption>图 7.2　论文原图 Fig. 14.4.2：异质宏整体架构与三大特性（精度/能效/速度）。（© IEEE ISSCC 2025，教学引用）</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 “无预充电 10T 位单元”——最后的拼图</div>
+<p>稀疏加速让读出的数据流“很多 0”。传统 SRAM 读前要<strong>预充电</strong>（每个周期都花电）；本文的 10T 单元用反相器替代预充电，<strong>RBL 不变（读 0）就不耗电</strong>——和稀疏数据天然匹配。比 8T 双端口省 1.95× 功耗（面积仅 +1.26×），是本宏 51.6 TFLOPS/W 峰值能效的重要来源（图 d09）。</p>
+</div>
+<figure>
+  <img src="assets/diagrams/d09_presfree_cell.svg" alt="无预充电单元" style="max-width:920px">
+  <figcaption>图 7.3　8T 预充电单元 vs 本文 10T 无预充电单元：读 0（RBL 不动）零功耗。</figcaption>
+</figure>
+</section>

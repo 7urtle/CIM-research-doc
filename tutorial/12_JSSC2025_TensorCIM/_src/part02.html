@@ -1,0 +1,25 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>MCM-CIM 系统与新挑战</h2>
+<figure>
+  <img src="assets/diagrams/d09_mcm.svg" alt="MCM 动机" style="max-width:920px">
+  <figcaption>图 2.1　MCM 的价值：高良率、混合工艺、按需扩展——CIM 扩容的正解。但芯粒间带宽有限。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_2_MCM-CIM系统.png" alt="论文图2">
+  <figcaption>图 2.2　论文原图 Fig. 2：四芯粒 MCM-CIM 系统（SpG/SpA 两种模式）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:940px">
+  <figcaption>图 2.3　三大挑战：① SpG 冗余；② SpA 初始化宏间不平衡；③ SpA 计算宏内空闲。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_3_挑战与方案.png" alt="论文图3">
+  <figcaption>图 2.4　论文原图 Fig. 3：MCM-CIM 的新挑战与 TensorCIM 的对应方案（REGM/EOCI/ILA-CIM）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① SpG 冗余</td><td>重复 DRAM/跨芯粒访问、重复归约（局部性强）</td><td>REGM：重排 + CIM 缓存高频特征/归约结果</td></tr>
+<tr><td>② SpA 初始化不平衡</td><td>不规则稀疏 → 各宏有效 MAC 数不同</td><td>EOCI：按有效操作数平衡子阵列分配</td></tr>
+<tr><td>③ SpA 计算空闲</td><td>输入行只激活部分阵列</td><td>ILA-CIM：前瞻未来输入保持忙碌</td></tr>
+</table>
+</section>

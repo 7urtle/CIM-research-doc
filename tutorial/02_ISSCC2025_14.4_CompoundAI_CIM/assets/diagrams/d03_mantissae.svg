@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b3fa0"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">MantissaEE 格式：把指数“折叠”进尾数，兼容 FP16/FP8/INT8</text>
+
+  <!-- FP16 分解 -->
+  <rect x="40" y="80" width="880" height="130" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">FP16（1 符号 + 5 指数 + 10 尾数）→ 16b MantissaEE</text>
+  <g font-size="10.5">
+    <rect x="70" y="122" width="80" height="40" rx="5" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="110" y="140" text-anchor="middle" fill="#c25e2e" font-weight="600">S 符号</text>
+    <text x="110" y="156" text-anchor="middle" fill="#45536b">1b</text>
+    <rect x="158" y="122" width="160" height="40" rx="5" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="238" y="140" text-anchor="middle" fill="#0e5a8a" font-weight="600">E 指数</text>
+    <text x="238" y="156" text-anchor="middle" fill="#45536b">5b（含偏置）</text>
+    <rect x="326" y="122" width="300" height="40" rx="5" fill="#eefaf3" stroke="#1d8a5f"/>
+    <text x="476" y="140" text-anchor="middle" fill="#1d8a5f" font-weight="600">M 尾数（隐含 1）</text>
+    <text x="476" y="156" text-anchor="middle" fill="#45536b">10b</text>
+    <path d="M240,162 V176" stroke="#0e5a8a" stroke-width="2"/>
+    <text x="250" y="186" fill="#6b3fa0" font-weight="600">低 2 位指数 E[1:0]</text>
+    <path d="M300,186 H476" stroke="#6b3fa0" stroke-width="2" marker-end="url(#a1)"/>
+    <text x="400" y="176" text-anchor="middle" fill="#45536b" font-size="10">与尾数拼接</text>
+  </g>
+
+  <!-- 转换 -->
+  <rect x="40" y="230" width="880" height="226" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="258" fill="#6b3fa0" font-size="13.5" font-weight="700">MantissaEE = 尾数右移 2b 指数低位的量再拼接</text>
+  <g font-size="12">
+    <text x="60" y="290" fill="#45536b">• 把 FP16 的“未打包尾数”按指数的低 2 位（E[1:0]）移位，</text>
+    <text x="60" y="312" fill="#45536b">　再和指数高位一起拼成 <strong>16b MantissaEE</strong>；</text>
+    <text x="60" y="344" fill="#45536b">• 好处 1：与 FP8（E4M3）和 INT8 兼容——一个硬件三种格式；</text>
+    <text x="60" y="366" fill="#45536b">• 好处 2：把指数分布“折叠”进尾数 → 对齐所需的有效指数宽度变小；</text>
+    <text x="60" y="398" fill="#6b3fa0" font-weight="600">MantissaEE 与指数存在 ME-CIM 同一行，</text>
+    <text x="60" y="420" fill="#6b3fa0" font-weight="600">并行做乘/加；阵列集成 XOR/AND（Booth 乘法 + 全加器所需）</text>
+    <text x="60" y="448" fill="#45536b">按所需精度激活外围移位器/部分全加器完成剩余逻辑 → “无损计算”</text>
+  </g>
+</svg>

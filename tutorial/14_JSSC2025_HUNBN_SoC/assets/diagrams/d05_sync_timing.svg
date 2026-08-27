@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">同步 DIMC 操作：把 Φ 与 WL 脉冲摊到两个时钟周期</text>
+
+  <!-- timing diagram -->
+  <rect x="40" y="84" width="880" height="250" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">时序图（论文 Fig.6）：写 / 读+计算 / 刷新</text>
+  <g font-size="11" fill="#45536b">
+    <!-- waveforms -->
+    <!-- CLK -->
+    <text x="60" y="150" fill="#0e5a8a">CLK</text>
+    <g stroke="#0e5a8a" stroke-width="2">
+      <polyline points="140,144 170,144 170,156 200,156 200,144 230,144 230,156 260,156 260,144 290,144 290,156 320,156 320,144 350,144 350,156 380,156 380,144 410,144 410,156 440,156 440,144 470,144 470,156 500,156 500,144 530,144 530,156 560,156 560,144 590,144 590,156 620,156 620,144 650,144 650,156 680,156 680,144 710,144 710,156 740,156 740,144 770,144 770,156 800,156 800,144 830,144 830,156 860,156 860,144 890,144" fill="none"/>
+    </g>
+    <!-- write cycle -->
+    <text x="60" y="196" fill="#1d8a5f">写（write）</text>
+    <g stroke="#1d8a5f" stroke-width="2">
+      <polyline points="140,196 200,196 200,188 320,188 320,196 380,196 380,188 500,188" fill="none"/>
+      <text x="230" y="208" fill="#45536b">A=addr, D=数据：连续写 OK（Φ 与 WL 重叠无妨）</text>
+    </g>
+    <!-- read+compute -->
+    <text x="60" y="244" fill="#f0a030">读+计算</text>
+    <g stroke="#f0a030" stroke-width="2">
+      <polyline points="520,244 560,244 560,236 600,236 600,244 650,244 650,236 690,236 690,244 740,244 740,236 780,236 780,244 830,244 830,236 870,236" fill="none"/>
+      <text x="540" y="258" fill="#45536b">pe 预充脉冲（Φ）在周期 A；re 读脉冲（WL）在周期 B → 不同周期，杜绝破坏性读</text>
+    </g>
+    <!-- compute after read -->
+    <text x="60" y="292" fill="#6b3fa0">计算</text>
+    <g stroke="#6b3fa0" stroke-width="2">
+      <polyline points="520,292 560,292 560,284 600,284 600,292 650,292 650,284 700,284 700,292 750,292 750,284 800,284 800,292 850,292 850,284 890,284" fill="none"/>
+      <text x="540" y="308" fill="#45536b">一次读后多次计算（SUM=BL 权重 × 不同输入 I）；BL 是浮空节点</text>
+    </g>
+    <!-- refresh -->
+    <text x="60" y="330" fill="#3cbe8c">刷新</text>
+    <g stroke="#3cbe8c" stroke-width="2">
+      <polyline points="700,330 730,330 730,322 770,322 770,330 800,330 800,322 840,322" fill="none"/>
+      <text x="540" y="322" fill="#45536b" font-size="10.5">一段时间后 WL 插刷新脉冲恢复 BL 全摆幅；ce 保持高、BL 值仍有效 → 不影响吞吐</text>
+    </g>
+  </g>
+
+  <!-- benefits -->
+  <rect x="40" y="354" width="880" height="180" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="380" fill="#0e5a8a" font-size="14" font-weight="700">为什么同步操作是创新？</text>
+  <g font-size="12.5">
+    <text x="60" y="410" fill="#45536b">传统 SRAM 用<strong>延迟线</strong>解决 Φ 与 WL 重叠（防止破坏性读）→ 鲁棒抗偏差的延迟线又大又费电</text>
+    <text x="60" y="438" fill="#45536b">对 DIMC 这种“无数宏”的阵列，延迟线是巨大瓶颈</text>
+    <text x="60" y="466" fill="#1d8a5f" font-weight="600">本论文：把 Φ 和 WL 脉冲同步地摊到两个不同时钟周期 → 结构上杜绝重叠 → 免掉延迟线</text>
+    <text x="60" y="492" fill="#1d8a5f" font-weight="600">收益①：读操作临界路径显著缩短；收益②：DIMC MAC 逻辑不再在临界路径上 → 可降供电电压省能</text>
+    <text x="60" y="518" fill="#45536b">实际测量中：MAC 逻辑电源与 Vr 都设为“仍能正确计算的最低电压”</text>
+  </g>
+</svg>

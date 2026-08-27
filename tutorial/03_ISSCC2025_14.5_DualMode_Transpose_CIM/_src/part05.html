@@ -1,0 +1,39 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：SFME + VWPA —— 浮点“伪装”成整数 + 最小截断窗口</h2>
+
+<h3 id="sec5-1">5.1 SFME：有符号定点尾数编码</h3>
+<figure>
+  <img src="assets/diagrams/d05_sfme.svg" alt="SFME" style="max-width:940px">
+  <figcaption>图 5.1　SFME：浮点权重预对齐后变成“有符号定点补码尾数”，FP8/BF16/INT4/INT8 统一走 4b/8b 整数通路。</figcaption>
+</figure>
+<p>FP 的 MAC 贵在“指数对齐”。SFME 的招数是<strong>把对齐提前做完、把结果变成定点数</strong>：</p>
+<div class="formula">W = −1<sup>s</sup>·2<sup>E−Bias</sup>·(1.M)　→预对齐→　−1<sup>s</sup>·2<sup>Es</sup>·(0.M<sub>n</sub>)　→　M<sub>a</sub> = −1<sup>s</sup>·0.M<sub>n</sub><span class="tag">式 5.1</span></div>
+<ul>
+<li>共享指数 E<sub>s</sub> = E<sub>max</sub> − Bias（同一组数据统一）；隐藏位+尾数归一化为 M<sub>n</sub>；</li>
+<li>对齐尾数 M<sub>a</sub> 是“有符号定点补码数”（小数点跟在符号位后）→ 4b 复用 INT4 通路、8b 复用 INT8 通路；</li>
+<li>四模式 4b 乘法器覆盖 8b 2C 乘法的全部 4b 部分积组合 → 一个乘法器服务 4b/8b。</li>
+</ul>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_4_SFME与VWPA.png">
+  <source src="assets/videos/v02_sfme.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · SFME 转换动画：FP 权重 → 预对齐（共享指数）→ 有符号定点尾数 → 复用 INT 通路。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · SFME 转换（看浮点怎么变成定点尾数）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">FP → 预对齐 → SFME 定点尾数</span>
+</div>
+<div class="hint">符号、指数、尾数三段（蓝）→ 预对齐合并指数（橙）→ 生成有符号定点尾数（绿），可以直接送进整数乘法器。</div>
+</div>
+
+<h3 id="sec5-2">5.2 VWPA：向量级预对齐</h3>
+<figure>
+  <img src="assets/diagrams/d06_vwpa.svg" alt="VWPA" style="max-width:920px">
+  <figcaption>图 5.2　逐层预对齐（截断窗口大）vs 向量级预对齐 VWPA（同向量元素分布接近 → 截断窗口小）。</figcaption>
+</figure>
+<p>预对齐的精度损失来自“截断”：指数跨度越大，尾数被截掉的位数越多。VWPA 的关键观察：<strong>同一个向量（同一输出通道）里的元素数量级往往接近</strong>（权重初始化、批归一化都让分布集中），而不同层/通道差异很大。所以<strong>按向量对齐</strong>比按整层对齐的指数跨度小得多 → 截断窗口更小 → 精度更高（精确模式下优于逐层预对齐 [1]）。</p>
+</section>

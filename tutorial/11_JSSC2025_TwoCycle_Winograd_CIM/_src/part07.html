@@ -1,0 +1,20 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与两种工作模式</h2>
+<figure>
+  <img src="assets/diagrams/d07_architecture.svg" alt="系统架构" style="max-width:940px">
+  <figcaption>图 7.1　系统架构：RISC-V 顶层控制器 + 6 个处理核（每核 = 144×32 CiM 核 + 激活输入缓冲 + 3 变换单元 + SIMD + 配置 SRAM）+ 全局/权重 SRAM。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_5_总体架构.png" alt="论文图5">
+  <figcaption>图 7.2　论文原图 Fig. 5：顶层架构（a）与两种模式的数据流方向（b）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<ul>
+<li><strong>6 个处理核</strong>：每个核含 144×32 CiM 核（= 4 × 36×32 宏 + ISPU + OMB）、激活输入缓冲、3 个 Winograd 变换单元（Bᵀ()B、G()Gᵀ、Aᵀ()A）、SIMD 单元、6kB 配置 SRAM；</li>
+<li><strong>全局存储</strong>：130.5kB 全局 SRAM + 121.5kB 权重 SRAM + 4kB 指令 SRAM；</li>
+<li><strong>两种模式</strong>：Winograd 域模式（CONV，三变换启用、SIMD 量化）与空间域模式（常规 CONV + FC GEMM，变换旁路）。</li>
+</ul>
+<div class="box key">
+<div class="bt">🧠 “三层级解耦”设计哲学</div>
+<p>电路级（Radix16+LUT）· 微架构级（混合 Winograd）· 数据级（MDPS）三个创新彼此独立、互不干扰——每个都能作为“该层级的通用优化技术”单独使用，也能与其他算法级稀疏（如 Transformer 的 attention/token 稀疏）正交叠加。这是系统级论文最值得学的“模块化创新”写法。</p>
+</div>
+</section>

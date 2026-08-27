@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">模型暴涨时代：为什么需要 MXFP 低比特浮点 + 自适应位宽</text>
+
+  <!-- 左侧：模型规模 -->
+  <text x="250" y="94" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">模型规模爆炸（参数量）</text>
+  <rect x="40" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#e0a96a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <rect x="70" y="140" width="60" height="70" fill="#cfe0ee"/><text x="100" y="130" text-anchor="middle" fill="#0e5a8a" font-size="10.5">GPT-2 1.5B</text>
+    <rect x="140" y="110" width="60" height="100" fill="#9fc4e2"/><text x="170" y="130" text-anchor="middle" fill="#0e5a8a" font-size="10.5">BERT 340M</text>
+    <rect x="210" y="80" width="60" height="130" fill="#6fa6d4"/><text x="240" y="74" text-anchor="middle" fill="#0e5a8a" font-size="10.5">LLaMA-3.1 8B</text>
+    <rect x="280" y="40" width="60" height="170" fill="#3f7fb8"/><text x="310" y="34" text-anchor="middle" fill="#0e5a8a" font-size="10.5">DeepSeek-V3 671B</text>
+    <text x="70" y="250" fill="#45536b">参数每 2 年涨 ~10× → 访存、带宽、能效全部告急</text>
+    <text x="70" y="290" fill="#c25e2e" font-weight="600">→ 低比特化（INT8/FP8/MXFP）是唯一出路</text>
+  </g>
+
+  <!-- 右侧：低比特 FP -->
+  <text x="710" y="94" text-anchor="middle" fill="#1d8a5f" font-size="15" font-weight="700">低比特浮点（MXFP6/MXFP8）</text>
+  <rect x="500" y="108" width="420" height="200" rx="12" fill="#fff" stroke="#bfe6d2" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <text x="520" y="140" fill="#45536b">• 比 INT8 动态范围大：能覆盖训练/推理</text>
+    <text x="520" y="164" fill="#45536b">• 比 FP16/BF16 省一半以上存储与带宽</text>
+    <text x="520" y="188" fill="#45536b">• DeepSeek-V3 用 FP8 成功完成大规模训练并商用</text>
+    <text x="520" y="218" fill="#1d8a5f" font-weight="600">→ FP8/MXFP 被产业验证：精度够、开销小</text>
+    <text x="520" y="248" fill="#45536b">但问题：不同层/不同任务需要的精度不同——</text>
+    <text x="520" y="270" fill="#c25e2e" font-weight="600">固定位宽（fixed PBW）架构浪费灵活性</text>
+    <text x="520" y="292" fill="#45536b">→ 需要“可调保留位宽（adaptive PBW）”的 FP-CIM</text>
+  </g>
+
+  <rect x="40" y="330" width="880" height="126" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="358" fill="#0e5a8a" font-size="13.5" font-weight="700">本论文的两个“必须”</text>
+  <text x="60" y="384" fill="#45536b" font-size="12.5">① 支持低比特浮点格式（MXFP6/MXFP8——microscaling 标准，一组 32 个数共享一个 8b 尺度）；</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">② 保留位宽可调（PBW 3b→27b 宽范围），简单推理用低位宽省电、复杂推理/训练用高位宽保精度。</text>
+  <text x="60" y="430" fill="#1d8a5f" font-size="12.5" font-weight="600">实测：MXFP6 127.54 TFLOPS/W、MXFP8 117.42 TFLOPS/W —— 首个宽范围自适应 PBW 的 MXFP-CIM</text>
+</svg>

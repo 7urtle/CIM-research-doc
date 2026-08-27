@@ -1,0 +1,187 @@
+===== PAGE 1 =====
+526  •  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.8
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Spiking neural networks (SNNs) [1] have demonstrated superior energy efﬁciency in event-
+driven applications such as event-based vision and audio processing, while convolutional 
+neural networks (CNNs) [2-3] provide high accuracy in image and voice recognition tasks 
+at the edge. Hybrid SNN-CNN models [4-6] have shown promise in balancing accuracy and 
+compute energy, enabling robust edge inference for various applications. Meanwhile, 
+SRAM-based digital compute-in-memory (SRAM-DCIM) [7] has been widely explored to 
+reduce data movement and improve energy efﬁciency, while outperforming analog SRAM-
+CIM (SRAM-ACIM) [8] in MAC accuracy. Combining SRAM-DCIM with hybrid SNN-CNN 
+models is a promising solution for diverse edge-AI tasks. 
+ 
+However, as shown in Fig. 30.8.1, designing SRAM-DCIM macros supporting hybrid SNN-
+CNN introduces two key challenges: (1) extra hardware overhead for supporting both SNN 
+and CNN, and excessive compute energy in the digital domain; and (2) area-energy trade-
+off between partial sum (PSUM) storage and weight (W) update during input (IN) and W 
+data mapping. 
+ 
+This work addresses these challenges with two key techniques: (1) a compact fully-digital 
+SNN-CNN reconﬁgurable computing (CFD-SC-RC) architecture that shares SNN-CNN MAC 
+circuit to reduce area and energy overhead, and supports adaptive model and precision 
+selection across layers; and (2) a PSUM storage–weight reuse optimized data mapping (PS-
+WR-ODM) scheme that balances PSUM-storage minimization and weight-reuse 
+maximization, achieving optimized register usage and weight-update energy. The test chip, 
+fabricated in a foundry 16nm FinFET CMOS process, demonstrates 444.21 TOPS/W with a 
+1bIN-8bW-14bOUT conﬁguration in SNN mode, and 62.84TOPS/W with an 8bIN-8bW-
+22bOUT conﬁguration in CNN mode. 
+ 
+Figure 30.8.2 illustrates the proposed 1Mb CFD-SC-RC SRAM-DCIM macro, consisting of 
+16 64kb banks. Each bank integrates a control block, I/O block, IN/W scheduler, WL driver, 
+32 reconﬁgurable inference blocks (RIBs), an adder tree, and a digital multi-membrane 
+potential dynamics behavior (MPDB) unit (DM-MPDBU). Each RIB contains a 2kb SRAM 
+array, a weight stationary cell (WSC), eight cross-model dual-mode local computing cells 
+(CMDM-LCCs), and a shift-and-add (SaA) circuit. Naïve SRAM-ACIM based hybrid SNN-
+CNN macros are vulnerable to process variations in MPDB functions, while prior 
+SRAM-DCIM based hybrid SNN-CNN macros [4] support only a single MPDB type, limiting 
+ﬂexibility for diverse model requirements. Both architectures lack hardware sharing, 
+incurring large area overhead. The proposed CFD-SC-RC architecture shares SNN-CNN MAC 
+circuits to reduce area overhead, provides high tolerance to process variation, and, via the 
+DM-MPDBU, additionally supports multiple MPDB functions beyond prior works [4], 
+including integrate-and-ﬁre (IF), leaky integrate-and-ﬁre (LIF), and integer quadratic 
+integrate-and-ﬁre (IQIF) [9]. The IF mode provides simple spike generation; the LIF mode 
+incorporates leakage dynamics for temporal noise ﬁltering; and the IQIF mode introduces 
+nonlinear integration for improved accuracy, enabling general-purpose SNN operations at 
+the edge. 
+ 
+Figure 30.8.3 illustrates the CFD-SC-RC computation ﬂow using the proposed CMDM-LCC 
+and DM-MPDBU. Conventional bit-wise (BW)-IN multipliers (BWMs) for SNN cannot 
+support word-wise (WW)-IN multiplication for CNN. To enable both BW-IN MAC for SNN 
+and conﬁgurable WW-IN MAC for CNN, the proposed CMDM-LCC integrates two MUX-
+based multipliers (MULs), an INT8 toggle reducer (TR), dual-mode weight mapping 
+(INT4/INT8) in the array, and an SaA circuit. Within one bank, each of eight CMDM-LCCs 
+performs MAC operations with INs and Ws (W0–3). In INT4 mode, the TR is disabled and 
+four 4b MACs are executed per cycle: W0–1 map to two 4b weights (A[3:0], B[3:0]) and  
+W2–3 to another two (C[3:0], D[3:0]). In INT8 mode, the TR eliminates redundant toggles, 
+enabling two 8b MACs per cycle: W0–1 correspond to the four LSBs of A[7:0] and B[7:0], 
+while W2–3 correspond to their four MSBs. The partial MACs (pMAC0–7) are sent directly to 
+the adder tree in SNN mode, while in CNN mode pMAC0–7 are passed to the SaA circuit for 
+WW-accumulation before entering the adder tree. Meanwhile, conventional MPDB blocks 
+only support a single MPDB function, limiting ﬂexibility for diverse SNN models. The 
+proposed DM-MPDBU supports three functions: (1) IF mode—membrane potential (MP) 
+accumulates until reaching threshold (peak), then ﬁres and resets; (2) LIF mode—MP 
+accumulates with leakage subtraction before proceeding as IF; and (3) IQIF mode—MP 
+accumulates with an integer quadratic (IQ) term dynamically deﬁned by parameters  
+(pdeth, rest, thresh, α, β): if MP[t] < pdeth, IQ=(α×rest–MP[t])) >> 3; otherwise, 
+IQ=(β×(MP[t]–thresh)) >> 3. 
+ 
+Figure 30.8.4 illustrates the proposed PS-WR-ODM scheme. In conventional timestep (TS)-
+ﬁrst data mapping, all input neurons (IN0–K) are accessed sequentially within each TS, 
+minimizing PSUM storage but incurring high weight-update energy and long latency 
+because weight reuse cannot be leveraged for early MPDB operations. In contrast,  
+prior weight-reuse data mapping [10] accesses same-index INs (e.g., IN0) across all TSs 
+(TS0–N), maximizing weight reuse and throughput but requiring large PSUM storage. The 
+proposed PS-WR-ODM adopts a hybrid strategy in which TSs are grouped into blocks with 
+user-deﬁned size (e.g., pairs of adjacent TSs), and weight-reuse mapping is applied within 
+each block. This approach achieves balanced performance in weight-update energy and 
+latency with only marginal PSUM buffer overhead. For example, as shown in the timing 
+diagrams, the conventional TS-ﬁrst data mapping incurs long weight-load cycles, while the 
+previous weight-reuse mapping demands excessive PSUM buffering. The proposed PS-
+WR-ODM achieves comparable latency reduction and energy savings without signiﬁcant 
+PSUM overhead. 
+ 
+Figure 30.8.5 shows the simulated performance of the proposed schemes. The CFD-SC-
+RC reduces macro area by 33% and improves energy efﬁciency by 2.31× over prior hybrid 
+SNN-CNN CIM design [4]. The PS-WR-ODM achieves >1.22× improvement in FoM1, deﬁned 
+as: energy efﬁciency/(area×latency), compared to conventional timestep-ﬁrst and weight-
+reuse-ﬁrst [10] mappings. The combined implementation of CFD-SC-RC, CMDM-LCC, and 
+PS-WR-ODM further delivers an FoM2, deﬁned as inference accuracy×energy 
+efﬁciency/(area×latency)], of 5.48× over baseline designs [4,10]. 
+ 
+Figure 30.8.6 presents the measurement results of the 16nm SRAM-DCIM macro and the 
+position chart versus prior silicon-veriﬁed works. The Shmoo plot conﬁrms 1.3ns 
+computing latency (TMAC) at 0.8V with an 8bIN-8bW-22bOUT conﬁguration. The proposed 
+macro achieves up to 8.2× improvement in FoM3, deﬁned as: IN precision×W 
+precision×energy efﬁciency, over prior works. Figure 30.8.7 presents the die micrograph 
+and chip performance summary. To the best of our knowledge, this is this chip is the ﬁrst 
+silicon-veriﬁed fully digital SRAM-CIM macro that supports multi-bit hybrid SNN–CNN 
+processing. 
+ 
+Acknowledgement:  
+The authors would like to thank NTHU-ITRI collaboration and NSTC for their ﬁnancial and 
+manufacturing support. 
+ 
+References: 
+[1] D. Huh and T. J. Sejnowski, “Gradient Descent for Spiking Neural Networks,” NeurIPS, 
+vol. 31, pp. 1–11, Dec. 2018. Accessed on Dec. 9, 2025.  
+<https://proceedings.neurips.cc/paper_ﬁles/paper/2018/ﬁle/185e65bc40581880c4f2c82958
+de8cfe-Paper.pdf> 
+[2] K. He et al., “Deep Residual Learning for Image Recognition,” IEEE Conf. Comp. Vision 
+and Pattern Recognition (CVPR), pp. 770-778, Dec. 2016.  
+https://doi.org/10.1109/CVPR.2016.90  
+[3] M. Sandler et al., “MobileNetV2: Inverted Residuals and Linear Bottlenecks,” IEEE/CVF 
+CVPR, pp. 4510-4520, Dec. 2018. https://doi.org/10.1109/CVPR.2018.00474 
+[4] C. Zha et al., “A Reconﬁgurable Digital Compute-In-Memory Heterogeneous Macro for 
+Differential Frame Convolution and Spiking Neural Network,” ISCAS, pp. 1-5, May 2025. 
+https://doi.org/10.1109/ISCAS56072.2025.11043929 
+[5] S. Kim et al., “C-DNN: A 24.5-85.8TOPS/W Complementary-Deep-Neural-Network 
+Processor with Heterogeneous CNN/SNN Core Architecture and Forward-Gradient-Based 
+Sparsity Generation,” ISSCC, pp. 334-335, Feb. 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067497 
+[6] S. Kim, S. Park, B. Na, and S. Yoon, “Spiking-YOLO: Spiking Neural Network for Energy-
+efﬁcient Object Detection,” AAAI Conference on Artiﬁcial Intelligence, vol. 34, no. 7, pp. 
+11270–11277, Feb. 2020. https://doi.org/10.1609/aaai.v34i07.6787 
+ 
+30.8    A 16nm, 1Mb, 1-to-8b-Conﬁgurable 444.21TOPS/W Fully Digital SRAM Compute-In-Memory Macro for Hybrid SNN-CNN Edge Computing 
+ 
+Yao-Kai Yeh*1, Jian-Wei Su*2, Ting-Hao Hsu1, Mai Tseng1, Jen-Chun Tien1, Ko-Chi Chen1, Chih-Yen Yue1, Yu-En Lin1, Yu-Jia Hu1, Le-Jung Hsieh1,  
+Jyun-Cheng Bai1, Yu-Sheng Kao1, Tsung-Han Lou1, Hung-Hsi Hsu1, De-Qi You1, Sheu Shyh-Shyuan2, Wei-Chung Lo2, Shih-Chieh Chang1,2, Ya-Tang Yang1,  
+Chung-Chuan Lo1, Ren-Shuo Liu1, Chih-Cheng Hsieh1, Kea-Tiong Tang1, Meng-Fan Chang1 
+ 
+1National Tsing Hua University, Hsinchu, Taiwan, 2Industrial Technology Research Institute, Hsinchu, Taiwan 
+*Equally Credited Authors (ECAs) 
+We present a silicon-veriﬁed fully digital SRAM-CIM macro that supports multi-bit hybrid 
+SNN-CNN processing. Key innovations include: (1) a compact CFD-SC-RC architecture that 
+shares SNN-CNN MAC hardware to minimize area and energy overhead while enabling 
+adaptive model and precision selection; and (2) a PS-WR-ODM scheme that balances partial-
+sum storage and weight-update energy. Fabricated in 16nm FinFET CMOS, the test chip 
+achieves 444.21TOPS/W (1bIN-8bW-14bOUT, SNN) and 62.84TOPS/W (8bIN-8bW-
+22bOUT, CNN). 
+ 
+Abstract
+2026 IEEE International Solid-State Circuits Conference (ISSCC) | 979-8-3315-8936-3/26/$31.00 ©2026 IEEE | DOI: 10.1109/ISSCC49663.2026.11409250
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:20 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+Figure 30.8.1: Motivation and challenges for hybrid SNN-CNN SRAM-CIM.
+Figure 30.8.2: Structure of proposed SRAM-DCIM macro and CFD-SC-RC operation.
+ISSCC 2026 / February 18, 2026 / 11:20 AM
+527  
+DIGEST OF TECHNICAL PAPERS  •
+30
+[7] H. Fujiwara et al., “A 3nm, 32.5TOPS/W, 55.0TOPS/mm2 and 3.78Mb/mm2 Fully-
+Digital Compute-in-Memory Macro Supporting INT12 × INT12 with a Parallel-MAC 
+Architecture and Foundry 6T-SRAM Bit Cell,” ISSCC, pp. 572-573, Feb. 2024. 
+https://doi.org/10.1109/ISSCC49657.2024.10454556 
+[8] P. Chen et al., “A 22nm Delta-Sigma Computing-In-Memory (Δ∑CIM) SRAM Macro 
+with Near-Zero-Mean Outputs and LSB-First ADCs Achieving 21.38TOPS/W for 8b-MAC 
+Edge AI Processing,” ISSCC, pp. 140-141, Feb. 2023.  
+https://doi.org/10.1109/ISSCC42615.2023.10067289 
+[9] W.-C. Wu et al., “Integer Quadratic Integrate-and-Fire (IQIF): A Neuron Model for 
+Digital Neuromorphic Systems,” AICAS, pp. 1-4, June 2021.  
+https://doi.org/10.1109/AICAS51828.2021.9458572 
+[10] S. Kim et al., “SNPU: An Energy-Efﬁcient Spike Domain Deep-Neural-Network 
+Processor With Two-Step Spike Encoding and Shift-and-Accumulation Unit,” JSSC, vol. 
+58, no. 10, pp. 2812-2825, Oct. 2023. https://doi.org/10.1109/JSSC.2023.3270442 
+[11] K. Park et al., “A 701.7 TOPS/W Compute-in-Memory Processor With Time-Domain 
+Computing for Spiking Neural Network,” IEEE Transactions on Circuits and Systems I: 
+Regular Papers, vol. 72, no. 1, pp. 25-35, Jan. 2025.  
+https://doi.org/10.1109/TCSI.2024.3480350 
+[12] H. Fu et al., “NeuC-CIM: A 1.3pJ/SOP Neuromorphic Charge-Domain Compute-in-
+Memory Macro for Spiking Neural Network,” IEEE Symp. VLSI Circuits, pp, 1-3, June 
+2025. https://doi.org/10.23919/VLSITechnologyandCir65189.2025.11074927
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:20 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+Figure 30.8.3: CMDM-LCC and DM-MPDBU structure and operation.
+ 
+Figure 30.8.4: PS-WR-ODM operational concept. 
+Figure 30.8.5: Simulated performance of proposed schemes.
+Figure 30.8.6: Measurement results and position chart.
+Figure 30.8.7: Die micrograph and performance summary table.
+•  2026 IEEE International Solid-State Circuits Conference
+ISSCC 2026 / SESSION 30 / COMPUTE-IN-MEMORY / 30.8
+979-8-3315-8936-3/26/$31.00 ©2026 IEEE
+Authorized licensed use limited to: University of Electronic Science and Tech of China. Downloaded on August 13,2026 at 03:58:20 UTC from IEEE Xplore.  Restrictions apply. 

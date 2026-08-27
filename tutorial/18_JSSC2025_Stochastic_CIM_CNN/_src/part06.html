@@ -1,0 +1,43 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新②：平均池化计算跳算——流长缩短 4×</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① SC 里平均池化 = MUX（随机选输入）；② 未选中的随机位不用算 → 跳算；③ 流长 vs 精度的指数成本与跳算的补救。</p>
+</div>
+
+<h3>6.1 SC 里的平均池化：MUX 随机选输入（论文 Fig.8）</h3>
+<p>池化让输出对输入位置不敏感、降维度。平均池化在 SC 里用<strong>MUX</strong>实现：K×K 窗口 → K²:1 MUX 随机选一个输入 → 输出概率 = 输入概率的平均（MUX 缩放加法）。</p>
+
+<h3>6.2 计算跳算：没被选中的位不计算</h3>
+<p>4 输入平均池化：每个随机输入只被选 1/4 的序列长度 → 未被选中的随机位不贡献输出 → <strong>这些位的计算可以跳过</strong>（省能省延迟）：</p>
+<ul>
+<li>每个输入只需算 N/4 位（原 N 位流）；</li>
+<li>更短流长等价于每个输入缩放 0.25；</li>
+<li>4 个输入由累加并行计数器（APC）相加。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig18_8_平均池化计算跳算.png" alt="平均池化计算跳算">
+<figcaption>图 9 · 论文 Fig.8：平均池化的计算跳算，以及流长与精度的关系。</figcaption>
+</figure>
+
+<h3>6.3 流长 vs 精度：SC 的指数软肋</h3>
+<p>SC 的能耗/延迟随精度<strong>指数</strong>增长（N-bit → 2ᴺ 随机位、2ᴺ 次求值），而定点逻辑 ∝ N²、模拟 CIM（位并行-位串行）也 ∝ N²（N² 次 MAC+ADC 求值）：</p>
+<table>
+<tr><th>精度</th><th>SC 求值数</th><th>CIM 求值数</th><th>SCIM 优势</th></tr>
+<tr><td>≤4-bit</td><td>2⁴=16</td><td>4²=16</td><td>相当</td></tr>
+<tr><td>8-bit</td><td>2⁸=256</td><td>8²=64</td><td>仅 1.6×（模拟 CIM）</td></tr>
+<tr><td>8-bit + 平均池化</td><td>256/4=64</td><td>64</td><td><strong>6.4×</strong>（跳算恢复）</td></tr>
+</table>
+
+<figure>
+<img src="assets/charts/c01_流长成本.png" alt="流长成本图">
+<figcaption>数据图 1 · SC 指数流长 vs CIM 平方成本（依据论文 Fig.8）。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 平均池化 = MUX 随机选输入；② 未选中的位不计算 → 每输入流长 N→N/4；③ 8-bit 时 SC 的 256 次求值是软肋，跳算把它砍回 64 次 → SCIM 优势 1.6×→6.4×（vs 模拟 CIM）。</p>
+</div>
+</section>

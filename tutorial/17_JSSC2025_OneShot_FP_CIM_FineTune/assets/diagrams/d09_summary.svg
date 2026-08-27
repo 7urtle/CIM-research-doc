@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">One-Shot FP CIM 引擎：总结 · 评价 · 未来方向</text>
+
+  <!-- summary -->
+  <rect x="40" y="84" width="880" height="210" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="110" fill="#1d8a5f" font-size="14" font-weight="700">三大创新与逻辑链</text>
+  <g font-size="12.5">
+    <text x="60" y="140" fill="#45536b">① <strong>one-shot 计算</strong>：multiply-less NN（L1 距离）把 INT 尾数 MAC 变成最小选择 → 位并行 1 周期完成（原 8 周期）→ 吞吐 8×、100% 利用率；</text>
+    <text x="60" y="168" fill="#45536b">② <strong>输入-权重协同对齐</strong>：离线无损钳位 + 权重 WE_max 预对齐 → 免 XE_max 选择（省 127 个比较器）；UBF16 免符号位 → 归一化搜索 16→8 位（共省 33.8% 面积、38.2% 能耗）；</text>
+    <text x="60" y="196" fill="#45536b">③ <strong>ODFC</strong>：128 轮顺序更新 + 时分复用 + 保损失 FP 加法 → 小面积训练硬件 → 环境变化时精度恢复（13.8%→84.3%）；</text>
+    <text x="60" y="232" fill="#1d8a5f" font-weight="600">闭环：28nm 实测 128 TFLOPS/W、7.02 TFLOPS/mm²（BF16），CIFAR-10 91.84%、ImageNet 75.00%、COCO 36.8% mAP，与 FP32 无损失</text>
+    <text x="60" y="258" fill="#45536b">设计哲学：算法（multiply-less）、架构（one-shot 流水）、电路（ParMS/UBF16）三层协同——先把运算变简单，再让电路跑得快</text>
+  </g>
+
+  <!-- eval -->
+  <rect x="40" y="314" width="880" height="110" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="340" fill="#0e5a8a" font-size="14" font-weight="700">评价（供思考）</text>
+  <g font-size="12">
+    <text x="60" y="366" fill="#1d8a5f" font-weight="600">强：</text>
+    <text x="110" y="366" fill="#45536b">① 首次在 FP-CIM 实现 one-shot（1 周期 FP 运算）；② 前作 [14]（第 13 篇）的集大成——把 multiply-less 从 INT 推到 FP 并加了训练；③ 三招环环相扣、量化清晰；④ 有片上微调（差异化卖点）</text>
+    <text x="60" y="392" fill="#e66e5a" font-weight="600">弱：</text>
+    <text x="110" y="392" fill="#45536b">① multiply-less 限于 L1 距离网络（非通用点积）；② 128 TFLOPS/W 是峰值（依赖稀疏度）；③ ODFC 能效 1.71 TFLOPS/W 远低于推理（训练天生贵）；④ 未覆盖 Transformer/注意力</text>
+  </g>
+
+  <!-- future -->
+  <rect x="40" y="444" width="880" height="90" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="470" fill="#6b3fa0" font-size="14" font-weight="700">未来研究方向</text>
+  <g font-size="12">
+    <text x="60" y="496" fill="#45536b">① multiply-less 扩展到 Transformer/注意力（L1 注意力）；② one-shot 推到更高精度（FP16/FP32，UBF16 扩展）；③ ODFC 支持更大模型/更复杂优化器（Adam）；</text>
+    <text x="60" y="518" fill="#45536b">④ 与安全（第 16 篇）结合：片上微调 + 权重加密；⑤ 多宏系统级扩展；⑥ 动态位宽/稀疏感知的 ParMS 变体</text>
+  </g>
+</svg>

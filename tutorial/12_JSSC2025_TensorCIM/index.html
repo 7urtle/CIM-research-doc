@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存内计算精讲：TensorCIM 多芯粒数字 CIM 张量处理器（JSSC 2025）</title>
+<meta name="description" content="面向零基础学生的 Compute-in-Memory 硬件教学：深入讲解 JSSC 2025 TensorCIM 多芯粒数字 CIM 张量处理器的稀疏采集/稀疏代数优化、冗余消除采集管理、等操作初始化和输入前瞻 CIM。">
+<style>
+/* ===== 存内计算教学教程 - 样式 ===== */
+:root{
+  --ink:#1a2332; --ink2:#45536b; --ink3:#6b7a93;
+  --bg:#f6f8fb; --card:#ffffff; --line:#dfe6f0;
+  --brand:#0e5a8a; --brand2:#0f7cb6; --accent:#e8a33d;
+  --good:#1d8a5f; --warn:#c25e2e; --bad:#b3403f;
+  --code-bg:#0f1b2d; --code-ink:#d7e3f4;
+  --shadow:0 1px 3px rgba(16,32,58,.08),0 4px 14px rgba(16,32,58,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.85; font-size:16px;
+}
+::selection{background:#cfe6f5}
+
+/* ---------- 布局 ---------- */
+.layout{display:flex; align-items:flex-start}
+.sidebar{
+  position:sticky; top:0; height:100vh; width:300px; flex:0 0 300px;
+  background:#0f1b2d; color:#cdd9ea; overflow-y:auto; padding:18px 10px 40px;
+  font-size:13.5px;
+}
+.sidebar .brand{padding:6px 12px 14px; border-bottom:1px solid #223349; margin-bottom:10px}
+.sidebar .brand .t1{color:#fff; font-weight:700; font-size:15px; line-height:1.4}
+.sidebar .brand .t2{color:#7f92ad; font-size:12px; margin-top:4px}
+.sidebar a{display:block; color:#b8c6da; text-decoration:none; padding:6px 12px; border-radius:8px; margin:1px 0}
+.sidebar a:hover{background:#182b44; color:#fff}
+.sidebar a.sec{font-weight:600; color:#e6edf7}
+.sidebar a.sub{padding-left:24px; color:#93a5bd; font-size:12.5px}
+.sidebar a.active{background:#12355a; color:#7fd0ff}
+.sidebar .mini{margin-top:18px; padding:0 12px; color:#5f728e; font-size:11.5px; line-height:1.7}
+.main{flex:1; min-width:0; padding:28px 46px 120px; max-width:1040px; margin:0 auto}
+
+/* ---------- 章节 ---------- */
+section.chapter{scroll-margin-top:18px}
+h1.title{font-size:30px; line-height:1.4; margin:6px 0 4px; color:#0d1b2e}
+h1.title .en{display:block; font-size:15px; color:var(--ink3); font-weight:500; margin-top:8px; letter-spacing:.2px}
+.meta{margin:10px 0 26px; color:var(--ink3); font-size:13.5px}
+h2{font-size:24px; margin:46px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--brand); color:#0d1b2e}
+h2 .no{color:var(--brand); margin-right:8px}
+h3{font-size:19px; margin:32px 0 10px; color:#123a57}
+h4{font-size:16.5px; margin:24px 0 8px; color:#1b4a6e}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:26px}
+li{margin:5px 0}
+strong{color:#0d1b2e}
+em{color:var(--brand2)}
+
+/* ---------- 提示框 ---------- */
+.box{border-radius:var(--radius); padding:14px 18px; margin:18px 0; border:1px solid var(--line); background:var(--card); box-shadow:var(--shadow)}
+.box .bt{font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px}
+.box.key{background:#eef7fd; border-color:#b8d9ee}
+.box.key .bt{color:var(--brand)}
+.box.warn{background:#fdf3e7; border-color:#eed3a9}
+.box.warn .bt{color:var(--warn)}
+.box.info{background:#eefaf3; border-color:#bfe6d2}
+.box.info .bt{color:var(--good)}
+.box.idea{background:#f5f0fc; border-color:#dcccf0}
+.box.idea .bt{color:#6b3fa0}
+.box.math{background:#fbfbfd; border-color:#d9e0ec; font-family:"Cambria Math","Times New Roman",serif}
+.box.math .bt{color:var(--ink2); font-family:inherit}
+
+/* ---------- 公式 ---------- */
+.formula{display:block; text-align:center; margin:16px 0; font-size:17px; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; background:#fbfcfe; border:1px dashed #c9d4e4; border-radius:10px; padding:12px}
+.formula .tag{float:right; color:var(--ink3); font-size:12px; margin-top:8px}
+
+/* ---------- 图与表 ---------- */
+figure{margin:22px 0; text-align:center}
+figure img{max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+figure svg, figure canvas{max-width:100%}
+figcaption{font-size:13px; color:var(--ink3); margin-top:8px; line-height:1.7}
+figcaption .src{color:#9aa8bd; font-size:12px}
+table{border-collapse:collapse; margin:16px 0; width:100%; background:#fff; font-size:14px; box-shadow:var(--shadow); border-radius:8px; overflow:hidden}
+th,td{border:1px solid var(--line); padding:8px 12px; text-align:center}
+th{background:#eef4fa; color:#123a57}
+tr:nth-child(even) td{background:#f8fafd}
+td.num{font-variant-numeric:tabular-nums}
+.tbl-scroll{overflow-x:auto}
+
+/* ---------- 代码 ---------- */
+pre{background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.65; font-family:"Cascadia Code","Consolas",monospace}
+code{background:#e8eef6; color:#0f3f66; padding:1px 6px; border-radius:5px; font-size:14px; font-family:"Cascadia Code","Consolas",monospace}
+pre code{background:none; color:inherit; padding:0}
+
+/* ---------- 交互演示 ---------- */
+.demo{background:#0e1826; border-radius:var(--radius); padding:14px; margin:20px 0; box-shadow:var(--shadow)}
+.demo .dhead{display:flex; align-items:center; gap:10px; color:#dbe6f4; font-size:14px; font-weight:600; margin-bottom:8px}
+.demo canvas{width:100%; background:#0a1119; border-radius:8px; display:block}
+.demo .dbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center}
+.demo button{background:#1a3552; color:#dbe6f4; border:1px solid #2c4d73; border-radius:8px; padding:6px 14px; font-size:13.5px; cursor:pointer; font-family:inherit}
+.demo button:hover{background:#24476e}
+.demo button.on{background:var(--brand2); color:#fff; border-color:var(--brand2)}
+.demo .hint{color:#7f93ad; font-size:12.5px; margin-top:8px; line-height:1.7}
+.demo .stat{color:#8fd3ff; font-family:"Cascadia Code",Consolas,monospace; font-size:13px}
+
+/* ---------- 视频 ---------- */
+.video-wrap{position:relative; margin:20px 0; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); background:#000}
+.video-wrap video{width:100%; display:block}
+.video-caption{padding:10px 14px; background:#0f1b2d; color:#cdd9ea; font-size:13px; text-align:center}
+
+/* ---------- 术语表 ---------- */
+.glossary dt{font-weight:700; color:#123a57; margin-top:14px}
+.glossary dd{margin:4px 0 0 0; color:var(--ink2); font-size:14.5px}
+
+/* ---------- 页脚 ---------- */
+.footer{margin-top:70px; padding-top:20px; border-top:2px solid var(--line); color:var(--ink3); font-size:13px}
+.footer .cite{font-size:12px; color:#9aa8bd; line-height:1.8}
+
+/* ---------- 顶部进度条 ---------- */
+#progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0; z-index:99}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{position:static; width:100%; height:auto; max-height:220px}
+  .main{padding:20px 18px 90px}
+}
+
+/* 打印 */
+@media print{
+  .sidebar,#progress{display:none}
+  .main{max-width:100%; padding:0}
+  body{background:#fff}
+  section.chapter{page-break-before:always}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="t1">多芯粒 CIM 张量处理器零基础精讲</div>
+    <div class="t2">IEEE JSSC 2025 · vol.60 no.2 · 清华+港科大</div>
+  </div>
+  <a class="sec" href="#sec0">00 · 导读与本论文速览</a>
+  <a class="sec" href="#sec1">01 · 背景：Beyond-NN 应用</a>
+  <a class="sec" href="#sec2">02 · MCM-CIM 的挑战</a>
+  <a class="sec" href="#sec3">03 · 创新①：REGM</a>
+  <a class="sec" href="#sec4">04 · 创新②：EOCI</a>
+  <a class="sec" href="#sec5">05 · 创新③：ILA-CIM</a>
+  <a class="sec" href="#sec6">06 · 系统架构与 MCM</a>
+  <a class="sec" href="#sec7">07 · 实测与对比</a>
+  <a class="sec" href="#sec8">08 · 设计思想总结</a>
+  <a class="sec" href="#sec9">09 · 未来方向 · 术语表 · 参考</a>
+  <a class="sub" href="#sec9-1">9.1 未来研究方向</a>
+  <a class="sub" href="#sec9-2">9.2 术语表</a>
+  <a class="sub" href="#sec9-3">9.3 参考资料</a>
+  <div class="mini">教学对象：未做过 CIM 实际研究的学生<br>配套素材：9 张教学图 · 3 张数据图 · 3 个演示视频 · 3 个交互仿真 · 原文论文 PDF</div>
+</nav>
+<main class="main">
+<section class="chapter" id="sec0">
+<h1 class="title">TensorCIM 多芯粒数字存内计算张量处理器零基础精讲：让 CIM 走出“神经网络”
+<span class="en">TensorCIM: Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration（IEEE JSSC, vol.60, no.2, 2025）</span></h1>
+<div class="meta">论文作者：Yiqi Wang, Zihan Wu, Weiwei Wu, Leibo Liu, Yang Hu, Shaojun Wei, Fengbin Tu, Shouyi Yin · 清华大学 + 港科大
+&nbsp;|&nbsp; 发表：IEEE JSSC，vol. 60, no. 2, 2025（ISSCC'23 期刊扩展版）
+&nbsp;|&nbsp; 本教程配套素材：教学图 9 张、数据图 3 张、演示视频 3 个、交互仿真 3 个、原文论文 PDF</div>
+
+<div class="box key">
+<div class="bt">🎯 这篇文章到底做了什么？（30 秒版）</div>
+<p>之前的 CIM 都在加速“神经网络”。但现实世界还有<strong>Beyond-NN 应用</strong>：图卷积网络（GCN）和推荐模型（DLRM）——它们由<strong>稀疏采集（SpG）</strong>和<strong>稀疏代数（SpA）</strong>组成，规模巨大、需要 FP32 精度、访存密集。本论文（清华尹首一 + 港科大涂锋斌）用 <strong>数字 CIM + 多芯粒（MCM）</strong>的组合来加速它们，并逐个化解 MCM-CIM 系统的三大新挑战：</p>
+<ol>
+<li><strong>REGM（冗余消除采集管理）</strong>：SpG 有强局部性（重复访问、重复归约）——把高频特征和归约结果<strong>“住进”CIM</strong>，消掉冗余 DRAM/跨芯粒访问和重复归约（DRAM −1.74×、跨芯粒 −3.55×）；</li>
+<li><strong>EOCI（等操作 CIM 初始化）</strong>：不规则稀疏让不同宏的有效 MAC 数不同 → 按<strong>有效操作数</strong>在子阵列级平衡分配 WT/GT → 利用率 17.6%→95.4%；</li>
+<li><strong>ILA-CIM（输入前瞻 CIM）</strong>：空闲子阵列<strong>前瞻未来输入</strong>提前算 → 所有子阵列一直忙（联合加速 5.28×）。</li>
+</ol>
+<p>28nm 实测：<strong>3.7 nJ/Gather</strong> 采集效率、<strong>8.3 TFLOPS/W</strong> FP32 代数能效、GCN 总能耗省 <strong>4.58×</strong>。</p>
+</div>
+
+<div class="box warn">
+<div class="bt">⚠️ 先建立三个直觉</div>
+<ul>
+<li><strong>SpG 是“查表+求和”，SpA 是“稀疏矩阵乘”：</strong>GCN 的聚合=查邻居特征求和（SpG），组合=神经网络变换（SpA）；DLRM 的嵌入层=查表（SpG），FC 层=矩阵乘（SpA）。它们的数据都是稀疏、不规则的。</li>
+<li><strong>多芯粒（MCM）是 CIM 的“扩容”方案：</strong>单芯片装不下大应用，把多个 CIM 芯粒封进一个封装（可混搭工艺、坏芯粒可替换、按需增减）。但芯粒间带宽有限——所以“尽量本地化”成了核心设计目标。</li>
+<li><strong>稀疏的难点在“负载均衡”：</strong>稀疏数据跳过很容易（不读零就行），难的是“跳过之后谁干活”——有的宏算得多、有的算得少（宏间不平衡），有的输入行只激活半片阵列（宏内空闲）。论文的两招（EOCI、ILA）分别治这两个病。</li>
+</ul>
+</div>
+
+<h2><span class="no">§0.1</span>摘要逐句精读</h2>
+<table>
+<tr><th style="width:46%">原文（摘录）</th><th>人话解释</th></tr>
+<tr><td class="num">“real-world scenarios have more applications beyond just NN processing like GCN and DLRM, which typically consist of sparse gathering (SpG) and sparse algebra (SpA)”</td>
+<td>Beyond-NN 应用（GCN/DLRM）由 SpG（稀疏采集）+ SpA（稀疏代数）组成。</td></tr>
+<tr><td class="num">“SpG involves repeated off-chip DRAM access, interchiplet access, and redundant reduction operations; SpA suffers from inter-CIM workload imbalance and intra-CIM under-utilization”</td>
+<td>两大新挑战：SpG 有重复访问/重复归约；SpA 有宏间不平衡与宏内空闲。</td></tr>
+<tr><td class="num">“the redundancy-eliminated gathering manager (REGM) dynamically maintains frequently accessed features and reduction results in the CIM”</td>
+<td>方案 1：REGM 动态把高频特征/归约结果维护在 CIM 里。</td></tr>
+<tr><td class="num">“the equal operation-based CIM initializer (EOCI) calculates effective MAC operations and initializes CIM macros with a balanced inter-CIM workload”</td>
+<td>方案 2：EOCI 按有效 MAC 数平衡宏间负载。</td></tr>
+<tr><td class="num">“the input-lookahead CIM (ILA-CIM) architecture looks ahead at future inputs to fully utilize CIM logic”</td>
+<td>方案 3：ILA-CIM 前瞻未来输入，充分利用 CIM 逻辑。</td></tr>
+<tr><td class="num">“consumes only 3.7 nJ/Gather for the GCN model, achieving 8.3-TFLOPS/W algebra efficiency at FP32”</td>
+<td>实测：3.7 nJ/Gather、FP32 代数能效 8.3 TFLOPS/W。</td></tr>
+</table>
+
+<h2><span class="no">§0.2</span>论文的核心贡献清单</h2>
+<ol>
+<li><strong>访问张量重排 + SpG 工作负载重分区</strong>：最大化特征局部性、最小化跨芯粒访问（聚类后按组分配）；</li>
+<li><strong>REGM 冗余消除采集</strong>：高频特征过滤器 + 归约冗余推测器 + 归约复用生成器 + 驱逐 FIFO，REGM 面积/功耗仅 3.6%/5.7%（全芯片）；</li>
+<li><strong>EOCI 等操作初始化</strong>：有效操作识别（相交 ID）+ 平衡分配 + CIM 自适应 WT 映射（分片纵向遍历），面积 +1.96%；</li>
+<li><strong>ILA-CIM 输入前瞻</strong>：输入前瞻 + FP 对齐 + 输出合并三步流水，附加逻辑面积 +2.64%；</li>
+<li><strong>实测</strong>：3.7 nJ/Gather、8.3 TFLOPS/W（FP32）、GCN/DLRM 能耗省 4.58×/3.52×、NN-only 平均加速 2.61×。</li>
+</ol>
+
+<div class="box info">
+<div class="bt">📖 阅读建议</div>
+<p>完全零基础：按 01→09 顺序读，重点玩 3 个交互仿真、看 3 个视频，约 60 分钟。这篇是“系统级 + 负载特性分析”的典范——先分析应用（SpG/SpA）再设计架构，读时注意“问题-对策”的一一对应。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec1">
+<h2><span class="no">§1</span>背景：Beyond-NN 应用 —— GCN 与 DLRM</h2>
+<figure>
+  <img src="assets/diagrams/d01_beyond_nn.svg" alt="Beyond-NN 应用" style="max-width:920px">
+  <figcaption>图 1.1　GCN 与 DLRM 都由 SpG（稀疏采集）+ SpA（稀疏代数）组成。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_1_BeyondNN应用.png" alt="论文图1">
+  <figcaption>图 1.2　论文原图 Fig. 1：两个典型 Beyond-NN 应用（GCN 与 DLRM）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">🧠 为什么 CIM 要“走出神经网络”？</div>
+<p>现实世界的数据不都是“规则张量”（图像/音频/文本），还有<strong>图</strong>（社交网络、知识图谱）和<strong>嵌入表</strong>（推荐系统）。GCN 在图上做卷积（聚合邻居特征 + NN 组合）；DLRM 查嵌入表生成推荐。两者的共同结构：<strong>SpG</strong>（按稀疏索引去“取”特征并求和）+ <strong>SpA</strong>（对取到的张量做稀疏矩阵乘）。它们规模巨大（大图/大表）、需要 FP32 精度 → <strong>数据搬移是主要瓶颈</strong> → 正好是 CIM 的主场。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>MCM-CIM 系统与新挑战</h2>
+<figure>
+  <img src="assets/diagrams/d09_mcm.svg" alt="MCM 动机" style="max-width:920px">
+  <figcaption>图 2.1　MCM 的价值：高良率、混合工艺、按需扩展——CIM 扩容的正解。但芯粒间带宽有限。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_2_MCM-CIM系统.png" alt="论文图2">
+  <figcaption>图 2.2　论文原图 Fig. 2：四芯粒 MCM-CIM 系统（SpG/SpA 两种模式）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d02_challenges.svg" alt="三大挑战" style="max-width:940px">
+  <figcaption>图 2.3　三大挑战：① SpG 冗余；② SpA 初始化宏间不平衡；③ SpA 计算宏内空闲。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_3_挑战与方案.png" alt="论文图3">
+  <figcaption>图 2.4　论文原图 Fig. 3：MCM-CIM 的新挑战与 TensorCIM 的对应方案（REGM/EOCI/ILA-CIM）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<table>
+<tr><th>挑战</th><th>本质</th><th>本文对策</th></tr>
+<tr><td>① SpG 冗余</td><td>重复 DRAM/跨芯粒访问、重复归约（局部性强）</td><td>REGM：重排 + CIM 缓存高频特征/归约结果</td></tr>
+<tr><td>② SpA 初始化不平衡</td><td>不规则稀疏 → 各宏有效 MAC 数不同</td><td>EOCI：按有效操作数平衡子阵列分配</td></tr>
+<tr><td>③ SpA 计算空闲</td><td>输入行只激活部分阵列</td><td>ILA-CIM：前瞻未来输入保持忙碌</td></tr>
+</table>
+</section>
+
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：REGM —— 冗余消除采集管理</h2>
+<figure>
+  <img src="assets/diagrams/d03_regm.svg" alt="REGM" style="max-width:940px">
+  <figcaption>图 3.1　SpG 工作流：访问张量重排（局部性）→ REGM 动态维护高频特征/归约结果在 CIM 中。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_7_SpG重排序示例.png" alt="论文图7">
+  <figcaption>图 3.2　论文原图 Fig. 7：访问张量与 SpG 工作负载重分区（最大化特征局部性）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p><strong>第一步：访问张量重排。</strong>SpG 的“访问张量”每行记录一次采集-归约需要的特征位置（GCN = 邻接矩阵、DLRM = 用户交互矩阵）。由于图有社区结构、用户偏好有聚类，<strong>把相似行重排到一起</strong>（locality-enhancing reordering），再打包成四组分给四个芯粒 → 每个芯粒主要访问<strong>本地 DRAM</strong>，跨芯粒访问大幅减少。</p>
+<p><strong>第二步：REGM 冗余消除。</strong>即使重排后，特征仍会被反复取、归约结果仍会被反复算。REGM 的关键部件：</p>
+<ul>
+<li><strong>高频特征过滤器</strong>：统计每个特征未来的访问次数，超过阈值 → 留在 CIM；低频 → 驱逐候选 FIFO（地址仅 8b，开销可忽略）；</li>
+<li><strong>归约冗余推测器</strong>：统计归约结果（如 f0+f3）的未来复用次数 → 高复用结果存入 CIM；</li>
+<li><strong>归约复用生成器</strong>：后续采集直接复用已存结果 → 免重复归约。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d08_gathering.svg" alt="冗余消除采集" style="max-width:920px">
+  <figcaption>图 3.3　Chiplet0 案例：高频特征 f0/f1/f3 与高复用归约 f0+f3 维护在 CIM 中（Fig. 8）。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">📊 REGM 收益（GCN Pubmed 四芯粒）</div>
+<p>DRAM 访问 <strong>−1.74×</strong>、跨芯粒访问 <strong>−3.55×</strong>、归约操作 <strong>−1.35×</strong>。全芯片面积/功耗占比仅 3.6% / 5.7%。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_7_SpG重排序示例.png">
+  <source src="assets/videos/v01_regm.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v01 · REGM 采集动画：高频特征住进 CIM、归约结果复用、低频特征被驱逐。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 A · REGM 冗余消除（高频特征入 CIM + 归约复用）</div>
+<canvas id="demoA" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoA-play" class="on">▶ 播放</button>
+  <button id="demoA-reset">重置</button>
+  <span class="stat" id="demoA-stat">高频特征（≥3 次）驻留 CIM；低频走 DRAM；归约结果复用</span>
+</div>
+<div class="hint">绿色=高频特征（住在 CIM，直接读）；红色=低频特征（每次都要从 DRAM 取）；f0+f3 的归约结果被缓存复用。→ DRAM 访问 −1.74×、跨芯粒 −3.55×。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新②：EOCI —— 等操作 CIM 初始化</h2>
+<figure>
+  <img src="assets/diagrams/d04_eoci.svg" alt="EOCI" style="max-width:940px">
+  <figcaption>图 4.1　EOCI 两步：① 有效操作识别（GT/WT 非零 ID 求交）；② 平衡分配（任意子阵列、操作数相等）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_12_EOCI初始化示例.png" alt="论文图12">
+  <figcaption>图 4.2　论文原图 Fig. 12：等操作 CIM 初始化示例（有效操作识别与平衡分配）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>稀疏张量乘法里，只有 <strong>GT 非零列 ∩ WT 非零行</strong> 的位置才有有效 MAC。EOCI 做两件事：</p>
+<ol>
+<li><strong>有效操作识别</strong>：并行比较器找两个非零 ID 序列的交集；不相交的 ID 直接弹出（避免无谓比较）；</li>
+<li><strong>平衡分配</strong>：每个相交 ID 触发一次分配，按“GT 列非零数 × WT 行非零数”算操作数；WT 行可以放到<strong>任意子阵列</strong>（不按索引序）→ 把重的行和轻的行搭配，让每个子阵列的 MAC 数相等（Core0: Row{0,10,4,13}、Core1: Row{7,15,9,16}）。</li>
+</ol>
+<p><strong>CIM 自适应 WT 映射</strong>：有效 WT 比 CIM 大 → 切成小 tile 逐块映射（每 tile 每行非零数 = SRAM 行权重数）；纵向遍历整块 WT，剩余非零再开新轮 → 任意稀疏模式都能保持“同一 WT 行在同一 SRAM 行”，利用率不因行间非零数差异而掉。</p>
+<div class="box key">
+<div class="bt">📊 EOCI 收益</div>
+<p>宏内利用率从 <strong>17.6%</strong>（基线）提升到 <strong>95.4%</strong>（与 ILA 联合）；单独 ILA 是 33.2%；联合总加速 <strong>5.28×</strong>。EOCI 面积开销仅 <strong>1.96%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_12_EOCI初始化示例.png">
+  <source src="assets/videos/v02_eoci.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · EOCI 初始化动画：相交识别 → 按有效 MAC 数平衡分配 WT/GT。</div>
+</div>
+<div class="demo">
+<div class="dhead">🧮 演示 B · 有效操作识别（GT ∩ WT 非零 ID）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">相交 {0,4,7} → 有效 MAC 识别 → 平衡分配</span>
+</div>
+<div class="hint">橙色=GT 非零列与 WT 非零行的交集（只有这些位置有有效 MAC）；不相交的直接跳过。再按操作数把 WT 行平衡分配到各子阵列（Core0/1 的 MAC 数相同）。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新③：ILA-CIM —— 输入前瞻</h2>
+<figure>
+  <img src="assets/diagrams/d05_ila_cim.svg" alt="ILA-CIM" style="max-width:940px">
+  <figcaption>图 5.1　传统“一次一行”导致空闲 vs ILA-CIM 前瞻未来输入让所有子阵列忙碌。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_16_ILA-CIM计算示例.png" alt="论文图16">
+  <figcaption>图 5.2　论文原图 Fig. 16：ILA-CIM 计算示例。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>即使初始化平衡了，计算中仍有空闲：每个 CIM 一次只能处理一行输入，而当前输入行因稀疏只激活部分阵列。ILA-CIM 的思路：<strong>空闲的子阵列“看未来输入”提前算</strong>。计算流水三步：</p>
+<ol>
+<li><strong>输入前瞻</strong>：把未来的输入行分配给空闲子阵列；</li>
+<li><strong>FP 对齐</strong>：按“输入指数 + 权重指数”的和把乘积归一化到 FP32（为后续加法）；</li>
+<li><strong>输出合并</strong>：收集各子阵列结果、把输出索引转成全局缓冲地址，与之前的部分和累加并写回。</li>
+</ol>
+<p>ILA-CIM 的稀疏归约也复用了同一数据通路：特征张量稀疏时<strong>不加载零</strong>，直接在 CIM 里做归约 → 省 SpG 的加载功耗。</p>
+<div class="box key">
+<div class="bt">📊 ILA-CIM 收益</div>
+<p>单独：利用率 17.6%→33.2%、加速 1.88×；与 EOCI 联合：利用率 <strong>95.4%</strong>、加速 <strong>5.28×</strong>（子阵列计算时间几乎相同）。附加逻辑面积仅 <strong>2.64%</strong>。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig12_16_ILA-CIM计算示例.png">
+  <source src="assets/videos/v03_ila.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · ILA-CIM 动画：空闲子阵列前瞻未来输入，全部保持忙碌。</div>
+</div>
+<div class="demo">
+<div class="dhead">⚡ 演示 C · 利用率对比（基线 vs ILA vs 联合）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">基线 17.6% → ILA 33.2% → 联合 95.4%</span>
+</div>
+<div class="hint">三档对比：红色=基线（一次一行，大量空闲）；蓝色=ILA（部分前瞻）；绿色=联合（全部忙碌）。ILA 附加逻辑面积仅 +2.64%。</div>
+</div>
+</section>
+
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>系统架构与 MCM 系统</h2>
+<figure>
+  <img src="assets/diagrams/d06_architecture.svg" alt="系统架构" style="max-width:940px">
+  <figcaption>图 6.1　TensorCIM 芯粒：8 个 ILA-CIM 核 + 8 个 REGM + EOCI + 256kB 输入/全局缓冲 + SIMD + 控制器；四种芯粒组成 MCM 系统。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig12_5_总体架构.png" alt="论文图5">
+  <figcaption>图 6.2　论文原图 Fig. 5：TensorCIM 处理器总体架构（三种配置）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<ul>
+<li><strong>8 个 ILA-CIM 核</strong>：每个核配一个 REGM（动态采集管理）；支持输入前瞻/FP 对齐/输出合并；</li>
+<li><strong>EOCI</strong>：负责 SpA 模式的平衡初始化；</li>
+<li><strong>256kB 输入缓冲 + 256kB 全局缓冲 + SIMD 核 + 顶层控制器</strong>；</li>
+<li><strong>三种配置复用同一数据通路</strong>：SpG 模式（CIM 采集）、SpA 初始化（EOCI）、SpA 计算（ILA-CIM）；</li>
+<li><strong>INT8/INT16/FP32 三种精度</strong>：INT 通过旁路指数处理实现（3 个 INT8 权重拼进 FP32 尾数槽）。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig12_20_芯片照片.png" alt="论文图20">
+  <figcaption>图 6.3　论文原图 Fig. 20：TensorCIM 的 MCM 封装、单芯粒封装、芯片显微照片、VF 缩放曲线与规格。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+</section>
+
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>实测与对比：28nm 芯片的成绩单</h2>
+<figure>
+  <img src="assets/charts/c01_energy.png" alt="能效" style="max-width:900px">
+  <figcaption>图 7.1　峰值代数能效：INT8 85.0 TOPS/W、INT16 14.2 TOPS/W、FP32 8.3 TFLOPS/W（0.65V/175MHz、稀疏 GCN Pubmed）。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c02_breakdown.png" alt="技术分解" style="max-width:860px">
+  <figcaption>图 7.2　技术分解：SpG 优化省 3.55×、SpA 优化省 5.95×、GCN 总省 4.58×、DLRM 总省 3.52×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/charts/c03_utilization.png" alt="利用率" style="max-width:860px">
+  <figcaption>图 7.3　宏内利用率：17.6% → 33.2%（ILA）→ 95.4%（联合）· 加速 5.28×。</figcaption>
+</figure>
+<figure>
+  <img src="assets/diagrams/d07_results.svg" alt="结果汇总" style="max-width:940px">
+  <figcaption>图 7.4　实测与对比汇总。</figcaption>
+</figure>
+<ul>
+<li><strong>芯片</strong>：28nm，3.88×3.20 mm²，0.6~1.0V，115~290MHz，29.10~166.84 mW；MCM 四芯粒、320Mb/s 跨芯粒带宽；</li>
+<li><strong>峰值性能</strong>：单芯粒 0.89 TOPS(INT8) / 0.15 TOPS(INT16) / 0.09 TFLOPS(FP32)；四芯粒 3.56 / 0.59 / 0.37；</li>
+<li><strong>能效</strong>：85.0 TOPS/W（INT8，= TSMC 数字 CIM [5] 的 2.17×）、8.3 TFLOPS/W（FP32，= [16] 的 2.24×）；</li>
+<li><strong>采集效率</strong>：3.7 nJ/Gather（GCN）· 2.3 nJ/Gather（DLRM）· 比模拟 [16] 低 9.49×；</li>
+<li><strong>总能耗</strong>：GCN 0.31 mJ（= [16] 的 5.64× 更低）；NN-only 平均加速 2.61×、省能 2.43×。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig12_23_技术分解.png" alt="论文图23">
+  <figcaption>图 7.5　论文原图 Fig. 23：GCN/DLRM 上的技术分解分析。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<div class="box warn">
+<div class="bt">⚠️ 读对比时的研究素养提醒</div>
+<p>① “能效 = 等效操作数 ÷ 实际能耗”的口径里，<strong>被跳过的零也算进操作数</strong>——这是论文与前作一致的做法，但会让稀疏模型的能效虚高，跨论文比较要看清口径；② MCM 系统的对比对象 [16] 是“模拟”出来的（不是硅验证），9.49× 这种数字要谨慎引用；③ “SpG 与 SpA 能耗占比相当”（GCN 46%/54%）说明只优化一半不够——这是论文强调“联合优化”的论据。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec8">
+<h2><span class="no">§8</span>设计思想总结：负载特性驱动的三层协同</h2>
+<div class="box key">
+<div class="bt">🧠 这篇论文教会我们的“系统设计方法论”</div>
+<p>① <strong>先分析应用负载，再设计硬件</strong>：把 GCN/DLRM 拆成 SpG+SpA，各自找到“数据搬移”与“利用率”两个矛盾点，再逐一设计硬件对策；</p>
+<p>② <strong>把“数据本地性”当成第一公民</strong>：MCM 带宽有限 → 重排访问张量（软件）+ CIM 缓存高频数据（硬件）双管齐下，把跨芯粒访问从“常态”变成“例外”；</p>
+<p>③ <strong>稀疏优化的本质是“负载均衡”</strong>：跳过零很容易，难的是让“干活的人”均匀——EOCI 管初始化（分布侧）、ILA-CIM 管执行（执行侧），两个层面都堵住空闲；</p>
+<p>④ <strong>小面积大收益</strong>：REGM 3.6% + EOCI 1.96% + ILA 2.64% ≈ 8% 面积开销换 4.58× 能耗节省——“每 1% 面积换多少收益”是衡量架构创新的硬标准。</p>
+</div>
+</section>
+
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更大的 MCM 规模与异构芯粒</strong>：4 芯粒 → 8/16 芯粒；计算芯粒（数字 CIM）+ 存储芯粒（3D DRAM，08 号论文路线）混搭，跨芯粒网络（NoC）的拓扑与调度是新的研究空间；</li>
+<li><strong>图/推荐负载的在线自适应</strong>：REGM 的频率/归约阈值目前是离线的。能否根据运行时访问分布在线调整？结合强化学习做“缓存策略”，采集效率更接近上界；</li>
+<li><strong>训练支持</strong>：GCN/DLRM 也有训练需求（图表示学习、推荐模型更新）。把 EOCI/ILA-CIM 扩展到反向传播（转置乘，03 号论文）+ 稀疏梯度，得到“推理-训练一体”的张量 CIM；</li>
+<li><strong>与 LLM 稀疏注意力结合</strong>：LLM 推理的 KV cache、稀疏注意力（top-k 选择）本质也是“稀疏采集”——REGM 的思路可以直接迁移；把 TensorCIM 的 SpG/SpA 框架扩展成“通用稀疏张量引擎”；</li>
+<li><strong>芯粒间通信的硬件化</strong>：REGM 靠“少访问”来绕开带宽瓶颈。更激进的方向：片上光互连/更宽芯粒间总线，让跨芯粒访问不再“贵”——届时重排策略会改变；</li>
+<li><strong>编译栈自动化</strong>：访问张量重排、聚类分组、WT 分片映射目前是手动的。做一个“GCN/DLRM → TensorCIM 配置”的自动编译器（负载分析 → 重排 → 分片 → 调度），软硬协同落地的最后一块拼图。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>Beyond-NN 应用</dt><dd>神经网络之外的应用（GCN、DLRM），由 SpG + SpA 组成。</dd>
+<dt>SpG（Sparse Gathering，稀疏采集）</dt><dd>按稀疏索引取特征并归约（GCN 聚合、DLRM 嵌入查表）。</dd>
+<dt>SpA（Sparse Algebra，稀疏代数）</dt><dd>稀疏张量乘法（GCN 组合、DLRM FC 层）。</dd>
+<dt>GCN（Graph Convolutional Network）</dt><dd>图卷积网络。</dd>
+<dt>DLRM（Deep-Learning Recommendation Model）</dt><dd>深度学习推荐模型（嵌入表 + FC）。</dd>
+<dt>MCM（Multichip-Module）</dt><dd>多芯粒封装：高良率、混合工艺、按需扩展。</dd>
+<dt>芯粒（Chiplet）</dt><dd>MCM 中的单个芯片。</dd>
+<dt>访问张量（Access Tensor）</dt><dd>记录稀疏访问模式（每行=一次采集-归约）。</dd>
+<dt>REGM（Redundancy-Eliminated Gathering Manager）</dt><dd>冗余消除采集管理：CIM 缓存高频特征/归约结果。</dd>
+<dt>EOCI（Equal Operation-based CIM Initializer）</dt><dd>等操作 CIM 初始化：按有效 MAC 数平衡子阵列。</dd>
+<dt>ILA-CIM（Input-Lookahead CIM）</dt><dd>输入前瞻 CIM：空闲子阵列提前算未来输入。</dd>
+<dt>有效操作识别</dt><dd>GT 非零列 ∩ WT 非零行的位置才是有效 MAC。</dd>
+<dt>CIM 自适应 WT 映射</dt><dd>大 WT 分片、纵向遍历，保持同 WT 行同 SRAM 行。</dd>
+<dt>采集效率（Gathering Efficiency）</dt><dd>平均生成一个归约结果的能耗（nJ/Gather）。</dd>
+<dt>代数能效（Algebra Efficiency）</dt><dd>稀疏张量乘法的能效（TFLOPS/W）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>Y. Wang, Z. Wu, W. Wu, L. Liu, Y. Hu, S. Wei, F. Tu, S. Yin, “TensorCIM: Digital Computing-in-Memory Tensor Processor With Multichip-Module-Based Architecture for Beyond-NN Acceleration,” <em>IEEE JSSC</em>, vol. 60, no. 2, pp. 734-746, Feb. 2025. DOI: 10.1109/JSSC.2024.3406569</li>
+<li>F. Tu et al., “TensorCIM: A 28nm 3.7nJ/gather and 8.3TFLOPS/W FP32 Digital-CIM Tensor Processor for MCM-CIM-Based Beyond-NN Acceleration,” <em>ISSCC 2023</em>, pp. 254-256.（会议版 [17]）</li>
+<li>F. Tu et al., “A 28nm 29.2TFLOPS/W BF16 and 36.5TOPS/W INT8 Reconfigurable Digital CIM Processor…,” <em>ISSCC 2022</em>, pp. 255-257.（数字 CIM 对比 [16]）</li>
+<li>H. Zhu et al., “COMB-MCM: Computing-on-Memory-Boundary NN Processor…,” <em>ISSCC 2022</em>, pp. 250-252.（MCM-CIM 前作 [28]）</li>
+<li>J. Yue et al., “A 28nm 16.9-300TOPS/W Computing-in-Memory Processor Supporting Floating-Point NN Inference/Training…,” <em>ISSCC 2023</em>, pp. 1-3.（[13]）</li>
+<li>T. N. Kipf and M. Welling, “Semi-supervised classification with graph convolutional networks,” <em>ICLR 2017</em>.（GCN）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图版权归 IEEE/原作者所有，此处仅作教学引用（© 2024 IEEE）。所有实测数字（3.7 nJ/Gather、8.3 TFLOPS/W、4.58× 等）均来自论文原文；对比中的“模拟”数据已在正文注明。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+/* ============================================================
+   TensorCIM 教学教程 · 交互脚本
+   演示 A 冗余采集 · 演示 B 有效操作识别 · 演示 C 利用率
+   ============================================================ */
+"use strict";
+
+function cvs(id, w, h) {
+  const c = document.getElementById(id);
+  if (!c) return null;
+  c.width = w; c.height = h;
+  return { c, ctx: c.getContext("2d"), w, h };
+}
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function txt(ctx, s, x, y, size, color, align) {
+  ctx.fillStyle = color || "#dbe6f4";
+  ctx.font = (size || 13) + "px 'Microsoft YaHei','PingFang SC',sans-serif";
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(s, x, y);
+}
+const PAL = {
+  bg: "#0a1119", panel: "#12202f", line: "#2c4d73",
+  blue: "#1e90dc", green: "#3cbe8c", orange: "#f0b446",
+  red: "#e66e5a", purple: "#aa78dc", gray: "#7f93ad", white: "#f0f4fa"
+};
+
+(function () {
+  const bar = document.getElementById("progress");
+  const links = Array.from(document.querySelectorAll(".sidebar a"));
+  const sections = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  function onScroll() {
+    const st = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+    let cur = 0;
+    sections.forEach((s, i) => { if (s && s.offsetTop - 120 <= st) cur = i; });
+    links.forEach((a, i) => a.classList.toggle("active", i === cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+
+/* ============================================================
+   演示 A · 冗余采集（REGM）
+   ============================================================ */
+(function () {
+  const D = cvs("demoA", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoA-stat");
+  const features = [
+    { name: "f0", cnt: 5 }, { name: "f1", cnt: 3 }, { name: "f2", cnt: 1 },
+    { name: "f3", cnt: 4 }, { name: "f4", cnt: 1 }, { name: "f5", cnt: 1 },
+  ];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "REGM 冗余消除：高频特征住进 CIM，低频从 DRAM 取", 30, 24, 15, PAL.white, "left");
+    features.forEach((f, i) => {
+      const x = 60 + i * 145;
+      const hot = f.cnt >= 3;
+      ctx.fillStyle = hot ? "#1e3c2c" : PAL.panel;
+      ctx.strokeStyle = hot ? PAL.green : PAL.line; ctx.lineWidth = 2;
+      rrect(ctx, x, 60, 130, 80, 10); ctx.fill(); ctx.stroke();
+      txt(ctx, f.name, x + 65, 85, 16, hot ? PAL.green : PAL.gray, "center");
+      txt(ctx, "访问 " + f.cnt + " 次", x + 65, 108, 12, PAL.white, "center");
+      txt(ctx, hot ? "✓ 在 CIM" : "✗ 需 DRAM", x + 65, 130, 11, hot ? PAL.green : PAL.red, "center");
+    });
+    // 归约复用
+    ctx.fillStyle = "#2a2440"; ctx.strokeStyle = PAL.orange; ctx.lineWidth = 2;
+    rrect(ctx, 60, 160, 860, 60, 10); ctx.fill(); ctx.stroke();
+    txt(ctx, "归约复用：f0+f3 被反复需要 → 结果存 CIM，直接复用（不重算）", 80, 184, 14, PAL.orange, "left");
+    txt(ctx, "未命中才触发 DRAM/跨芯粒访问；低频特征进驱逐 FIFO", 80, 208, 12, PAL.gray, "left");
+    txt(ctx, "→ DRAM −1.74× · 跨芯粒 −3.55× · 归约 −1.35×（GCN Pubmed）", 60, 260, 13.5, PAL.green, "left");
+    if (stat) stat.textContent = "高频特征（≥3 次）驻留 CIM；低频走 DRAM；归约结果复用";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoA-play");
+  const bReset = document.getElementById("demoA-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 900); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 900);
+  draw();
+})();
+
+/* ============================================================
+   演示 B · 有效操作识别（EOCI）
+   ============================================================ */
+(function () {
+  const D = cvs("demoB", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoB-stat");
+  const gt = [0, 1, 2, 3, 4, 7];
+  const wt = [0, 4, 5, 6, 7];
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "EOCI 有效操作识别：GT 非零列 ∩ WT 非零行", 30, 24, 15, PAL.white, "left");
+    // GT 行
+    txt(ctx, "GT 非零列", 60, 58, 13, PAL.blue);
+    gt.forEach((v, i) => {
+      const x = 200 + i * 70;
+      const inter = wt.includes(v);
+      ctx.fillStyle = inter ? "#3a2a1e" : "#1e3c56";
+      ctx.strokeStyle = inter ? PAL.orange : PAL.blue; ctx.lineWidth = 2;
+      rrect(ctx, x, 46, 58, 30, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, v, x + 29, 61, 13, PAL.white, "center");
+    });
+    // WT 行
+    txt(ctx, "WT 非零行", 60, 108, 13, PAL.purple);
+    wt.forEach((v, i) => {
+      const x = 200 + i * 70;
+      const inter = gt.includes(v);
+      ctx.fillStyle = inter ? "#3a2a1e" : "#2a2440";
+      ctx.strokeStyle = inter ? PAL.orange : PAL.purple; ctx.lineWidth = 2;
+      rrect(ctx, x, 96, 58, 30, 6); ctx.fill(); ctx.stroke();
+      txt(ctx, v, x + 29, 111, 13, PAL.white, "center");
+    });
+    txt(ctx, "相交 ID：{0, 4, 7}（橙色）——只有这些位置存在有效 MAC", 60, 160, 13.5, PAL.orange, "left");
+    txt(ctx, "不相交 ID 直接跳过（算也是白算）→ 再按操作数平衡分配 WT 行到各子阵列", 60, 190, 12.5, PAL.gray, "left");
+    txt(ctx, "Core0: Row{0,10,4,13} ｜ Core1: Row{7,15,9,16} → 每子阵列 MAC 数相同", 60, 220, 13.5, PAL.green, "left");
+    txt(ctx, "→ 利用率 17.6%→95.4%（联合 ILA）· EOCI 面积 +1.96%", 60, 252, 12.5, PAL.gray, "left");
+    if (stat) stat.textContent = "相交 {0,4,7} → 有效 MAC 识别 → 平衡分配";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoB-play");
+  const bReset = document.getElementById("demoB-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1200); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1200);
+  draw();
+})();
+
+/* ============================================================
+   演示 C · 利用率对比（ILA-CIM）
+   ============================================================ */
+(function () {
+  const D = cvs("demoC", 980, 300);
+  if (!D) return;
+  const { ctx } = D;
+  let cyc = 0, play = true, timer = null;
+  const stat = document.getElementById("demoC-stat");
+
+  function draw() {
+    const w = D.w, h = D.h;
+    ctx.fillStyle = PAL.bg; ctx.fillRect(0, 0, w, h);
+    txt(ctx, "ILA-CIM：空闲子阵列前瞻未来输入（利用率对比）", 30, 24, 15, PAL.white, "left");
+    const k = cyc % 3;
+    const util = [17.6, 33.2, 95.4];
+    const labels = ["基线（一次一行）", "ILA-CIM（单独）", "EOCI+ILA（联合）"];
+    const cols = [PAL.red, PAL.blue, PAL.green];
+    // 子阵列图
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 4; c++) {
+        const x = 70 + c * 90, y = 60 + r * 40;
+        const busy = k === 2 ? true : (r === 0 && c === 0) || (k === 1 && (r + c) % 2 === 0);
+        ctx.fillStyle = busy ? (k === 2 ? "#1e3c2c" : (k === 1 ? "#1e3c56" : "#3c2a26")) : "#141c2a";
+        ctx.strokeStyle = busy ? cols[k] : PAL.line; ctx.lineWidth = busy ? 2 : 1;
+        rrect(ctx, x, y, 82, 34, 5); ctx.fill(); ctx.stroke();
+      }
+    }
+    // 利用率条
+    const bw = 240 * (util[k] / 100);
+    ctx.fillStyle = "#1c2838"; ctx.strokeStyle = cols[k]; ctx.lineWidth = 2;
+    rrect(ctx, 450, 70, 240, 30, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = cols[k];
+    ctx.fillRect(452, 72, bw, 26);
+    txt(ctx, util[k] + "%", 570, 85, 14, PAL.white, "center");
+    txt(ctx, labels[k], 450, 125, 14, cols[k], "left");
+    txt(ctx, k === 2 ? "→ 总加速 5.28× · 子阵列计算时间几乎相同" : "→ 空闲子阵列白等（利用率低）", 450, 155, 12, PAL.gray, "left");
+    txt(ctx, "ILA 三步：输入前瞻 → FP 对齐（指数和归一化）→ 输出合并（写回全局缓冲）", 60, 230, 12.5, PAL.white, "left");
+    txt(ctx, "附加逻辑面积仅 +2.64%；稀疏归约复用同一数据通路（不加载特征零）", 60, 258, 12, PAL.gray, "left");
+    if (stat) stat.textContent = labels[k] + "（利用率 " + util[k] + "%）";
+  }
+
+  function tick() { cyc++; draw(); }
+  const bPlay = document.getElementById("demoC-play");
+  const bReset = document.getElementById("demoC-reset");
+  if (bPlay) bPlay.onclick = function () {
+    play = !play;
+    this.classList.toggle("on", play);
+    this.textContent = play ? "⏸ 暂停" : "▶ 播放";
+    if (play) { clearInterval(timer); timer = setInterval(tick, 1600); } else clearInterval(timer);
+  };
+  if (bReset) bReset.onclick = function () { cyc = 0; draw(); };
+  if (play) timer = setInterval(tick, 1600);
+  draw();
+})();
+
+</script>
+</body>
+</html>

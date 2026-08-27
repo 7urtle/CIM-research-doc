@@ -1,0 +1,34 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>为什么混合 SNN-CNN 需要专用 CIM 硬件</h2>
+
+<h3 id="sec2-1">2.1 论文点名的两大挑战</h3>
+<p>论文 Fig. 30.8.1 用一张图总结了设计混合 SNN-CNN SRAM-CIM 宏的两大挑战（这也是全文的“问题定义”）：</p>
+<div class="box warn">
+<div class="bt">⚠️ 挑战 1：双模式硬件开销 + 数字域计算能耗</div>
+<p>支持 SNN 需要“位宽乘法 + 神经元动力学单元（MPDB）”，支持 CNN 需要“字宽乘法 + 加法树”。如果各做各的：<strong>面积直接翻倍</strong>。更糟的是，如果只做模拟 CIM，膜电位累积这类“模拟运算”会被工艺波动污染（见 §5.1）；而全数字虽然精度确定，但数字 MAC 本身也要消耗能量——所以既要共享电路（省面积），也要把数字计算做得省电（省能耗）。</p>
+</div>
+<div class="box warn">
+<div class="bt">⚠️ 挑战 2：PSUM 存储与权重更新的面积-能耗权衡</div>
+<p>SNN 有“时间步（timestep）”维度：同一个神经元要在 N 个时间步上不断累积膜电位。数据映射时有两个极端：</p>
+<ul>
+<li><strong>时间步优先（TS-first）</strong>：一个时间步内把所有输入算完 → 中间结果（PSUM）很快被消费，<strong>PSUM 存储小</strong>，但每换一个时间步都要重新加载权重 → <strong>权重更新能耗高、延迟长</strong>；</li>
+<li><strong>权重复用优先</strong>：同一个输入在所有时间步上算 → 权重只读一次、复用 N 次 → <strong>权重更新能耗低</strong>，但不同时间步的部分和要一直存着 → <strong>PSUM 缓冲巨大</strong>。</li>
+</ul>
+<p>怎么在这两个极端之间找平衡，就是 §6 的创新③。</p>
+</div>
+
+<h3 id="sec2-2">2.2 数字 CIM 还是模拟 CIM？——沿用“确定性”路线</h3>
+<p>本论文选择 <strong>SRAM 数字 CIM（SRAM-DCIM）</strong>，理由与 10 号论文一脉相承：</p>
+<table>
+<tr><th>维度</th><th>SRAM 模拟 CIM（SRAM-ACIM）</th><th>SRAM 数字 CIM（SRAM-DCIM，本文）</th></tr>
+<tr><td>MAC 精度</td><td>电流/电荷求和 + ADC，有量化与噪声误差</td><td>逐位精确，无 ADC</td></tr>
+<tr><td>神经元膜电位（MPDB）</td><td>模拟积分受工艺波动（PVT）影响，发放时刻不可复现</td><td>数字积分 + 比较器，确定可复现</td></tr>
+<tr><td>工艺缩放 / 低压</td><td>模拟精度随电压恶化</td><td>数字逻辑可低压运行</td></tr>
+<tr><td>灵活性</td><td>模式切换复杂</td><td>模式=配置位，天然灵活</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 数字路线对“混合模型”特别重要</div>
+<p>混合模型要求硬件在 SNN/CNN 两种模式间切换。在数字实现里，“模式”只是一个配置寄存器：乘法器是位宽还是字宽、MPDB 用 IF 还是 LIF、精度是 INT4 还是 INT8，全部由配置位决定——这是模拟电路很难做到的“即插即用”。论文摘要那句 “provides high tolerance to process variation” 说的就是数字 MPDB 的确定性。</p>
+</div>
+<p>论文原文引用的对比对象：模拟方案如 [8]（ΔΣ CIM，22nm，21.38 TOPS/W），数字方案如 [7]（INT12×INT12，3nm）。本文主打的是“<strong>数字 + 双模式 + 多比特</strong>”的组合，是第一个把这三者一起做到硅验证的工作。</p>
+</section>

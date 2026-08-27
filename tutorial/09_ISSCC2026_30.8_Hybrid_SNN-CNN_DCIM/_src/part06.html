@@ -1,0 +1,59 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：PS-WR-ODM —— PSUM 存储与权重复用的数据映射折中</h2>
+
+<h3 id="sec6-1">6.1 先搞懂 SNN 的“时间步”维度和两个极端</h3>
+<p>SNN 的处理对象是“一段时间的脉冲流”。网络把时间切成一个个<strong>时间步（timestep, TS）</strong>：每个 TS 输入一批脉冲，神经元膜电位跨 TS 累积。所以数据有三个维度要遍历：<strong>输入神经元（IN0…INK）、时间步（TS0…TSN）、权重</strong>。先访问谁，直接决定两类开销：</p>
+<figure>
+  <img src="assets/diagrams/d05_pswr_odm.svg" alt="三种数据映射" style="max-width:920px">
+  <figcaption>图 6.1　三种数据映射策略：TS-first（左）权重反复加载；复用-first（右）PSUM 缓冲爆炸；PS-WR-ODM（下）块内折中。</figcaption>
+</figure>
+<table>
+<tr><th>策略</th><th>遍历顺序</th><th>权重更新能耗</th><th>PSUM 存储</th><th>延迟</th></tr>
+<tr><td><strong>TS-first</strong>（传统）</td><td>一个 TS 内扫完所有 IN → 下一个 TS</td><td>高（每 TS 重载权重）</td><td>小（PSUM 立刻被消费）</td><td>长（权重加载串行）</td></tr>
+<tr><td><strong>复用-first</strong>（前作 [10]）</td><td>一个 IN 跨所有 TS 算完 → 下一个 IN</td><td>低（权重只读一次）</td><td><strong>巨大</strong>（跨 TS 的部分和全要存）</td><td>短（吞吐高）</td></tr>
+<tr><td><strong>PS-WR-ODM</strong>（本文）</td><td>TS 分组（如 2 个一组），<strong>块内</strong>复用</td><td>中低</td><td>中（只有块大小那么多）</td><td>短</td></tr>
+</table>
+
+<h3 id="sec6-2">6.2 块内权重复用：把“折中”做成参数</h3>
+<p>PS-WR-ODM（PSUM Storage–Weight Reuse Optimized Data Mapping，PSUM 存储-权重复用优化数据映射）的做法：</p>
+<ol>
+<li>把 N 个时间步分成若干<strong>块（block）</strong>，块大小是<strong>用户可定义的参数</strong>（例如相邻 2 个 TS 一组，也可以更大）；</li>
+<li><strong>块内</strong>采用“权重复用”顺序：同一输入 IN 在块内各 TS 上访问，权重只读一次被块内复用；</li>
+<li><strong>块间</strong>重新加载权重，进入下一个块。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么这是“最优折中”？</div>
+<p>把参数列出来就看清楚了：</p>
+<ul>
+<li>块大小 = 1（每个 TS 单独一块）→ 退化成 TS-first（PSUM 最小、权重能耗最大）；</li>
+<li>块大小 = N（所有 TS 一块）→ 退化成复用-first（权重能耗最小、PSUM 最大）；</li>
+<li>块大小 = B（折中）→ 权重能耗降到 ~1/B，而 PSUM 缓冲只增加 B 份——<strong>用可控的 PSUM 开销换取权重更新能耗的大幅下降</strong>。</li>
+</ul>
+<p>论文用 FoM1 = 能效 /（面积 × 延迟）衡量：PS-WR-ODM 比两个极端都好 <strong>&gt;1.22×</strong>。</p>
+</div>
+
+<h3 id="sec6-3">6.3 交互演示 C：三个方案的代价对比</h3>
+<div class="demo">
+<div class="dhead">⚖ 演示 C · 数据映射三方案对比（PSUM vs 权重更新能耗）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">方案对比：权重更新能耗 vs PSUM 存储</span>
+</div>
+<div class="hint">三条柱代表三个方案：红色柱越高 = 权重更新能耗越大；蓝色柱越高 = PSUM 缓冲占用越大。观察 PS-WR-ODM（绿色）如何同时压住两边。</div>
+</div>
+
+<h3 id="sec6-4">6.4 视频演示：三种映射的时序对比</h3>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_8_4_数据映射.png">
+  <source src="assets/videos/v03_mapping.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 三种数据映射策略动画：TS-first 权重反复加载（红色能耗条持续上涨），复用-first PSUM 缓冲巨大（蓝色条顶满），PS-WR-ODM 块内复用两边都低。</div>
+</div>
+
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 块大小是不是越大越好？提示：PSUM 缓冲的“边际收益递减”。② 这个映射优化对 CNN 模式还成立吗？（提示：CNN 没有时间步维度，TS 维度退化为 1。）③ “用户可定义块大小”意味着硬件要提供什么？（提示：一个可编程的调度寄存器，决定一次复用跨越几个 TS。）</p>
+</div>
+</section>

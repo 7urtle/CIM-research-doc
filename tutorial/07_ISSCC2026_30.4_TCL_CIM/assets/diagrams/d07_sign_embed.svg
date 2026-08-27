@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="470" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">总线 TCL：把符号位扩展“嵌”进位列加法，只多 2.95% 面积</text>
+
+  <!-- 符号扩展问题 -->
+  <rect x="40" y="80" width="420" height="180" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">2 的补码有符号乘法的问题</text>
+  <g font-size="12">
+    <text x="60" y="136" fill="#45536b">最高位（符号位）的位积要“符号扩展”：</text>
+    <text x="60" y="160" fill="#45536b">负权重的 P<sub>7m</sub> 需要被复制到 TCL-7~14</text>
+    <text x="60" y="184" fill="#45536b">（斜线方向的每个位列都要加它）</text>
+    <text x="60" y="214" fill="#c25e2e" font-weight="600">传统：单独做符号扩展阵列 [6,8] → 面积大</text>
+    <text x="60" y="238" fill="#c25e2e" font-weight="600">或额外周期 [11] → 吞吐降</text>
+  </g>
+
+  <!-- 本论文方案 -->
+  <rect x="500" y="80" width="420" height="180" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="520" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">总线 TCL（bus TCL）复用</text>
+  <g font-size="12">
+    <text x="520" y="136" fill="#45536b">TCL-14 里 8 个 MMU 就是“符号位列”</text>
+    <text x="520" y="160" fill="#45536b">（P<sub>m7</sub>，m=0~7）——让它同时充当</text>
+    <text x="520" y="184" fill="#45536b">TCL-7~14 的符号扩展位：</text>
+    <text x="520" y="210" fill="#1d8a5f" font-weight="600">P<sub>07</sub> 被 TCL-7~14 复用 8 次，</text>
+    <text x="520" y="232" fill="#1d8a5f" font-weight="600">P<sub>17</sub> 复用 7 次，……（嵌入扩展）</text>
+    <text x="520" y="254" fill="#45536b">加上“反相权重 MMU + CNT 初值=XIN[7]”</text>
+    <text x="520" y="276" fill="#45536b">→ 完整 2C 乘法规则，零额外延迟</text>
+  </g>
+
+  <!-- 模式切换 -->
+  <rect x="40" y="286" width="880" height="160" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="314" fill="#0e5a8a" font-size="13.5" font-weight="700">有符号 / 无符号模式切换（7 个传输门 + 8 个 2:1 MUX）</text>
+  <g font-size="12.5">
+    <text x="60" y="342" fill="#45536b">• <strong>有符号（2C）</strong>：连接 P<sub>m7</sub>（m=0~7）到总线 TCL-14；把反相的 W<sub>n</sub> 接到取反 MMU；CNT(TCL-7) 初值 = XIN[7]</text>
+    <text x="60" y="368" fill="#45536b">• <strong>无符号</strong>：断开 TCL-14 的 P<sub>m7</sub>；取反 MMU 改接 W<sub>n</sub>；CNT(TCL-7) 初值 = 0</text>
+    <text x="60" y="400" fill="#1d8a5f" font-weight="600">→ 面积开销仅 2.95%，无额外延迟；切换只需几个控制信号</text>
+    <text x="60" y="426" fill="#45536b">Monte Carlo 验证：MMU 传播延迟 Δt<sub>MMU</sub> 恒小于 RDC 延迟 Δt<sub>RDC</sub> → PVT 波动下 TCL 计数正确</text>
+  </g>
+</svg>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Multiply-Less 近似 CIM 宏总体架构（16 个数字近似 CIM 阵列）</text>
+
+  <!-- ACT buffer + ActACCU -->
+  <rect x="40" y="84" width="270" height="150" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="108" fill="#0e5a8a" font-size="13.5" font-weight="700">ACT Buffer</text>
+  <text x="60" y="132" fill="#45536b" font-size="12">接收并排序激活值</text>
+  <text x="60" y="152" fill="#45536b" font-size="12">MSB 优先位串行送入</text>
+  <rect x="60" y="166" width="120" height="36" rx="6" fill="#cfe0ee" stroke="#0e5a8a"/>
+  <text x="120" y="189" text-anchor="middle" fill="#0e5a8a" font-size="11">激活比特流</text>
+  <text x="60" y="222" fill="#1d8a5f" font-size="12" font-weight="600">→ ActACCU：Σxi 累加</text>
+
+  <!-- 16 arrays -->
+  <rect x="330" y="84" width="360" height="330" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="350" y="108" fill="#1d8a5f" font-size="13.5" font-weight="700">16 × 数字近似 CIM 阵列（8行×128列 8T SRAM）</text>
+  <g>
+    <!-- one array magnified -->
+    <rect x="350" y="120" width="320" height="150" rx="8" fill="#f2faf6" stroke="#1d8a5f"/>
+    <text x="362" y="142" fill="#1d8a5f" font-size="11.5" font-weight="600">单个阵列内部</text>
+    <rect x="362" y="152" width="130" height="80" rx="6" fill="#e4f2ea" stroke="#1d8a5f"/>
+    <text x="427" y="178" text-anchor="middle" fill="#1d8a5f" font-size="10.5">8T SRAM bank</text>
+    <text x="427" y="196" text-anchor="middle" fill="#45536b" font-size="10">128×8 + 15(WSUM)</text>
+    <rect x="506" y="152" width="150" height="80" rx="6" fill="#fdeeda" stroke="#f0a030"/>
+    <text x="581" y="174" text-anchor="middle" fill="#a06510" font-size="10.5">L1 计算单元</text>
+    <text x="581" y="192" text-anchor="middle" fill="#45536b" font-size="10">MinSEL(比较器)</text>
+    <text x="581" y="206" text-anchor="middle" fill="#45536b" font-size="10">MinMUX + MinACCU</text>
+    <text x="581" y="220" text-anchor="middle" fill="#45536b" font-size="10">ABS-ASM</text>
+    <line x1="492" y1="192" x2="504" y2="192" stroke="#1d8a5f" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="362" y="256" fill="#45536b" font-size="10.5">位串行数据流 → 面积/能耗线性位宽扩展</text>
+    <!-- other arrays -->
+    <g font-size="10" fill="#45536b">
+      <rect x="350" y="284" width="96" height="46" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="398" y="303" text-anchor="middle" fill="#1d8a5f">阵列1</text><text x="398" y="318" text-anchor="middle">…</text>
+      <rect x="458" y="284" width="96" height="46" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="506" y="303" text-anchor="middle" fill="#1d8a5f">阵列2</text><text x="506" y="318" text-anchor="middle">…</text>
+      <rect x="566" y="284" width="96" height="46" rx="6" fill="#d9f0e4" stroke="#1d8a5f"/><text x="614" y="303" text-anchor="middle" fill="#1d8a5f">阵列16</text>
+      <text x="510" y="400" text-anchor="middle" font-size="11">128 输入并行 → 16 个 Psum 输出/8 周期</text>
+    </g>
+  </g>
+
+  <!-- 外设 -->
+  <rect x="710" y="84" width="210" height="330" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+  <text x="730" y="108" fill="#6b3fa0" font-size="13.5" font-weight="700">外设与接口</text>
+  <g font-size="12">
+    <rect x="730" y="126" width="170" height="44" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="815" y="147" text-anchor="middle" fill="#6b3fa0">标准 SRAM 读写</text>
+    <text x="815" y="163" text-anchor="middle" fill="#45536b">接口控制器</text>
+    <rect x="730" y="184" width="170" height="44" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="815" y="205" text-anchor="middle" fill="#6b3fa0">CIM 控制</text>
+    <text x="815" y="221" text-anchor="middle" fill="#45536b">外设</text>
+    <rect x="730" y="242" width="170" height="44" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="815" y="263" text-anchor="middle" fill="#6b3fa0">时钟门控输出</text>
+    <text x="815" y="279" text-anchor="middle" fill="#45536b">（降低输出翻转）</text>
+    <text x="730" y="320" fill="#45536b">ActACCU 结果广播到</text>
+    <text x="730" y="340" fill="#45536b">16 阵列共享（摊薄成本）</text>
+    <text x="730" y="386" fill="#6b3fa0" font-size="11" font-weight="600">L1 计算单元占能效 40%</text>
+    <text x="730" y="404" fill="#6b3fa0" font-size="11" font-weight="600">占面积 59%（0.9V）</text>
+  </g>
+
+  <!-- 数据流 -->
+  <rect x="40" y="444" width="880" height="96" rx="12" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="470" fill="#0e5a8a" font-size="13.5" font-weight="700">单次 L1 计算数据流</text>
+  <g font-size="12">
+    <text x="60" y="496" fill="#45536b">① 激活按 MSB 优先逐位进入 → ② 每周期与对应权重位比较（动态比较器）→ ③ 比较结果控制 MinMUX 选择 min(x,w) 位</text>
+    <text x="60" y="518" fill="#45536b">④ MinACCU 累加 Σmin → ⑤ ABS-ASM 汇合 Σx、Σw、2Σmin → 输出部分和 → 6 位宽可配 2–8 b</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>

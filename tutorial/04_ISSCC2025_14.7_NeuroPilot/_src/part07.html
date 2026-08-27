@@ -1,0 +1,18 @@
+<section class="chapter" id="sec7">
+<h2><span class="no">§7</span>系统架构与三阶段工作流</h2>
+<figure>
+  <img src="assets/diagrams/d08_architecture.svg" alt="宏架构" style="max-width:940px">
+  <figcaption>图 7.1　NeuroPilot 宏：32×32 Pilot PE 阵列 + WL/BL 驱动 + IO + 行列译码器 + OPC + 主控制器；行列反馈定位交汇点。</figcaption>
+</figure>
+<p><strong>三阶段工作流</strong>（论文 Fig. 14.7.2 底部）：</p>
+<ol>
+<li><strong>地图写入（memory-write）</strong>：把地图数据——BLOCK（不可达单元）、START、END、TJL（交通拥堵级）——写入 PE 的 SRAM_F；</li>
+<li><strong>路径导引（path-pilot）</strong>：启动路径搜索（DDS），信号传播直到交汇收敛；每个 PE 把方向信息存进 SRAM_R；</li>
+<li><strong>读回（memory-read）</strong>：从交汇 PE 出发，沿 SRAM_R 的方向数据回溯，拼出最终路径（PC 进一步处理）。</li>
+</ol>
+<p>控制器先做<strong>地图预处理</strong>：根据地图尺寸决定走“直接 CIM 宏处理”（小图）还是“TsCFP 粗/细映射”（大图）。</p>
+<figure>
+  <img src="assets/diagrams/d09_junction.svg" alt="交汇与回溯" style="max-width:940px">
+  <figcaption>图 7.2　交汇与回溯：junction 信号标记交汇位置；方向数据存在 SRAM_R（比 DFF 省面积），向两端回溯拼接路径。</figcaption>
+</figure>
+</section>

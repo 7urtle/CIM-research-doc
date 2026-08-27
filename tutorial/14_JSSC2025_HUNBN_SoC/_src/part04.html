@@ -1,0 +1,105 @@
+<section class="chapter" id="sec4">
+<h2><span class="no">§4</span>创新②：分离 MAC 流程 + 同步 DIMC 操作</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① DIMC MAC 逻辑怎么做 1-bit×2-bit 乘法（BL/BLB 双线）；② split MAC 流程怎么把“定制”和“综合”分工（面积 −20%）；③ 同步操作怎么免掉延迟线、缩短临界路径、允许降电压。</p>
+</div>
+
+<h3>4.1 DIMC MAC 逻辑：1-bit × 2-bit 乘法</h3>
+<p>论文 Fig.5 的 MAC 逻辑：每周期从 DIMC 内存读出 24 个 4-bit 权重 W0–W23，按权位分成 4 组（每组 24 个同权位）。每组配 2-bit 输入激活，做 <strong>1-bit×2-bit 乘法</strong>：</p>
+<ul>
+<li>SRAM 的 BL 和 BLB 都用于乘法——<strong>BL 承载结果的一位、BLB 承载另一位</strong>（权重与其反相分别读在 BL/BLB 上）；</li>
+<li>两个输入激活位用不同符号（一正一反）保证位级乘法正确；</li>
+<li>每个宏每周期做 24 个 2-bit 激活 × 24 个权重（4 组 × 24 位）；</li>
+<li>2-bit 串行重复 → <strong>4b×4b MAC 只需 2 个时钟周期</strong>（比传统位串行快 2 倍）。</li>
+</ul>
+<p>乘法结果用<strong>定制加法树</strong>累加，加法树工作在<strong>低电压域</strong>：因为 BL 读电压可以较低（§3.2 的 Vr），低电压域降低漏电；求和结果 SUM0–SUM3 用<strong>静态电平移位器</strong>恢复到标准数字摆幅，再进入综合逻辑域（电平移位器面积仅 +2%）。</p>
+
+<figure>
+<img src="assets/figs/fig14_5_DIMC宏逻辑.png" alt="DIMC宏逻辑">
+<figcaption>图 5 · 论文 Fig.5：DIMC MAC 逻辑——1-bit×2-bit 乘法（BL/BLB 双线）+ 低电压域定制加法树 + 电平移位器。</figcaption>
+</figure>
+
+<h3>4.2 分离 MAC 流程（Split MAC Workflow）：定制与综合的分工</h3>
+<p>传统 DIMC 的手动设计工作量集中在两处，都随精度/输入数膨胀：</p>
+<ul>
+<li><strong>乘法器</strong>：规模随权重/输入精度扩展；</li>
+<li><strong>加法树</strong>：复杂度 ∝ 精度 × log(输入数)——每一级加法器位长不同，需要逐级单独设计。</li>
+</ul>
+<p>本论文的 split MAC 方案（论文 Fig.7）：</p>
+<ol>
+<li><strong>并入定制阶段的（手动）</strong>：位级乘法 + 加法树的<strong>早期级</strong>（最重复、最值得优化的部分）——用定制电路流程（逻辑门高度定制 + 用最低金属层，数字工具无法利用这些），相比标准数字流程实现面积 <strong>−20%</strong>，作为硬宏嵌入 HDL；</li>
+<li><strong>推给综合阶段的（标准流程）</strong>：部分积合并 + 后期累加（复杂但重复少）——RTL 级标准数字流程实现。</li>
+</ol>
+<div class="box key">
+<div class="bt">💡 为什么“分离”是聪明的工程决策？</div>
+<p>定制电路面积小但设计成本高；综合电路省人力但面积大。原则：<strong>把设计成本花在“重复最多”的地方（每周期都用无数次），把综合工具留给“复杂但少复用”的地方</strong>。既拿到 DIMC 在位级乘法的密度优势，又不至于为整个加法树付出手工设计的人力。整体设计时间显著缩短。</p>
+</div>
+
+<figure>
+<img src="assets/figs/fig14_7_分离MAC流程对比.png" alt="分离MAC流程对比">
+<figcaption>图 6 · 论文 Fig.7：传统 DIMC MAC 流程 vs 分离 MAC 流程——早期加法树并入定制乘法阶段，后期推给综合。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d04_mac_logic.svg" alt="MAC逻辑教学图">
+<figcaption>教学图 4 · 1-bit×2-bit 乘法（BL/BLB 双线）与 split MAC 流程的分工。</figcaption>
+</figure>
+
+<h3>4.3 同步 DIMC 操作：Φ 与 WL 摊到两个时钟周期</h3>
+<p>传统 SRAM 用<strong>延迟线</strong>处理“预充脉冲（Φ）与字线脉冲（WL）重叠”的问题（重叠会导致破坏性读），而鲁棒抗偏差的延迟线既占面积又费电——对 DIMC 这种“一堆宏”的阵列是巨大瓶颈。本论文的同步操作（论文 Fig.6）：</p>
+<ul>
+<li><strong>写操作</strong>：写本身会破坏存储状态，Φ 与 WL 重叠无妨 → 可连续写；</li>
+<li><strong>读/计算操作</strong>：不允许 Φ 与 WL 重叠（否则破坏性读）→ <strong>把 pe（预充使能）脉冲放到周期 A、re（读使能）脉冲放到周期 B</strong>，同步地错开 → 结构上杜绝重叠 → 免延迟线；</li>
+<li><strong>计算</strong>：一次读后可跟多次计算（SUM = BL 权重 × 不同输入 I）；BL 是浮空节点，所以一段时间后要在 WL 上插<strong>刷新脉冲</strong>恢复 BL 全摆幅——由于 BL 值已接近读值，刷新只造成很小电压变化，且 ce 保持高 → <strong>不影响吞吐、能耗影响很小</strong>；</li>
+<li>注意：刷新机制在“权重时间复用少”时开始退化（§5 实测会讨论）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_6_同步时序图.png" alt="同步时序图">
+<figcaption>图 7 · 论文 Fig.6：DIMC 宏的同步时序图——写、读/计算、刷新三种操作。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 同步操作的两大收益</div>
+<p>① <strong>读操作临界路径显著缩短</strong>（不用等延迟线）；② 由于 DIMC MAC 逻辑不再在临界路径上，<strong>它的供电电压可以降低</strong> → 直接省能。实测中 MAC 逻辑电源和 Vr 都设为“仍能正确计算的最低电压”。</p>
+</div>
+
+<figure>
+<img src="assets/diagrams/d05_sync_timing.svg" alt="同步时序教学图">
+<figcaption>教学图 5 · 同步操作时序：pe/re 分周期、读后多算、刷新恢复 BL。</figcaption>
+</figure>
+
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig14_5_DIMC宏逻辑.png">
+  <source src="assets/videos/v02.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v02 · 宏级 MAC 逻辑：1-bit×2-bit 乘法（BL/BLB 双线）与同步读/计算/刷新时序。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 B · 1-bit×2-bit 乘法（BL/BLB 双线）</div>
+<canvas id="demoB" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">组0：W×I[0]=…，WB×I[1]=…</span>
+</div>
+<div class="hint">橙色框=当前激活组。每周期读出 24 个同权位权重（示例 12 位），BL 送 W、BLB 送反相 WB；2-bit 激活 I[1:0] 的两个位分别与 BL/BLB 相乘 → 一个 1-bit×2-bit 乘法拆成两个 1-bit×1-bit。2-bit 串行重复 → 4b×4b MAC 只需 2 周期。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔬 演示 C · 同步 DIMC 操作时序（pe/re 分周期）</div>
+<canvas id="demoC" width="980" height="320"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">周期 1：预充周期（pe）</span>
+</div>
+<div class="hint">蓝色=预充脉冲（pe，偶周期）、橙色=读脉冲（re，奇周期）——两者永远不同周期 → 结构上杜绝破坏性读 → 免掉延迟线。绿色阴影=读后的计算窗口（一次读多次算）；紫色=刷新脉冲恢复 BL 全摆幅。</div>
+</div>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① MAC 逻辑用 BL/BLB 双线做 1b×2b 乘法，2 周期完成 4b×4b MAC；② split MAC：位级乘法/早期加法树定制（面积 −20%），后期累加综合（省人力）；③ 同步操作：Φ/WL 分两周期免延迟线，临界路径缩短、MAC 逻辑可降电压 → 宏级 126.3 TOPS/W。</p>
+</div>
+</section>

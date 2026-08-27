@@ -1,0 +1,51 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>存储与双缓冲：权重“躺”在哪里，以及怎么换</h2>
+
+<h3 id="sec6-1">6.1 可中断 12T 锁存器（Interruptible 12T Latch）</h3>
+<p>权重存储是 DCiM 的“地基”。本文没用定制 SRAM 宏，而是用<strong>标准单元库里的锁存器</strong>实现——这是“全可综合”成立的前提（§2.2）。一个锁存器本质上是<strong>两个交叉耦合的反相器</strong>（互相锁住对方的输出），标准实现约 12 个晶体管（6T SRAM 的一半都不到的关系——SRAM 6T，锁存 12T，锁存更“贵”但完全可综合）。</p>
+<figure>
+  <img src="assets/diagrams/d09_latch_12t.svg" alt="12T 锁存单元" style="max-width:880px">
+  <figcaption>图 6.1　可中断 12T 锁存单元与多比特打包示意。锁存 = 两个交叉耦合反相器；多比特 = 若干位共用一个单元体。</figcaption>
+</figure>
+<p><strong>“可中断”（Interruptible）</strong>是什么意思？意思是写入操作可以由写使能（WE）控制<strong>随时暂停/恢复</strong>：WE 断开时锁存器保持原值不受数据线干扰。这对 DCiM 有两个直接好处：</p>
+<ul>
+<li><strong>低压写入稳健</strong>：400 mV 下写 SRAM 位单元很容易失败（写入裕度不足），但锁存器的写是“显式数据驱动 + 使能控制”的，低压下依然可靠——论文强调 “robust low supply voltage write operation”；</li>
+<li><strong>写入与计算互不干扰</strong>：一组权重写一半停下来去处理别的事，数据不会丢、计算不会错。</li>
+</ul>
+
+<h3 id="sec6-2">6.2 多比特高密度（Multibit / High-Density）与“5 种锁存类型”</h3>
+<p>锁存器比 SRAM 位单元大，论文就想法子“省面积”：</p>
+<ul>
+<li><strong>多比特（Multibit）</strong>：把多个位（论文提到 4b 级别）打包进一个共享单元体（共享电源/地/控制线），位间连线复用，密度大幅提升；</li>
+<li><strong>5 种锁存类型混用</strong>：从单比特到高密度多比特，按“需要的位宽”和“时序约束”选用最省面积的类型；</li>
+<li>综合工具按 <strong>compute-after-write 两周期时序约束</strong>（写入后隔一拍再读）做优化，最终高密度多比特锁存的<strong>插入比例高达 95.5%</strong>；</li>
+<li>净收益：<strong>权重存储面积降低 20%</strong>。</li>
+</ul>
+<div class="box info">
+<div class="bt">🧠 为什么“多比特”能省面积？——把“重复的公共部分”合并</div>
+<p>一个 1b 锁存单元有自己的反相器对、控制电路和布线。如果 4 个位共享同一组控制线、电源网格和一部分驱动电路，就相当于把 4 份“公共开销”合并成 1 份，位均面积明显下降。代价是：多比特单元内的位不能单独随机写（写粒度变粗）——但对“整列权重一起写”的 DCiM 数据流来说完全够用。这就是“高密度多比特”和 DCiM 负载的绝配。</p>
+</div>
+
+<h3 id="sec6-3">6.3 双缓冲（Double Buffering）：计算与更新权重零冲突</h3>
+<p>权重不是永远不变的——推理时切换网络、更新层权重，都需要“换权重”。如果换权重要停算，吞吐就掉。本文用<strong>双缓冲</strong>彻底解决：每个计算列存<strong>两组</strong>权重，一组参与计算，另一组在<strong>后台</strong>被新数据覆盖：</p>
+<figure>
+  <img src="assets/diagrams/d10_double_buffer.svg" alt="双缓冲时间线" style="max-width:900px">
+  <figcaption>图 6.2　双缓冲时间线：权重组 A 计算的同时，组 B 用 32 个周期在后台写完，然后无缝切换。</figcaption>
+</figure>
+<ul>
+<li><strong>写一组权重要 32 个周期</strong>：每周期写 4 个权重的 Booth 选择码（128 权重 ÷ 32 周期 = 4 权重/周期）；</li>
+<li><strong>计算不中断</strong>：计算只在“选中的那一组”上进行，另一组随便写；</li>
+<li><strong>切换即选通</strong>：通过一个<strong>静态 2:1 多路选择器（Static 2:1 MUX）</strong>选当前计算组。关键在于 MUX 只在<strong>每次计算操作开始时读一次</strong>，之后整组权重在锁存里保持稳定——避免了“每个周期都读存储”的巨大读功耗；</li>
+<li>当计算延迟 &gt; 写一组权重延迟时，加速器处于<strong>计算功耗主导</strong>（compute-power bound）状态，写功耗占比可降到 <strong>1%</strong>，能效达到峰值——这正是实测 147~254 TOPS/W 出现的条件。</li>
+</ul>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig30_9_1_架构组织.png">
+  <source src="assets/videos/v03_double_buffer.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · 双缓冲动画：权重组 A 持续计算（橙色脉冲为流入的激活），组 B 在后台写入（进度条 0→100%），32 周期后无缝切换。</div>
+</div>
+<div class="box key">
+<div class="bt">💡 为什么“计算功耗主导”时能效最高？</div>
+<p>能效 = 吞吐 / 总功耗。总功耗 = 计算功耗 + 写功耗 + 漏电。双缓冲把“写功耗”从“阻塞计算的串行过程”里拿出来，和计算重叠（overlap）。当计算时间足够长时，摊到每次计算上的写功耗趋近于零，能效就逼近“纯计算”的上限。<strong>所以双缓冲不只是吞吐优化，更是能效优化。</strong></p>
+</div>
+</section>

@@ -1,0 +1,37 @@
+<section class="chapter" id="sec6">
+<h2><span class="no">§6</span>创新③：MDPS 宏级并行双端稀疏</h2>
+<figure>
+  <img src="assets/diagrams/d06_mdps.svg" alt="MDPS" style="max-width:940px">
+  <figcaption>图 6.1　MDPS：激活侧（bit-mask + tile 压缩、连续 4 零跳过）与权重侧（水平压缩 + PPRS 重排）双端并行；OMB 合并结果。</figcaption>
+</figure>
+<figure>
+  <img src="assets/figs/fig11_13_MDPS策略.png" alt="论文图13">
+  <figcaption>图 6.2　论文原图 Fig. 13：MDPS 策略流程（激活压缩 + 权重水平压缩）。（© IEEE 2024，教学引用）</figcaption>
+</figure>
+<p>稀疏优化在“刚性阵列”的 CiM 里很难做——随机分布的非结构化稀疏会让激活数据“重新进入”阵列。MDPS 的解法是<strong>只在宏级调度</strong>，分三步：</p>
+<ol>
+<li><strong>激活处理（ISPU）</strong>：bit-mask 生成器按激活稀疏度生成掩码；<strong>连续 4 个稀疏数据就跳过</strong>（对应单个 4×32 宏输入规模）；tile 压缩器去掉稀疏段、tile 分配器把有效数据依次送入；</li>
+<li><strong>右移累加 MAC（PPRS）</strong>：权重水平压缩（只改列位置、不改行位置 → 稀疏随机分布不引起激活重入）；PPRS 按权重索引把每个 P[10:0] 移回正确位置再进 4 输入加法树；</li>
+<li><strong>结果合并（OMB）</strong>：权重索引 + 合并配置（由 bit-mask 生成）控制写地址；有效结果写正确位置、零值写空白；Cout 太多时部分积经间隔周期送 SIMD + 全局 SRAM 补加（隐藏延迟）。</li>
+</ol>
+<div class="box key">
+<div class="bt">📊 MDPS 收益（ResNet34）</div>
+<p>50% 激活稀疏 → 1.84×；50% 权重稀疏 → 1.76×；<strong>双端 50% → 3.11×</strong> 能效。稀疏控制电路（ISPU/PPRS/OMB）面积仅 +4.5%、功耗仅 +7.8%。</p>
+</div>
+<div class="video-wrap">
+<video controls preload="metadata" poster="assets/figs/fig11_13_MDPS策略.png">
+  <source src="assets/videos/v03_mdps.mp4" type="video/mp4">
+</video>
+<div class="video-caption">🎬 视频 v03 · MDPS 动画：激活连续 4 零跳过 + 权重水平压缩重排。</div>
+</div>
+<div class="demo">
+<div class="dhead">🔀 演示 C · 激活压缩（连续 4 零跳过）</div>
+<canvas id="demoC" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoC-play" class="on">▶ 播放</button>
+  <button id="demoC-reset">重置</button>
+  <span class="stat" id="demoC-stat">连续 4 个零 → 整组跳过（宏级调度）</span>
+</div>
+<div class="hint">橙色=有效激活（送入宏计算）；红色=连续 4 个零的整组（跳过）。看“跳过”如何减少送入宏的输入周期。</div>
+</div>
+</section>

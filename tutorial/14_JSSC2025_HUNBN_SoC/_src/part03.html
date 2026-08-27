@@ -1,0 +1,64 @@
+<section class="chapter" id="sec3">
+<h2><span class="no">§3</span>创新①：foundry pushed-rule 6T 位单元阵列——密度优先</h2>
+
+<div class="box info">
+<div class="bt">📐 本节目标</div>
+<p>理解：① 为什么选最普通的 6T 单元而不是 8T/12T；② 写/读外设怎么做成双向多路复用器；③ 格雷码译码器为什么省 50% 动态能量；④ DIMC 与普通 SRAM 的两点关键差异。</p>
+</div>
+
+<h3>3.1 为什么是 6T？——“存储密度”是系统级能效的生命线</h3>
+<p>很多 DIMC 论文用 8T（如第 13 篇）、12T 单元来做计算。但 HUNBN 反其道而行，直接用 foundry 提供的 <strong>pushed-rule 6T 位单元</strong>（工艺规则压到最小的标准单元）。原因：</p>
+<ul>
+<li>8T/12T 单元虽然计算方便，但单元面积大 → 存储密度低；</li>
+<li>HUNBN 的目标是<strong>把整个边缘 CNN 模型装进片上</strong>（§1.2 的大前提）→ 密度优先于单元功能；</li>
+<li>计算不靠单元本身，而靠<strong>阵列外围的 MAC 逻辑</strong>（§4）→ 普通 6T 也够用。</li>
+</ul>
+<p>每个宏：256×96 的 pushed-rule 6T 阵列 → 存 256×24 个 4-bit 权重；每周期并行输出 24 个 4b 权重，做 24 元素点积。384 个宏 → 总容量 <strong>2.36M 个 4-bit 权重</strong>。</p>
+
+<figure>
+<img src="assets/figs/fig14_3_DIMC宏存储器电路.png" alt="DIMC宏存储器电路">
+<figcaption>图 3 · 论文 Fig.3：DIMC 宏存储器的电路细节——6T 阵列、写/读外设（双向多路复用器）。</figcaption>
+</figure>
+
+<h3>3.2 写/读外设：双向多路复用器</h3>
+<p>普通 SRAM 的写/读外设很重，而 DIMC 的 BL:WL 比很高（列多行少），写外设电路复制量大——所以外设面积哪怕只差一点都影响整体面积效率。本论文把写/读外设做成<strong>由读使能 re 控制的双向多路复用器</strong>：</p>
+<ul>
+<li>re=0（写模式）：96 位数据 D[0–95] 写入选中字线 WL；</li>
+<li>re=1（读模式）：BL 施加预充电压 Vr；Vr 可调（如 75% Vdd）——更低 Vr 读更快更省能，但降低单元鲁棒性、限制 MAC 逻辑最高电压；</li>
+<li>所有模式：只在控制信号 Φ 为高时发生状态改变（为 §4.3 的同步操作打基础）。</li>
+</ul>
+
+<h3>3.3 DIMC 与普通 SRAM 的两点关键差异</h3>
+<div class="box key">
+<div class="bt">💡 差异①：WL 少 → BL 寄生小 → 全摆幅读反而省能</div>
+<p>普通 SRAM 行数多、BL 寄生电容大，全摆幅读很耗能；DIMC 用很少的 WL → BL 寄生显著更小 → BL 全摆幅读在 DIMC 里反而比普通 SRAM 更省能。</p>
+</div>
+<div class="box key">
+<div class="bt">💡 差异②：写只在开机发生一次 → 省掉 write-assist 电路</div>
+<p>模型能全部装进 DIMC → 运行期不需要写权重 → 写辅助（write-assist）电路需求大减 → 外设面积进一步缩小。这是“容量够大”带来的连锁红利。</p>
+</div>
+
+<h3>3.4 格雷码风格译码器</h3>
+<p>地址译码器也要抠面积。论文 Fig.4 的格雷码译码器：</p>
+<ul>
+<li>8-bit 地址 A[7:0] 分三段：A[7:6] 选 4 个块（每块 64 地址）、A[5:3] 选块内 8 个瓦片、A[2:0] 里 A[0] 是特殊半占空比信号；</li>
+<li><strong>A[0] 用格雷码编码</strong> → 相邻 WL 驱动之间只翻转 1 位；</li>
+<li>格雷码让 NAND 门有更多<strong>栅极多晶接触共享</strong>机会 → 布局复杂度降低；</li>
+<li>线性地址取址时 WL 翻转活动最小化 → <strong>动态能量平均省 50%</strong>（对比二进制译码器）。</li>
+</ul>
+
+<figure>
+<img src="assets/figs/fig14_4_格雷码译码器.png" alt="格雷码译码器">
+<figcaption>图 4 · 论文 Fig.4：格雷码风格译码器——地址分段 + 格雷码编码，减少 WL 翻转、促进接触共享。</figcaption>
+</figure>
+
+<figure>
+<img src="assets/diagrams/d03_macro_memory.svg" alt="宏存储器教学图">
+<figcaption>教学图 3 · 6T 阵列、双向复用外设与格雷码译码器，以及 DIMC 与普通 SRAM 的两点差异。</figcaption>
+</figure>
+
+<div class="box key">
+<div class="bt">💡 本节小结</div>
+<p>① 6T pushed-rule 单元：密度优先（508 kB/mm²），计算交给外围 MAC 逻辑；② 写/读外设做成 re 控制的双向复用器，利用“只写一次”省 write-assist；③ 格雷码译码器靠最少翻转 + 接触共享省 50% 动态能量、简化布局。全部指向同一个目标：把“单位面积能装多少权重”做到极致。</p>
+</div>
+</section>

@@ -1,0 +1,31 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>sFC-OCL 核：存内计算 + 移位相加（无乘法器）</h2>
+<figure>
+  <img src="assets/diagrams/d05_sfc_ocl.svg" alt="sFC-OCL 核" style="max-width:940px">
+  <figcaption>图 5.1　sFC-OCL 核：加权脉冲 → 事件滤波器 → sFC PE1（8 个 CIM 宏，32Kb RAM + 16 神经元）→ sFC PE2（10 个 CIM 宏，10 输出神经元）。每个 CIM 宏 = RAM + SA/格雷码解码器 + 并行移位加法器 + 可配置神经元。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么 SNN 全连接层不需要乘法器？</div>
+<p>全连接层输出 = Σ(权重 × 输入脉冲)。输入脉冲只有 0 或 1：<strong>脉冲=0 时不加，脉冲=1 时把权重加进 Vmem</strong>。所以“加权脉冲”的地址直接激活存储器的字线，读出权重、移位累加进膜电位即可——<strong>乘法变成了“选通 + 加法”</strong>，硬件上就是并行移位加法器。这是事件驱动计算在电路层的最大红利。</p>
+</div>
+<ul>
+<li><strong>事件滤波器</strong>：利用输入稀疏性，跳过高达 <strong>92.4%</strong> 的冗余计算（DVS Gesture）；</li>
+<li><strong>CIM 宏</strong>：第一级 sFC PE 有 8 个数字 CIM 宏（每宏 32Kb RAM 存 8b 权重 + SA + 格雷码解码器 + 并行移位加法器 + 16 个可配置神经元）；第二级 sFC PE 有 10 个 CIM 宏（10Kb 权重、10 输出神经元）；</li>
+<li><strong>三种神经元行为</strong>：LIF（泄漏）、IF（积分）、InoF（抑制性），按任务在“时间敏感性”与“能效”间动态权衡；</li>
+<li><strong>推理→学习复用</strong>：推理保存的 Vmem/脉冲状态直接用于 e-OTBP 反向传播（握手流水线）。</li>
+</ul>
+<figure>
+  <img src="assets/figs/fig18_4_3_sFC-OCL核.png" alt="论文图 18.4.3">
+  <figcaption>图 5.2　论文原图 Fig. 18.4.3：sFC-OCL 核系统图、事件滤波器/移位加法器/可配置神经元（右上）与握手流水线（下）。（© IEEE ISSCC 2026，教学引用）</figcaption>
+</figure>
+<div class="demo">
+<div class="dhead">🧮 演示 B · 移位相加：脉冲 × 权重 = 选通 + 加法（无乘法）</div>
+<canvas id="demoB" width="980" height="300"></canvas>
+<div class="dbar">
+  <button id="demoB-play" class="on">▶ 播放</button>
+  <button id="demoB-reset">重置</button>
+  <span class="stat" id="demoB-stat">Vmem = Σ(脉冲=1 的权重)，无乘法器</span>
+</div>
+<div class="hint">脉冲为 1 的输入把对应权重“选”出来加进膜电位 Vmem；为 0 的直接跳过。Vmem 撞阈值 → 发放。对比：CNN 需要 8b×8b 乘法器，这里只需要加法器。</div>
+</div>
+</section>

@@ -1,0 +1,33 @@
+<section class="chapter" id="sec2">
+<h2><span class="no">§2</span>PNM 的两条路线与本论文的选择：3D 堆叠</h2>
+
+<h3 id="sec2-1">2.1 算力放哪：DRAM 内计算 vs 3D 堆叠近存</h3>
+<p>“近存”的本质是让计算单元尽量靠近存储。业界尝试过两条路线：</p>
+<figure>
+  <img src="assets/diagrams/d02_pnm_roadmap.svg" alt="PNM 路线对比" style="max-width:920px">
+  <figcaption>图 2.1　路线①把计算做进 DRAM 晶圆（受 DRAM 工艺限制）；路线②（本论文）把 DRAM 和逻辑分开做，再用 3D 叠起来——各用各的工艺。</figcaption>
+</figure>
+<div class="box key">
+<div class="bt">💡 为什么“分开再做再叠”优于“直接做进 DRAM”？</div>
+<ul>
+<li><strong>DRAM 工艺不适合做逻辑</strong>：DRAM 晶圆追求存储密度（深沟槽电容、大漏电），晶体管性能差、标准单元库不全，能实现的逻辑频率和复杂度都很有限——前作 PNM（如 [2][3][4]）大多受此约束；</li>
+<li><strong>分开做</strong>：DRAM 用 DRAM 工艺保密度（99.4 Mb/mm²），逻辑用 28nm 标准 CMOS 保频率（1.2 GHz）；</li>
+<li><strong>3D 互连补带宽</strong>：HB + mini-TSV 把两片 DRAM 的行缓冲直接连到逻辑层，总线宽达 2048b → 带宽密度碾压传统引脚。</li>
+</ul>
+</div>
+
+<h3 id="sec2-2">2.2 3D 集成技术：混合键合（HB）与 mini-TSV</h3>
+<p>3D 堆叠的“胶水”是两种垂直互连：</p>
+<ul>
+<li><strong>混合键合（Hybrid Bonding, HB）</strong>：两片晶圆面对面直接金属键合，互连间距极小（本设计 pitch = 3 μm），密度极高——这是带宽密度 12.77 GB/s/mm² 的来源；</li>
+<li><strong>mini-TSV（硅通孔）</strong>：垂直穿通硅片的过孔（pitch = 5 μm）。因为堆了三层，中间那层 DRAM_N 的信号要“直连 HB”到逻辑层，而最上层 DRAM_F 的信号得走 “HB → TSV → HB” 链穿过 DRAM_N 才能到达逻辑层。</li>
+</ul>
+<figure>
+  <img src="assets/diagrams/d03_3d_stack.svg" alt="3D堆叠结构" style="max-width:920px">
+  <figcaption>图 2.2　Two-DRAM-One-Logic 堆叠：DRAM_N 直连 HB，DRAM_F 走 HB-TSV-HB 链；每个 TSV 配两个 HB 冗余连接保证良率。</figcaption>
+</figure>
+<div class="box info">
+<div class="bt">🧠 良率是 3D 集成的头号敌人</div>
+<p>TSV/HB 任何一个焊点失效，整条通路就断了。论文的可靠性技巧：<strong>每个 TSV 配两个 HB 连接</strong>（一主一备）。实测结果：3D 集成只引入 <strong>0.58%</strong> 的额外失效率，DRAM 本体良率也很好（96ms@98°C 保持测试失效率 &lt;0.05%）——这说明这套 3D 工艺已经具备量产可行性。</p>
+</div>
+</section>

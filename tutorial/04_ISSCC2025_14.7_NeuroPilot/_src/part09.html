@@ -1,0 +1,46 @@
+<section class="chapter" id="sec9">
+<h2><span class="no">§9</span>未来研究方向 · 术语表 · 参考资料</h2>
+
+<h3 id="sec9-1">9.1 未来研究方向</h3>
+<ol>
+<li><strong>更大规模阵列与 3D 集成</strong>：32×32 是起点。128×128、256×256 阵列配合 3D 堆叠（08 号论文路线），单片覆盖更大地图；动态逻辑衰减的“360L 上限”也随工艺/阵列架构提升；</li>
+<li><strong>带权图与多目标寻路</strong>：本文的传播是“等速 + TJL 延迟树”。扩展到加权边（真实路网）、多目标点（TSP 类）、动态障碍（实时避障），需要 PE 支持“代价累积”；</li>
+<li><strong>与 MAC-CIM 融合的“感知-规划”芯片</strong>：前几篇做“看”（CNN 推理）、本文做“走”（路径规划）——把 EVS（05 号论文）+ CNN-CIM + 路径 CIM 集成成一个“感知-规划”一体化边缘芯片，是微机器人的完整大脑；</li>
+<li><strong>TsCFP 的自动化</strong>：粗图分辨率选择和路径比打分目前是启发式。做一个“地图自适应”的自动缩放器（结合机器学习预测最优粗图级别），大图流程更鲁棒；</li>
+<li><strong>动态逻辑的可靠性工程</strong>：漏电/保持时间是动态逻辑的软肋。引入片上电压/温度感知（PVT 补偿 [5]）、自适应预充电策略，让动态逻辑在更宽的工作范围可靠；</li>
+<li><strong>通用图算法加速</strong>：波前传播能加速的不只是寻路——连通性、最短路径树、洪水填充、神经网络的反向传播（图依赖）。把 PE 阵列做成“可重构图处理器”，应用面更广。</li>
+</ol>
+
+<h3 id="sec9-2">9.2 术语表</h3>
+<dl class="glossary">
+<dt>Mimetic-Path CIM（模拟路径 CIM）</dt><dd>把地图映射成 PE 阵列、用信号传播做路径搜索的 CIM。</dd>
+<dt>波前传播（Wavefront Propagation）</dt><dd>信号从起点像水波一样逐层扩散的搜索方式。</dd>
+<dt>SDS（Single-Direction Searching）</dt><dd>单向搜索：信号只从 START 出发。</dd>
+<dt>DDS（Dual-Direction Searching）</dt><dd>双向搜索：START 与 END 同时出发，中间交汇（−2.1× 时间）。</dd>
+<dt>Junction（交汇点）</dt><dd>两股波前相遇的 PE；产生 junction 信号标记位置。</dd>
+<dt>Trace-back（回溯）</dt><dd>沿方向数据从交汇点向两端还原路径。</dd>
+<dt>Pilot PE</dt><dd>导引处理单元：14 个 SRAM + 中心动态逻辑核心 + 8 邻接发射器。</dd>
+<dt>SRAM_F / SRAM_R</dt><dd>地图数据存储（EN/STA/END/TJL） / 方向数据存储。</dd>
+<dt>TJL（Traffic-Jam Level）</dt><dd>交通拥堵级；延迟树模拟速度（EMA=111 最慢）。</dd>
+<dt>动态逻辑（Dynamic Logic）</dt><dd>预充电-求值两相的电路风格，省面积但需防漏电。</dd>
+<dt>OPC（Outspread Pre-Charging）</dt><dd>外扩预充电：预充电随波前外扩、交汇终止（−1.32× 面积）。</dd>
+<dt>TsCFP（3-Step Coarse/Fine-Path）</dt><dd>三步粗/细路径：粗图 → 走廊 → 细路径。</dd>
+<dt>路径比（Path Ratio）</dt><dd>原图与转换图路径相似度，用于粗图分辨率打分。</dd>
+<dt>EMA[2:0]</dt><dd>拥堵级编码（111 = 最慢）。</dd>
+</dl>
+
+<h3 id="sec9-3">9.3 参考资料</h3>
+<ol class="refs">
+<li>A. Guo, J. Zhang, et al., “NeuroPilot: A 28nm, 69.4fJ/node and 0.22ns/node, 32×32 Mimetic-Path-Searching CIM-Macro with Dynamic-Logic Pilot PE and Dual-Direction Searching,” <em>ISSCC 2025</em>, Paper 14.7. DOI: 10.1109/ISSCC49661.2025.10904805</li>
+<li>C. Yu et al., “A Time-Domain Wavefront Computing Accelerator With a 32×32 Reconfigurable PE Array,” <em>IEEE JSSC</em>, vol. 58, no. 8, 2023.（前作 [1]）</li>
+<li>L. Everson et al., “A 40×40 Four-Neighbor Time-Based In-Memory Computing Graph ASIC Chip Featuring Wavefront Expansion and 2D Gradient Control,” <em>ISSCC 2019</em>, pp. 50-52.（前作 [2]）</li>
+<li>C. Chung et al., “A 1.5μJ/Task Path-Planning Processor for 2D/3D Autonomous Navigation of Micro Robots,” <em>ISSCC 2020</em>, pp. 324-326.（数字加速器对比 [3]）</li>
+<li>Y. Kim et al., “A 0.55V 1.1mW Artificial-Intelligence Processor with PVT Compensation for Micro Robots,” <em>ISSCC 2016</em>, pp. 258-260.（PVT 补偿 [5]）</li>
+<li>L. Everson et al., “A Time-Based Intra-Memory Computing Graph Processor Featuring A* Wavefront Expansion and 2-D Gradient Control,” <em>IEEE JSSC</em>, vol. 56, no. 7, 2021.（[6]）</li>
+</ol>
+
+<div class="footer">
+<p>本教程由 AI 生成，用于 CIM 方向的零基础教学。文中的架构图、数据图、动画与视频均为根据论文文字描述重新绘制/制作的教学素材；论文原图（Fig. 14.7.1–14.7.7）版权归 IEEE/原作者所有，此处仅作教学引用（© 2025 IEEE）。所有实测数字（3670M nodes/s、69.4 fJ、213.6 μm²、373.82ns 等）均来自论文原文。</p>
+<div class="cite">配套文件：原文论文 PDF（assets/原文论文.pdf）· 论文原图 7 张（assets/figs/）· 教学图 9 张（assets/diagrams/）· 数据图 3 张（assets/charts/）· 演示视频 3 个（assets/videos/）· 交互仿真 3 个（本页内嵌）</div>
+</div>
+</section>

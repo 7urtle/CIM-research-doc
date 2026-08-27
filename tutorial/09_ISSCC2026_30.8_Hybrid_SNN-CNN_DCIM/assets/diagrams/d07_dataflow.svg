@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e5a8a"/>
+    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="520" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="46" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="43" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">SNN / CNN 两条数据流：pMAC 怎么走，取决于模式</text>
+
+  <!-- SNN 数据流 -->
+  <text x="250" y="96" text-anchor="middle" fill="#0e5a8a" font-size="15" font-weight="700">SNN 模式（1b 脉冲输入）</text>
+  <rect x="40" y="108" width="420" height="220" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11.5">
+    <rect x="60" y="128" width="110" height="40" rx="6" fill="#eef7fd" stroke="#0e5a8a"/>
+    <text x="115" y="146" text-anchor="middle" fill="#0e5a8a">1b 脉冲 × 8b 权重</text>
+    <text x="115" y="162" text-anchor="middle" fill="#45536b">（CMDM-LCC BW 模式）</text>
+    <rect x="60" y="188" width="110" height="40" rx="6" fill="#f5f0fc" stroke="#dcccf0"/>
+    <text x="115" y="206" text-anchor="middle" fill="#6b3fa0">pMAC0–7</text>
+    <text x="115" y="222" text-anchor="middle" fill="#45536b">直接输出</text>
+    <rect x="60" y="248" width="110" height="40" rx="6" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="115" y="266" text-anchor="middle" fill="#0e5a8a">加法树</text>
+    <text x="115" y="282" text-anchor="middle" fill="#45536b">（32 路）</text>
+    <rect x="60" y="300" width="110" height="0" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <path d="M170,148 H240" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M170,208 H240" stroke="#6b3fa0" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M170,268 H240" stroke="#0e5a8a" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="300" y="152" fill="#45536b">→ 每个时间步的脉冲直接累加</text>
+    <text x="300" y="176" fill="#45536b">→ pMAC 不进 SaA（无字宽累积）</text>
+    <text x="300" y="240" fill="#0e5a8a" font-weight="600">→ DM-MPDBU 做膜电位积分/发放</text>
+    <text x="300" y="264" fill="#45536b">→ 输出脉冲到下一层</text>
+  </g>
+
+  <!-- CNN 数据流 -->
+  <text x="710" y="96" text-anchor="middle" fill="#c25e2e" font-size="15" font-weight="700">CNN 模式（8b 字宽输入）</text>
+  <rect x="500" y="108" width="420" height="220" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="11.5">
+    <rect x="520" y="128" width="110" height="40" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="575" y="146" text-anchor="middle" fill="#c25e2e">8b 值 × 8b 权重</text>
+    <text x="575" y="162" text-anchor="middle" fill="#45536b">（CMDM-LCC WW 模式）</text>
+    <rect x="520" y="188" width="110" height="40" rx="6" fill="#fdf3e7" stroke="#e0a96a"/>
+    <text x="575" y="206" text-anchor="middle" fill="#c25e2e">SaA 移位相加</text>
+    <text x="575" y="222" text-anchor="middle" fill="#45536b">字宽累积</text>
+    <rect x="520" y="248" width="110" height="40" rx="6" fill="#eef4fa" stroke="#c9d8ea"/>
+    <text x="575" y="266" text-anchor="middle" fill="#0e5a8a">加法树</text>
+    <text x="575" y="282" text-anchor="middle" fill="#45536b">（32 路）</text>
+    <path d="M630,148 H700" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M630,208 H700" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <path d="M630,268 H700" stroke="#c25e2e" stroke-width="2" marker-end="url(#ar)"/>
+    <text x="760" y="152" fill="#45536b">→ 8b 输入要按位/按字拆分</text>
+    <text x="760" y="176" fill="#45536b">→ pMAC 先经 SaA 做字宽累积</text>
+    <text x="760" y="240" fill="#c25e2e" font-weight="600">→ 跳过神经元，直接输出特征</text>
+    <text x="760" y="264" fill="#45536b">→ 激活函数（ReLU 等）在外部</text>
+  </g>
+
+  <!-- 底部 -->
+  <rect x="40" y="352" width="880" height="144" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="60" y="380" fill="#0e5a8a" font-size="13" font-weight="700">两种模式如何“共用一个计算单元”？</text>
+  <text x="60" y="406" fill="#45536b" font-size="12.5">关键在 CMDM-LCC 内部的<strong>两个 MUX 乘法器</strong>：</text>
+  <text x="60" y="430" fill="#45536b" font-size="12.5">• SNN：1b 输入 → 只需“与门级”位宽乘法，MUX 直接输出 pMAC；</text>
+  <text x="60" y="452" fill="#45536b" font-size="12.5">• CNN：8b 输入 → 需要字宽乘法，MUX 配合 SaA 完成多位累加；</text>
+  <text x="60" y="474" fill="#45536b" font-size="12.5">• 同一套乘法器 + 同一组 SRAM 权重 → 模式只是一个“控制开关”，硬件共享 → 面积省 33%</text>
+</svg>

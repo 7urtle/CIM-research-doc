@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="480" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">路径搜索（Path Finding）：不只是导航，还有布线、波前传播</text>
+
+  <!-- 应用 -->
+  <g font-size="11.5">
+    <rect x="40" y="90" width="200" height="130" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="140" y="118" text-anchor="middle" fill="#0e5a8a" font-weight="700">微机器人导航</text>
+    <text x="60" y="146" fill="#45536b">送货、巡逻、城市</text>
+    <text x="60" y="168" fill="#45536b">导航，实时寻路</text>
+    <rect x="260" y="90" width="200" height="130" rx="12" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="360" y="118" text-anchor="middle" fill="#6b3fa0" font-weight="700">VLSI 布线</text>
+    <text x="280" y="146" fill="#45536b">芯片内部连线寻径、</text>
+    <text x="280" y="168" fill="#45536b">拥塞避障</text>
+    <rect x="480" y="90" width="200" height="130" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+    <text x="580" y="118" text-anchor="middle" fill="#1d8a5f" font-weight="700">城市路径规划</text>
+    <text x="500" y="146" fill="#45536b">交通拥堵感知寻路</text>
+    <text x="500" y="168" fill="#45536b">（TJL 交通拥堵级）</text>
+    <rect x="700" y="90" width="220" height="130" rx="12" fill="#fff" stroke="#c25e2e" stroke-width="2" filter="url(#sh)"/>
+    <text x="810" y="118" text-anchor="middle" fill="#c25e2e" font-weight="700">波前传播</text>
+    <text x="720" y="146" fill="#45536b">洪水填充、扩散、</text>
+    <text x="720" y="168" fill="#45536b">最短距离场计算</text>
+  </g>
+
+  <!-- 概念 -->
+  <text x="480" y="250" text-anchor="middle" fill="#123a57" font-size="14" font-weight="700">“模拟路径 CIM”（Mimetic-Path CIM）是什么？</text>
+  <rect x="40" y="262" width="880" height="120" rx="12" fill="#fff" stroke="#dfe6f0" stroke-width="2" filter="url(#sh)"/>
+  <g font-size="12">
+    <text x="60" y="294" fill="#45536b">• 把地图网格映射成 <strong>PE 阵列</strong>（每个 PE = 一个地图节点）；</text>
+    <text x="60" y="316" fill="#45536b">• “搜索”不再由 CPU 顺序算，而是<strong>信号在 PE 阵列里像水波一样传播</strong>（波前传播）；</text>
+    <text x="60" y="338" fill="#45536b">• SRAM 内嵌在 PE 里（存地图数据与方向），计算与存储同地 → PPA 优势；</text>
+    <text x="60" y="360" fill="#1d8a5f" font-weight="600">→ 与 MAC-CIM 不同：这里“算”的是路径传播，不是乘加！</text>
+  </g>
+
+  <rect x="40" y="404" width="880" height="52" rx="10" fill="#eef4fa" stroke="#c9d8ea"/>
+  <text x="480" y="430" text-anchor="middle" fill="#0e5a8a" font-size="12.5" font-weight="600">前作用数字加速器做导航 [3-5]；模拟路径 CIM 架构在 PPA 上更优，但有三块绊脚石（§2）</text>
+</svg>

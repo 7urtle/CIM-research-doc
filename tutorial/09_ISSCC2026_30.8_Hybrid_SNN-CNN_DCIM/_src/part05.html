@@ -1,0 +1,33 @@
+<section class="chapter" id="sec5">
+<h2><span class="no">§5</span>创新②：DM-MPDBU —— 数字“多膜电位动力学”单元</h2>
+
+<h3 id="sec5-1">5.1 为什么神经元单元必须是“数字”的</h3>
+<p>SNN 的最后一环是<strong>膜电位动力学（MPDB, Membrane Potential Dynamics Behavior）</strong>：把加法树算出的“输入总和”累积进膜电位、比较阈值、决定是否发放。这个功能模拟电路也能做（用电容积分、比较器判阈值），但有一个致命问题：</p>
+<div class="box warn">
+<div class="bt">⚠️ 模拟 MPDB 的工艺波动问题</div>
+<p>电容充电速率、比较器失调都随工艺角（PVT）漂移。同一批芯片、同一个模型、同样的输入，A 芯片的神经元在“第 3 个时间步”发放，B 芯片可能在“第 5 个时间步”才发放——<strong>SNN 的时序行为完全不可复现</strong>。对于要部署到成千上万台设备上的推理系统，这是不能接受的。</p>
+</div>
+<p>本论文的 <strong>DM-MPDBU</strong>（Digital Multi-Membrane-Potential-Dynamics-Behavior Unit）用纯数字实现：累加器 + 比较器 + 移位器（&gt;&gt;3）完成全部动力学 → 逐位确定、可复现、可低压。这也再次呼应“数字 CiM 的确定性精度”这一主线。</p>
+<figure>
+  <img src="assets/diagrams/d09_mpdbu.svg" alt="DM-MPDBU 结构" style="max-width:880px">
+  <figcaption>图 5.1　DM-MPDBU：加法树输出 → 模式选择（IF/LIF/IQIF）→ 膜电位积分/比较/发放 → 输出。一个硬件三种神经元。</figcaption>
+</figure>
+
+<h3 id="sec5-2">5.2 三种模型，一套硬件：可配置的动力学</h3>
+<p>前作 [4] 的数字混合方案只支持<strong>一种</strong> MPDB 函数，模型设计被锁死。DM-MPDBU 把三种动力学做成“配置位切换”：</p>
+<table>
+<tr><th>模式</th><th>每步运算</th><th>硬件开销</th></tr>
+<tr><td><strong>IF</strong></td><td>MP ← MP + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>累加器 + 比较器（最简）</td></tr>
+<tr><td><strong>LIF</strong></td><td>MP ← max(0, MP − leak) + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>IF + 减法器</td></tr>
+<tr><td><strong>IQIF</strong></td><td>按式 3.2 计算 IQ（移位+乘加），MP ← MP + IQ + Σ输入；if MP ≥ θ: 发放, MP=0</td><td>IF + 移位器 + 小乘法</td></tr>
+</table>
+<div class="box key">
+<div class="bt">🧠 为什么 IF/LIF/IQIF 能“共用一个单元”？</div>
+<p>三种动力学本质都是 <strong>MP ← 修正(MP) + 输入</strong>，区别只在“修正函数”是 0（IF）、常数泄漏（LIF）、还是分段线性/二次（IQIF）。数字实现里，这些修正只是多几个可选的加法/移位路径——用多路选择器按配置位选通即可。这是“数字可重构”最典型的好处。</p>
+</div>
+<p>论文强调，DM-MPDBU 让本宏支持“<strong>通用边缘 SNN 操作</strong>”：IF 负责简单发放、LIF 负责时间噪声滤波、IQIF 负责高精度非线性积分。配合 §4 的 CMDM-LCC，一个 bank 就能按层配置“CNN-INT8 / CNN-INT4 / SNN-IF / SNN-LIF / SNN-IQIF”五种组合。</p>
+<div class="box idea">
+<div class="bt">🤔 想一想</div>
+<p>① 如果膜电位累积不设上限会怎样？（提示：MP 位宽要够，否则溢出——论文用 14b/22b 输出累加器就是干这个的。）② LIF 的泄漏量是固定常数还是可配置参数？③ IQIF 的 “&gt;&gt;3” 为什么能代替除以 8？整数右移对负数成立吗？（提示：算术右移 vs 逻辑右移。）</p>
+</div>
+</section>

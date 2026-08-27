@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="'Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.15"/></filter>
+  </defs>
+  <rect width="960" height="560" fill="#f6f8fb"/>
+  <rect x="20" y="14" width="920" height="50" rx="10" fill="#0f1b2d"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">NN 模型部署流程：离线训练 → 截断/量化 → 正则化 → 上片</text>
+
+  <!-- pipeline -->
+  <g font-size="12">
+    <rect x="40" y="84" width="200" height="86" rx="10" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+    <text x="140" y="110" text-anchor="middle" fill="#0e5a8a" font-weight="700">① PyTorch 训练</text>
+    <text x="140" y="130" text-anchor="middle" fill="#45536b">浮点 multiply-less</text>
+    <text x="140" y="148" text-anchor="middle" fill="#45536b">预训练模型</text>
+    <line x1="242" y1="127" x2="278" y2="127" stroke="#45536b" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="280" y="84" width="200" height="86" rx="10" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+    <text x="380" y="110" text-anchor="middle" fill="#1d8a5f" font-weight="700">② 权重截断</text>
+    <text x="380" y="130" text-anchor="middle" fill="#45536b">负权重 → [0, wmax]</text>
+    <text x="380" y="148" text-anchor="middle" fill="#45536b">并入 WSUM（等效不变）</text>
+    <line x1="482" y1="127" x2="518" y2="127" stroke="#45536b" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="520" y="84" width="200" height="86" rx="10" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+    <text x="620" y="110" text-anchor="middle" fill="#a06510" font-weight="700">③ 共享尺度量化</text>
+    <text x="620" y="130" text-anchor="middle" fill="#45536b">激活/权重同缩放因子</text>
+    <text x="620" y="148" text-anchor="middle" fill="#45536b">（比较需同一尺度）8-bit</text>
+    <line x1="722" y1="127" x2="758" y2="127" stroke="#45536b" stroke-width="2" marker-end="url(#ar)"/>
+
+    <rect x="760" y="84" width="160" height="86" rx="10" fill="#fff" stroke="#6b3fa0" stroke-width="2" filter="url(#sh)"/>
+    <text x="840" y="110" text-anchor="middle" fill="#6b3fa0" font-weight="700">④ 激活正则化</text>
+    <text x="840" y="130" text-anchor="middle" fill="#45536b">每激活 ≤5 个「1」</text>
+    <text x="840" y="148" text-anchor="middle" fill="#45536b">低比特截断</text>
+  </g>
+
+  <!-- 量化细节 -->
+  <rect x="40" y="196" width="430" height="120" rx="12" fill="#fff" stroke="#f0a030" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="222" fill="#a06510" font-size="13.5" font-weight="700">共享缩放因子的必要性</text>
+  <g font-size="12">
+    <text x="60" y="250" fill="#45536b">L1 比较需要 x 与 w 在同一数值尺度（同缩放因子）</text>
+    <text x="60" y="272" fill="#45536b">>95% 的权重/激活落在 2⁻⁵ ~ 2³ 范围 → 单一共享尺度可行</text>
+    <text x="60" y="294" fill="#45536b">量化后 8-bit → 部署到测试芯片（免重训练，PTQ）</text>
+  </g>
+
+  <!-- mapping -->
+  <rect x="490" y="196" width="430" height="120" rx="12" fill="#fff" stroke="#0e5a8a" stroke-width="2" filter="url(#sh)"/>
+  <text x="510" y="222" fill="#0e5a8a" font-size="13.5" font-weight="700">逐层映射（layer-by-layer）</text>
+  <g font-size="12">
+    <text x="510" y="250" fill="#45536b">16 列 = 16 个输出通道；每列存 128 个输入通道权重</text>
+    <text x="510" y="272" fill="#45536b">128 输入并行送入 → 与 16 列权重同时比较</text>
+    <text x="510" y="294" fill="#45536b">8 周期比较+累加 → 16 个 Psum</text>
+  </g>
+
+  <!-- 实测结果 -->
+  <rect x="40" y="336" width="880" height="200" rx="12" fill="#fff" stroke="#1d8a5f" stroke-width="2" filter="url(#sh)"/>
+  <text x="60" y="362" fill="#1d8a5f" font-size="14" font-weight="700">芯片实测结果（表 II + 图 15）</text>
+  <g font-size="12">
+    <text x="60" y="392" fill="#45536b">工艺 28nm · 面积 0.028 mm² · 电压 0.54–0.9 V · 频率 20–240 MHz</text>
+    <text x="60" y="416" fill="#45536b">8-bit 峰值算力 0.122 TOPS（0.9 V / 240 MHz）；一次比较+累加计 2 OPs，8 位需 8 周期</text>
+    <text x="60" y="440" fill="#1d8a5f" font-weight="600">峰值能效 102 TOPS/W @0.54V/20MHz（10% 激活稀疏 + 50% 权重稀疏）</text>
+    <text x="60" y="464" fill="#45536b">能效随位宽线性提升 → 突破传统 MAC CIM 的二次成本</text>
+    <line x1="60" y1="486" x2="900" y2="486" stroke="#c9d8ea"/>
+    <text x="60" y="508" fill="#0e5a8a" font-weight="600">ResNet-20（CIFAR-10, 8-bit）：91.71% · 2.14 µJ/图 · 3019.5 图/s</text>
+    <text x="60" y="528" fill="#6b3fa0" font-weight="600">ResNet-50（ImageNet, 8-bit）：74.8% · 220.04 µJ/图 · 28.21 图/s</text>
+  </g>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill"/>
+    </marker>
+  </defs>
+</svg>
